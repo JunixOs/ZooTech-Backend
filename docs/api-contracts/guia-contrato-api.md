@@ -4,6 +4,38 @@
 > **Propósito:** Definir los estándares que debemos seguir al diseñar contratos de API antes de comenzar la implementación.  
 > **Obligatorio:** Sí. Todo endpoint debe tener su contrato aprobado antes de escribir código.
 
+- [📘 Guía de Contratos de API — Estándares del Equipo](#-guía-de-contratos-de-api--estándares-del-equipo)
+  - [¿Qué es un Contrato de API?](#qué-es-un-contrato-de-api)
+  - [1. Estándar que usamos: OpenAPI 3.0 (YAML)](#1-estándar-que-usamos-openapi-30-yaml)
+  - [2. Convenciones de Nomenclatura REST](#2-convenciones-de-nomenclatura-rest)
+    - [Rutas (URLs)](#rutas-urls)
+    - [Métodos HTTP](#métodos-http)
+    - [Parámetros](#parámetros)
+  - [3. Módulos del Proyecto y sus Rutas Base](#3-módulos-del-proyecto-y-sus-rutas-base)
+  - [4. Códigos de Respuesta HTTP](#4-códigos-de-respuesta-http)
+  - [5. Estructura del Cuerpo de Error](#5-estructura-del-cuerpo-de-error)
+  - [6. Paginación](#6-paginación)
+    - [Request](#request)
+    - [Response](#response)
+  - [7. Estructura Base del Archivo YAML](#7-estructura-base-del-archivo-yaml)
+  - [8. Ejemplos Reales del Proyecto](#8-ejemplos-reales-del-proyecto)
+    - [8.1 Listar Fecundaciones — `GET /fecundaciones`](#81-listar-fecundaciones--get-fecundaciones)
+    - [8.2 Estado de Fecundación del Vacuno — `GET /vacunos/{vacunoId}/fecundacion-estado`](#82-estado-de-fecundación-del-vacuno--get-vacunosvacunoidfecundacion-estado)
+    - [8.3 Registrar Fecundación — `POST /fecundaciones`](#83-registrar-fecundación--post-fecundaciones)
+    - [8.4 Editar Fecundación — `PATCH /fecundaciones/{fecundacionId}`](#84-editar-fecundación--patch-fecundacionesfecundacionid)
+    - [8.5 Eliminar Fecundación — `DELETE /fecundaciones/{fecundacionId}`](#85-eliminar-fecundación--delete-fecundacionesfecundacionid)
+  - [9. Modelos (Schemas) del Módulo Fecundación](#9-modelos-schemas-del-módulo-fecundación)
+  - [10. Referencia de Rutas por Módulo](#10-referencia-de-rutas-por-módulo)
+    - [Módulo Vacuno](#módulo-vacuno)
+    - [Módulo Reproducción – Celo](#módulo-reproducción--celo)
+    - [Módulo Sanidad – Triaje](#módulo-sanidad--triaje)
+    - [Módulo Producción de Leche](#módulo-producción-de-leche)
+  - [11. Versionado de la API](#11-versionado-de-la-api)
+  - [12. Checklist antes de entregar un contrato](#12-checklist-antes-de-entregar-un-contrato)
+  - [13. Flujo de trabajo del equipo](#13-flujo-de-trabajo-del-equipo)
+  - [Recursos de referencia](#recursos-de-referencia)
+
+
 ---
 
 ## ¿Qué es un Contrato de API?
