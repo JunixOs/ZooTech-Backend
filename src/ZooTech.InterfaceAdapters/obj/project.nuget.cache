@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "rCUk5SOnca4=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\yonel\\Desktop\\Proyectos Programacion\\.NET\\Aplicaciones\\ZooTech\\ZooTech-Backend - Solution\\src\\ZooTech.InterfaceAdapters\\ZooTech.InterfaceAdapters.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\yonel\\.nuget\\packages\\microsoft.aspnetcore.openapi\\10.0.7\\microsoft.aspnetcore.openapi.10.0.7.nupkg.sha512",
+    "C:\\Users\\yonel\\.nuget\\packages\\microsoft.openapi\\2.0.0\\microsoft.openapi.2.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}

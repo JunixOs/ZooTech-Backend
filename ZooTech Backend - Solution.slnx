@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ZooTech.Application/ZooTech.Application.csproj" />
+    <Project Path="src/ZooTech.Domain/ZooTech.Domain.csproj" />
+    <Project Path="src/ZooTech.Infrastructure/ZooTech.Infrastructure.csproj" />
+    <Project Path="src/ZooTech.InterfaceAdapters/ZooTech.InterfaceAdapters.csproj" />
+  </Folder>
+</Solution>
