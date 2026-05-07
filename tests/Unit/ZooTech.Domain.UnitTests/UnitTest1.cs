@@ -1,4 +1,4 @@
-﻿namespace ZooTech.Domain.Tests;
+﻿namespace ZooTech.Domain.UnitTests;
 
 public class UnitTest1
 {

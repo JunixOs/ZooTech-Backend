@@ -1,4 +1,4 @@
-﻿namespace ZooTech.Application.Tests;
+﻿namespace ZooTech.InterfaceAdapters.IntegrationTests;
 
 public class UnitTest1
 {

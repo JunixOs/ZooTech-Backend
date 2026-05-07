@@ -5,4 +5,15 @@
     <Project Path="src/ZooTech.Infrastructure/ZooTech.Infrastructure.csproj" />
     <Project Path="src/ZooTech.InterfaceAdapters/ZooTech.InterfaceAdapters.csproj" />
   </Folder>
+  <Folder Name="/tests/" />
+  <Folder Name="/tests/Integration/">
+    <Project Path="tests/Integration/ZooTech.Infrastructure.IntegrationTests/ZooTech.Infrastructure.IntegrationTests.csproj" />
+    <Project Path="tests/Integration/ZooTech.InterfaceAdapters.IntegrationTests/ZooTech.InterfaceAdapters.IntegrationTests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Unit/">
+    <Project Path="tests/Unit/ZooTech.Application.UnitTests/ZooTech.Application.UnitTests.csproj" />
+    <Project Path="tests/Unit/ZooTech.Domain.UnitTests/ZooTech.Domain.UnitTests.csproj" />
+    <Project Path="tests/Unit/ZooTech.Infrastructure.UnitTests/ZooTech.Infrastructure.UnitTests.csproj" />
+    <Project Path="tests/Unit/ZooTech.InterfaceAdapters.UnitTests/ZooTech.InterfaceAdapters.UnitTests.csproj" />
+  </Folder>
 </Solution>
