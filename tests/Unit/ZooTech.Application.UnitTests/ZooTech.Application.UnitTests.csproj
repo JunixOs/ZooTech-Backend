@@ -18,4 +18,8 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\ZooTech.Application\ZooTech.Application.csproj" />
+  </ItemGroup>
+
 </Project>
