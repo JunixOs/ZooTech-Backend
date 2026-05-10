@@ -8,11 +8,14 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.7" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.7" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\ZooTech.Application\ZooTech.Application.csproj" />
     <ProjectReference Include="..\ZooTech.Domain\ZooTech.Domain.csproj" />
+    <ProjectReference Include="..\ZooTech.Infrastructure\ZooTech.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
