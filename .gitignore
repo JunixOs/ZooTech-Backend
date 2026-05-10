@@ -215,3 +215,9 @@ copilot/
 
 *.cache
 .cache/
+
+# ======
+# MIO
+# ======
+.agent/
+docs/
