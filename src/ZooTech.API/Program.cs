@@ -4,6 +4,21 @@ var builder = WebApplication.CreateBuilder(args);
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+var frontendPort = builder.Configuration["Frontend:FrontendPort"];
+var frontendIP = builder.Configuration["Frontend:FrontendIP"];
+var frontendProtocol = builder.Configuration["Frontend:FrontendProtocol"];
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend",
+        policy =>
+        {
+            policy.WithOrigins($"{frontendProtocol}://{frontendIP}:{frontendPort}")
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+        });
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
