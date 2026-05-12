@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
 
+
 namespace ZooTech.InterfaceAdapters.Module_Sanidad.Controllers;
 
 [ApiController]

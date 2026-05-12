@@ -1,6 +1,7 @@
 ﻿using ZooTech.Domain.Module_Sanidad.Interfaces;
 using ZooTech.Infrastructure.Context;
 
+
 namespace ZooTech.Infrastructure.Persistence.Modules.Module_Sanidad.Repositories;
 
 public class TriajeRepository : ITriajeRepository
