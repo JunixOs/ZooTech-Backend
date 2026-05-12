@@ -10,6 +10,21 @@ builder.Services.AddSanidadServices(builder.Configuration);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+var frontendPort = builder.Configuration["Frontend:FrontendPort"];
+var frontendIP = builder.Configuration["Frontend:FrontendIP"];
+var frontendProtocol = builder.Configuration["Frontend:FrontendProtocol"];
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend",
+        policy =>
+        {
+            policy.WithOrigins($"{frontendProtocol}://{frontendIP}:{frontendPort}")
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+        });
+});
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

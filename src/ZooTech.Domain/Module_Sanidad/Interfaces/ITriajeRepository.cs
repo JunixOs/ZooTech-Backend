@@ -7,4 +7,4 @@ public interface ITriajeRepository
     Task AddAsync(object triaje);
     Task UpdateAsync(object triaje);
     Task DeleteAsync(long id);
-}
+} 
