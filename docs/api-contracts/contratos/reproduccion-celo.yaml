@@ -377,4 +377,636 @@ paths:
             type: integer
             example: 7
 
-## CONTINUACIPON AKEMI ##
+      responses:
+        '200':
+          description: "Estado de celo obtenido exitosamente"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CeloEstado'
+              example:
+                vacunoId: 7
+                tieneCeloActivo: true
+                ultimoCelo:
+                  id: 1
+                  vacunoId: 7
+                  fechaCelo: "2024-03-12"
+                  horaDeteccion: "08:30"
+                  intensidad: "alta"
+                  estado: "detectado"
+        '401':
+          description: "No autenticado"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: "Vacuno no encontrado"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: "Error interno del servidor"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - BearerAuth: []
+
+  /celos/reportes:
+    get:
+      tags:
+        - "Celos"
+      summary: "Listado de reportes de celo"
+      description: "Retorna un listado paginado de reportes resumidos de celos."
+      operationId: "listCeloReportes"
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: "Número de página"
+          schema:
+            type: integer
+            default: 1
+            example: 1
+        - name: limit
+          in: query
+          required: false
+          description: "Cantidad de resultados por página"
+          schema:
+            type: integer
+            default: 20
+            example: 20
+        - name: fechaInicio
+          in: query
+          required: false
+          description: "Fecha inicial del reporte"
+          schema:
+            type: string
+            format: date
+            example: "2024-03-01"
+        - name: fechaFin
+          in: query
+          required: false
+          description: "Fecha final del reporte"
+          schema:
+            type: string
+            format: date
+            example: "2024-03-31"
+      responses:
+        '200':
+          description: "Listado de reportes obtenido exitosamente"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/CeloReporteResumen'
+        '401':
+          description: "No autenticado"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: "Error interno del servidor"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - BearerAuth: []
+
+  /celos/reportes/general:
+    get:
+      tags:
+        - "Celos"
+      summary: "Reporte de celo general"
+      description: "Retorna indicadores generales de celos registrados en el sistema."
+      operationId: "getCeloReporteGeneral"
+      parameters:
+        - name: fechaInicio
+          in: query
+          required: false
+          description: "Fecha inicial del reporte"
+          schema:
+            type: string
+            format: date
+            example: "2024-03-01"
+        - name: fechaFin
+          in: query
+          required: false
+          description: "Fecha final del reporte"
+          schema:
+            type: string
+            format: date
+            example: "2024-03-31"
+      responses:
+        '200':
+          description: "Reporte general obtenido exitosamente"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CeloReporteGeneral'
+        '401':
+          description: "No autenticado"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: "Error interno del servidor"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - BearerAuth: []
+
+  /vacunos/{vacunoId}/celos/reporte:
+    get:
+      tags:
+        - "Celos"
+      summary: "Reporte de celo por vacuno"
+      description: "Retorna el historial e indicadores de celos de un vacuno específico."
+      operationId: "getCeloReporteByVacuno"
+      parameters:
+        - name: vacunoId
+          in: path
+          required: true
+          description: "ID único del vacuno"
+          schema:
+            type: integer
+            example: 7
+      responses:
+        '200':
+          description: "Reporte por vacuno obtenido exitosamente"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CeloReportePorVacuno'
+        '401':
+          description: "No autenticado"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: "Vacuno no encontrado"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: "Error interno del servidor"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - BearerAuth: []
+
+  /celos/comparaciones:
+    get:
+      tags:
+        - "Celos"
+      summary: "Comparación de celos real vs estándar"
+      description: "Compara los celos registrados con el ciclo estándar esperado de 21 días."
+      operationId: "getCeloComparacionGeneral"
+      responses:
+        '200':
+          description: "Comparación general obtenida exitosamente"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CeloComparacionGeneral'
+        '401':
+          description: "No autenticado"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: "Error interno del servidor"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - BearerAuth: []
+
+  /vacunos/{vacunoId}/celos/comparacion:
+    get:
+      tags:
+        - "Celos"
+      summary: "Comparación celo real vs estándar por vacuno"
+      description: "Compara el ciclo real de celo de un vacuno con el ciclo estándar esperado."
+      operationId: "getCeloComparacionByVacuno"
+      parameters:
+        - name: vacunoId
+          in: path
+          required: true
+          description: "ID único del vacuno"
+          schema:
+            type: integer
+            example: 7
+      responses:
+        '200':
+          description: "Comparación por vacuno obtenida exitosamente"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CeloComparacionPorVacuno'
+        '401':
+          description: "No autenticado"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: "Vacuno no encontrado"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: "Error interno del servidor"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - BearerAuth: []
+
+components:
+  schemas:
+    Celo:
+      type: object
+      description: "Representa un evento de celo detectado en un vacuno."
+      properties:
+        id:
+          type: integer
+          example: 1
+        vacunoId:
+          type: integer
+          example: 7
+        fechaCelo:
+          type: string
+          format: date
+          example: "2024-03-12"
+        horaDeteccion:
+          type: string
+          example: "08:30"
+        signosObservados:
+          type: string
+          example: "Inquietud, monta a otras vacas y secreción mucosa"
+        intensidad:
+          type: string
+          enum: [baja, media, alta]
+          example: "alta"
+        estado:
+          type: string
+          enum: [detectado, programado, fecundado, finalizado, cancelado]
+          example: "detectado"
+        observaciones:
+          type: string
+          nullable: true
+          example: "Se recomienda programar fecundación"
+        creadoEn:
+          type: string
+          format: date-time
+          example: "2024-03-12T08:40:00Z"
+        actualizadoEn:
+          type: string
+          format: date-time
+          example: "2024-03-12T08:40:00Z"
+      required:
+        - id
+        - vacunoId
+        - fechaCelo
+        - signosObservados
+        - intensidad
+        - estado
+        - creadoEn
+
+    CreateCeloRequest:
+      type: object
+      description: "Datos necesarios para registrar un celo."
+      properties:
+        fechaCelo:
+          type: string
+          format: date
+          description: "Fecha en la que se detectó el celo. No puede ser futura."
+          example: "2024-03-12"
+        horaDeteccion:
+          type: string
+          description: "Hora aproximada en la que se detectó el celo."
+          example: "08:30"
+        signosObservados:
+          type: string
+          maxLength: 500
+          example: "Inquietud, monta a otras vacas y secreción mucosa"
+        intensidad:
+          type: string
+          enum: [baja, media, alta]
+          example: "alta"
+        observaciones:
+          type: string
+          nullable: true
+          maxLength: 500
+          example: "Se recomienda programar fecundación"
+      required:
+        - fechaCelo
+        - signosObservados
+        - intensidad
+
+    UpdateCeloRequest:
+      type: object
+      description: "Campos opcionales para actualizar un celo."
+      properties:
+        fechaCelo:
+          type: string
+          format: date
+          example: "2024-03-12"
+        horaDeteccion:
+          type: string
+          example: "08:30"
+        signosObservados:
+          type: string
+          maxLength: 500
+          example: "Monta a otras vacas y secreción mucosa"
+        intensidad:
+          type: string
+          enum: [baja, media, alta]
+          example: "media"
+        estado:
+          type: string
+          enum: [detectado, programado, fecundado, finalizado, cancelado]
+          example: "programado"
+        observaciones:
+          type: string
+          nullable: true
+          maxLength: 500
+          example: "Celo programado para fecundación"
+
+    CeloEstado:
+      type: object
+      description: "Estado actual de celo de un vacuno."
+      properties:
+        vacunoId:
+          type: integer
+          example: 7
+        tieneCeloActivo:
+          type: boolean
+          example: true
+        ultimoCelo:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/Celo'
+      required:
+        - vacunoId
+        - tieneCeloActivo
+
+    CeloReporteResumen:
+      type: object
+      description: "Resumen de un celo para reportes."
+      properties:
+        celoId:
+          type: integer
+          example: 1
+        vacunoId:
+          type: integer
+          example: 7
+        codigoVacuno:
+          type: string
+          example: "VAC-007"
+        fechaCelo:
+          type: string
+          format: date
+          example: "2024-03-12"
+        intensidad:
+          type: string
+          example: "alta"
+        estado:
+          type: string
+          example: "detectado"
+
+    CeloReporteGeneral:
+      type: object
+      description: "Indicadores generales del módulo de celo."
+      properties:
+        totalCelos:
+          type: integer
+          example: 35
+        celosDetectados:
+          type: integer
+          example: 15
+        celosProgramados:
+          type: integer
+          example: 8
+        celosFecundados:
+          type: integer
+          example: 7
+        celosFinalizados:
+          type: integer
+          example: 5
+        celosCancelados:
+          type: integer
+          example: 0
+        promedioDiasEntreCelos:
+          type: number
+          format: float
+          example: 21.5
+      required:
+        - totalCelos
+        - celosDetectados
+        - celosProgramados
+        - celosFecundados
+
+    CeloReportePorVacuno:
+      type: object
+      description: "Reporte de celos de un vacuno específico."
+      properties:
+        vacunoId:
+          type: integer
+          example: 7
+        codigoVacuno:
+          type: string
+          example: "VAC-007"
+        totalCelos:
+          type: integer
+          example: 4
+        ultimoCelo:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/Celo'
+        historial:
+          type: array
+          items:
+            $ref: '#/components/schemas/Celo'
+      required:
+        - vacunoId
+        - totalCelos
+        - historial
+
+    CeloComparacionGeneral:
+      type: object
+      description: "Comparación general entre celos reales y el ciclo estándar."
+      properties:
+        cicloEstandarDias:
+          type: integer
+          example: 21
+        totalVacunosEvaluados:
+          type: integer
+          example: 20
+        vacunosDentroDelRango:
+          type: integer
+          example: 15
+        vacunosFueraDelRango:
+          type: integer
+          example: 5
+        detalle:
+          type: array
+          items:
+            $ref: '#/components/schemas/CeloComparacionDetalle'
+      required:
+        - cicloEstandarDias
+        - totalVacunosEvaluados
+        - vacunosDentroDelRango
+        - vacunosFueraDelRango
+
+    CeloComparacionPorVacuno:
+      type: object
+      description: "Comparación del ciclo real de celo de un vacuno contra el ciclo estándar."
+      properties:
+        vacunoId:
+          type: integer
+          example: 7
+        codigoVacuno:
+          type: string
+          example: "VAC-007"
+        cicloEstandarDias:
+          type: integer
+          example: 21
+        promedioRealDias:
+          type: number
+          format: float
+          example: 22.5
+        estadoComparacion:
+          type: string
+          enum: [dentro_del_rango, fuera_del_rango]
+          example: "dentro_del_rango"
+        historialComparacion:
+          type: array
+          items:
+            $ref: '#/components/schemas/CeloComparacionDetalle'
+      required:
+        - vacunoId
+        - cicloEstandarDias
+        - promedioRealDias
+        - estadoComparacion
+
+    CeloComparacionDetalle:
+      type: object
+      description: "Detalle de comparación entre dos celos consecutivos."
+      properties:
+        vacunoId:
+          type: integer
+          example: 7
+        fechaCeloAnterior:
+          type: string
+          format: date
+          example: "2024-02-20"
+        fechaCeloActual:
+          type: string
+          format: date
+          example: "2024-03-12"
+        diasEntreCelos:
+          type: integer
+          example: 21
+        cicloEstandarDias:
+          type: integer
+          example: 21
+        diferenciaDias:
+          type: integer
+          example: 0
+        estadoComparacion:
+          type: string
+          enum: [dentro_del_rango, fuera_del_rango]
+          example: "dentro_del_rango"
+
+    PaginatedResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items: {}
+        pagination:
+          type: object
+          properties:
+            page:
+              type: integer
+              example: 1
+            limit:
+              type: integer
+              example: 20
+            total:
+              type: integer
+              example: 85
+            totalPages:
+              type: integer
+              example: 5
+          required:
+            - page
+            - limit
+            - total
+            - totalPages
+      required:
+        - data
+        - pagination
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: "CELO_NOT_FOUND"
+            message:
+              type: string
+              example: "El celo con ID 1 no existe."
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                    example: "fechaCelo"
+                  message:
+                    type: string
+                    example: "La fecha del celo no puede ser futura."
+          required:
+            - code
+            - message
+            - details
+      required:
+        - error
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - BearerAuth: []
