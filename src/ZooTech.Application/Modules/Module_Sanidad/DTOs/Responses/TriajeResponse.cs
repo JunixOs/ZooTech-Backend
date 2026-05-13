@@ -11,4 +11,5 @@ public class TriajeResponse
     public string? Observaciones { get; set; }
     public string EstadoRegistroCode { get; set; } = string.Empty;
     public long? EncargadoUsuarioId { get; set; }
+    public DateTime CreatedAt { get; set; }
 }
