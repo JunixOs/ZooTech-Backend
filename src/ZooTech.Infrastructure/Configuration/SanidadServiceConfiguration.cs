@@ -5,6 +5,9 @@ using ZooTech.Domain.Module_Sanidad.Interfaces;
 using ZooTech.Infrastructure.Context;
 using ZooTech.Infrastructure.Persistence.Modules.Module_Sanidad.Repositories;
 
+using ZooTech.Application.Common.Gateway.Time;
+using ZooTech.Infrastructure.Common.Time;
+
 namespace ZooTech.Infrastructure.Configuration;
 
 public static class SanidadServiceConfiguration
@@ -13,7 +16,7 @@ public static class SanidadServiceConfiguration
     {
         services.AddDbContext<ZootechContext>(options =>
             options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
-
+        services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddScoped<ITriajeRepository, TriajeRepository>();
 
         return services;

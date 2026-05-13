@@ -1,11 +1,14 @@
 using ZooTech.Infrastructure.Configuration;
+using ZooTech.Application.Common.Gateway.Time;
+using ZooTech.Infrastructure.Common.Time;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
 builder.Services.AddSanidadServices(builder.Configuration);
-
+//Time
+builder.Services.AddScoped<IDateTimeProvider, DateTimeProvider>();
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

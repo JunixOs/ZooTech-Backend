@@ -2,7 +2,7 @@
 
 public class TriajeRequest
 {
-    public DateTime FechaHora { get; set; }
+    public DateTime FechaHora { get; set; } = DateTime.Now;
     public long VacunoId { get; set; }
     public string TipoPesoCode { get; set; } = string.Empty;
     public decimal PesoKg { get; set; }

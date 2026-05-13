@@ -3,6 +3,8 @@ using ZooTech.Domain.Module_Sanidad.Interfaces;
 using ZooTech.Infrastructure.Persistence.Modules.Module_Sanidad.Entities;
 using ZooTech.InterfaceAdapters.Modules.Module_Sanidad.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_Sanidad.DTOs.Responses;
+using ZooTech.Application.Common.Gateway.Time;
+using ZooTech.Infrastructure.Common.Time;
 namespace ZooTech.InterfaceAdapters.Module_Sanidad.Controllers;
 
 [ApiController]
@@ -10,10 +12,13 @@ namespace ZooTech.InterfaceAdapters.Module_Sanidad.Controllers;
 public class TriajeController : ControllerBase
 {
     private readonly ITriajeRepository _triajeRepository;
+    private readonly IDateTimeProvider _dateTimeProvider;
 
-    public TriajeController(ITriajeRepository triajeRepository)
+    public TriajeController(ITriajeRepository triajeRepository, IDateTimeProvider dateTimeProvider)
     {
         _triajeRepository = triajeRepository;
+        _dateTimeProvider = dateTimeProvider;
+
     }
 
 
@@ -43,18 +48,20 @@ public class TriajeController : ControllerBase
     public async Task<ActionResult<TriajeResponse>> Create([FromBody] TriajeRequest request)
     {
         var codigo = await _triajeRepository.GenerateCodigoAsync();
+        var now = _dateTimeProvider.ServerNow;
+
         var triaje = new Triaje
         {
             Codigo = codigo,
-            FechaHora = request.FechaHora,
+            FechaHora = now,
             VacunoId = request.VacunoId,
             TipoPesoCode = request.TipoPesoCode,
             PesoKg = request.PesoKg,
             Observaciones = request.Observaciones,
             EstadoRegistroCode = request.EstadoRegistroCode,
             EncargadoUsuarioId = request.EncargadoUsuarioId,
-            CreatedAt = DateTime.Now,
-            UpdatedAt = DateTime.Now
+            CreatedAt = now,
+            UpdatedAt = now
         };
 
         await _triajeRepository.AddAsync(triaje);
@@ -68,19 +75,20 @@ public class TriajeController : ControllerBase
     public async Task<ActionResult<TriajeResponse>> Update(long id, [FromBody] TriajeRequest request)
     {
         var triaje = await _triajeRepository.GetByIdAsync(id);
+        var now = _dateTimeProvider.ServerNow;
+
         if (triaje is not Triaje entity)
         {
             return NotFound();
         }
 
-        entity.FechaHora = request.FechaHora;
         entity.VacunoId = request.VacunoId;
         entity.TipoPesoCode = request.TipoPesoCode;
         entity.PesoKg = request.PesoKg;
         entity.Observaciones = request.Observaciones;
         entity.EstadoRegistroCode = request.EstadoRegistroCode;
         entity.EncargadoUsuarioId = request.EncargadoUsuarioId;
-        entity.UpdatedAt = DateTime.Now;
+        entity.UpdatedAt = now;
 
         await _triajeRepository.UpdateAsync(entity);
 
@@ -117,4 +125,5 @@ public class TriajeController : ControllerBase
             EncargadoUsuarioId = triaje.EncargadoUsuarioId
         };
     }
+
 }
