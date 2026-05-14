@@ -1,4 +1,4 @@
-﻿namespace ZooTech.InterfaceAdapters.Modules.Module_Sanidad.DTOs.Responses;
+﻿namespace ZooTech.Application.Modules.Module_Sanidad.DTOs.Responses;
 
 public class TriajeResponse
 {

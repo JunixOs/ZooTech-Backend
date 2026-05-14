@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using Microsoft.EntityFrameworkCore;
-using ZooTech.Infrastructure.Persistence.Modules.Module_Sanidad.Entities;
+﻿using Microsoft.EntityFrameworkCore;
+using ZooTech.Infrastructure.Persistence.Entities;
 
 namespace ZooTech.Infrastructure.Context;
 
@@ -12,33 +10,33 @@ public partial class ZootechContext : DbContext
     {
     }
 
-    public virtual DbSet<CatEstadoRegistro> CatEstadoRegistros { get; set; }
+    public virtual DbSet<cat_estado_registro> CatEstadoRegistros { get; set; }
 
-    public virtual DbSet<CatTipoPeso> CatTipoPesos { get; set; }
+    public virtual DbSet<cat_tipo_peso> CatTipoPesos { get; set; }
 
-    public virtual DbSet<Triaje> Triajes { get; set; }
+    public virtual DbSet<triaje> Triajes { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<CatEstadoRegistro>(entity =>
+        modelBuilder.Entity<cat_estado_registro>(entity =>
         {
-            entity.HasKey(e => e.Code).HasName("PK__cat_esta__357D4CF8DC626498");
+            entity.HasKey(e => e.code).HasName("PK__cat_esta__357D4CF8DC626498");
         });
 
-        modelBuilder.Entity<CatTipoPeso>(entity =>
+        modelBuilder.Entity<cat_tipo_peso>(entity =>
         {
-            entity.HasKey(e => e.Code).HasName("PK__cat_tipo__357D4CF8E03DBB3A");
+            entity.HasKey(e => e.code).HasName("PK__cat_tipo__357D4CF8E03DBB3A");
         });
 
-        modelBuilder.Entity<Triaje>(entity =>
+        modelBuilder.Entity<triaje>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__triaje__3213E83F8AC578E0");
+            entity.HasKey(e => e.id).HasName("PK__triaje__3213E83F8AC578E0");
 
-            entity.HasOne(d => d.EstadoRegistroCodeNavigation).WithMany(p => p.Triajes)
+            entity.HasOne(d => d.estado_registro_codeNavigation).WithMany(p => p.triajes)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_triaje_estado");
 
-            entity.HasOne(d => d.TipoPesoCodeNavigation).WithMany(p => p.Triajes)
+            entity.HasOne(d => d.tipo_peso_codeNavigation).WithMany(p => p.triajes)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_triaje_tipo_peso");
         });

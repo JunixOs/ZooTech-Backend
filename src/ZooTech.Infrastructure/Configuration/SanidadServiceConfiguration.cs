@@ -15,8 +15,9 @@ public static class SanidadServiceConfiguration
     public static IServiceCollection AddSanidadServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddDbContext<ZootechContext>(options =>
-            options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
-        services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
+            options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")
+                ?? throw new InvalidOperationException("ConnectionString 'DefaultConnection' not found.")));
+        services.AddScoped<IDateTimeProvider, DateTimeProvider>();
         services.AddScoped<ITriajeRepository, TriajeRepository>();
 
         return services;

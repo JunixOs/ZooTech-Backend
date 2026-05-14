@@ -1,129 +1,78 @@
 using Microsoft.AspNetCore.Mvc;
-using ZooTech.Domain.Module_Sanidad.Interfaces;
-using ZooTech.Infrastructure.Persistence.Modules.Module_Sanidad.Entities;
-using ZooTech.InterfaceAdapters.Modules.Module_Sanidad.DTOs.Requests;
-using ZooTech.InterfaceAdapters.Modules.Module_Sanidad.DTOs.Responses;
-using ZooTech.Application.Common.Gateway.Time;
-using ZooTech.Infrastructure.Common.Time;
+using ZooTech.Application.Modules.Module_Sanidad.DTOs.Requests;
+using ZooTech.Application.Modules.Module_Sanidad.DTOs.Responses;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases;
+
 namespace ZooTech.InterfaceAdapters.Module_Sanidad.Controllers;
 
 [ApiController]
 [Route("api/v1/triaje")]
 public class TriajeController : ControllerBase
 {
-    private readonly ITriajeRepository _triajeRepository;
-    private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly GetAllTriajesUseCase _getAllUseCase;
+    private readonly GetTriajeByIdUseCase _getByIdUseCase;
+    private readonly CreateTriajeUseCase _createUseCase;
+    private readonly UpdateTriajeUseCase _updateUseCase;
+    private readonly DeleteTriajeUseCase _deleteUseCase;
 
-    public TriajeController(ITriajeRepository triajeRepository, IDateTimeProvider dateTimeProvider)
+    public TriajeController(
+        GetAllTriajesUseCase getAllUseCase,
+        GetTriajeByIdUseCase getByIdUseCase,
+        CreateTriajeUseCase createUseCase,
+        UpdateTriajeUseCase updateUseCase,
+        DeleteTriajeUseCase deleteUseCase)
     {
-        _triajeRepository = triajeRepository;
-        _dateTimeProvider = dateTimeProvider;
-
+        _getAllUseCase = getAllUseCase;
+        _getByIdUseCase = getByIdUseCase;
+        _createUseCase = createUseCase;
+        _updateUseCase = updateUseCase;
+        _deleteUseCase = deleteUseCase;
     }
-
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<TriajeResponse>>> GetAll()
     {
-        var triajes = await _triajeRepository.GetAllAsync();
-        return Ok(triajes.OfType<Triaje>().Select(ToResponse));
+        var result = await _getAllUseCase.ExecuteAsync();
+        return Ok(result);
     }
-
 
     [HttpGet("{id:long}")]
     public async Task<ActionResult<TriajeResponse>> GetById(long id)
     {
-        var triaje = await _triajeRepository.GetByIdAsync(id);
+        var result = await _getByIdUseCase.ExecuteAsync(id);
 
-        if (triaje is not Triaje entity)
-        {
+        if (result is null)
             return NotFound();
-        }
 
-        return Ok(ToResponse(entity));
+        return Ok(result);
     }
 
-    
     [HttpPost]
     public async Task<ActionResult<TriajeResponse>> Create([FromBody] TriajeRequest request)
     {
-        var codigo = await _triajeRepository.GenerateCodigoAsync();
-        var now = _dateTimeProvider.ServerNow;
-
-        var triaje = new Triaje
-        {
-            Codigo = codigo,
-            FechaHora = now,
-            VacunoId = request.VacunoId,
-            TipoPesoCode = request.TipoPesoCode,
-            PesoKg = request.PesoKg,
-            Observaciones = request.Observaciones,
-            EstadoRegistroCode = request.EstadoRegistroCode,
-            EncargadoUsuarioId = request.EncargadoUsuarioId,
-            CreatedAt = now,
-            UpdatedAt = now
-        };
-
-        await _triajeRepository.AddAsync(triaje);
-
-        var response = ToResponse(triaje);
-        return CreatedAtAction(nameof(GetById), new { id = response.Id }, response);
+        var result = await _createUseCase.ExecuteAsync(request);
+        return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
 
-    
     [HttpPut("{id:long}")]
     public async Task<ActionResult<TriajeResponse>> Update(long id, [FromBody] TriajeRequest request)
     {
-        var triaje = await _triajeRepository.GetByIdAsync(id);
-        var now = _dateTimeProvider.ServerNow;
+        var result = await _updateUseCase.ExecuteAsync(id, request);
 
-        if (triaje is not Triaje entity)
-        {
+        if (result is null)
             return NotFound();
-        }
 
-        entity.VacunoId = request.VacunoId;
-        entity.TipoPesoCode = request.TipoPesoCode;
-        entity.PesoKg = request.PesoKg;
-        entity.Observaciones = request.Observaciones;
-        entity.EstadoRegistroCode = request.EstadoRegistroCode;
-        entity.EncargadoUsuarioId = request.EncargadoUsuarioId;
-        entity.UpdatedAt = now;
-
-        await _triajeRepository.UpdateAsync(entity);
-
-        return Ok(ToResponse(entity));
+        return Ok(result);
     }
 
-    
     [HttpDelete("{id:long}")]
     public async Task<IActionResult> Delete(long id)
     {
-        var triaje = await _triajeRepository.GetByIdAsync(id);
+        var deleted = await _deleteUseCase.ExecuteAsync(id);
 
-        if (triaje is not Triaje)
-        {
+        if (!deleted)
             return NotFound();
-        }
 
-        await _triajeRepository.DeleteAsync(id);
         return NoContent();
     }
-
-    private static TriajeResponse ToResponse(Triaje triaje)
-    {
-        return new TriajeResponse
-        {
-            Id = triaje.Id,
-            Codigo = triaje.Codigo,
-            FechaHora = triaje.FechaHora,
-            VacunoId = triaje.VacunoId,
-            TipoPesoCode = triaje.TipoPesoCode,
-            PesoKg = triaje.PesoKg,
-            Observaciones = triaje.Observaciones,
-            EstadoRegistroCode = triaje.EstadoRegistroCode,
-            EncargadoUsuarioId = triaje.EncargadoUsuarioId
-        };
-    }
-
 }

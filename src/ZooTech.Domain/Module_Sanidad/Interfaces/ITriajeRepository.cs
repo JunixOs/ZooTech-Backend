@@ -1,11 +1,13 @@
-﻿namespace ZooTech.Domain.Module_Sanidad.Interfaces;
+﻿using ZooTech.Domain.Module_Sanidad.Entities;
+
+namespace ZooTech.Domain.Module_Sanidad.Interfaces;
 
 public interface ITriajeRepository
 {
-    Task<object?> GetByIdAsync(long id);
-    Task<IEnumerable<object>> GetAllAsync();
-    Task AddAsync(object triaje);
-    Task UpdateAsync(object triaje);
+    Task<Triaje?> GetByIdAsync(long id);
+    Task<IEnumerable<Triaje>> GetAllAsync();
+    Task AddAsync(Triaje triaje);
+    Task UpdateAsync(Triaje triaje);
     Task DeleteAsync(long id);
     Task<string> GenerateCodigoAsync();
 }

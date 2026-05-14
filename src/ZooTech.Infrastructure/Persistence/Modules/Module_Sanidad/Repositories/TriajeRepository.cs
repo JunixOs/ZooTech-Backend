@@ -1,86 +1,129 @@
 using Microsoft.EntityFrameworkCore;
+using ZooTech.Application.Common.Gateway.Time;
+using ZooTech.Domain.Module_Sanidad.Entities;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
+using ZooTech.Infrastructure.Common.Time;
 using ZooTech.Infrastructure.Context;
-using ZooTech.Infrastructure.Persistence.Modules.Module_Sanidad.Entities;
+using ZooTech.Infrastructure.Persistence.Entities;
 
 namespace ZooTech.Infrastructure.Persistence.Modules.Module_Sanidad.Repositories;
 
 public class TriajeRepository : ITriajeRepository
 {
     private readonly ZootechContext _context;
+    private readonly IDateTimeProvider _dateTimeProvider;
 
-    public TriajeRepository(ZootechContext context)
+    public TriajeRepository(ZootechContext context, IDateTimeProvider dateTimeProvider)
     {
         _context = context;
+        _dateTimeProvider = dateTimeProvider;
     }
 
-    public async Task<object?> GetByIdAsync(long id)
+    public async Task<Triaje?> GetByIdAsync(long id)
     {
-        return await _context.Triajes
+        var entity = await _context.Triajes
             .AsNoTracking()
-            .FirstOrDefaultAsync(triaje => triaje.Id == id && triaje.DeletedAt == null);
+            .FirstOrDefaultAsync(t => t.id == id && t.deleted_at == null);
+
+        return entity is null ? null : ToTriaje(entity);
     }
 
-    public async Task<IEnumerable<object>> GetAllAsync()
+    public async Task<IEnumerable<Triaje>> GetAllAsync()
     {
-        return await _context.Triajes
+        var entities = await _context.Triajes
             .AsNoTracking()
-            .Where(triaje => triaje.DeletedAt == null)
-            .OrderByDescending(triaje => triaje.FechaHora)
-            .Cast<object>()
+            .Where(t => t.deleted_at == null)
+            .OrderByDescending(t => t.fecha_hora)
             .ToListAsync();
+
+        return entities.Select(ToTriaje);
     }
 
-    public async Task AddAsync(object triaje)
+    public async Task AddAsync(Triaje triaje)
     {
-        if (triaje is not Triaje entity)
-        {
-            throw new ArgumentException("El objeto debe ser una entidad Triaje", nameof(triaje));
-        }
-
+        var entity = ToEntity(triaje);
         _context.Triajes.Add(entity);
         await _context.SaveChangesAsync();
+        triaje.Id = entity.id;
     }
 
-    public async Task UpdateAsync(object triaje)
+    public async Task UpdateAsync(Triaje triaje)
     {
-        if (triaje is not Triaje entity)
-        {
-            throw new ArgumentException("El objeto debe ser una entidad Triaje", nameof(triaje));
-        }
-
+        var entity = ToEntity(triaje);
         _context.Triajes.Update(entity);
         await _context.SaveChangesAsync();
     }
 
     public async Task DeleteAsync(long id)
     {
-        var triaje = await _context.Triajes
-            .FirstOrDefaultAsync(item => item.Id == id && item.DeletedAt == null);
+        var entity = await _context.Triajes
+            .FirstOrDefaultAsync(t => t.id == id && t.deleted_at == null);
 
-        if (triaje is null)
-        {
-            return;
-        }
+        if (entity is null) return;
 
-        var now = DateTime.UtcNow;
-        triaje.DeletedAt = now;
-        triaje.UpdatedAt = now;
+        var now = _dateTimeProvider.ServerNow;
+        entity.deleted_at = now;
+        entity.updated_at = now;
 
         await _context.SaveChangesAsync();
     }
-   public async Task<string> GenerateCodigoAsync()
+
+    public async Task<string> GenerateCodigoAsync()
     {
         var lastCodigo = await _context.Triajes
-            .Where(t => t.Codigo.StartsWith("TRI"))
-            .OrderByDescending(t => t.Codigo)
-            .Select(t => t.Codigo)
+            .Where(t => t.codigo.StartsWith("TRI"))
+            .OrderByDescending(t => t.codigo)
+            .Select(t => t.codigo)
             .FirstOrDefaultAsync();
+
         var nextNumber = 1;
-        if (!string.IsNullOrEmpty(lastCodigo) && lastCodigo.Length > 3 && int.TryParse(lastCodigo[3..], out var lastNumber))
+        if (!string.IsNullOrEmpty(lastCodigo) && lastCodigo.Length > 3
+            && int.TryParse(lastCodigo[3..], out var lastNumber))
         {
             nextNumber = lastNumber + 1;
         }
+
         return $"TRI{nextNumber:D3}";
     }
+
+    // Mappers
+    private static Triaje ToTriaje(triaje e) => new()
+    {
+        Id = e.id,
+        Codigo = e.codigo,
+        FechaHora = e.fecha_hora,
+        VacunoId = e.vacuno_id,
+        TipoPesoCode = e.tipo_peso_code,
+        PesoKg = e.peso_kg,
+        Observaciones = e.observaciones,
+        EstadoRegistroCode = e.estado_registro_code,
+        EncargadoUsuarioId = e.encargado_usuario_id,
+        CreatedBy = e.created_by,
+        UpdatedBy = e.updated_by,
+        DeletedBy = e.deleted_by,
+        CreatedAt = e.created_at,
+        UpdatedAt = e.updated_at,
+        DeletedAt = e.deleted_at,
+        MotivoEliminacion = e.motivo_eliminacion
+    };
+
+    private static triaje ToEntity(Triaje t) => new()
+    {
+        id = t.Id,
+        codigo = t.Codigo,
+        fecha_hora = t.FechaHora,
+        vacuno_id = t.VacunoId,
+        tipo_peso_code = t.TipoPesoCode,
+        peso_kg = t.PesoKg,
+        observaciones = t.Observaciones,
+        estado_registro_code = t.EstadoRegistroCode,
+        encargado_usuario_id = t.EncargadoUsuarioId,
+        created_by = t.CreatedBy,
+        updated_by = t.UpdatedBy,
+        deleted_by = t.DeletedBy,
+        created_at = t.CreatedAt,
+        updated_at = t.UpdatedAt,
+        deleted_at = t.DeletedAt,
+        motivo_eliminacion = t.MotivoEliminacion
+    };
 }
