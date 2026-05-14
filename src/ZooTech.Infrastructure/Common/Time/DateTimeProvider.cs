@@ -8,8 +8,8 @@ public class DateTimeProvider : IDateTimeProvider
     {
         get
         {
-            var serverZone = TimeZoneInfo.FindSystemTimeZoneById("US Mountain Standard Time");
-            return TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, serverZone);
+            var peruZone = TimeZoneInfo.FindSystemTimeZoneById("SA Pacific Standard Time");
+            return TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, peruZone);
         }
     }
 }

@@ -50,8 +50,15 @@ public class TriajeController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<TriajeResponse>> Create([FromBody] TriajeRequest request)
     {
-        var result = await _createUseCase.ExecuteAsync(request);
-        return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+        try
+        {
+            var result = await _createUseCase.ExecuteAsync(request);
+            return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
     }
 
     [HttpPut("{id:long}")]
