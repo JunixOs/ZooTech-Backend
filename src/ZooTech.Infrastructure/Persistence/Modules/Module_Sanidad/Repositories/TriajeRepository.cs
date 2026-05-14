@@ -41,10 +41,17 @@ public class TriajeRepository : ITriajeRepository
 
     public async Task AddAsync(Triaje triaje)
     {
-        var entity = ToEntity(triaje);
-        _context.Triajes.Add(entity);
-        await _context.SaveChangesAsync();
-        triaje.Id = entity.id;
+        try
+        {
+            var entity = ToEntity(triaje);
+            _context.Triajes.Add(entity);
+            await _context.SaveChangesAsync();
+            triaje.Id = entity.id;
+        }
+        catch (DbUpdateException)
+        {
+            throw new InvalidOperationException("No se pudo registrar el triaje. Verifique que no exista un registro con el mismo vacuno, tipo de peso y fecha.");
+        }
     }
 
     public async Task UpdateAsync(Triaje triaje)
