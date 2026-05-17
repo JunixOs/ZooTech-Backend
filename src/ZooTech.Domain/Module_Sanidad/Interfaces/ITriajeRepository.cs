@@ -13,4 +13,6 @@ public interface ITriajeRepository
 
     // Tipo peso
     Task<IEnumerable<TipoPeso>> GetAllTipoPesosAsync();
+    // Vacuno id codigo nombre
+    Task<IEnumerable<VacunoOption>> GetAllVacunosAsync();
 }

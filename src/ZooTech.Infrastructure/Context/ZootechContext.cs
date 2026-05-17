@@ -13,6 +13,7 @@ public partial class ZootechContext : DbContext
     public virtual DbSet<cat_estado_registro> CatEstadoRegistros { get; set; }
 
     public virtual DbSet<cat_tipo_peso> CatTipoPesos { get; set; }
+    public virtual DbSet<vacuno> Vacunos { get; set; }
 
     public virtual DbSet<triaje> Triajes { get; set; }
 

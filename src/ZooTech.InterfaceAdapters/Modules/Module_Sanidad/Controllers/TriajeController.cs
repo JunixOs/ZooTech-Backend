@@ -15,6 +15,7 @@ public class TriajeController : ControllerBase
     private readonly UpdateTriajeUseCase _updateUseCase;
     private readonly DeleteTriajeUseCase _deleteUseCase;
     private readonly GetAllTipoPesosUseCase _getTipoPesosUseCase;
+    private readonly GetAllVacunosUseCase _getVacunosUseCase;
 
     public TriajeController(
         GetAllTriajesUseCase getAllUseCase,
@@ -22,7 +23,8 @@ public class TriajeController : ControllerBase
         CreateTriajeUseCase createUseCase,
         UpdateTriajeUseCase updateUseCase,
         DeleteTriajeUseCase deleteUseCase,
-            GetAllTipoPesosUseCase getTipoPesosUseCase)
+            GetAllTipoPesosUseCase getTipoPesosUseCase,
+            GetAllVacunosUseCase getVacunosUseCase)
     {
         _getAllUseCase = getAllUseCase;
         _getByIdUseCase = getByIdUseCase;
@@ -30,6 +32,7 @@ public class TriajeController : ControllerBase
         _updateUseCase = updateUseCase;
         _deleteUseCase = deleteUseCase;
         _getTipoPesosUseCase = getTipoPesosUseCase;
+        _getVacunosUseCase = getVacunosUseCase;
     }
 
     [HttpGet]
@@ -91,6 +94,13 @@ public class TriajeController : ControllerBase
     public async Task<ActionResult<IEnumerable<TipoPesoResponse>>> GetTiposPeso()
     {
         var result = await _getTipoPesosUseCase.ExecuteAsync();
+        return Ok(result);
+    }
+
+    [HttpGet("vacunos")]
+    public async Task<ActionResult<IEnumerable<VacunoOptionResponse>>> GetVacunos()
+    {
+        var result = await _getVacunosUseCase.ExecuteAsync();
         return Ok(result);
     }
 }

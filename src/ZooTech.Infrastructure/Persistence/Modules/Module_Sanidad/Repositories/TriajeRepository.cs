@@ -106,6 +106,19 @@ public class TriajeRepository : ITriajeRepository
             .ToListAsync();
     }
 
+    public async Task<IEnumerable<VacunoOption>> GetAllVacunosAsync()
+    {
+        return await _context.Vacunos
+            .Where(v => v.deleted_at == null)
+            .Select(v => new VacunoOption
+            {
+                Id = v.id,
+                Codigo = v.codigo,
+                Nombre = v.nombre
+            })
+            .ToListAsync();
+    }
+
 
     // Mappers
     private static Triaje ToTriaje(triaje e) => new()

@@ -18,6 +18,7 @@ public static class DependencyInjection
         services.AddScoped<UpdateTriajeUseCase>();
         services.AddScoped<DeleteTriajeUseCase>();
         services.AddScoped<GetAllTipoPesosUseCase>();
+        services.AddScoped<GetAllVacunosUseCase>();
 
 
         // ============================================
