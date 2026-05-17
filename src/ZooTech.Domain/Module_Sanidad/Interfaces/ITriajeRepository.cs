@@ -15,4 +15,6 @@ public interface ITriajeRepository
     Task<IEnumerable<TipoPeso>> GetAllTipoPesosAsync();
     // Vacuno id codigo nombre
     Task<IEnumerable<VacunoOption>> GetAllVacunosAsync();
+
+    Task<IEnumerable<TriajeHistorialItem>> GetHistorialByVacunoIdAsync(long vacunoId);
 }

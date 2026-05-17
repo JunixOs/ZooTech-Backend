@@ -118,6 +118,21 @@ public class TriajeRepository : ITriajeRepository
             })
             .ToListAsync();
     }
+    public async Task<IEnumerable<TriajeHistorialItem>> GetHistorialByVacunoIdAsync(long vacunoId)
+    {
+        return await _context.Triajes
+            .AsNoTracking()
+            .Where(t => t.vacuno_id == vacunoId && t.deleted_at == null)
+            .OrderByDescending(t => t.fecha_hora)
+            .Select(t => new TriajeHistorialItem
+            {
+                Id = t.id,
+                FechaHora = t.fecha_hora,
+                TipoPesoCode = t.tipo_peso_code,
+                PesoKg = t.peso_kg
+            })
+            .ToListAsync();
+    }
 
 
     // Mappers

@@ -16,6 +16,7 @@ public class TriajeController : ControllerBase
     private readonly DeleteTriajeUseCase _deleteUseCase;
     private readonly GetAllTipoPesosUseCase _getTipoPesosUseCase;
     private readonly GetAllVacunosUseCase _getVacunosUseCase;
+    private readonly GetHistorialByVacunoIdUseCase _getHistorialUseCase;
 
     public TriajeController(
         GetAllTriajesUseCase getAllUseCase,
@@ -24,7 +25,8 @@ public class TriajeController : ControllerBase
         UpdateTriajeUseCase updateUseCase,
         DeleteTriajeUseCase deleteUseCase,
             GetAllTipoPesosUseCase getTipoPesosUseCase,
-            GetAllVacunosUseCase getVacunosUseCase)
+            GetAllVacunosUseCase getVacunosUseCase,
+            GetHistorialByVacunoIdUseCase getHistorialUseCase)
     {
         _getAllUseCase = getAllUseCase;
         _getByIdUseCase = getByIdUseCase;
@@ -33,6 +35,7 @@ public class TriajeController : ControllerBase
         _deleteUseCase = deleteUseCase;
         _getTipoPesosUseCase = getTipoPesosUseCase;
         _getVacunosUseCase = getVacunosUseCase;
+        _getHistorialUseCase = getHistorialUseCase;
     }
 
     [HttpGet]
@@ -101,6 +104,12 @@ public class TriajeController : ControllerBase
     public async Task<ActionResult<IEnumerable<VacunoOptionResponse>>> GetVacunos()
     {
         var result = await _getVacunosUseCase.ExecuteAsync();
+        return Ok(result);
+    }
+    [HttpGet("historial/{vacunoId:long}")]
+    public async Task<ActionResult<IEnumerable<TriajeHistorialResponse>>> GetHistorial(long vacunoId)
+    {
+        var result = await _getHistorialUseCase.ExecuteAsync(vacunoId);
         return Ok(result);
     }
 }
