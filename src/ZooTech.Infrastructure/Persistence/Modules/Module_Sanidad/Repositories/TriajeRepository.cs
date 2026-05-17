@@ -93,6 +93,20 @@ public class TriajeRepository : ITriajeRepository
         return $"TRI{nextNumber:D3}";
     }
 
+    // Metodo get para traer tipo peso 
+    public async Task<IEnumerable<TipoPeso>> GetAllTipoPesosAsync()
+    {
+        return await _context.CatTipoPesos
+            .Where(t => t.activo)
+            .Select(t => new TipoPeso
+            {
+                Code = t.code,
+                Nombre = t.nombre
+            })
+            .ToListAsync();
+    }
+
+
     // Mappers
     private static Triaje ToTriaje(triaje e) => new()
     {

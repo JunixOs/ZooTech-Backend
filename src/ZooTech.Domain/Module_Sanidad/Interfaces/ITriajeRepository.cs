@@ -10,4 +10,7 @@ public interface ITriajeRepository
     Task UpdateAsync(Triaje triaje);
     Task DeleteAsync(long id);
     Task<string> GenerateCodigoAsync();
+
+    // Tipo peso
+    Task<IEnumerable<TipoPeso>> GetAllTipoPesosAsync();
 }

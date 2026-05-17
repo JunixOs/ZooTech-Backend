@@ -14,19 +14,22 @@ public class TriajeController : ControllerBase
     private readonly CreateTriajeUseCase _createUseCase;
     private readonly UpdateTriajeUseCase _updateUseCase;
     private readonly DeleteTriajeUseCase _deleteUseCase;
+    private readonly GetAllTipoPesosUseCase _getTipoPesosUseCase;
 
     public TriajeController(
         GetAllTriajesUseCase getAllUseCase,
         GetTriajeByIdUseCase getByIdUseCase,
         CreateTriajeUseCase createUseCase,
         UpdateTriajeUseCase updateUseCase,
-        DeleteTriajeUseCase deleteUseCase)
+        DeleteTriajeUseCase deleteUseCase,
+            GetAllTipoPesosUseCase getTipoPesosUseCase)
     {
         _getAllUseCase = getAllUseCase;
         _getByIdUseCase = getByIdUseCase;
         _createUseCase = createUseCase;
         _updateUseCase = updateUseCase;
         _deleteUseCase = deleteUseCase;
+        _getTipoPesosUseCase = getTipoPesosUseCase;
     }
 
     [HttpGet]
@@ -81,5 +84,13 @@ public class TriajeController : ControllerBase
             return NotFound();
 
         return NoContent();
+    }
+
+    
+    [HttpGet("tipos-peso")]
+    public async Task<ActionResult<IEnumerable<TipoPesoResponse>>> GetTiposPeso()
+    {
+        var result = await _getTipoPesosUseCase.ExecuteAsync();
+        return Ok(result);
     }
 }
