@@ -5,6 +5,7 @@ public class TriajeResponse
     public long Id { get; set; }
     public string Codigo { get; set; } = string.Empty;
     public DateTime FechaHora { get; set; }
+    public string VacunoNombre { get; set; } = string.Empty;
     public long VacunoId { get; set; }
     public string TipoPesoCode { get; set; } = string.Empty;
     public decimal PesoKg { get; set; }

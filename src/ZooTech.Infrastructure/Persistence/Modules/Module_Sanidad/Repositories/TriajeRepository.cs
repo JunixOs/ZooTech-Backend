@@ -32,9 +32,12 @@ public class TriajeRepository : ITriajeRepository
     {
         var entities = await _context.Triajes
             .AsNoTracking()
+            .Include(t => t.vacuno) // Incluir datos del vacuno
             .Where(t => t.deleted_at == null)
             .OrderByDescending(t => t.fecha_hora)
             .ToListAsync();
+            
+
 
         return entities.Select(ToTriaje);
     }
@@ -142,6 +145,7 @@ public class TriajeRepository : ITriajeRepository
         Codigo = e.codigo,
         FechaHora = e.fecha_hora,
         VacunoId = e.vacuno_id,
+        VacunoNombre = e.vacuno.nombre,
         TipoPesoCode = e.tipo_peso_code,
         PesoKg = e.peso_kg,
         Observaciones = e.observaciones,

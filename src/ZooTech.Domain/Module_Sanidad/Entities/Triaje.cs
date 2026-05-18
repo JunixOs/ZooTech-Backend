@@ -6,6 +6,7 @@ public class Triaje
     public string Codigo { get; set; } = null!;
     public DateTime FechaHora { get; set; }
     public long VacunoId { get; set; }
+    public string VacunoNombre { get; set; } = string.Empty;
     public string TipoPesoCode { get; set; } = null!;
     public decimal PesoKg { get; set; }
     public string? Observaciones { get; set; }

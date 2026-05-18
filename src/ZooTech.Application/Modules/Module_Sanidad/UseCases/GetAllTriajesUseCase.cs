@@ -22,6 +22,7 @@ public class GetAllTriajesUseCase
             Codigo = t.Codigo,
             FechaHora = t.FechaHora,
             VacunoId = t.VacunoId,
+            VacunoNombre= t.VacunoNombre,
             TipoPesoCode = t.TipoPesoCode,
             PesoKg = t.PesoKg,
             Observaciones = t.Observaciones,
