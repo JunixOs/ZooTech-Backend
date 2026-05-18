@@ -22,6 +22,7 @@ public class TriajeRepository : ITriajeRepository
     public async Task<Triaje?> GetByIdAsync(long id)
     {
         var entity = await _context.Triajes
+            .Include(t => t.vacuno)
             .AsNoTracking()
             .FirstOrDefaultAsync(t => t.id == id && t.deleted_at == null);
 
