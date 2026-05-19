@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using ZooTech.Application.Modules.Module_Animals.UseCases.ListAnimals;
-using ZooTech.Domain.Modules.Module_Animals.Enums;
+using ZooTech.Domain.Enums;
 using ZooTech.InterfaceAdapters.Modules.Module_Animals.Presenters;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_Animals.Controllers;

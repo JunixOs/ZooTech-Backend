@@ -1,8 +1,8 @@
+using ZooTech.Domain.Enums;
 using ZooTech.Domain.Exceptions;
-using ZooTech.Domain.Modules.Module_Animals.Enums;
-using ZooTech.Domain.Modules.Module_Animals.ValueObjects;
+using ZooTech.Domain.ValueObjects;
 
-namespace ZooTech.Domain.Modules.Module_Animals.Entities;
+namespace ZooTech.Domain.Entities;
 
 public class Animal
 {

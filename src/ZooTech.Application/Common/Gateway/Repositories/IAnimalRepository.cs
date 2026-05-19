@@ -1,6 +1,6 @@
 using ZooTech.Application.Common.Models;
-using ZooTech.Domain.Modules.Module_Animals.Entities;
-using ZooTech.Domain.Modules.Module_Animals.Enums;
+using ZooTech.Domain.Entities;
+using ZooTech.Domain.Enums;
 
 namespace ZooTech.Application.Common.Gateway.Repositories;
 

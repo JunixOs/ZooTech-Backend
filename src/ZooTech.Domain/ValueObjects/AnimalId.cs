@@ -1,4 +1,4 @@
-namespace ZooTech.Domain.Modules.Module_Animals.ValueObjects;
+namespace ZooTech.Domain.ValueObjects;
 
 public class AnimalId
 {

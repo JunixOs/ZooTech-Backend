@@ -6,9 +6,9 @@ using ZooTech.Application.Common.Gateway.Repositories;
 using ZooTech.Application.Common.Gateway.Time;
 using ZooTech.Application.Common.Models;
 using ZooTech.Application.Modules.Module_Animals.UseCases.ListAnimals;
-using ZooTech.Domain.Modules.Module_Animals.Entities;
-using ZooTech.Domain.Modules.Module_Animals.Enums;
-using ZooTech.Domain.Modules.Module_Animals.ValueObjects;
+using ZooTech.Domain.Entities;
+using ZooTech.Domain.Enums;
+using ZooTech.Domain.ValueObjects;
 
 namespace ZooTech.Application.UnitTests.Modules.Module_Animals.UseCases;
 

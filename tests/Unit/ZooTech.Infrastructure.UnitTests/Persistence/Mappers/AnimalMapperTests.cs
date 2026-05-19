@@ -1,7 +1,7 @@
 using FluentAssertions;
-using ZooTech.Domain.Modules.Module_Animals.Entities;
-using ZooTech.Domain.Modules.Module_Animals.Enums;
-using ZooTech.Domain.Modules.Module_Animals.ValueObjects;
+using ZooTech.Domain.Entities;
+using ZooTech.Domain.Enums;
+using ZooTech.Domain.ValueObjects;
 using ZooTech.Infrastructure.Persistence.Entities;
 using ZooTech.Infrastructure.Persistence.Mappers;
 

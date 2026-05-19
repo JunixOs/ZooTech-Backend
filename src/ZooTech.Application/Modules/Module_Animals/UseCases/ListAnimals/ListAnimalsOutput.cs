@@ -1,5 +1,5 @@
 using ZooTech.Application.Common.Models;
-using ZooTech.Domain.Modules.Module_Animals.Enums;
+using ZooTech.Domain.Enums;
 
 namespace ZooTech.Application.Modules.Module_Animals.UseCases.ListAnimals;
 

@@ -1,0 +1,17 @@
+[33meba0dd8[m[33m ([m[1;36mHEAD[m[33m, [m[1;31morigin/develop[m[33m, [m[1;31morigin/SEBASTHIAN_RAMIREZ/feature[m[33m)[m HEAD@{0}: reset: moving to origin/develop
+[33m6b98cb9[m[33m ([m[1;31morigin/Juan_Ramos[m[33m, [m[1;32mJuan_Ramos[m[33m)[m HEAD@{1}: checkout: moving from 0c679b41b5deb645979284c0b667a1bf46f0e069 to origin/Juan_Ramos
+[33m0c679b4[m HEAD@{2}: merge origin/develop: Merge made by the 'ort' strategy.
+[33m6b98cb9[m[33m ([m[1;31morigin/Juan_Ramos[m[33m, [m[1;32mJuan_Ramos[m[33m)[m HEAD@{3}: checkout: moving from f20baebd4f5b91782163eb048c0de2057142972f to origin/Juan_Ramos
+[33mf20baeb[m HEAD@{4}: commit: Refact
+[33ma55884e[m HEAD@{5}: commit: Refact: Arquitectura Capa Dominio
+[33m6176756[m HEAD@{6}: commit (merge): Refact: Arquitectura Capa Dominio
+[33m6b98cb9[m[33m ([m[1;31morigin/Juan_Ramos[m[33m, [m[1;32mJuan_Ramos[m[33m)[m HEAD@{7}: checkout: moving from eba0dd802c09d748b3281b3a1b257be7db03afc5 to origin/Juan_Ramos
+[33meba0dd8[m[33m ([m[1;36mHEAD[m[33m, [m[1;31morigin/develop[m[33m, [m[1;31morigin/SEBASTHIAN_RAMIREZ/feature[m[33m)[m HEAD@{8}: checkout: moving from f5d596298ec4e3129bbf3e3066d6fa0fed6f0323 to origin/develop
+[33mf5d5962[m HEAD@{9}: commit: merge1
+[33m6b98cb9[m[33m ([m[1;31morigin/Juan_Ramos[m[33m, [m[1;32mJuan_Ramos[m[33m)[m HEAD@{10}: checkout: moving from eba0dd802c09d748b3281b3a1b257be7db03afc5 to origin/Juan_Ramos
+[33meba0dd8[m[33m ([m[1;36mHEAD[m[33m, [m[1;31morigin/develop[m[33m, [m[1;31morigin/SEBASTHIAN_RAMIREZ/feature[m[33m)[m HEAD@{11}: checkout: moving from Juan_Ramos to origin/develop
+[33m6b98cb9[m[33m ([m[1;31morigin/Juan_Ramos[m[33m, [m[1;32mJuan_Ramos[m[33m)[m HEAD@{12}: commit: feat vacunos: listado y pruebas unitarias y de integracion
+[33ma265454[m HEAD@{13}: commit: base
+[33m0d6f43a[m HEAD@{14}: commit: Base
+[33md5820cc[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;31morigin/Aracely_Gonzales[m[33m, [m[1;31morigin/Akemi_Zambrano[m[33m, [m[1;32mmain[m[33m)[m HEAD@{15}: checkout: moving from main to Juan_Ramos
+[33md5820cc[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;31morigin/Aracely_Gonzales[m[33m, [m[1;31morigin/Akemi_Zambrano[m[33m, [m[1;32mmain[m[33m)[m HEAD@{16}: clone: from https://dev.azure.com/pmarco031/Zootech%20Platform/_git/zootech-backend
