@@ -5,5 +5,4 @@ public sealed record UpdateOrdenioRequest(
     long EncargadoUsuarioId,
     decimal Litros,
     string EstadoOrdenioCode,
-    string? Observaciones,
-    long? ActorUsuarioId);
+    string? Observaciones);

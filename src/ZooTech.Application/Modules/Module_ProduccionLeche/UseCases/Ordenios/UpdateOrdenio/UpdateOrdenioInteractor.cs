@@ -38,7 +38,7 @@ public sealed class UpdateOrdenioInteractor : IUpdateOrdenioInputPort
                 command.Litros,
                 command.EstadoOrdenioCode,
                 command.Observaciones,
-                command.ActorUsuarioId,
+                null,
                 DateTime.UtcNow);
         }
         catch (ArgumentException ex)

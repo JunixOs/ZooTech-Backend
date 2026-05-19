@@ -19,8 +19,7 @@ public static class ProduccionLecheMapper
             request.EncargadoUsuarioId,
             request.Litros,
             request.EstadoOrdenioCode,
-            request.Observaciones,
-            request.ActorUsuarioId);
+            request.Observaciones);
 
     public static UpdateOrdenioCommand ToCommand(UpdateOrdenioRequest request)
         => new(
@@ -28,11 +27,10 @@ public static class ProduccionLecheMapper
             request.EncargadoUsuarioId,
             request.Litros,
             request.EstadoOrdenioCode,
-            request.Observaciones,
-            request.ActorUsuarioId);
+            request.Observaciones);
 
     public static DeleteOrdenioCommand ToCommand(DeleteOrdenioRequest request)
-        => new(request.MotivoEliminacion, request.ActorUsuarioId);
+        => new(request.MotivoEliminacion);
 
     public static CreateOrdenioResponse ToResponse(CreateOrdenioOutput output)
         => new(ToResponse(output.Data));

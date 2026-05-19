@@ -7,7 +7,6 @@ public sealed record CreateOrdenioCommand(
     long EncargadoUsuarioId,
     decimal Litros,
     string EstadoOrdenioCode,
-    string? Observaciones,
-    long? ActorUsuarioId
+    string? Observaciones
 );
 

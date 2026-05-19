@@ -44,7 +44,7 @@ public sealed class CreateOrdenioInteractor : ICreateOrdenioInputPort
                 command.Litros,
                 command.EstadoOrdenioCode,
                 command.Observaciones,
-                command.ActorUsuarioId,
+                null,
                 DateTime.UtcNow);
         }
         catch (ArgumentException ex)

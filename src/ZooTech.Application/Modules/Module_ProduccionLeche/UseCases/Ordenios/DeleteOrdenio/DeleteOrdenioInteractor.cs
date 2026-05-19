@@ -19,7 +19,7 @@ public sealed class DeleteOrdenioInteractor : IDeleteOrdenioInputPort
 
         try
         {
-            existing.SoftDelete(command.MotivoEliminacion, command.ActorUsuarioId, DateTime.UtcNow);
+            existing.SoftDelete(command.MotivoEliminacion, null, DateTime.UtcNow);
         }
         catch (ArgumentException ex)
         {
