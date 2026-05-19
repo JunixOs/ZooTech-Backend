@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ZooTech.Application\ZooTech.Application.csproj" />
+    <ProjectReference Include="..\ZooTech.Infrastructure\ZooTech.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

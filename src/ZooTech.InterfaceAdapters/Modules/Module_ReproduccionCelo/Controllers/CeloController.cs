@@ -15,24 +15,26 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_ReproduccionCelo.Controllers
             _repository = repository;
         }
 
+        [HttpPost("registrar")]
+        public async Task<IActionResult> RegistrarCelo([FromBody] RegistrarCeloDTO dto)
+        {
+            var resultado = await _repository.RegistrarCeloAsync(dto);
+
+            if (!resultado)
+                return BadRequest(new { mensaje = "No se pudo registrar el celo" });
+
+            return Ok(new { mensaje = "¡Celo registrado con éxito!" });
+        }
+
         [HttpPut("editar")]
-        public async Task<IActionResult> EditarCelo(
-            [FromBody] EditarCeloDTO dto)
+        public async Task<IActionResult> EditarCelo([FromBody] EditarCeloDTO dto)
         {
             var resultado = await _repository.EditarCeloAsync(dto);
 
             if (!resultado)
-            {
-                return NotFound(new
-                {
-                    mensaje = "No se encontró el registro de celo"
-                });
-            }
+                return NotFound(new { mensaje = "No se encontró el registro de celo" });
 
-            return Ok(new
-            {
-                mensaje = "¡Celo editado con éxito!"
-            });
+            return Ok(new { mensaje = "¡Celo editado con éxito!" });
         }
     }
 }

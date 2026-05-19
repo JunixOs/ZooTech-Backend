@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using ZooTech.Application.DTOs.Reproduccion;
 using ZooTech.Infrastructure.Persistence.Entities;
+using ZooTech.Infrastructure.Persistence.Context;
 
 namespace ZooTech.Infrastructure.Persistence.Repositories.Reproduccion
 {
@@ -30,7 +31,7 @@ namespace ZooTech.Infrastructure.Persistence.Repositories.Reproduccion
 
             // Buscar nuevas características
             var caracteristicas = await _context.cat_caracteristica_celos
-                .Where(c => dto.CaracteristicaIds.Contains(c.id))
+                .Where(c => dto.CaracteristicaCodes.Contains(c.code))
                 .ToListAsync();
 
             // Agregar nuevas características
@@ -45,5 +46,41 @@ namespace ZooTech.Infrastructure.Persistence.Repositories.Reproduccion
 
             return true;
         }
+
+        public async Task<bool> RegistrarCeloAsync(RegistrarCeloDTO dto)
+        {
+            var vacunoExiste = await _context.vacunos
+                .AnyAsync(v => v.id == dto.VacunoId);
+
+            if (!vacunoExiste)
+                return false;
+
+            var nuevoCelo = new celo_registro
+            {
+                codigo = $"CLO_{DateTime.Now:HHmmss}",
+                fecha_hora = dto.FechaHora,
+                vacuno_id = dto.VacunoId,
+                encargado_usuario_id = dto.EncargadoUsuarioId,
+                observaciones = dto.Observaciones,
+                estado_registro_code = "ACTIVO",
+                created_at = DateTime.Now,
+                updated_at = DateTime.Now
+            };
+
+            var caracteristicas = await _context.cat_caracteristica_celos
+                .Where(c => dto.CaracteristicaCodes.Contains(c.code))
+                .ToListAsync();
+
+            foreach (var caracteristica in caracteristicas)
+            {
+                nuevoCelo.caracteristica_codes.Add(caracteristica);
+            }
+
+            await _context.celo_registros.AddAsync(nuevoCelo);
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
     }
 }
+
