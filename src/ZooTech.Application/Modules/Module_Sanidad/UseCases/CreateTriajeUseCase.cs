@@ -1,4 +1,4 @@
-﻿using ZooTech.Application.Common.Gateway.Time;
+using ZooTech.Application.Common.Gateway.Time;
 using ZooTech.Application.Modules.Module_Sanidad.DTOs.Requests;
 using ZooTech.Application.Modules.Module_Sanidad.DTOs.Responses;
 using ZooTech.Domain.Module_Sanidad.Entities;
@@ -25,7 +25,7 @@ public class CreateTriajeUseCase
         var triaje = new Triaje
         {
             Codigo = codigo,
-            FechaHora = now,
+            FechaHora = request.FechaHora,
             VacunoId = request.VacunoId,
             TipoPesoCode = request.TipoPesoCode,
             PesoKg = request.PesoKg,

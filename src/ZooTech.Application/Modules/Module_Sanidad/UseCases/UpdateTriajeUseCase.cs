@@ -1,4 +1,4 @@
-﻿using ZooTech.Application.Common.Gateway.Time;
+using ZooTech.Application.Common.Gateway.Time;
 using ZooTech.Application.Modules.Module_Sanidad.DTOs.Requests;
 using ZooTech.Application.Modules.Module_Sanidad.DTOs.Responses;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
@@ -25,7 +25,6 @@ public class UpdateTriajeUseCase
 
         var now = _dateTimeProvider.ServerNow;
 
-        triaje.VacunoId = request.VacunoId;
         triaje.TipoPesoCode = request.TipoPesoCode;
         triaje.PesoKg = request.PesoKg;
         triaje.Observaciones = request.Observaciones;

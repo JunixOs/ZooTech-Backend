@@ -1,7 +1,8 @@
-﻿namespace ZooTech.Application.Modules.Module_Sanidad.DTOs.Requests;
+namespace ZooTech.Application.Modules.Module_Sanidad.DTOs.Requests;
 
 public class TriajeRequest
 {
+    public DateTime FechaHora { get; set; }
     public long VacunoId { get; set; }
     public string TipoPesoCode { get; set; } = string.Empty;
     public decimal PesoKg { get; set; }
