@@ -12,7 +12,7 @@ public interface IOrdenioRepository
     Task<bool> ExistsUsuarioAsync(long usuarioId, CancellationToken cancellationToken);
     Task<bool> ExistsEstadoAsync(string estadoOrdenioCode, CancellationToken cancellationToken);
     Task<Ordenio?> GetByIdAsync(long id, CancellationToken cancellationToken);
-    Task<IReadOnlyList<OrdenioOutput>> ListAsync(ListOrdeniosQuery query, CancellationToken cancellationToken);
+    Task<(IReadOnlyList<OrdenioOutput> Items, int TotalCount)> ListAsync(ListOrdeniosQuery query, CancellationToken cancellationToken);
     Task<Ordenio> AddAsync(Ordenio ordenio, CancellationToken cancellationToken);
     Task<Ordenio> UpdateAsync(Ordenio ordenio, CancellationToken cancellationToken);
 }

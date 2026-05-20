@@ -5,6 +5,7 @@ public sealed record OrdenioResponse(
     string Codigo,
     DateTime FechaHora,
     long VacunoId,
+    string NombreVacuno,
     long EncargadoUsuarioId,
     decimal Litros,
     string EstadoOrdenioCode,

@@ -17,7 +17,7 @@ public sealed class ListOrdeniosInteractor : IListOrdeniosInputPort
         var pageSize = query.PageSize <= 0 ? 20 : Math.Min(query.PageSize, 100);
         var normalized = query with { Page = page, PageSize = pageSize };
        
-        var items = await _repository.ListAsync(normalized, cancellationToken);
-        return new ListOrdeniosOutput(items);
+        var (items, totalCount) = await _repository.ListAsync(normalized, cancellationToken);
+        return new ListOrdeniosOutput(items, totalCount);
     }
 }
