@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ZooTech.Application;
 
@@ -35,6 +35,7 @@ public static class DependencyInjection
         // ============================================
 
         // services.AddScoped<IMyService, MyService>();
+        services.AddScoped<ZooTech.Application.Modules.Module_Vacunos.UseCases.ListarVacunos.IListarVacunosInputPort, ZooTech.Application.Modules.Module_Vacunos.UseCases.ListarVacunos.ListarVacunosInteractor>();
 
         return services;
     }

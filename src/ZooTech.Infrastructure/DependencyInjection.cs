@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ZooTech.Infrastructure.Persistence.Context;
@@ -32,6 +32,7 @@ public static class DependencyInjection
         // ============================================
 
         // services.AddScoped<IAnimalRepository, AnimalRepository>();
+        services.AddScoped<ZooTech.Application.Common.Gateway.Repositories.IVacunoRepository, ZooTech.Infrastructure.Persistence.Repositories.VacunoRepository>();
 
         // ============================================
         // External Services
