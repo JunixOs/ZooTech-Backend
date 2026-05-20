@@ -22,10 +22,10 @@ public static class DependencyInjection
         // DbContext
         // ============================================
 
-        /*services.AddDbContext<GanaderiaDbContext>(options =>
+        services.AddDbContext<GanaderiaDbContext>(options =>
         {
             options.UseSqlServer(connectionString);
-        });*/
+        });
 
         // ============================================
         // Repositories
