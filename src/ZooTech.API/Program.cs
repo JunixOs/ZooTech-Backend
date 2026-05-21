@@ -3,7 +3,9 @@ using ZooTech.Infrastructure;
 
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.Controllers;
-using ZooTech.Infrastructure.Persistence.Repositories.Reproduccion;
+using ZooTech.Infrastructure.Persistence.Repositories;
+
+
 
 var builder = WebApplication.CreateBuilder(args);
 
