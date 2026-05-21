@@ -14,5 +14,11 @@ public partial class GanaderiaDbContext
             entity.HasNoKey();
             entity.ToView(null);
         });
+
+        modelBuilder.Entity<RegistroVacunoReporteRow>(entity =>
+        {
+            entity.HasNoKey();
+            entity.ToView(null);
+        });
     }
 }
