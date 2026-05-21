@@ -20,45 +20,24 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddSanidadServices(builder.Configuration); // <-- tuyo
 
-    options.SwaggerDoc("public", new()
-    {
-        Title = "Public API",
-        Version = "v1"
-    });
-});
-
-builder.Services.AddApplication();
-
-builder.Services.AddInfrastructure(
-    builder.Configuration);
->>>>>>>>> Temporary merge branch 2
-
-var frontendPort = builder.Configuration["Frontend:FrontendPort"];
-var frontendIP = builder.Configuration["Frontend:FrontendIP"];
-var frontendProtocol = builder.Configuration["Frontend:FrontendProtocol"];
-
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowFrontend",
-        policy =>
-        {
-            policy.WithOrigins($"{frontendProtocol}://{frontendIP}:{frontendPort}")
-                .AllowAnyHeader()
-                .AllowAnyMethod();
-        });
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        var frontendPort = builder.Configuration["Frontend:FrontendPort"];
+        var frontendIP = builder.Configuration["Frontend:FrontendIP"];
+        var frontendProtocol = builder.Configuration["Frontend:FrontendProtocol"];
+        policy.WithOrigins($"{frontendProtocol}://{frontendIP}:{frontendPort}")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
 });
 
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-<<<<<<<<< Temporary merge branch 1
-    app.MapOpenApi();
     app.UseSwagger();
-    app.UseSwaggerUI();
-=========
-    app.UseSwagger();
-
     app.UseSwaggerUI(options =>
     {
         options.SwaggerEndpoint("/swagger/public/swagger.json", "Public API");
@@ -67,9 +46,6 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-    // app.MapOpenApi();
->>>>>>>>> Temporary merge branch 2
-}
 app.UseCors("AllowFrontend");
 app.UseHttpsRedirection();
 app.UseAuthorization();

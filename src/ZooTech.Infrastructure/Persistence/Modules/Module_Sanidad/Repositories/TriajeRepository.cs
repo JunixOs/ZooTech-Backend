@@ -28,7 +28,7 @@ public class TriajeRepository : ITriajeRepository
 
         return entity is null ? null : ToTriaje(entity);
     }
-
+  
     public async Task<IEnumerable<Triaje>> GetAllAsync()
     {
         var entities = await _context.Triajes
@@ -81,20 +81,18 @@ public class TriajeRepository : ITriajeRepository
 
     public async Task<string> GenerateCodigoAsync()
     {
-        var lastCodigo = await _context.Triajes
+        var codigos = await _context.Triajes
             .Where(t => t.codigo.StartsWith("TRI"))
-            .OrderByDescending(t => t.codigo)
             .Select(t => t.codigo)
-            .FirstOrDefaultAsync();
+            .ToListAsync();
 
-        var nextNumber = 1;
-        if (!string.IsNullOrEmpty(lastCodigo) && lastCodigo.Length > 3
-            && int.TryParse(lastCodigo[3..], out var lastNumber))
-        {
-            nextNumber = lastNumber + 1;
-        }
+        var maxNumber = codigos
+            .Select(codigo =>
+                int.TryParse(codigo[3..], out var number) ? number : 0)
+            .DefaultIfEmpty(0)
+            .Max();
 
-        return $"TRI{nextNumber:D3}";
+        return $"TRI{maxNumber + 1:D3}";
     }
 
     // Metodo get para traer tipo peso 
