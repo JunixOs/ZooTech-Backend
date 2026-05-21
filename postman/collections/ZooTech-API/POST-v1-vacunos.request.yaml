@@ -1,0 +1,61 @@
+$kind: http-request
+name: POST /v1/vacunos
+method: POST
+url: '{{base_url}}/v1/vacunos'
+order: 1000
+body:
+  type: formdata
+  content:
+    - key: Codigo
+      type: text
+      value: ''
+    - key: Nombre
+      type: text
+      value: ''
+    - key: FechaNacimiento
+      type: text
+      value: '2023-01-15'
+    - key: IdTipoAdquisicion
+      type: text
+      value: '1'
+    - key: PrecioCompra
+      type: text
+      value: '1500.00'
+      description: 'Optional'
+    - key: IdRaza
+      type: text
+      value: '1'
+    - key: IdColor
+      type: text
+      value: '1'
+    - key: IdSexo
+      type: text
+      value: '1'
+    - key: CodigoPadre
+      type: text
+      value: 'VAC-001'
+    - key: CodigoMadre
+      type: text
+      value: 'VAC-002'
+    - key: NombreGranja
+      type: text
+      value: 'Granja El Sol'
+    - key: IdDistrito
+      type: text
+      value: '1'
+    - key: IdDepartamento
+      type: text
+      value: '1'
+    - key: IdProvincia
+      type: text
+      value: '1'
+    - key: IdTipoUtilizacion
+      type: text
+      value: '1'
+    - key: FechaEspecificacion
+      type: text
+      value: '2023-01-15'
+    - key: Observaciones
+      type: text
+      value: 'Sin observaciones'
+      description: 'Optional'

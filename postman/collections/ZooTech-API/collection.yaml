@@ -1,0 +1,5 @@
+$kind: collection
+name: ZooTech API
+variables:
+  - key: base_url
+    value: 'https://localhost:7221'
