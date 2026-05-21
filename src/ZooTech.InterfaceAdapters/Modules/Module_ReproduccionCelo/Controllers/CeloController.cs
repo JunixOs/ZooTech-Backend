@@ -5,7 +5,7 @@ using ZooTech.Infrastructure.Persistence.Repositories.Reproduccion;
 namespace ZooTech.InterfaceAdapters.Modules.Module_ReproduccionCelo.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/v1/celo")]
     public class CeloController : ControllerBase
     {
         private readonly CeloRepository _repository;
