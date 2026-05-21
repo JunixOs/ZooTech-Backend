@@ -8,13 +8,16 @@ public sealed class ObtenerRegistroVacunoReporteUseCase : IObtenerRegistroVacuno
 
     private readonly IRegistroVacunoReadRepository _repository;
     private readonly IRegistroVacunoExcelReportService _excelReportService;
+    private readonly IRegistroVacunoPdfReportService _pdfReportService;
 
     public ObtenerRegistroVacunoReporteUseCase(
         IRegistroVacunoReadRepository repository,
-        IRegistroVacunoExcelReportService excelReportService)
+        IRegistroVacunoExcelReportService excelReportService,
+        IRegistroVacunoPdfReportService pdfReportService)
     {
         _repository = repository;
         _excelReportService = excelReportService;
+        _pdfReportService = pdfReportService;
     }
 
     public async Task<RegistroVacunoReporteResponse> HandleAsync(
@@ -31,15 +34,6 @@ public sealed class ObtenerRegistroVacunoReporteUseCase : IObtenerRegistroVacuno
 
         var formato = Normalize(query.Formato) ?? "json";
         EnsureFormatoValido(formato);
-
-        if (formato is "pdf")
-        {
-            throw new ApplicationRuleException(
-                "REPORT_FORMAT_NOT_IMPLEMENTED",
-                "La generacion de PDF pertenece a TK05.",
-                [new ApplicationErrorDetail("formato", "Para TK04 solo esta implementado formato=json y formato=excel.")],
-                501);
-        }
 
         var detalle = await _repository.ObtenerRegistroAsync(query.VacunoId, cancellationToken);
 
@@ -60,6 +54,16 @@ public sealed class ObtenerRegistroVacunoReporteUseCase : IObtenerRegistroVacuno
                 detalle,
                 Array.Empty<object>(),
                 excel.DownloadUrl);
+        }
+
+        if (formato is "pdf")
+        {
+            var pdf = await _pdfReportService.GenerateAsync(detalle, cancellationToken);
+
+            return new RegistroVacunoReporteResponse(
+                detalle,
+                Array.Empty<object>(),
+                pdf.DownloadUrl);
         }
 
         return new RegistroVacunoReporteResponse(

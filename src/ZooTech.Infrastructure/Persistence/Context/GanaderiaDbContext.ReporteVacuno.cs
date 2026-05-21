@@ -19,6 +19,9 @@ public partial class GanaderiaDbContext
         {
             entity.HasNoKey();
             entity.ToView(null);
+
+            entity.Property(x => x.PrecioCompra)
+                .HasPrecision(18, 2);
         });
     }
 }
