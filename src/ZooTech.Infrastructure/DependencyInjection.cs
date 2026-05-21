@@ -7,6 +7,7 @@ using ZooTech.Application.Common.Gateway.Time;
 using ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ListarReporteVacunos;
 using ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ObtenerRegistroVacunoReporte;
 using ZooTech.Infrastructure.Persistence.Repositories;
+using ZooTech.Infrastructure.Reports;
 using ZooTech.Infrastructure.Time;
 
 namespace ZooTech.Infrastructure;
@@ -44,6 +45,7 @@ public static class DependencyInjection
 
         services.AddScoped<IReporteVacunoReadRepository, ReporteVacunoReadRepository>();
         services.AddScoped<IRegistroVacunoReadRepository, RegistroVacunoReadRepository>();
+        services.AddScoped<IRegistroVacunoExcelReportService, RegistroVacunoExcelReportService>();
 
         // ============================================
         // External Services

@@ -7,10 +7,14 @@ public sealed class ObtenerRegistroVacunoReporteUseCase : IObtenerRegistroVacuno
     private static readonly string[] FormatosPermitidos = ["json", "pdf", "excel"];
 
     private readonly IRegistroVacunoReadRepository _repository;
+    private readonly IRegistroVacunoExcelReportService _excelReportService;
 
-    public ObtenerRegistroVacunoReporteUseCase(IRegistroVacunoReadRepository repository)
+    public ObtenerRegistroVacunoReporteUseCase(
+        IRegistroVacunoReadRepository repository,
+        IRegistroVacunoExcelReportService excelReportService)
     {
         _repository = repository;
+        _excelReportService = excelReportService;
     }
 
     public async Task<RegistroVacunoReporteResponse> HandleAsync(
@@ -28,12 +32,12 @@ public sealed class ObtenerRegistroVacunoReporteUseCase : IObtenerRegistroVacuno
         var formato = Normalize(query.Formato) ?? "json";
         EnsureFormatoValido(formato);
 
-        if (formato is "pdf" or "excel")
+        if (formato is "pdf")
         {
             throw new ApplicationRuleException(
                 "REPORT_FORMAT_NOT_IMPLEMENTED",
-                "La generacion de PDF y Excel pertenece a TK04/TK05.",
-                [new ApplicationErrorDetail("formato", "Para TK03 solo esta implementado formato=json.")],
+                "La generacion de PDF pertenece a TK05.",
+                [new ApplicationErrorDetail("formato", "Para TK04 solo esta implementado formato=json y formato=excel.")],
                 501);
         }
 
@@ -46,6 +50,16 @@ public sealed class ObtenerRegistroVacunoReporteUseCase : IObtenerRegistroVacuno
                 "No existe un vacuno con el ID enviado.",
                 [],
                 404);
+        }
+
+        if (formato is "excel")
+        {
+            var excel = await _excelReportService.GenerateAsync(detalle, cancellationToken);
+
+            return new RegistroVacunoReporteResponse(
+                detalle,
+                Array.Empty<object>(),
+                excel.DownloadUrl);
         }
 
         return new RegistroVacunoReporteResponse(

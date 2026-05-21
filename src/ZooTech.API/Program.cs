@@ -1,4 +1,5 @@
 using System.Reflection;
+using Microsoft.Extensions.FileProviders;
 using ZooTech.Application;
 using ZooTech.Infrastructure;
 using ZooTech.InterfaceAdapters;
@@ -117,6 +118,15 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
     app.UseHttpsRedirection();
 }
+
+// Permite exponer los archivos generados en wwwroot/reportes/vacunos
+var generatedFilesRoot = Path.Combine(AppContext.BaseDirectory, "wwwroot");
+Directory.CreateDirectory(generatedFilesRoot);
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(generatedFilesRoot),
+    RequestPath = string.Empty
+});
 
 app.UseCors("FrontendCors");
 app.MapControllers();
