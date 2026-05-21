@@ -1,18 +1,17 @@
 using ZooTech.Application;
 using ZooTech.Infrastructure;
+using ZooTech.InterfaceAdapters;
 
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
+using ZooTech.InterfaceAdapters.Modules.Module_Vacunos.Controllers;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-// builder.Services.AddOpenApi();
-
-// ======= Configuracion Swagger =======
+// ======= Controllers & Swagger =======
 builder.Services
     .AddControllers()
-    .AddApplicationPart(typeof(HomeController).Assembly);
+    .AddApplicationPart(typeof(HomeController).Assembly)
+    .AddApplicationPart(typeof(VacunosController).Assembly);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -35,11 +34,12 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+// ======= Capas de la Arquitectura =======
 builder.Services.AddApplication();
+builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddInterfaceAdapters();
 
-builder.Services.AddInfrastructure(
-    builder.Configuration);
-
+// ======= CORS =======
 var frontendPort = builder.Configuration["Frontend:FrontendPort"];
 var frontendIP = builder.Configuration["Frontend:FrontendIP"];
 var frontendProtocol = builder.Configuration["Frontend:FrontendProtocol"];
@@ -57,7 +57,7 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// ======= HTTP Pipeline =======
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -76,11 +76,31 @@ if (app.Environment.IsDevelopment())
             "/swagger/users/swagger.json",
             "Users API");
     });
-
-    // app.MapOpenApi();
 }
 
 app.UseHttpsRedirection();
+app.UseCors("AllowFrontend");
+
+// Middleware: Resolución de Tenant desde header X-Tenant-Id
+// El TenantContext ya lee el header internamente vía IHttpContextAccessor,
+// pero este log ayuda a diagnosticar qué tenant se está usando.
+app.Use(async (context, next) =>
+{
+    var logger = context.RequestServices.GetRequiredService<ILoggerFactory>()
+        .CreateLogger("TenantMiddleware");
+
+    if (context.Request.Headers.TryGetValue("X-Tenant-Id", out var tenantHeader))
+    {
+        logger.LogInformation("Tenant recibido por header: {TenantId}", tenantHeader.ToString());
+    }
+    else
+    {
+        logger.LogInformation("Sin header X-Tenant-Id, usando DefaultTenantId del appsettings");
+    }
+
+    await next();
+});
+
 app.UseAuthorization();
 app.MapControllers();
 

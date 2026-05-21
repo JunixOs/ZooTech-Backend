@@ -1,7 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using ZooTech.Application.Common.Gateway.Context;
+using ZooTech.Application.Common.Gateway.Features;
+using ZooTech.Application.Common.Gateway.Time;
+using ZooTech.Infrastructure.Features;
 using ZooTech.Infrastructure.Persistence.Context;
+using ZooTech.Infrastructure.Tenant;
+using ZooTech.Infrastructure.Time;
 
 namespace ZooTech.Infrastructure;
 
@@ -28,18 +34,29 @@ public static class DependencyInjection
         });
 
         // ============================================
+        // Multi-Tenant
+        // ============================================
+
+        services.AddHttpContextAccessor();
+        services.AddScoped<ITenantContext, TenantContext>();
+
+        // ============================================
+        // Feature Flags
+        // ============================================
+
+        services.AddScoped<IFeatureService, DevFeatureService>();
+
+        // ============================================
         // Repositories
         // ============================================
 
-        // services.AddScoped<IAnimalRepository, AnimalRepository>();
         services.AddScoped<ZooTech.Application.Common.Gateway.Repositories.IVacunoRepository, ZooTech.Infrastructure.Persistence.Repositories.VacunoRepository>();
 
         // ============================================
         // External Services
         // ============================================
 
-        // services.AddScoped<IJwtService, JwtService>();
-        // services.AddScoped<IDateTimeProvider, DateTimeProvider>();
+        services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
 
         // ============================================
         // Caching
@@ -49,4 +66,4 @@ public static class DependencyInjection
 
         return services;
     }
-}
+}
