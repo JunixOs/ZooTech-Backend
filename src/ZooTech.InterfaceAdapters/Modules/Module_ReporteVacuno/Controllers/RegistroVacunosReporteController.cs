@@ -20,13 +20,6 @@ public sealed class RegistroVacunosReporteController : ControllerBase
         _obtenerRegistroVacunoReporteUseCase = obtenerRegistroVacunoReporteUseCase;
     }
 
-    /// <summary>
-    /// Genera el reporte individual de registro por vacuno.
-    /// </summary>
-    /// <remarks>
-    /// Ejemplo:
-    /// GET /vacunos/1/reporte?formato=json
-    /// </remarks>
     [HttpGet("{vacunoId:long}/reporte")]
     [ProducesResponseType(typeof(RegistroVacunoReporteResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status400BadRequest)]

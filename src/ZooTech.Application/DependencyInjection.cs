@@ -1,6 +1,7 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 
 using ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ListarReporteVacunos;
+using ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ListarReportesDisponibles;
 using ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ObtenerRegistroVacunoReporte;
 
 namespace ZooTech.Application;
@@ -37,6 +38,7 @@ public static class DependencyInjection
         // Use Cases / Services
         // ============================================
 
+        services.AddScoped<IListarReportesDisponiblesUseCase, ListarReportesDisponiblesUseCase>();
         services.AddScoped<IListarReporteVacunosUseCase, ListarReporteVacunosUseCase>();
         services.AddScoped<IObtenerRegistroVacunoReporteUseCase, ObtenerRegistroVacunoReporteUseCase>();
 

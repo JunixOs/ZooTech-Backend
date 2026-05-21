@@ -2,6 +2,7 @@ using System.Globalization;
 using Microsoft.Extensions.Logging;
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Common.Gateway.Time;
+using ZooTech.Application.Modules.Module_ReporteVacuno.Common;
 
 namespace ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ListarReporteVacunos;
 
@@ -37,20 +38,14 @@ public sealed class ListarReporteVacunosUseCase : IListarReporteVacunosUseCase
             throw new ApplicationRuleException(
                 "REPORT_FORMAT_NOT_IMPLEMENTED",
                 "La generacion de PDF y Excel pertenece a TK04/TK05.",
-                [new ApplicationErrorDetail("formato", "Para TK02 solo esta implementado formato=json.")],
+                [new ApplicationErrorDetail("formato", "Para el listado solo esta implementado formato=json.")],
                 501);
         }
 
-        var fechaHasta = ParseDate(query.FechaHasta, "fechaHasta") ?? _dateTimeProvider.Today;
-        var fechaDesde = ParseDate(query.FechaDesde, "fechaDesde") ?? fechaHasta.AddDays(-30);
-
-        if (fechaDesde > fechaHasta)
-        {
-            throw new ApplicationRuleException(
-                "VALIDATION_ERROR",
-                "Los datos enviados no son validos.",
-                [new ApplicationErrorDetail("fechaDesde", "fechaDesde no puede ser mayor que fechaHasta.")]);
-        }
+        var rango = ReporteVacunoDateRangeResolver.Resolve(
+            query.FechaDesde,
+            query.FechaHasta,
+            _dateTimeProvider.Today);
 
         var page = ParsePositiveIntOrDefault(query.Page, "page", 1);
         var limit = ParsePositiveIntOrDefault(query.Limit, "limit", 20);
@@ -70,12 +65,12 @@ public sealed class ListarReporteVacunosUseCase : IListarReporteVacunosUseCase
 
         _logger.LogInformation(
             "[ReporteVacuno] rango aplicado: [{FechaDesde} - {FechaHasta}]",
-            fechaDesde,
-            fechaHasta);
+            rango.FechaDesde,
+            rango.FechaHasta);
 
         var criteria = new ReporteVacunoListadoCriteria(
-            fechaDesde,
-            fechaHasta,
+            rango.FechaDesde,
+            rango.FechaHasta,
             Normalize(query.Q),
             Normalize(query.Raza),
             Normalize(query.Procedencia),
@@ -89,7 +84,7 @@ public sealed class ListarReporteVacunosUseCase : IListarReporteVacunosUseCase
         return new ListadoVacunosReporteResponse(
             pageResult.Items,
             new ReporteVacunoResumen(pageResult.TotalRegistros),
-            new ReporteVacunoFiltros(fechaDesde, fechaHasta, criteria.Q, formato),
+            new ReporteVacunoFiltros(rango.FechaDesde, rango.FechaHasta, criteria.Q, formato),
             null);
     }
 
@@ -97,24 +92,6 @@ public sealed class ListarReporteVacunosUseCase : IListarReporteVacunosUseCase
     {
         var normalized = value?.Trim();
         return string.IsNullOrWhiteSpace(normalized) ? null : normalized.ToLowerInvariant();
-    }
-
-    private static DateOnly? ParseDate(string? value, string field)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return null;
-        }
-
-        if (DateOnly.TryParseExact(value.Trim(), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
-        {
-            return date;
-        }
-
-        throw new ApplicationRuleException(
-            "VALIDATION_ERROR",
-            "Los datos enviados no son validos.",
-            [new ApplicationErrorDetail(field, "La fecha debe usar formato YYYY-MM-DD.")]);
     }
 
     private static int ParsePositiveIntOrDefault(string? value, string field, int defaultValue)

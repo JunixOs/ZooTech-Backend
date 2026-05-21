@@ -8,12 +8,12 @@ namespace ZooTech.Application.UnitTests.ReporteVacuno;
 public sealed class ListarReporteVacunosUseCaseTests
 {
     [Fact]
-    public async Task HandleAsync_WhenDatesAreMissing_AppliesLastThirtyDays()
+    public async Task HandleAsync_WhenDatesAreMissing_AppliesLastThirtyDaysAndReturnsAppliedRangeInFilters()
     {
         var repository = new FakeRepository();
         var useCase = CreateUseCase(repository);
 
-        await useCase.HandleAsync(new ListarReporteVacunosQuery(
+        var response = await useCase.HandleAsync(new ListarReporteVacunosQuery(
             null,
             null,
             null,
@@ -28,8 +28,54 @@ public sealed class ListarReporteVacunosUseCaseTests
         Assert.NotNull(repository.LastCriteria);
         Assert.Equal(new DateOnly(2026, 4, 20), repository.LastCriteria!.FechaDesde);
         Assert.Equal(new DateOnly(2026, 5, 20), repository.LastCriteria.FechaHasta);
+        Assert.Equal(new DateOnly(2026, 4, 20), response.Filtros.FechaDesde);
+        Assert.Equal(new DateOnly(2026, 5, 20), response.Filtros.FechaHasta);
         Assert.Equal(1, repository.LastCriteria.Page);
         Assert.Equal(20, repository.LastCriteria.Limit);
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenOnlyFechaHastaIsProvided_CalculatesFechaDesdeThirtyDaysBefore()
+    {
+        var repository = new FakeRepository();
+        var useCase = CreateUseCase(repository);
+
+        await useCase.HandleAsync(new ListarReporteVacunosQuery(
+            null,
+            "2026-05-10",
+            null,
+            null,
+            null,
+            null,
+            null,
+            "json",
+            null,
+            null));
+
+        Assert.Equal(new DateOnly(2026, 4, 10), repository.LastCriteria!.FechaDesde);
+        Assert.Equal(new DateOnly(2026, 5, 10), repository.LastCriteria.FechaHasta);
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenOnlyFechaDesdeIsProvided_UsesServerTodayAsFechaHasta()
+    {
+        var repository = new FakeRepository();
+        var useCase = CreateUseCase(repository);
+
+        await useCase.HandleAsync(new ListarReporteVacunosQuery(
+            "2026-05-01",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            "json",
+            null,
+            null));
+
+        Assert.Equal(new DateOnly(2026, 5, 1), repository.LastCriteria!.FechaDesde);
+        Assert.Equal(new DateOnly(2026, 5, 20), repository.LastCriteria.FechaHasta);
     }
 
     [Fact]
