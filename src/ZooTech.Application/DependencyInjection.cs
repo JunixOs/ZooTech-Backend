@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
+using ZooTech.Application.Modules.Animals.UseCases.DeleteAnimal;
 
 namespace ZooTech.Application;
 
@@ -35,6 +36,8 @@ public static class DependencyInjection
         // ============================================
 
         // services.AddScoped<IMyService, MyService>();
+        services.AddScoped<DeleteAnimalValidator>();
+        services.AddScoped<IDeleteAnimalInputPort, DeleteAnimalInteractor>();
 
         return services;
     }
