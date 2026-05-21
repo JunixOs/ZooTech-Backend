@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using ZooTech.Application.Common.Gateway.Repositories;
+using ZooTech.Application.Modules.Module_Vacunos.UseCases.ListarVacunos;
 using ZooTech.Domain.Entities;
 using ZooTech.Domain.Enums;
 using ZooTech.Infrastructure.Persistence.Context;
@@ -16,7 +17,7 @@ public class VacunoRepository : IVacunoRepository
         _db = db;
     }
 
-    public async Task<(List<Animal> Data, int Total)> GetPagedAsync(
+    public async Task<(List<VacunoResumen> Data, int Total)> GetPagedAsync(
         DateTime? fechaDesde,
         DateTime? fechaHasta,
         EstadoAnimal? estado,
@@ -24,15 +25,10 @@ public class VacunoRepository : IVacunoRepository
         int skip,
         int take)
     {
-        // Query base con navigations necesarias para el mapper
+        // Query base SIN includes
         var query = _db.vacunos
             .AsNoTracking()
-            .Include(v => v.raza_codeNavigation)
-            .Include(v => v.granja)
-                .ThenInclude(g => g.distrito_codigoNavigation)
-                    .ThenInclude(d => d.provincia_codigoNavigation)
-                        .ThenInclude(p => p.departamento_codigoNavigation)
-            .Where(v => v.deleted_at == null) // Solo registros activos (soft delete)
+            .Where(v => v.deleted_at == null)
             .AsQueryable();
 
         // Filtro por fecha de registro
@@ -48,46 +44,61 @@ public class VacunoRepository : IVacunoRepository
             query = query.Where(v => v.fecha_registro <= hasta);
         }
 
-        // Filtro por estado usando la vista v_vacuno_estado_vigente
+        // Filtro por estado usando la vista
         if (estado.HasValue)
         {
             var estadoStr = estado.Value.ToString();
-            var vacunoIdsConEstado = _db.v_vacuno_estado_vigentes
-                .Where(e => e.estado_code == estadoStr)
-                .Select(e => e.vacuno_id);
-
-            query = query.Where(v => vacunoIdsConEstado.Contains(v.id));
+            query = query.Where(v => _db.v_vacuno_estado_vigentes
+                .Any(e => e.vacuno_id == v.id && e.estado_code == estadoStr));
         }
 
-        // Filtro por búsqueda de texto (código o nombre)
+        // Filtro por búsqueda de texto
         if (!string.IsNullOrWhiteSpace(q))
         {
             query = query.Where(v => v.codigo.Contains(q) || v.nombre.Contains(q));
         }
 
-        // Total para paginación
+        // Total para paginación (rápido sin includes)
         var total = await query.CountAsync();
 
-        // Obtener página de datos
-        var entities = await query
+        // Proyección directa para evitar over-fetching y resolver el estado en el mismo query
+        var dataRaw = await query
             .OrderByDescending(v => v.fecha_registro)
             .Skip(skip)
             .Take(take)
+            .Select(v => new
+            {
+                Id = v.id,
+                Codigo = v.codigo,
+                FechaRegistro = v.fecha_registro,
+                Nombre = v.nombre,
+                Raza = v.raza_codeNavigation != null ? v.raza_codeNavigation.nombre : v.raza_code,
+                Procedencia = v.granja != null 
+                    ? v.granja.nombre + " - " + v.granja.distrito_codigoNavigation.nombre + " - " + v.granja.distrito_codigoNavigation.provincia_codigoNavigation.nombre + " - " + v.granja.distrito_codigoNavigation.provincia_codigoNavigation.departamento_codigoNavigation.nombre
+                    : "Sin granja",
+                EstadoString = _db.v_vacuno_estado_vigentes
+                                .Where(e => e.vacuno_id == v.id)
+                                .Select(e => e.estado_code)
+                                .FirstOrDefault() ?? "VIVO"
+            })
             .ToListAsync();
 
-        // Obtener estados vigentes para los vacunos de esta página
-        var vacunoIds = entities.Select(v => v.id).ToList();
-        var estadosVigentes = await _db.v_vacuno_estado_vigentes
-            .Where(e => vacunoIds.Contains(e.vacuno_id))
-            .ToDictionaryAsync(e => e.vacuno_id, e => e.estado_code);
-
-        // Mapear a dominio
-        var domainEntities = entities.Select(v =>
+        // Mapeo final en memoria al DTO de Application
+        var data = dataRaw.Select(x =>
         {
-            estadosVigentes.TryGetValue(v.id, out var estadoCode);
-            return VacunoMapper.ToDomain(v, estadoCode);
+            var estadoParsed = Enum.TryParse<EstadoAnimal>(x.EstadoString, true, out var e) ? e : EstadoAnimal.VIVO;
+            return new VacunoResumen
+            {
+                Id = x.Id,
+                Codigo = x.Codigo,
+                FechaRegistro = x.FechaRegistro.ToDateTime(TimeOnly.MinValue),
+                Nombre = x.Nombre,
+                Raza = x.Raza,
+                Procedencia = x.Procedencia,
+                Estado = estadoParsed
+            };
         }).ToList();
 
-        return (domainEntities, total);
+        return (data, total);
     }
 }

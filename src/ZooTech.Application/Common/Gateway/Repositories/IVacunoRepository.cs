@@ -1,12 +1,12 @@
 using ZooTech.Application.Common.Models;
-using ZooTech.Domain.Entities;
+using ZooTech.Application.Modules.Module_Vacunos.UseCases.ListarVacunos;
 using ZooTech.Domain.Enums;
 
 namespace ZooTech.Application.Common.Gateway.Repositories;
 
 public interface IVacunoRepository
 {
-    Task<(List<Animal> Data, int Total)> GetPagedAsync(
+    Task<(List<VacunoResumen> Data, int Total)> GetPagedAsync(
         DateTime? fechaDesde,
         DateTime? fechaHasta,
         EstadoAnimal? estado,

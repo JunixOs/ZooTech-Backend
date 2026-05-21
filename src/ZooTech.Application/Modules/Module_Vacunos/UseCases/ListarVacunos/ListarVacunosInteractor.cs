@@ -51,7 +51,7 @@ public class ListarVacunosInteractor : IListarVacunosInputPort
         int skip = (cmd.Page - 1) * cmd.Limit;
         int take = cmd.Limit;
 
-        // 4. Obtener datos
+        // 4. Obtener datos proyectados desde el repositorio
         var (data, total) = await _repository.GetPagedAsync(
             fechaDesde,
             fechaHasta,
@@ -60,24 +60,12 @@ public class ListarVacunosInteractor : IListarVacunosInputPort
             skip,
             take);
 
-        // 5. Mapear a Resumen
-        var resumenData = data.Select(a => new VacunoResumen
-        {
-            Id = a.Id.Value,
-            Codigo = a.Codigo,
-            FechaRegistro = a.FechaRegistro,
-            Nombre = a.Nombre,
-            Raza = a.Raza.Nombre,
-            Procedencia = a.Procedencia.ToString(),
-            Estado = a.Estado
-        }).ToList();
-
-        // 6. Retornar por el Output Port
+        // 5. Retornar por el Output Port
         await _output.Ok(new ListarVacunosOutput
         {
             PagedData = new PagedResult<VacunoResumen>
             {
-                Data = resumenData,
+                Data = data,
                 Total = total,
                 Page = cmd.Page,
                 PageSize = cmd.Limit

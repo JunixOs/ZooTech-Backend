@@ -62,7 +62,7 @@ public class ListarVacunosInteractorTests
 
         var command = new ListarVacunosCommand { FechaDesde = null, FechaHasta = null };
         _repositoryMock.GetPagedAsync(Arg.Any<DateTime?>(), Arg.Any<DateTime?>(), Arg.Any<EstadoAnimal?>(), Arg.Any<string>(), Arg.Any<int>(), Arg.Any<int>())
-            .Returns((new List<Animal>(), 0));
+            .Returns((new List<VacunoResumen>(), 0));
 
         // Act
         await _sut.Handle(command);
@@ -87,19 +87,19 @@ public class ListarVacunosInteractorTests
         _featuresMock.IsEnabledAsync("module.vacunos").Returns(true);
         _timeMock.UtcNow.Returns(new DateTime(2023, 1, 1));
 
-        var animal = Animal.Create(
-            AnimalId.Of(1),
-            "VAC-01",
-            "Lola",
-            new DateTime(2020, 1, 1),
-            new DateTime(2020, 1, 2),
-            new Raza("ANG", "Angus"),
-            new Procedencia("G1", "D1", "P1", "Dep1"),
-            new DateTime(2020, 1, 2)
-        );
+        var animalResumen = new VacunoResumen
+        {
+            Id = 1,
+            Codigo = "VAC-01",
+            Nombre = "Lola",
+            FechaRegistro = new DateTime(2020, 1, 2),
+            Raza = "Angus",
+            Procedencia = "G1 - D1 - P1 - Dep1",
+            Estado = EstadoAnimal.VIVO
+        };
 
         _repositoryMock.GetPagedAsync(Arg.Any<DateTime?>(), Arg.Any<DateTime?>(), Arg.Any<EstadoAnimal?>(), Arg.Any<string>(), Arg.Any<int>(), Arg.Any<int>())
-            .Returns((new List<Animal> { animal }, 1));
+            .Returns((new List<VacunoResumen> { animalResumen }, 1));
 
         var command = new ListarVacunosCommand { Page = 2, Limit = 10 };
 
