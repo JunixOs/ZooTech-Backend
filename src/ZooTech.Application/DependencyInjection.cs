@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
+using ZooTech.Application.Modules.Module_Celo.UseCases.ListarCelos;
 
 namespace ZooTech.Application;
 
@@ -35,6 +36,8 @@ public static class DependencyInjection
         // ============================================
 
         // services.AddScoped<IMyService, MyService>();
+
+        services.AddScoped<IListarCelosUseCase, ListarCelosUseCase>();
 
         return services;
     }

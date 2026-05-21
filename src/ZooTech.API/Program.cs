@@ -2,6 +2,7 @@ using ZooTech.Application;
 using ZooTech.Infrastructure;
 
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
+using ZooTech.InterfaceAdapters.Modules.Module_Celo.Controllers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,7 +13,8 @@ var builder = WebApplication.CreateBuilder(args);
 // ======= Configuracion Swagger =======
 builder.Services
     .AddControllers()
-    .AddApplicationPart(typeof(HomeController).Assembly);
+    .AddApplicationPart(typeof(HomeController).Assembly)
+    .AddApplicationPart(typeof(CeloController).Assembly);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
