@@ -19,7 +19,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Common\Services\" />
+    <Folder Include="Persistence\Entities\GanaderiaDb\" />
+    <Folder Include="Persistence\Entities\MainTenantsDb\" />
     <Folder Include="Persistence\Mappers\" />
     <Folder Include="Persistence\Repositories\" />
   </ItemGroup>
