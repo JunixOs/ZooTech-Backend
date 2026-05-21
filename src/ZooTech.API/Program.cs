@@ -1,56 +1,93 @@
+using Microsoft.OpenApi;
+using Microsoft.EntityFrameworkCore;
+using ZooTech.API.Endpoints;
+using ZooTech.API.Services;
+using ZooTech.Application;
+using ZooTech.Infrastructure;
+using ZooTech.InterfaceAdapters;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddInterfaceAdapters();
 
-var frontendPort = builder.Configuration["Frontend:FrontendPort"];
-var frontendIP = builder.Configuration["Frontend:FrontendIP"];
-var frontendProtocol = builder.Configuration["Frontend:FrontendProtocol"];
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddOpenApi();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "ZooTech API",
+        Version = "v1"
+    });
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "Ingrese: Bearer zootech-demo-token",
+        In = ParameterLocation.Header,
+        Name = "Authorization",
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+    
+});
+
+builder.Services.AddSingleton<IDemoAuthService, DemoAuthService>();
+// If a connection string is provided use EF repository against SQL Server, otherwise use in-memory
+var defaultConn = builder.Configuration.GetConnectionString("Default");
+if (!string.IsNullOrWhiteSpace(defaultConn))
+{
+    builder.Services.AddDbContext<ZooTech.Infrastructure.Persistence.Context.GanaderiaDbContext>(options =>
+        options.UseSqlServer(defaultConn));
+
+    builder.Services.AddScoped<IVacunoRepository, ZooTech.API.Services.EfVacunoRepository>();
+}
+else
+{
+    builder.Services.AddSingleton<IVacunoRepository, InMemoryVacunoRepository>();
+}
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowFrontend",
-        policy =>
-        {
-            policy.WithOrigins($"{frontendProtocol}://{frontendIP}:{frontendPort}")
-                .AllowAnyHeader()
-                .AllowAnyMethod();
-        });
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy
+            .SetIsOriginAllowed(origin =>
+                Uri.TryCreate(origin, UriKind.Absolute, out var uri) &&
+                (uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+                 uri.Host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase) ||
+                 uri.Host.Equals("::1", StringComparison.OrdinalIgnoreCase)))
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
 });
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+app.UseCors("AllowFrontend");
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+app.MapGet("/api/health", () => Results.Ok(new
+    {
+        status = "ok",
+        service = "ZooTech.API",
+        utc = DateTime.UtcNow
+    }))
+    .WithTags("Sistema")
+    .WithName("HealthCheck")
+    .WithSummary("Verifica que la API este disponible.");
 
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+app.MapAuthEndpoints();
+app.MapVacunoEndpoints();
 
 app.Run();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
+public partial class Program;
+
+

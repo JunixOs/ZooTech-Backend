@@ -1,6 +1,59 @@
 @ZooTech.API_HostAddress = http://localhost:5085
+@Token = zootech-demo-token
 
-GET {{ZooTech.API_HostAddress}}/weatherforecast/
+### Health
+GET {{ZooTech.API_HostAddress}}/api/health
 Accept: application/json
 
-###
+### Login demo
+POST {{ZooTech.API_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@zootech.com",
+  "password": "Zootech2026!"
+}
+
+### Listar vacunos
+GET {{ZooTech.API_HostAddress}}/api/vacunos?page=1&pageSize=10
+Accept: application/json
+Authorization: Bearer {{Token}}
+
+### Buscar vacuno por texto
+GET {{ZooTech.API_HostAddress}}/api/vacunos?search=duquesa&page=1&pageSize=10
+Accept: application/json
+Authorization: Bearer {{Token}}
+
+### Ver detalle de vacuno
+GET {{ZooTech.API_HostAddress}}/api/vacunos/VAC_101
+Accept: application/json
+Authorization: Bearer {{Token}}
+
+### Editar vacuno
+PUT {{ZooTech.API_HostAddress}}/api/vacunos/VAC_101
+Content-Type: application/json
+Authorization: Bearer {{Token}}
+
+{
+  "nombre": "Duquesa",
+  "fechaNacimiento": "2023-02-01",
+  "adquisicionPor": "Inseminacion",
+  "raza": "Holstein",
+  "color": "Marron",
+  "sexo": "Hembra",
+  "codigoPadre": "VAC_0021",
+  "codigoMadre": "VAC_0147",
+  "granja": "Granjas Trejo",
+  "distrito": "Rupa Rupa",
+  "departamento": "Huanuco",
+  "provincia": "Leoncio Prado",
+  "aptoPara": "Produccion de leche",
+  "fechaRegistroFuncion": "2023-02-08",
+  "observaciones": "Actualizado desde prueba HTTP.",
+  "fotoUrl": "https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=700&q=80",
+  "estado": "activo"
+}
+
+### Eliminar vacuno de prueba
+DELETE {{ZooTech.API_HostAddress}}/api/vacunos/VAC_112
+Authorization: Bearer {{Token}}

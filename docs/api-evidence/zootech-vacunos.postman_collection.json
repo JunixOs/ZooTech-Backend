@@ -1,0 +1,205 @@
+{
+  "info": {
+    "_postman_id": "86119812-7fef-44b3-ae0e-cccb67b47449",
+    "name": "ZooTech - Vacunos API",
+    "description": "Coleccion para evidenciar login y endpoints de Ver Vacuno.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5085"
+    },
+    {
+      "key": "authToken",
+      "value": "zootech-demo-token"
+    }
+  ],
+  "item": [
+    {
+      "name": "Login demo",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const response = pm.response.json();",
+              "pm.collectionVariables.set('authToken', response.token);",
+              "pm.test('login OK', () => pm.response.to.have.status(200));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin@zootech.com\",\n  \"password\": \"Zootech2026!\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Listar vacunos",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/vacunos?page=1&pageSize=10",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "vacunos"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "pageSize",
+              "value": "10"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Ver VAC_101",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/vacunos/VAC_101",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "vacunos",
+            "VAC_101"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Buscar Duquesa",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/vacunos?search=duquesa&page=1&pageSize=10",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "vacunos"
+          ],
+          "query": [
+            {
+              "key": "search",
+              "value": "duquesa"
+            },
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "pageSize",
+              "value": "10"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Editar VAC_101",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Duquesa API\",\n  \"fechaNacimiento\": \"2023-02-01\",\n  \"adquisicionPor\": \"Inseminacion\",\n  \"raza\": \"Holstein\",\n  \"color\": \"Marron\",\n  \"sexo\": \"Hembra\",\n  \"codigoPadre\": \"VAC_0021\",\n  \"codigoMadre\": \"VAC_0147\",\n  \"granja\": \"Granjas Trejo\",\n  \"distrito\": \"Rupa Rupa\",\n  \"departamento\": \"Huanuco\",\n  \"provincia\": \"Leoncio Prado\",\n  \"aptoPara\": \"Produccion de leche\",\n  \"fechaRegistroFuncion\": \"2023-02-08\",\n  \"observaciones\": \"Actualizado desde Postman.\",\n  \"fotoUrl\": \"https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=700&q=80\",\n  \"estado\": \"activo\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/vacunos/VAC_101",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "vacunos",
+            "VAC_101"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Eliminar VAC_112",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/vacunos/VAC_112",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "vacunos",
+            "VAC_112"
+          ]
+        }
+      }
+    }
+  ]
+}
