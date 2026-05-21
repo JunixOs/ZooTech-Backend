@@ -1,7 +1,19 @@
+using FluentValidation;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
 using ZooTech.Application;
+using ZooTech.Application.Common.Behaviors;
+using ZooTech.Application.Common.Gateway.Context;
+using ZooTech.Application.Common.Gateway.Tenant;
+using ZooTech.Application.Modules.Module_Tenancing.UseCases;
+using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant;
+using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant.Ports;
 using ZooTech.Infrastructure;
-
+using ZooTech.Infrastructure.Persistence.Context;
+using ZooTech.Infrastructure.Tenant;
+using ZooTech.InterfaceAdapters.Middleware;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
+using ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Presenters;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,6 +52,54 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(
     builder.Configuration);
 
+// ======= Configuracion Context BD Tenant Principal =======
+builder.Services.AddDbContext<TenantCatalogDb>(options =>
+{
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("TenantCatalogConnection"));
+});
+// ======= Configuracion Context BD Tenant Principal =======
+
+// ======= Configuracion DI =======
+builder.Services.AddMemoryCache();
+// MediatR
+builder.Services.AddMediatR(cfg =>
+{
+    cfg.RegisterServicesFromAssembly(
+        typeof(CreateTenantHandler)
+            .Assembly);
+});
+// FluentValidation
+builder.Services
+    .AddValidatorsFromAssembly(
+        typeof(CreateTenantValidator)
+            .Assembly);
+
+// ======= Registro de Validators =======
+builder.Services.AddValidatorsFromAssembly(
+    typeof(CreateTenantValidator).Assembly
+);
+// ======= Registro de Validators =======
+
+// ======= Registro de Behaviors =======
+builder.Services.AddTransient(
+    typeof(ZooTech.Application.Common.Behaviors.IPipelineBehavior<,>),
+    typeof(ValidationBehavior<,>)
+);
+// ======= Registro de Behaviors =======
+
+builder.Services.AddScoped<ITenantStore , TenantStore>();
+builder.Services.AddScoped<ITenantContext , TenantContext>();
+builder.Services.AddScoped<ITenantProvisioningService , TenantProvisioningService>();
+
+builder.Services.AddTransient<ICreateTenantInputPort , CreateTenantInteractor>();
+builder.Services.AddTransient<TenancingPresenter>();
+builder.Services.AddScoped<
+    ICreateTenantOutputPort>(
+        sp => sp.GetRequiredService<
+            TenancingPresenter>());
+// ======= Configuracion DI =======
+
 var frontendPort = builder.Configuration["Frontend:FrontendPort"];
 var frontendIP = builder.Configuration["Frontend:FrontendIP"];
 var frontendProtocol = builder.Configuration["Frontend:FrontendProtocol"];
@@ -56,6 +116,11 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// ===== Configurar Middlewares =====
+app.UseMiddleware<TenantResolutionMiddleware>();
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+// ===== Configurar Middlewares =====
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
