@@ -20,5 +20,9 @@
     <ProjectReference Include="..\ZooTech.Infrastructure\ZooTech.Infrastructure.csproj" />
     <ProjectReference Include="..\ZooTech.InterfaceAdapters\ZooTech.InterfaceAdapters.csproj" />
   </ItemGroup>
-
+	<PropertyGroup>
+		<!-- Genera comentarios XML para Swagger -->
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<NoWarn>$(NoWarn);1591</NoWarn>
+	</PropertyGroup>
 </Project>
