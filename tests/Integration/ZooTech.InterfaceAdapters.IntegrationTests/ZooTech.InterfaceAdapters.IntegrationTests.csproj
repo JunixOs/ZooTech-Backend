@@ -19,9 +19,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\ZooTech.InterfaceAdapters\ZooTech.InterfaceAdapters.csproj" />
     <ProjectReference Include="..\..\..\src\ZooTech.Infrastructure\ZooTech.Infrastructure.csproj" />
     <ProjectReference Include="..\..\..\src\ZooTech.Application\ZooTech.Application.csproj" />
+    <ProjectReference Include="..\..\..\src\ZooTech.InterfaceAdapters\ZooTech.InterfaceAdapters.csproj" />
   </ItemGroup>
 
 </Project>
