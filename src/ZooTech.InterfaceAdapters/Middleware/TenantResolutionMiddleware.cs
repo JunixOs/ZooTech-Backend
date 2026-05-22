@@ -9,6 +9,7 @@ namespace ZooTech.InterfaceAdapters.Middleware
     {
         private readonly RequestDelegate _next;
         private readonly string _baseDomain;
+        private readonly string _adminSubDomain;
 
         public TenantResolutionMiddleware(
             RequestDelegate next,
@@ -17,6 +18,7 @@ namespace ZooTech.InterfaceAdapters.Middleware
         {
             _next = next;
             _baseDomain = config["MultiTenant:BaseDomain"];
+            _adminSubDomain = config["MultiTenant:AdminSubDomain"];
         }
 
         public async Task InvokeAsync(
