@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using ZooTech.Application.Common.Gateway.Time;
 using ZooTech.Domain.Module_Sanidad.Entities;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
-using ZooTech.Infrastructure.Common.Time;
 using ZooTech.Infrastructure.Context;
 using ZooTech.Infrastructure.Persistence.Entities;
 
@@ -28,19 +27,44 @@ public class TriajeRepository : ITriajeRepository
 
         return entity is null ? null : ToTriaje(entity);
     }
-  
-    public async Task<IEnumerable<Triaje>> GetAllAsync()
+
+    public async Task<(IEnumerable<Triaje> Items, int Total)> GetAllAsync(
+        int pagina,
+        int tamano,
+        string? fecha = null,
+        string? codigo = null,
+        string? nombre = null,
+        string? tipoPeso = null,
+        decimal? pesoKg = null)
     {
-        var entities = await _context.Triajes
+        var query = _context.Triajes
             .AsNoTracking()
-            .Include(t => t.vacuno) // Incluir datos del vacuno
+            .Include(t => t.vacuno)
             .Where(t => t.deleted_at == null)
-            .OrderByDescending(t => t.fecha_hora)
+            .AsQueryable();
+
+        if (!string.IsNullOrEmpty(codigo))
+            query = query.Where(t => t.codigo.Contains(codigo));
+
+        if (!string.IsNullOrEmpty(nombre))
+            query = query.Where(t => t.vacuno.nombre.Contains(nombre));
+
+        if (!string.IsNullOrEmpty(tipoPeso))
+            query = query.Where(t => t.tipo_peso_code == tipoPeso);
+
+        if (pesoKg.HasValue)
+            query = query.Where(t => t.peso_kg == pesoKg);
+
+        query = query.OrderByDescending(t => t.fecha_hora);
+
+        var total = await query.CountAsync();
+
+        var entities = await query
+            .Skip((pagina - 1) * tamano)
+            .Take(tamano)
             .ToListAsync();
-            
 
-
-        return entities.Select(ToTriaje);
+        return (entities.Select(ToTriaje), total);
     }
 
     public async Task AddAsync(Triaje triaje)
