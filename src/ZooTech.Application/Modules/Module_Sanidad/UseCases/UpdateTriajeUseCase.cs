@@ -25,12 +25,12 @@ public class UpdateTriajeUseCase
 
         var now = _dateTimeProvider.ServerNow;
 
-        triaje.VacunoId = request.VacunoId;
+        //triaje.VacunoId = request.VacunoId;
         triaje.TipoPesoCode = request.TipoPesoCode;
         triaje.PesoKg = request.PesoKg;
         triaje.Observaciones = request.Observaciones;
-        triaje.EstadoRegistroCode = request.EstadoRegistroCode;
-        triaje.EncargadoUsuarioId = request.EncargadoUsuarioId;
+        //triaje.EstadoRegistroCode = request.EstadoRegistroCode;
+        //triaje.EncargadoUsuarioId = request.EncargadoUsuarioId;
         triaje.UpdatedAt = now;
 
         await _repository.UpdateAsync(triaje);
