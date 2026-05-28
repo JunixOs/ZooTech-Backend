@@ -30,42 +30,42 @@ namespace ZooTech.Infrastructure.Tenant
         {
             var tenantDbName = $"ZooTech_{cmd.Code.Replace("-", "_")}_Db";
 
-            AddressEntity addressEntity = new AddressEntity
+            address addressEntity = new address
             {
-                Country = cmd.TenantAddress.Country,
-                State = cmd.TenantAddress.State,
-                Province = cmd.TenantAddress.Province,
-                City = cmd.TenantAddress.City,
-                AddressLine1 = cmd.TenantAddress.AddressLine_1,
-                AddressLine2 = cmd.TenantAddress.AddressLine_2,
-                Metadata = cmd.TenantAddress.Metadata,
-                CreatedAt = DateTime.Now
+                country = cmd.TenantAddress.Country,
+                state = cmd.TenantAddress.State,
+                province = cmd.TenantAddress.Province,
+                city = cmd.TenantAddress.City,
+                address_line1 = cmd.TenantAddress.AddressLine_1,
+                address_line2 = cmd.TenantAddress.AddressLine_2,
+                metadata = cmd.TenantAddress.Metadata,
+                created_at = DateTime.Now
             };
 
-            TenantDatabaseConnectionEntity tenantDatabaseConnectionEntity = new TenantDatabaseConnectionEntity
+            tenant_database_connection tenantDatabaseConnectionEntity = new tenant_database_connection
             {
-                DatabaseName = tenantDbName,
-                IsActive = cmd.TenantDatabaseConnection.IsActive
+                database_name = tenantDbName,
+                is_active = cmd.TenantDatabaseConnection.IsActive
             };
 
-            var tenant = new TenantEntity
+            var tenant = new tenant
             {
-                Code = cmd.Code,
-                SubDomain = cmd.SubDomain,
-                DisplayName = cmd.DisplayName,
-                LegalName = cmd.LegalName,
-                Email = cmd.Email,
-                Phone = cmd.Phone,
-                Address = addressEntity,
-                TenantDatabaseConnection = tenantDatabaseConnectionEntity,
-                Status = cmd.Status,
-                Metadata = cmd.Metadata,
-                CreatedAt = DateTime.Now
+                code = cmd.Code,
+                sub_domain = cmd.SubDomain,
+                display_name = cmd.DisplayName,
+                legal_name = cmd.LegalName,
+                email = cmd.Email,
+                phone = cmd.Phone,
+                address = addressEntity,
+                tenant_database_connection = tenantDatabaseConnectionEntity,
+                status = cmd.Status,
+                metadata = cmd.Metadata,
+                created_at = DateTime.Now
             };
 
             try
             {
-                _tenantCatalogDb.TenantEntity.Add(tenant);
+                _tenantCatalogDb.tenants.Add(tenant);
                 await _tenantCatalogDb.SaveChangesAsync();
 
                 // Crear Base de datos para el tenant

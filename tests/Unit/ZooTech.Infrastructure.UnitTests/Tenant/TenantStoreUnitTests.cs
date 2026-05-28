@@ -46,39 +46,39 @@ namespace ZooTech.Infrastructure.UnitTests.Tenant
         
             var db = CreateDbContext();
 
-            db.TenantEntity.Add(
-                new TenantEntity
+            db.tenants.Add(
+                new tenant
                 {
-                    Id = 1,
-                    Code = "TENANT_1",
-                    SubDomain = "tenant1",
-                    DisplayName = "Granja Tenant 1",
-                    LegalName = "Granja Tenant 1 S.A.C",
-                    Email = "tenant1@gmail.com",
-                    Phone = "950678900",
-                    Status = "INACTIVE",
+                    id = 1,
+                    code = "TENANT_1",
+                    sub_domain = "tenant1",
+                    display_name = "Granja Tenant 1",
+                    legal_name = "Granja Tenant 1 S.A.C",
+                    email = "tenant1@gmail.com",
+                    phone = "950678900",
+                    status = "INACTIVE",
 
-                    Address = 
-                        new AddressEntity
+                    address = 
+                        new address
                         {
-                            Id = 10,
-                            Country = "Perú",
-                            State = "Huanuco",
-                            Province = "Huanuco",
-                            City = "Huanuco",
-                            AddressLine1 = "Av. Abtao 1001",
-                            CreatedAt = DateTime.Now
+                            id = 10,
+                            country = "Perú",
+                            state = "Huanuco",
+                            province = "Huanuco",
+                            city = "Huanuco",
+                            address_line1 = "Av. Abtao 1001",
+                            created_at = DateTime.Now
                         },
-                    TenantDatabaseConnection =
-                        new TenantDatabaseConnectionEntity
+                    tenant_database_connection =
+                        new tenant_database_connection
                         {
-                            Id = 10,
-                            IsActive = true,
-                            DatabaseName =
+                            id = 10,
+                            is_active = true,
+                            database_name =
                                 "ZooTech_tenant1_Db",
-                            CreatedAt = DateTime.Now
+                            created_at = DateTime.Now
                         },
-                    CreatedAt = DateTime.Now
+                    created_at = DateTime.Now
                 }
             );
 
@@ -140,39 +140,39 @@ namespace ZooTech.Infrastructure.UnitTests.Tenant
             // Arrange
             var db = CreateDbContext();
 
-            db.TenantEntity.Add(
-                new TenantEntity
+            db.tenants.Add(
+                new tenant
                 {
-                    Id = 1,
-                    Code = "TENANT_1",
-                    SubDomain = "tenant1",
-                    DisplayName = "Granja Tenant 1",
-                    LegalName = "Granja Tenant 1 S.A.C",
-                    Email = "tenant1@gmail.com",
-                    Phone = "950678900",
-                    Status = "ACTIVE",
+                    id = 1,
+                    code = "TENANT_1",
+                    sub_domain = "tenant1",
+                    display_name = "Granja Tenant 1",
+                    legal_name = "Granja Tenant 1 S.A.C",
+                    email = "tenant1@gmail.com",
+                    phone = "950678900",
+                    status = "ACTIVE",
 
-                    Address = 
-                        new AddressEntity
+                    address = 
+                        new address
                         {
-                            Id = 10,
-                            Country = "Perú",
-                            State = "Huanuco",
-                            Province = "Huanuco",
-                            City = "Huanuco",
-                            AddressLine1 = "Av. Abtao 1001",
-                            CreatedAt = DateTime.Now
+                            id = 10,
+                            country = "Perú",
+                            state = "Huanuco",
+                            province = "Huanuco",
+                            city = "Huanuco",
+                            address_line1 = "Av. Abtao 1001",
+                            created_at = DateTime.Now
                         },
-                    TenantDatabaseConnection =
-                        new TenantDatabaseConnectionEntity
+                    tenant_database_connection =
+                        new tenant_database_connection
                         {
-                            Id = 10,
-                            IsActive = true,
-                            DatabaseName =
+                            id = 10,
+                            is_active = true,
+                            database_name =
                                 "ZooTech_tenant1_Db",
-                            CreatedAt = DateTime.Now
+                            created_at = DateTime.Now
                         },
-                    CreatedAt = DateTime.Now
+                    created_at = DateTime.Now
                 }
             );
 
