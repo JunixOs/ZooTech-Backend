@@ -5,8 +5,6 @@ using ZooTech.InterfaceAdapters;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// ======= Configuracion Swagger =======
 builder.Services
     .AddControllers()
     .AddApplicationPart(typeof(HomeController).Assembly)
@@ -79,7 +77,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowFrontend");
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 
