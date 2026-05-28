@@ -5,7 +5,7 @@ using ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Mappers;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Presenters
 {
-    public class TenancingPresenter : ICreateTenantOutputPort
+    public class CreateTenantPresenter : ICreateTenantOutputPort
     {
         public CreateTenantResponseDto? Response { get; private set; }
         public Task Ok(CreateTenantOutput output)

@@ -14,12 +14,12 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers
     {
         private readonly IMediator _mediator;
         private readonly ICreateTenantInputPort _createTenantInputPort;
-        private readonly TenancingPresenter _tenancingPresenter;
+        private readonly CreateTenantPresenter _tenancingPresenter;
 
         public TenancingController(
             IMediator mediator,
             ICreateTenantInputPort createTenantInputPort,
-            TenancingPresenter tenancingPresenter
+            CreateTenantPresenter tenancingPresenter
         )
         {
             _mediator = mediator;
