@@ -15,4 +15,7 @@ public interface IOrdenioRepository
     Task<(IReadOnlyList<OrdenioOutput> Items, int TotalCount)> ListAsync(ListOrdeniosQuery query, CancellationToken cancellationToken);
     Task<Ordenio> AddAsync(Ordenio ordenio, CancellationToken cancellationToken);
     Task<Ordenio> UpdateAsync(Ordenio ordenio, CancellationToken cancellationToken);
+    Task<IReadOnlyList<VacunoSimpleOutput>> ListVacunosAsync(CancellationToken cancellationToken);
 }
+
+public sealed record VacunoSimpleOutput(long Id, string Codigo, string Nombre, string RazaCode);

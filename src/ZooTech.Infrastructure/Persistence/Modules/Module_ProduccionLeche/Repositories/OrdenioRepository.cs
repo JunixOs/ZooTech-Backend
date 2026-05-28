@@ -127,6 +127,14 @@ public sealed class OrdenioRepository : IOrdenioRepository
         return ToDomain(entity);
     }
 
+    public async Task<IReadOnlyList<VacunoSimpleOutput>> ListVacunosAsync(CancellationToken cancellationToken)
+    {
+        return await _dbContext.vacunos
+            .AsNoTracking()
+            .Select(x => new VacunoSimpleOutput(x.id, x.codigo, x.nombre, x.raza_code))
+            .ToListAsync(cancellationToken);
+    }
+
     private static Ordenio ToDomain(ordenio entity)
         => Ordenio.Rehydrate(
             entity.id,
