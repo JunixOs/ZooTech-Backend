@@ -3,6 +3,7 @@ using ZooTech.Infrastructure;
 
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.Controllers;
+using ZooTech.Infrastructure.Persistence.Repositories.Reproduccion;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -41,6 +42,8 @@ builder.Services.AddApplication();
 
 builder.Services.AddInfrastructure(
     builder.Configuration);
+
+builder.Services.AddScoped<CeloRepository>();
 
 var frontendPort = builder.Configuration["Frontend:FrontendPort"];
 var frontendIP = builder.Configuration["Frontend:FrontendIP"];
