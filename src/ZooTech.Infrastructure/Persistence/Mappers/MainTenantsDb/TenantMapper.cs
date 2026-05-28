@@ -6,35 +6,35 @@ namespace ZooTech.Infrastructure.Persistence.Mappers.MainTenantsDb
 {
     public class TenantMapper
     {
-        public static TenantDomainEntity ToDomain(TenantEntity tenantEntity)
+        public static TenantDomainEntity ToDomain(tenant tenantEntity)
         {
             return TenantDomainEntity.Create(
-                tenantEntity.Id,
-                tenantEntity.Code,
-                tenantEntity.SubDomain,
-                tenantEntity.DisplayName,
-                tenantEntity.LegalName,
-                tenantEntity.Email,
-                tenantEntity.Phone,
-                tenantEntity.Status,
-                tenantEntity.CreatedAt,
-                tenantEntity.UpdatedAt
+                tenantEntity.id,
+                tenantEntity.code,
+                tenantEntity.sub_domain,
+                tenantEntity.display_name,
+                tenantEntity.legal_name,
+                tenantEntity.email,
+                tenantEntity.phone,
+                tenantEntity.status,
+                tenantEntity.created_at,
+                tenantEntity.updated_at
             );
         }
 
-        public static TenantEntity ToEntity(TenantDomainEntity tenantDomainEntity)
+        public static tenant ToEntity(TenantDomainEntity tenantDomainEntity)
         {
-            return new TenantEntity
+            return new tenant
             {
-                Code = tenantDomainEntity.Code,
-                SubDomain = tenantDomainEntity.SubDomain,
-                DisplayName = tenantDomainEntity.DisplayName,
-                LegalName = tenantDomainEntity.LegalName,
-                Email = tenantDomainEntity.Email,
-                Phone = tenantDomainEntity.Phone,
-                Status = tenantDomainEntity.Status.ToString(),
-                CreatedAt = tenantDomainEntity.CreatedAt,
-                UpdatedAt = tenantDomainEntity.UpdatedAt
+                code = tenantDomainEntity.Code,
+                sub_domain = tenantDomainEntity.SubDomain,
+                display_name = tenantDomainEntity.DisplayName,
+                legal_name = tenantDomainEntity.LegalName,
+                email = tenantDomainEntity.Email,
+                phone = tenantDomainEntity.Phone,
+                status = tenantDomainEntity.Status.ToString(),
+                created_at = tenantDomainEntity.CreatedAt,
+                updated_at = tenantDomainEntity.UpdatedAt
             };
         }
     }
