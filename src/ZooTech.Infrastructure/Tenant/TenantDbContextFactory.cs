@@ -1,3 +1,4 @@
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using ZooTech.Application.Common.Gateway.Context;
@@ -21,7 +22,12 @@ namespace ZooTech.Infrastructure.Tenant
         public GanaderiaDbContext CreateDbContext()
         {
             var template = _config.GetConnectionString("TenantTemplate");
-            var conn = template.Replace("{DATABASE}", _tenantContext.DatabaseName);
+
+            var builder = new SqlConnectionStringBuilder(template);
+
+            builder.InitialCatalog = _tenantContext.DatabaseName;
+
+            var conn = builder.ConnectionString;
 
             var options = new DbContextOptionsBuilder<GanaderiaDbContext>()
                 .UseSqlServer(conn)

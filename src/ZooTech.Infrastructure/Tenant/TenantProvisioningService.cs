@@ -13,14 +13,17 @@ namespace ZooTech.Infrastructure.Tenant
     {
         private readonly TenantCatalogDb _tenantCatalogDb;
         private readonly IConfiguration _config;
+        private readonly ITenantDatabaseMigrator _tenantDatabaseMigrator;
 
         public TenantProvisioningService(
             TenantCatalogDb tenantCatalogDb, 
-            IConfiguration config
+            IConfiguration config,
+            ITenantDatabaseMigrator tenantDatabaseMigrator
         )
         {
             _tenantCatalogDb = tenantCatalogDb;
             _config = config;
+            _tenantDatabaseMigrator = tenantDatabaseMigrator;
         }
 
         public async Task<bool> ProvisionAsync(CreateTenantCommand cmd)
@@ -73,13 +76,8 @@ namespace ZooTech.Infrastructure.Tenant
 
                 var conn = builder.ConnectionString;
 
-                var options = new DbContextOptionsBuilder<GanaderiaDbContext>()
-                    .UseSqlServer(conn)
-                    .Options;
+                await _tenantDatabaseMigrator.MigrateAsync(conn); // Se necesitan permisos para crear la BD
 
-                await using var ganaderiaDb = new GanaderiaDbContext(options);
-
-                await ganaderiaDb.Database.MigrateAsync(); // Se necesitan permisos para crear la BD
                 return true;
             }
             catch (Exception ex)
