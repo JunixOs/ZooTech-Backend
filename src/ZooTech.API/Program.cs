@@ -117,11 +117,11 @@ builder.Services.AddScoped<ITenantContext , TenantContext>();
 builder.Services.AddScoped<ITenantProvisioningService , TenantProvisioningService>();
 
 builder.Services.AddTransient<ICreateTenantInputPort , CreateTenantInteractor>();
-builder.Services.AddTransient<TenancingPresenter>();
+builder.Services.AddTransient<CreateTenantPresenter>();
 builder.Services.AddScoped<
     ICreateTenantOutputPort>(
         sp => sp.GetRequiredService<
-            TenancingPresenter>());
+            CreateTenantPresenter>());
 // ======= Configuracion DI =======
 
 var frontendPort = builder.Configuration["Frontend:FrontendPort"];
