@@ -21,4 +21,8 @@ public sealed record ReporteVacunoFiltrosDto(
     DateOnly FechaDesde,
     DateOnly FechaHasta,
     string? Q,
+    string? Raza,
+    string? Procedencia,
+    string? Estado,
+    string? AptoPara,
     string Formato);

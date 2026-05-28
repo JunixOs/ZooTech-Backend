@@ -47,6 +47,7 @@ public static class DependencyInjection
         services.AddScoped<IRegistroVacunoReadRepository, RegistroVacunoReadRepository>();
         services.AddScoped<IRegistroVacunoExcelReportService, RegistroVacunoExcelReportService>();
         services.AddScoped<IRegistroVacunoPdfReportService, RegistroVacunoPdfReportService>();
+        services.AddScoped<IListadoVacunosReportFileService, ListadoVacunosReportFileService>();
 
         // ============================================
         // External Services

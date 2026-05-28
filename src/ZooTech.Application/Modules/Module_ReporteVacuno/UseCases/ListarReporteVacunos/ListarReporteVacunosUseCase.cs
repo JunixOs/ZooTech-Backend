@@ -13,15 +13,18 @@ public sealed class ListarReporteVacunosUseCase : IListarReporteVacunosUseCase
     private static readonly string[] AptosPermitidos = ["produccion_leche", "carne", "reproduccion"];
 
     private readonly IReporteVacunoReadRepository _repository;
+    private readonly IListadoVacunosReportFileService _reportFileService;
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly ILogger<ListarReporteVacunosUseCase> _logger;
 
     public ListarReporteVacunosUseCase(
         IReporteVacunoReadRepository repository,
+        IListadoVacunosReportFileService reportFileService,
         IDateTimeProvider dateTimeProvider,
         ILogger<ListarReporteVacunosUseCase> logger)
     {
         _repository = repository;
+        _reportFileService = reportFileService;
         _dateTimeProvider = dateTimeProvider;
         _logger = logger;
     }
@@ -32,15 +35,6 @@ public sealed class ListarReporteVacunosUseCase : IListarReporteVacunosUseCase
     {
         var formato = Normalize(query.Formato) ?? "json";
         EnsureAllowed("formato", formato, FormatosPermitidos, "INVALID_REPORT_FORMAT", "El formato debe ser json, pdf o excel.", "Formato no permitido.");
-
-        if (formato is "pdf" or "excel")
-        {
-            throw new ApplicationRuleException(
-                "REPORT_FORMAT_NOT_IMPLEMENTED",
-                "La generacion de PDF y Excel pertenece a TK04/TK05.",
-                [new ApplicationErrorDetail("formato", "Para el listado solo esta implementado formato=json.")],
-                501);
-        }
 
         var rango = ReporteVacunoDateRangeResolver.Resolve(
             query.FechaDesde,
@@ -81,11 +75,29 @@ public sealed class ListarReporteVacunosUseCase : IListarReporteVacunosUseCase
 
         var pageResult = await _repository.ListarAsync(criteria, cancellationToken);
 
+        var resumen = new ReporteVacunoResumen(pageResult.TotalRegistros);
+        var filtros = new ReporteVacunoFiltros(
+            rango.FechaDesde,
+            rango.FechaHasta,
+            criteria.Q,
+            criteria.Raza,
+            criteria.Procedencia,
+            criteria.Estado,
+            criteria.AptoPara,
+            formato);
+
+        var downloadUrl = formato switch
+        {
+            "excel" => (await _reportFileService.GenerateExcelAsync(pageResult.Items, resumen, filtros, cancellationToken)).DownloadUrl,
+            "pdf" => (await _reportFileService.GeneratePdfAsync(pageResult.Items, resumen, filtros, cancellationToken)).DownloadUrl,
+            _ => null
+        };
+
         return new ListadoVacunosReporteResponse(
             pageResult.Items,
-            new ReporteVacunoResumen(pageResult.TotalRegistros),
-            new ReporteVacunoFiltros(rango.FechaDesde, rango.FechaHasta, criteria.Q, formato),
-            null);
+            resumen,
+            filtros,
+            downloadUrl);
     }
 
     private static string? Normalize(string? value)

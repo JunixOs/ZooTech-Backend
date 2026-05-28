@@ -6,9 +6,7 @@ using ZooTech.InterfaceAdapters;
 using ZooTech.InterfaceAdapters.Middleware;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ZooTech API – TK02: GET /vacunos/reportes/listado
-// Proyecto aislado y funcional para la tarea TK02.
-// Diseñado con Clean Architecture para futura integración al sistema principal.
+// ZooTech API – GET /vacunos/reportes/listado
 // ─────────────────────────────────────────────────────────────────────────────
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,7 +18,6 @@ builder.Services
     .AddInterfaceAdapters();
 
 // ── Controladores ─────────────────────────────────────────────────────────────
-// Se descubren los controladores de ZooTech.InterfaceAdapters
 builder.Services.AddControllers()
     .AddApplicationPart(
         typeof(ZooTech.InterfaceAdapters.Modules.Module_ReporteVacuno
@@ -58,7 +55,6 @@ builder.Logging.AddConsole();
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
 // En desarrollo y producción se controla desde configuración o variables de entorno:
-// Cors__AllowedOrigins__0=https://tu-frontend.com
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("FrontendCors", policy =>
@@ -82,7 +78,6 @@ builder.Services.AddCors(options =>
         }
         else
         {
-            // En producción, no abrir CORS si no se configuró explícitamente.
             policy.WithOrigins("https://frontend-no-configurado.local")
                   .AllowAnyHeader()
                   .AllowAnyMethod();
@@ -96,10 +91,10 @@ var app = builder.Build();
 // Pipeline HTTP
 // ─────────────────────────────────────────────────────────────────────────────
 
-// 1. Middleware global de manejo de excepciones (debe ir primero)
+// Middleware global de manejo de excepciones
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-// 2. Swagger UI: desarrollo por defecto, o por variable Swagger__Enabled=true
+// Swagger UI
 var swaggerEnabled = app.Environment.IsDevelopment()
     || app.Configuration.GetValue<bool>("Swagger:Enabled");
 
@@ -119,7 +114,6 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
-// Permite exponer los archivos generados en wwwroot/reportes/vacunos
 var generatedFilesRoot = Path.Combine(AppContext.BaseDirectory, "wwwroot");
 Directory.CreateDirectory(generatedFilesRoot);
 app.UseStaticFiles(new StaticFileOptions
