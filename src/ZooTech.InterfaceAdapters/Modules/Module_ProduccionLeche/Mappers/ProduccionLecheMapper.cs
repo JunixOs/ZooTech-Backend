@@ -44,9 +44,8 @@ public static class ProduccionLecheMapper
     public static ListOrdeniosResponse ToResponse(ListOrdeniosOutput output, int page, int pageSize)
     {
         var data = output.Data.Select(ToResponse).ToList();
-        var total = data.Count;
-        var totalPages = total == 0 ? 0 : 1;
-        return new ListOrdeniosResponse(data, new PaginationResponse(page, pageSize, total, totalPages));
+        var totalPages = (int)Math.Ceiling((double)output.TotalCount / pageSize);
+        return new ListOrdeniosResponse(data, new PaginationResponse(page, pageSize, output.TotalCount, totalPages));
     }
 
     private static OrdenioResponse ToResponse(OrdenioOutput output)
@@ -55,6 +54,7 @@ public static class ProduccionLecheMapper
             output.Codigo,
             output.FechaHora,
             output.VacunoId,
+            output.NombreVacuno,
             output.EncargadoUsuarioId,
             output.Litros,
             output.EstadoOrdenioCode,

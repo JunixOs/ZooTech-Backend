@@ -40,13 +40,14 @@ public sealed class OrdenioRepository : IOrdenioRepository
     public async Task<Ordenio?> GetByIdAsync(long id, CancellationToken cancellationToken)
     {
         var entity = await _dbContext.ordenios
+            .Include(x => x.vacuno)
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.id == id && x.deleted_at == null, cancellationToken);
 
         return entity is null ? null : ToDomain(entity);
     }
 
-    public async Task<IReadOnlyList<OrdenioOutput>> ListAsync(ListOrdeniosQuery query, CancellationToken cancellationToken)
+    public async Task<(IReadOnlyList<OrdenioOutput> Items, int TotalCount)> ListAsync(ListOrdeniosQuery query, CancellationToken cancellationToken)
     {
         var queryable = _dbContext.ordenios
             .AsNoTracking()
@@ -74,6 +75,8 @@ public sealed class OrdenioRepository : IOrdenioRepository
             queryable = queryable.Where(x => x.fecha_hora <= query.FechaHasta.Value);
         }
 
+        var totalCount = await queryable.CountAsync(cancellationToken);
+
         var items = await queryable
             .OrderByDescending(x => x.fecha_hora)
             .Skip((query.Page - 1) * query.PageSize)
@@ -83,6 +86,7 @@ public sealed class OrdenioRepository : IOrdenioRepository
                 x.codigo,
                 x.fecha_hora,
                 x.vacuno_id,
+                x.vacuno.nombre,
                 x.encargado_usuario_id,
                 x.litros,
                 x.estado_ordenio_code,
@@ -91,7 +95,7 @@ public sealed class OrdenioRepository : IOrdenioRepository
                 x.updated_at))
             .ToListAsync(cancellationToken);
 
-        return items;
+        return (items, totalCount);
     }
 
     public async Task<Ordenio> AddAsync(Ordenio ordenio, CancellationToken cancellationToken)
@@ -123,12 +127,21 @@ public sealed class OrdenioRepository : IOrdenioRepository
         return ToDomain(entity);
     }
 
+    public async Task<IReadOnlyList<VacunoSimpleOutput>> ListVacunosAsync(CancellationToken cancellationToken)
+    {
+        return await _dbContext.vacunos
+            .AsNoTracking()
+            .Select(x => new VacunoSimpleOutput(x.id, x.codigo, x.nombre, x.raza_code))
+            .ToListAsync(cancellationToken);
+    }
+
     private static Ordenio ToDomain(ordenio entity)
         => Ordenio.Rehydrate(
             entity.id,
             entity.codigo,
             entity.fecha_hora,
             entity.vacuno_id,
+            entity.vacuno?.nombre ?? string.Empty,
             entity.encargado_usuario_id,
             entity.litros,
             entity.estado_ordenio_code,

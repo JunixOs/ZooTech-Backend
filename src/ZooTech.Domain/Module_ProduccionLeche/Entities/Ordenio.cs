@@ -9,6 +9,7 @@ public sealed class Ordenio
         string codigo,
         DateTime fechaHora,
         long vacunoId,
+        string nombreVacuno,
         long encargadoUsuarioId,
         decimal litros,
         string estadoOrdenioCode,
@@ -24,6 +25,7 @@ public sealed class Ordenio
         Codigo = codigo;
         FechaHora = fechaHora;
         VacunoId = vacunoId;
+        NombreVacuno = nombreVacuno;
         EncargadoUsuarioId = encargadoUsuarioId;
         Litros = litros;
         EstadoOrdenioCode = estadoOrdenioCode;
@@ -40,6 +42,7 @@ public sealed class Ordenio
     public string Codigo { get; private set; }
     public DateTime FechaHora { get; private set; }
     public long VacunoId { get; private set; }
+    public string NombreVacuno { get; private set; }
     public long EncargadoUsuarioId { get; private set; }
     public decimal Litros { get; private set; }
     public string EstadoOrdenioCode { get; private set; }
@@ -72,6 +75,7 @@ public sealed class Ordenio
             codigo: codigo.Trim(),
             fechaHora: fechaHora,
             vacunoId: vacunoId,
+            nombreVacuno: string.Empty,
             encargadoUsuarioId: encargadoUsuarioId,
             litros: litros,
             estadoOrdenioCode: estadoOrdenioCode.Trim(),
@@ -89,6 +93,7 @@ public sealed class Ordenio
         string codigo,
         DateTime fechaHora,
         long vacunoId,
+        string nombreVacuno,
         long encargadoUsuarioId,
         decimal litros,
         string estadoOrdenioCode,
@@ -108,6 +113,7 @@ public sealed class Ordenio
             codigo.Trim(),
             fechaHora,
             vacunoId,
+            nombreVacuno,
             encargadoUsuarioId,
             litros,
             estadoOrdenioCode.Trim(),

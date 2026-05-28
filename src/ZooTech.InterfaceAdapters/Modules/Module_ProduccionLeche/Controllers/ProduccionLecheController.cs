@@ -7,6 +7,7 @@ using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.ListO
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.UpdateOrdenio;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Mappers;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Ports;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
 
@@ -24,6 +25,23 @@ public sealed class ProduccionLecheController : ControllerBase
             model = "modulo produccion leche"
 
         });
+    }
+
+    [HttpGet("vacunos")]
+    public async Task<IActionResult> GetVacunos(
+        [FromServices] IOrdenioRepository repository,
+        CancellationToken cancellationToken)
+    {
+        var list = await repository.ListVacunosAsync(cancellationToken);
+        var mappedList = list.Select(x => new {
+            id = x.Id,
+            
+            nombre = x.Nombre,
+            raza = x.RazaCode,
+            ultimoRegistro = "2023-10-01",
+            promedio = "15L"
+        }).ToList();
+        return Ok(new { data = mappedList });
     }
 
     [HttpPost]

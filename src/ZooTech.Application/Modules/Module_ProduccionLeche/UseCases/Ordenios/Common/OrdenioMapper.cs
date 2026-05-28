@@ -10,6 +10,7 @@ internal static class OrdenioMapper
             ordenio.Codigo,
             ordenio.FechaHora,
             ordenio.VacunoId,
+            ordenio.NombreVacuno,
             ordenio.EncargadoUsuarioId,
             ordenio.Litros,
             ordenio.EstadoOrdenioCode,
