@@ -39,9 +39,16 @@ public class TriajeController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<TriajeResponse>>> GetAll()
+    public async Task<ActionResult<PagedResponse<TriajeResponse>>> GetAll(
+        [FromQuery] int pagina = 1,
+        [FromQuery] int tamano = 10,
+        [FromQuery] string? fecha = null,
+        [FromQuery] string? codigo = null,
+        [FromQuery] string? nombre = null,
+        [FromQuery] string? tipoPeso = null,
+        [FromQuery] decimal? pesoKg = null)
     {
-        var result = await _getAllUseCase.ExecuteAsync();
+        var result = await _getAllUseCase.ExecuteAsync(pagina, tamano, fecha, codigo, nombre, tipoPeso, pesoKg);
         return Ok(result);
     }
 
