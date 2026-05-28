@@ -215,3 +215,5 @@ copilot/
 
 *.cache
 .cache/
+*.md
+*.json
