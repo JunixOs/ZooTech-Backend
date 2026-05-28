@@ -40,6 +40,7 @@ Published/
 # =========================
 
 *.log
+errores.txt
 logs/
 Log/
 Logs/
