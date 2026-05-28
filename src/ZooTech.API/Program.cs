@@ -27,6 +27,7 @@ builder.Services.AddCors(options =>
         var frontendPort = builder.Configuration["Frontend:FrontendPort"];
         var frontendIP = builder.Configuration["Frontend:FrontendIP"];
         var frontendProtocol = builder.Configuration["Frontend:FrontendProtocol"];
+
         policy.WithOrigins($"{frontendProtocol}://{frontendIP}:{frontendPort}")
             .AllowAnyHeader()
             .AllowAnyMethod();
