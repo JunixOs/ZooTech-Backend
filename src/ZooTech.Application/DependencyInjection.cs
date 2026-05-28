@@ -1,6 +1,12 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases;
 
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.CreateOrdenio;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.DeleteOrdenio;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GetOrdenioById;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.ListOrdenios;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.UpdateOrdenio;
+
 namespace ZooTech.Application;
 
 public static class DependencyInjection
@@ -46,10 +52,14 @@ public static class DependencyInjection
         //     typeof(ValidationBehavior<,>));
 
         // ============================================
-        // Use Cases / Services
+        // Use Cases - Module_ProduccionLeche
         // ============================================
 
-        // services.AddScoped<IMyService, MyService>();
+        services.AddScoped<ICreateOrdenioInputPort, CreateOrdenioInteractor>();
+        services.AddScoped<IGetOrdenioByIdInputPort, GetOrdenioByIdInteractor>();
+        services.AddScoped<IListOrdeniosInputPort, ListOrdeniosInteractor>();
+        services.AddScoped<IUpdateOrdenioInputPort, UpdateOrdenioInteractor>();
+        services.AddScoped<IDeleteOrdenioInputPort, DeleteOrdenioInteractor>();
 
         return services;
     }
