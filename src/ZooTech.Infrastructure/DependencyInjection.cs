@@ -2,7 +2,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ZooTech.Application.Modules.Animals.UseCases.DeleteAnimal;
+using ZooTech.Application.Modules.Animals.UseCases.ReportAnimalList;
 using ZooTech.Infrastructure.Persistence.Context;
+using ZooTech.Infrastructure.Reports;
 using ZooTech.Infrastructure.Repositories;
 
 namespace ZooTech.Infrastructure;
@@ -35,6 +37,8 @@ public static class DependencyInjection
 
         // services.AddScoped<IAnimalRepository, AnimalRepository>();
         services.AddScoped<IAnimalRepository, AnimalRepository>();
+        services.AddScoped<IAnimalReportRepository, AnimalReportRepository>();
+        services.AddScoped<IAnimalReportExcelService, AnimalReportExcelService>();
 
         // ============================================
         // External Services
