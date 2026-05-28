@@ -45,6 +45,10 @@ public static class VacunoListMapper
                 response.Filtros.FechaDesde,
                 response.Filtros.FechaHasta,
                 response.Filtros.Q,
+                response.Filtros.Raza,
+                response.Filtros.Procedencia,
+                response.Filtros.Estado,
+                response.Filtros.AptoPara,
                 response.Filtros.Formato));
     }
 
