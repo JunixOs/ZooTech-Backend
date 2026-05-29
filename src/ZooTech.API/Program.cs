@@ -1,3 +1,5 @@
+using Asp.Versioning;
+using Microsoft.OpenApi;
 using ZooTech.Application;
 using ZooTech.Infrastructure;
 using ZooTech.InterfaceAdapters;
@@ -14,6 +16,20 @@ builder.Services
     .AddControllers()
     .AddApplicationPart(typeof(HomeController).Assembly)
     .AddApplicationPart(typeof(ProduccionLecheController).Assembly);
+
+// Configuracion del versionado de la API
+builder.Services.AddApiVersioning(options =>
+{
+    options.DefaultApiVersion = new ApiVersion(1, 0);
+    options.AssumeDefaultVersionWhenUnspecified= true;
+    options.ReportApiVersions = true;
+})
+.AddApiExplorer(options =>
+{
+    options.GroupNameFormat = "'v'VVV";
+    options.SubstituteApiVersionInUrl = true;
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -34,6 +50,15 @@ builder.Services.AddSwaggerGen(options =>
         Title = "Public API",
         Version = "v1"
     });
+
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "ZooTech API",
+        Version = "v1",
+        Description = "API para la gestión de la granja ZooTech, incluyendo módulos de producción de leche, alimentación, salud animal, entre otros.",
+
+    });
+
 });
 
 builder.Services
@@ -55,6 +80,7 @@ builder.Services.AddCors(options =>
     });
 });
 
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -74,10 +100,17 @@ if (app.Environment.IsDevelopment())
         options.SwaggerEndpoint(
             "/swagger/users/swagger.json",
             "Users API");
+
+        options.SwaggerEndpoint(
+            "/swagger/v1/swagger.json",
+            "ZooTech API"
+        );
     });
 
     // app.MapOpenApi();
 }
+
+
 
 app.UseHttpsRedirection();
 app.UseAuthorization();

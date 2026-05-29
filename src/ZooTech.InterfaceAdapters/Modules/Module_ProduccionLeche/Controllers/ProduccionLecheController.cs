@@ -8,11 +8,13 @@ using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Updat
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Mappers;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Ports;
+using Asp.Versioning;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
 
 [ApiController]
-[Route("v1/produccion-leche")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/produccion-leche")]
 public sealed class ProduccionLecheController : ControllerBase
 {
 
