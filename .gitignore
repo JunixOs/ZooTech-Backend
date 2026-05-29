@@ -209,10 +209,4 @@ BenchmarkDotNet.Artifacts/
 
 copilot/
 .ai/
-
-# =========================
-# Misc
-# =========================
-
-*.cache
-.cache/
+ 
