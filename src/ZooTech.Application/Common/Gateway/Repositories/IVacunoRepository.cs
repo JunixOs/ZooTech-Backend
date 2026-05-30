@@ -18,4 +18,10 @@ public interface IVacunoRepository
         VacunoUtilizacionHistorial utilizacion,
         VacunoFoto? foto,
         CancellationToken ct = default);
+
+    Task<IReadOnlyList<Vacuno>> ListarAsync(int page, int limit, string? q, string? estado, CancellationToken ct = default);
+
+    Task<int> ContarAsync(string? q, string? estado, CancellationToken ct = default);
+
+    Task<Vacuno?> ObtenerPorIdAsync(int id, CancellationToken ct = default);
 }

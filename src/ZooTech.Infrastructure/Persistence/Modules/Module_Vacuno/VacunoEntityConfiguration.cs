@@ -37,8 +37,20 @@ public class VacunoEntityConfiguration :
             .IsRequired();
 
         builder.Property(v => v.IdRaza).HasColumnName("id_raza");
+        builder.Property(v => v.Raza)
+            .HasColumnName("raza")
+            .HasMaxLength(15)
+            .IsRequired();
         builder.Property(v => v.IdColor).HasColumnName("id_color");
+        builder.Property(v => v.Color)
+            .HasColumnName("color")
+            .HasMaxLength(15)
+            .IsRequired();
         builder.Property(v => v.IdSexo).HasColumnName("id_sexo");
+        builder.Property(v => v.Sexo)
+            .HasColumnName("sexo")
+            .HasMaxLength(15)
+            .IsRequired();
 
         builder.Property(v => v.CodigoPadre)
             .HasColumnName("codigo_padre")
@@ -51,9 +63,25 @@ public class VacunoEntityConfiguration :
             .IsRequired();
 
         builder.Property(v => v.IdGranja).HasColumnName("id_granja");
+        builder.Property(v => v.Granja)
+            .HasColumnName("granja")
+            .HasMaxLength(15)
+            .IsRequired();
         builder.Property(v => v.IdDistrito).HasColumnName("id_distrito");
+        builder.Property(v => v.Distrito)
+            .HasColumnName("distrito")
+            .HasMaxLength(15)
+            .IsRequired();
         builder.Property(v => v.IdDepartamento).HasColumnName("id_departamento");
+        builder.Property(v => v.Departamento)
+            .HasColumnName("departamento")
+            .HasMaxLength(15)
+            .IsRequired();
         builder.Property(v => v.IdProvincia).HasColumnName("id_provincia");
+        builder.Property(v => v.Provincia)
+            .HasColumnName("provincia")
+            .HasMaxLength(15)
+            .IsRequired();
         builder.Property(v => v.IdEstado).HasColumnName("id_estado");
 
         builder.Property(v => v.CreadoEn)
@@ -118,6 +146,10 @@ public class VacunoEntityConfiguration :
         builder.Property(u => u.Id).HasColumnName("id").UseIdentityColumn();
         builder.Property(u => u.IdVacuno).HasColumnName("id_vacuno");
         builder.Property(u => u.IdTipoUtilizacion).HasColumnName("id_tipo_utilizacion");
+        builder.Property(u => u.AptoPara)
+            .HasColumnName("apto_para")
+            .HasMaxLength(30)
+            .IsRequired();
         builder.Property(u => u.FechaEspecificacion)
             .HasColumnName("fecha_especificacion")
             .HasColumnType("date");

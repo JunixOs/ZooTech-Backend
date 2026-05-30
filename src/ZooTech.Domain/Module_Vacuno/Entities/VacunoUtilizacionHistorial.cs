@@ -8,6 +8,7 @@ public class VacunoUtilizacionHistorial
     public int Id { get; private set; }
     public int IdVacuno { get; private set; }
     public int IdTipoUtilizacion { get; private set; }
+    public string AptoPara { get; private set; } = default!;
     public DateOnly FechaEspecificacion { get; private set; }
     public string? Observaciones { get; private set; }
 
@@ -18,6 +19,7 @@ public class VacunoUtilizacionHistorial
     public static VacunoUtilizacionHistorial Crear(
         int idVacuno,
         int idTipoUtilizacion,
+        string aptoPara,
         DateOnly fechaEspecificacion,
         string? observaciones)
     {
@@ -25,6 +27,7 @@ public class VacunoUtilizacionHistorial
         {
             IdVacuno = idVacuno,
             IdTipoUtilizacion = idTipoUtilizacion,
+            AptoPara = aptoPara,
             FechaEspecificacion = fechaEspecificacion,
             Observaciones = observaciones
         };

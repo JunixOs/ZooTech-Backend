@@ -40,8 +40,7 @@ public sealed class RegistrarVacunoHandler : IRequestHandler<RegistrarVacunoComm
         if (yaExiste)
         {
             // Lanzamos excepción de dominio; el middleware la mapea a 409 Conflict
-            throw new VacunoYaExisteException(
-                $"Ya existe un vacuno con el código '{command.Codigo}'.");
+            throw new VacunoYaExisteException(command.Codigo);
         }
 
         var ahora = _timeProvider.UtcNow;
@@ -52,14 +51,21 @@ public sealed class RegistrarVacunoHandler : IRequestHandler<RegistrarVacunoComm
             nombre: command.Nombre,
             fechaNacimiento: command.FechaNacimiento,
             idRaza: command.IdRaza,
+            raza: command.Raza,
             idColor: command.IdColor,
+            color: command.Color,
             idSexo: command.IdSexo,
+            sexo: command.Sexo,
             codigoPadre: command.CodigoPadre,
             codigoMadre: command.CodigoMadre,
             idGranja: await ResolverGranjaIdAsync(command.NombreGranja, cancellationToken),
+            granja: command.NombreGranja,
             idDistrito: command.IdDistrito,
+            distrito: command.Distrito,
             idDepartamento: command.IdDepartamento,
+            departamento: command.Departamento,
             idProvincia: command.IdProvincia,
+            provincia: command.Provincia,
             idEstadoVivo: IdEstadoVivo,
             ahora: ahora
         );
@@ -75,6 +81,7 @@ public sealed class RegistrarVacunoHandler : IRequestHandler<RegistrarVacunoComm
         var utilizacion = VacunoUtilizacionHistorial.Crear(
             idVacuno: 0,
             idTipoUtilizacion: command.IdTipoUtilizacion,
+            aptoPara: command.AptoPara,
             fechaEspecificacion: command.FechaEspecificacion,
             observaciones: command.Observaciones
         );

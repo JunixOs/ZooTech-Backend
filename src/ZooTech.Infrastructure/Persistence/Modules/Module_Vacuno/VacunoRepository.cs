@@ -55,6 +55,7 @@ public sealed class VacunoRepository : IVacunoRepository
             var utilizacionConFk = VacunoUtilizacionHistorial.Crear(
                 idVacuno: idVacuno,
                 idTipoUtilizacion: utilizacion.IdTipoUtilizacion,
+                aptoPara: utilizacion.AptoPara,
                 fechaEspecificacion: utilizacion.FechaEspecificacion,
                 observaciones: utilizacion.Observaciones
             );
@@ -78,5 +79,57 @@ public sealed class VacunoRepository : IVacunoRepository
             await transaction.RollbackAsync(ct);
             throw;
         }
+    }
+
+    public async Task<IReadOnlyList<Vacuno>> ListarAsync(
+        int page,
+        int limit,
+        string? q,
+        string? estado,
+        CancellationToken ct = default)
+    {
+        return await AplicarFiltros(q, estado)
+            .Include(v => v.Adquisicion)
+            .Include(v => v.Utilizacion)
+            .Include(v => v.Foto)
+            .OrderByDescending(v => v.CreadoEn)
+            .Skip((page - 1) * limit)
+            .Take(limit)
+            .AsNoTracking()
+            .ToListAsync(ct);
+    }
+
+    public async Task<int> ContarAsync(string? q, string? estado, CancellationToken ct = default)
+    {
+        return await AplicarFiltros(q, estado).CountAsync(ct);
+    }
+
+    public async Task<Vacuno?> ObtenerPorIdAsync(int id, CancellationToken ct = default)
+    {
+        return await _context.Vacunos
+            .Include(v => v.Adquisicion)
+            .Include(v => v.Utilizacion)
+            .Include(v => v.Foto)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(v => v.Id == id, ct);
+    }
+
+    private IQueryable<Vacuno> AplicarFiltros(string? q, string? estado)
+    {
+        var query = _context.Vacunos.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(q))
+        {
+            var texto = q.Trim().ToUpperInvariant();
+            query = query.Where(v => v.Codigo.Contains(texto) || v.Nombre.Contains(q.Trim()));
+        }
+
+        if (string.Equals(estado, "vivo", StringComparison.OrdinalIgnoreCase))
+            query = query.Where(v => v.IdEstado == 1);
+
+        if (string.Equals(estado, "muerto", StringComparison.OrdinalIgnoreCase))
+            query = query.Where(v => v.IdEstado != 1);
+
+        return query;
     }
 }

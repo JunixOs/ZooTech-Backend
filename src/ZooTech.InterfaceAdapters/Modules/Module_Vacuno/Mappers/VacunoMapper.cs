@@ -11,6 +11,37 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Mappers;
 /// </summary>
 public static class VacunoMapper
 {
+    private static readonly Dictionary<string, int> TiposAdquisicion = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["monta"] = 1,
+        ["compra"] = 2
+    };
+
+    private static readonly Dictionary<string, int> Razas = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["Jersey"] = 1,
+        ["Holstein"] = 2,
+        ["Angus"] = 3,
+        ["Hereford"] = 4,
+        ["Simmental"] = 5,
+        ["Brown Swiss"] = 6,
+        ["Brahman"] = 7,
+        ["Charolais"] = 8
+    };
+
+    private static readonly Dictionary<string, int> Sexos = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["macho"] = 1,
+        ["hembra"] = 2
+    };
+
+    private static readonly Dictionary<string, int> TiposUtilizacion = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["produccion_leche"] = 1,
+        ["carne"] = 2,
+        ["reproduccion"] = 3
+    };
+
     /// <summary>
     /// Convierte el Request HTTP en el Command de Application.
     /// Aquí se hace el puente entre IFormFile (ASP.NET) y Stream (dominio).
@@ -22,18 +53,25 @@ public static class VacunoMapper
             Codigo = request.Codigo.Trim().ToUpperInvariant(),
             Nombre = request.Nombre.Trim(),
             FechaNacimiento = request.FechaNacimiento,
-            IdTipoAdquisicion = request.IdTipoAdquisicion,
+            IdTipoAdquisicion = Resolver(TiposAdquisicion, request.AdquisicionPor),
             PrecioCompra = request.PrecioCompra,
-            IdRaza = request.IdRaza,
-            IdColor = request.IdColor,
-            IdSexo = request.IdSexo,
+            IdRaza = Resolver(Razas, request.Raza),
+            Raza = request.Raza.Trim(),
+            IdColor = ResolverColor(request.Color),
+            Color = request.Color.Trim(),
+            IdSexo = Resolver(Sexos, request.Sexo),
+            Sexo = request.Sexo.Trim().ToLowerInvariant(),
             CodigoPadre = request.CodigoPadre.Trim().ToUpperInvariant(),
             CodigoMadre = request.CodigoMadre.Trim().ToUpperInvariant(),
-            NombreGranja = request.NombreGranja.Trim(),
-            IdDistrito = request.IdDistrito,
-            IdDepartamento = request.IdDepartamento,
-            IdProvincia = request.IdProvincia,
-            IdTipoUtilizacion = request.IdTipoUtilizacion,
+            NombreGranja = request.Granja.Trim(),
+            IdDistrito = ResolverUbigeo(request.Distrito),
+            Distrito = request.Distrito.Trim(),
+            IdDepartamento = ResolverUbigeo(request.Departamento),
+            Departamento = request.Departamento.Trim(),
+            IdProvincia = ResolverUbigeo(request.Provincia),
+            Provincia = request.Provincia.Trim(),
+            IdTipoUtilizacion = Resolver(TiposUtilizacion, request.AptoPara),
+            AptoPara = request.AptoPara.Trim(),
             FechaEspecificacion = request.FechaEspecificacion,
             Observaciones = request.Observaciones?.Trim(),
 
@@ -41,6 +79,38 @@ public static class VacunoMapper
             FotoStream = request.Foto?.OpenReadStream(),
             FotoNombreOriginal = request.Foto?.FileName
         };
+    }
+
+    public static string NombreRaza(int id) => Razas.FirstOrDefault(x => x.Value == id).Key ?? $"Raza {id}";
+    public static string NombreSexo(int id) => Sexos.FirstOrDefault(x => x.Value == id).Key ?? "hembra";
+    public static string NombreTipoAdquisicion(int id) => TiposAdquisicion.FirstOrDefault(x => x.Value == id).Key ?? "monta";
+    public static string NombreTipoUtilizacion(int id) => TiposUtilizacion.FirstOrDefault(x => x.Value == id).Key ?? "produccion_leche";
+
+    private static int Resolver(Dictionary<string, int> catalogo, string valor)
+    {
+        if (catalogo.TryGetValue(valor.Trim(), out var id))
+            return id;
+
+        return 0;
+    }
+
+    private static int ResolverColor(string color)
+    {
+        var normalizado = color.Trim().ToLowerInvariant();
+        return normalizado switch
+        {
+            "negro" => 1,
+            "blanco" => 2,
+            "marron" or "marrón" => 3,
+            "gris" => 4,
+            "rojizo" or "rojo" => 5,
+            _ => 1
+        };
+    }
+
+    private static int ResolverUbigeo(string valor)
+    {
+        return string.IsNullOrWhiteSpace(valor) ? 0 : Math.Abs(valor.Trim().ToUpperInvariant().GetHashCode() % 10000) + 1;
     }
 
     /// <summary>

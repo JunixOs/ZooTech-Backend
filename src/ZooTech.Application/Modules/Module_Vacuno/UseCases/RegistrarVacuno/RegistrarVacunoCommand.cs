@@ -21,10 +21,13 @@ public sealed record RegistrarVacunoCommand : IRequest<RegistrarVacunoResult>
     // ── Características ───────────────────────────────────────────────
     /// <summary>FK a cat_raza</summary>
     public required int IdRaza { get; init; }
+    public required string Raza { get; init; }
     /// <summary>FK a cat_color</summary>
     public required int IdColor { get; init; }
+    public required string Color { get; init; }
     /// <summary>FK a cat_sexo</summary>
     public required int IdSexo { get; init; }
+    public required string Sexo { get; init; }
 
     // ── Trazabilidad ──────────────────────────────────────────────────
     public required string CodigoPadre { get; init; }
@@ -33,12 +36,16 @@ public sealed record RegistrarVacunoCommand : IRequest<RegistrarVacunoResult>
     // ── Procedencia ───────────────────────────────────────────────────
     public required string NombreGranja { get; init; }
     public required int IdDistrito { get; init; }
+    public required string Distrito { get; init; }
     public required int IdDepartamento { get; init; }
+    public required string Departamento { get; init; }
     public required int IdProvincia { get; init; }
+    public required string Provincia { get; init; }
 
     // ── Utilización ───────────────────────────────────────────────────
     /// <summary>FK a cat_tipo_utilizacion</summary>
     public required int IdTipoUtilizacion { get; init; }
+    public required string AptoPara { get; init; }
     public required DateOnly FechaEspecificacion { get; init; }
 
     // ── Opcionales ────────────────────────────────────────────────────

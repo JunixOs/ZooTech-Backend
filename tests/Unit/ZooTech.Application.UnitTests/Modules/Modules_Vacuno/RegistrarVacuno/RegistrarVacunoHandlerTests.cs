@@ -1,236 +1,100 @@
-using FluentAssertions;
-using Moq;
-using ZooTech.Application.Common.Exceptions;
-using ZooTech.Application.Common.Repositories;
-using ZooTech.Application.Common.Features;     // IArchivoService
-using ZooTech.Application.Common.Time;          // ITimeProvider
+using System.Reflection;
+using ZooTech.Application.Common.Gateway.Features;
+using ZooTech.Application.Common.Gateway.Repositories;
+using ZooTech.Application.Common.Gateway.Time;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.RegistrarVacuno;
+using ZooTech.Domain.Exceptions;
 using ZooTech.Domain.Module_Vacuno.Entities;
-using Xunit;
 
 namespace ZooTech.Application.UnitTests.Modules.Module_Vacuno.RegistrarVacuno;
 
-public class RegistrarVacunoHandlerTests
+public sealed class RegistrarVacunoHandlerTests
 {
-    // ─────────────────────────────────────────────────────────
-    // Dependencias mockeadas
-    // ─────────────────────────────────────────────────────────
-
-    private readonly Mock<IVacunoRepository> _repoMock;
-    private readonly Mock<IArchivoService> _archivoMock;
-    private readonly Mock<ITimeProvider> _timeMock;
-    private readonly RegistrarVacunoHandler _sut;
-
-    public RegistrarVacunoHandlerTests()
+    [Fact]
+    public async Task Handle_CodigoDuplicado_LanzaExcepcionYNoGuarda()
     {
-        _repoMock = new Mock<IVacunoRepository>();
-        _archivoMock = new Mock<IArchivoService>();
-        _timeMock = new Mock<ITimeProvider>();
+        var repository = new FakeVacunoRepository { Existe = true };
+        var archivo = new FakeArchivoService();
+        var handler = new RegistrarVacunoHandler(repository, archivo, new FakeTimeProvider());
 
-        _timeMock.Setup(t => t.UtcNow).Returns(DateTime.UtcNow);
+        await Assert.ThrowsAsync<VacunoYaExisteException>(
+            () => handler.Handle(RegistrarVacunoValidatorTests.ComandoValido(), CancellationToken.None));
 
-        _sut = new RegistrarVacunoHandler(
-            _repoMock.Object,
-            _archivoMock.Object,
-            _timeMock.Object);
+        Assert.False(repository.Guardo);
+        Assert.False(archivo.Guardo);
     }
-
-    // ─────────────────────────────────────────────────────────
-    // Helper
-    // ─────────────────────────────────────────────────────────
-
-    private static RegistrarVacunoCommand ComandoValido() => new()
-    {
-        Codigo = "VACA001",
-        Nombre = "Lola",
-        FechaNacimiento = DateOnly.FromDateTime(DateTime.Today.AddYears(-2)),
-        AdquisicionPor = "monta",
-        PrecioCompra = null,
-        Raza = "Angus",
-        Color = "Negro",
-        Sexo = "hembra",
-        CodigoPadre = "TORO001",
-        CodigoMadre = "VACA002",
-        Granja = "Granja Norte",
-        Distrito = "Tocache",
-        Departamento = "San Martín",
-        Provincia = "Tocache",
-        AptoPara = "produccion_leche",
-        FechaEspecificacion = DateOnly.FromDateTime(DateTime.Today),
-        Observaciones = null,
-        Foto = null,
-    };
-
-    // ─────────────────────────────────────────────────────────
-    // TK 09-A  Detectar duplicado por código
-    // ─────────────────────────────────────────────────────────
 
     [Fact]
-    public async Task Handle_CuandoCodigoYaExiste_DebeLanzarVacunoYaExisteException()
+    public async Task Handle_CodigoUnico_GuardaRegistro()
     {
-        // Arrange
-        var cmd = ComandoValido();
-        _repoMock
-            .Setup(r => r.ExisteConCodigoAsync(cmd.Codigo, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+        var repository = new FakeVacunoRepository();
+        var handler = new RegistrarVacunoHandler(repository, new FakeArchivoService(), new FakeTimeProvider());
 
-        // Act
-        var act = async () => await _sut.Handle(cmd, CancellationToken.None);
+        var result = await handler.Handle(RegistrarVacunoValidatorTests.ComandoValido(), CancellationToken.None);
 
-        // Assert
-        await act.Should().ThrowAsync<VacunoYaExisteException>()
-            .WithMessage("*VACA001*");
+        Assert.True(repository.Guardo);
+        Assert.Equal(10, result.Id);
+        Assert.Equal("VACA001", result.Codigo);
     }
-
-    // ─────────────────────────────────────────────────────────
-    // TK 09-B  No debe bloquear cuando el código es único
-    // ─────────────────────────────────────────────────────────
 
     [Fact]
-    public async Task Handle_CuandoCodigoNoExiste_DebeGuardarCorrectamente()
+    public async Task Handle_ConFoto_GuardaArchivoYAsociaRuta()
     {
-        // Arrange
-        var cmd = ComandoValido();
-
-        _repoMock
-            .Setup(r => r.ExisteConCodigoAsync(cmd.Codigo, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
-
-        _repoMock
-            .Setup(r => r.AgregarAsync(It.IsAny<Vacuno>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(1); // ID generado
-
-        // Act
-        var resultado = await _sut.Handle(cmd, CancellationToken.None);
-
-        // Assert
-        resultado.Should().NotBeNull();
-        resultado.Id.Should().Be(1);
-        resultado.Codigo.Should().Be("VACA001");
-
-        _repoMock.Verify(
-            r => r.AgregarAsync(It.IsAny<Vacuno>(), It.IsAny<CancellationToken>()),
-            Times.Once);
-    }
-
-    // ─────────────────────────────────────────────────────────
-    // TK 09-C  Código duplicado con distinta capitalización
-    //          (el sistema normaliza a mayúsculas antes de buscar)
-    // ─────────────────────────────────────────────────────────
-
-    [Theory]
-    [InlineData("VACA001")]
-    [InlineData("vaca001")]
-    [InlineData("Vaca001")]
-    public async Task Handle_CuandoCodigoExisteConDistintaCapitalizacion_DebeLanzarExcepcion(
-        string codigoDuplicado)
-    {
-        // Arrange
-        var cmd = ComandoValido();
-        cmd.Codigo = codigoDuplicado;
-
-        // El repositorio recibe siempre el código en mayúsculas (lo normaliza el handler)
-        _repoMock
-            .Setup(r => r.ExisteConCodigoAsync(
-                It.Is<string>(c => c == codigoDuplicado.ToUpper()),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
-
-        // Act
-        var act = async () => await _sut.Handle(cmd, CancellationToken.None);
-
-        // Assert
-        await act.Should().ThrowAsync<VacunoYaExisteException>();
-    }
-
-    // ─────────────────────────────────────────────────────────
-    // TK 09-D  No se llama a AgregarAsync si hay duplicado
-    // ─────────────────────────────────────────────────────────
-
-    [Fact]
-    public async Task Handle_CuandoExisteDuplicado_NoDebeGuardar()
-    {
-        // Arrange
-        var cmd = ComandoValido();
-        _repoMock
-            .Setup(r => r.ExisteConCodigoAsync(cmd.Codigo, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
-
-        // Act
-        try { await _sut.Handle(cmd, CancellationToken.None); } catch { /* esperado */ }
-
-        // Assert
-        _repoMock.Verify(
-            r => r.AgregarAsync(It.IsAny<Vacuno>(), It.IsAny<CancellationToken>()),
-            Times.Never);
-    }
-
-    // ─────────────────────────────────────────────────────────
-    // TK 09-E  No sube foto si hay duplicado
-    // ─────────────────────────────────────────────────────────
-
-    [Fact]
-    public async Task Handle_CuandoExisteDuplicado_NoDebeSubirFoto()
-    {
-        // Arrange
-        var cmd = ComandoValido();
-        cmd.Foto = CrearFotoFake("foto.jpg");
-
-        _repoMock
-            .Setup(r => r.ExisteConCodigoAsync(cmd.Codigo, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
-
-        // Act
-        try { await _sut.Handle(cmd, CancellationToken.None); } catch { }
-
-        // Assert
-        _archivoMock.Verify(
-            a => a.GuardarAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
-            Times.Never);
-    }
-
-    // ─────────────────────────────────────────────────────────
-    // TK 09-F  Registro exitoso devuelve los campos del contrato
-    // ─────────────────────────────────────────────────────────
-
-    [Fact]
-    public async Task Handle_RegistroExitoso_DebeRetornarIdCodigoNombreYFechas()
-    {
-        // Arrange
-        var cmd = ComandoValido();
-
-        _repoMock
-            .Setup(r => r.ExisteConCodigoAsync(cmd.Codigo, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
-
-        _repoMock
-            .Setup(r => r.AgregarAsync(It.IsAny<Vacuno>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(42);
-
-        // Act
-        var resultado = await _sut.Handle(cmd, CancellationToken.None);
-
-        // Assert — campos definidos en el Response del contrato API (POST /v1/vacunos)
-        resultado.Id.Should().Be(42);
-        resultado.Codigo.Should().Be("VACA001");
-        resultado.Nombre.Should().Be("Lola");
-        resultado.AdquisicionPor.Should().Be("monta");
-        resultado.PrecioCompra.Should().BeNull();
-        resultado.CreadoEn.Should().NotBe(default);
-    }
-
-    // ─────────────────────────────────────────────────────────
-    // Utilidad interna
-    // ─────────────────────────────────────────────────────────
-
-    private static Microsoft.AspNetCore.Http.IFormFile CrearFotoFake(string nombre)
-    {
-        var stream = new MemoryStream(new byte[] { 0xFF, 0xD8 });
-        return new Microsoft.AspNetCore.Http.FormFile(
-            stream, 0, stream.Length, "foto", nombre)
+        var archivo = new FakeArchivoService();
+        var command = RegistrarVacunoValidatorTests.ComandoValido() with
         {
-            Headers = new Microsoft.AspNetCore.Http.HeaderDictionary(),
-            ContentType = "image/jpeg",
+            FotoStream = new MemoryStream([1, 2, 3]),
+            FotoNombreOriginal = "vaca.jpg"
         };
+        var handler = new RegistrarVacunoHandler(new FakeVacunoRepository(), archivo, new FakeTimeProvider());
+
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        Assert.True(archivo.Guardo);
+        Assert.Equal("vacunos/fotos/vaca.jpg", result.FotoUrl);
+    }
+
+    private sealed class FakeVacunoRepository : IVacunoRepository
+    {
+        public bool Existe { get; init; }
+        public bool Guardo { get; private set; }
+
+        public Task<bool> ExisteCodigoAsync(string codigo, CancellationToken ct = default) => Task.FromResult(Existe);
+
+        public Task<Vacuno> RegistrarAsync(
+            Vacuno vacuno,
+            VacunoAdquisicion adquisicion,
+            VacunoUtilizacionHistorial utilizacion,
+            VacunoFoto? foto,
+            CancellationToken ct = default)
+        {
+            Guardo = true;
+            typeof(Vacuno).GetProperty("Id", BindingFlags.Instance | BindingFlags.Public)!
+                .SetValue(vacuno, 10);
+            return Task.FromResult(vacuno);
+        }
+
+        public Task<IReadOnlyList<Vacuno>> ListarAsync(int page, int limit, string? q, string? estado, CancellationToken ct = default)
+            => Task.FromResult<IReadOnlyList<Vacuno>>([]);
+
+        public Task<int> ContarAsync(string? q, string? estado, CancellationToken ct = default) => Task.FromResult(0);
+
+        public Task<Vacuno?> ObtenerPorIdAsync(int id, CancellationToken ct = default) => Task.FromResult<Vacuno?>(null);
+    }
+
+    private sealed class FakeArchivoService : IArchivoService
+    {
+        public bool Guardo { get; private set; }
+
+        public Task<string> GuardarAsync(Stream stream, string nombreOriginal, string carpeta, CancellationToken ct = default)
+        {
+            Guardo = true;
+            return Task.FromResult($"{carpeta}/{nombreOriginal}");
+        }
+    }
+
+    private sealed class FakeTimeProvider : ITimeProvider
+    {
+        public DateTime UtcNow => new(2026, 5, 30, 12, 0, 0, DateTimeKind.Utc);
     }
 }

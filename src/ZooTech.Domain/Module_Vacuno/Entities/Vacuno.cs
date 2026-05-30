@@ -17,8 +17,11 @@ public class Vacuno
 
     // --- Características físicas ---
     public int IdRaza { get; private set; }
+    public string Raza { get; private set; } = default!;
     public int IdColor { get; private set; }
+    public string Color { get; private set; } = default!;
     public int IdSexo { get; private set; }
+    public string Sexo { get; private set; } = default!;
 
     // --- Trazabilidad parental ---
     public string CodigoPadre { get; private set; } = default!;
@@ -26,9 +29,13 @@ public class Vacuno
 
     // --- Procedencia ---
     public int IdGranja { get; private set; }
+    public string Granja { get; private set; } = default!;
     public int IdDistrito { get; private set; }
+    public string Distrito { get; private set; } = default!;
     public int IdDepartamento { get; private set; }
+    public string Departamento { get; private set; } = default!;
     public int IdProvincia { get; private set; }
+    public string Provincia { get; private set; } = default!;
 
     // --- Estado ---
     public int IdEstado { get; private set; }
@@ -54,14 +61,21 @@ public class Vacuno
         string nombre,
         DateOnly fechaNacimiento,
         int idRaza,
+        string raza,
         int idColor,
+        string color,
         int idSexo,
+        string sexo,
         string codigoPadre,
         string codigoMadre,
         int idGranja,
+        string granja,
         int idDistrito,
+        string distrito,
         int idDepartamento,
+        string departamento,
         int idProvincia,
+        string provincia,
         int idEstadoVivo,
         DateTime ahora)
     {
@@ -71,14 +85,21 @@ public class Vacuno
             Nombre = nombre,
             FechaNacimiento = fechaNacimiento,
             IdRaza = idRaza,
+            Raza = raza,
             IdColor = idColor,
+            Color = color,
             IdSexo = idSexo,
+            Sexo = sexo,
             CodigoPadre = codigoPadre.ToUpperInvariant(),
             CodigoMadre = codigoMadre.ToUpperInvariant(),
             IdGranja = idGranja,
+            Granja = granja,
             IdDistrito = idDistrito,
+            Distrito = distrito,
             IdDepartamento = idDepartamento,
+            Departamento = departamento,
             IdProvincia = idProvincia,
+            Provincia = provincia,
             IdEstado = idEstadoVivo,
             CreadoEn = ahora,
             ActualizadoEn = ahora

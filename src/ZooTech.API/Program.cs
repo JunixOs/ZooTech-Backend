@@ -1,7 +1,9 @@
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using ZooTech.Application.Common.Behaviors;
 using ZooTech.Application.Common.Gateway.Features;
 using ZooTech.Application.Common.Gateway.Repositories;
@@ -19,13 +21,43 @@ var builder = WebApplication.CreateBuilder(args);
 // DbContext SQL Server
 builder.Services.AddDbContext<GanaderiaDbContext>(options =>
 {
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+        ?? builder.Configuration.GetConnectionString("DefaultString")
+        ?? throw new InvalidOperationException("Falta la cadena de conexion DefaultConnection o DefaultString.");
+
+    options.UseSqlServer(connectionString);
 });
 
 // Controllers
 builder.Services
     .AddControllers()
     .AddApplicationPart(typeof(VacunoController).Assembly);
+
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var details = context.ModelState
+            .Where(x => x.Value?.Errors.Count > 0)
+            .SelectMany(x => x.Value!.Errors.Select(error => new
+            {
+                field = x.Key,
+                message = string.IsNullOrWhiteSpace(error.ErrorMessage)
+                    ? "Campo invalido."
+                    : error.ErrorMessage
+            }));
+
+        return new BadRequestObjectResult(new
+        {
+            error = new
+            {
+                code = "VALIDATION_ERROR",
+                message = "Los datos enviados no son validos.",
+                details
+            }
+        });
+    };
+});
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
@@ -86,9 +118,24 @@ if (app.Environment.IsDevelopment())
 }
 
 // Middlewares
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+var storageBasePath = builder.Configuration["Storage:BasePath"];
+if (!string.IsNullOrWhiteSpace(storageBasePath))
+{
+    Directory.CreateDirectory(storageBasePath);
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(storageBasePath),
+        RequestPath = "/files"
+    });
+}
 app.UseCors("AllowFrontend");
 app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
+
+public partial class Program;

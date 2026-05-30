@@ -50,12 +50,21 @@ public sealed class RegistrarVacunoValidator : AbstractValidator<RegistrarVacuno
         // ── Características ───────────────────────────────────────────
         RuleFor(x => x.IdRaza)
             .GreaterThan(0).WithMessage("La raza es obligatoria.");
+        RuleFor(x => x.Raza)
+            .NotEmpty().WithMessage("La raza es obligatoria.")
+            .MaximumLength(15).WithMessage("La raza no puede exceder 15 caracteres.");
 
         RuleFor(x => x.IdColor)
             .GreaterThan(0).WithMessage("El color es obligatorio.");
+        RuleFor(x => x.Color)
+            .NotEmpty().WithMessage("El color es obligatorio.")
+            .MaximumLength(15).WithMessage("El color no puede exceder 15 caracteres.");
 
         RuleFor(x => x.IdSexo)
             .GreaterThan(0).WithMessage("El sexo es obligatorio.");
+        RuleFor(x => x.Sexo)
+            .NotEmpty().WithMessage("El sexo es obligatorio.")
+            .MaximumLength(15).WithMessage("El sexo no puede exceder 15 caracteres.");
 
         // ── Trazabilidad ──────────────────────────────────────────────
         RuleFor(x => x.CodigoPadre)
@@ -75,16 +84,27 @@ public sealed class RegistrarVacunoValidator : AbstractValidator<RegistrarVacuno
 
         RuleFor(x => x.IdDistrito)
             .GreaterThan(0).WithMessage("El distrito es obligatorio.");
+        RuleFor(x => x.Distrito)
+            .NotEmpty().WithMessage("El distrito es obligatorio.")
+            .MaximumLength(15).WithMessage("El distrito no puede exceder 15 caracteres.");
 
         RuleFor(x => x.IdDepartamento)
             .GreaterThan(0).WithMessage("El departamento es obligatorio.");
+        RuleFor(x => x.Departamento)
+            .NotEmpty().WithMessage("El departamento es obligatorio.")
+            .MaximumLength(15).WithMessage("El departamento no puede exceder 15 caracteres.");
 
         RuleFor(x => x.IdProvincia)
             .GreaterThan(0).WithMessage("La provincia es obligatoria.");
+        RuleFor(x => x.Provincia)
+            .NotEmpty().WithMessage("La provincia es obligatoria.")
+            .MaximumLength(15).WithMessage("La provincia no puede exceder 15 caracteres.");
 
         // ── Utilización ───────────────────────────────────────────────
         RuleFor(x => x.IdTipoUtilizacion)
             .GreaterThan(0).WithMessage("El tipo de utilización (apto para) es obligatorio.");
+        RuleFor(x => x.AptoPara)
+            .NotEmpty().WithMessage("El campo apto para es obligatorio.");
 
         RuleFor(x => x.FechaEspecificacion)
             .NotEmpty().WithMessage("La fecha de especificación es obligatoria.");

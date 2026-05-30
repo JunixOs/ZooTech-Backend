@@ -8,22 +8,22 @@ public sealed class RegistrarVacunoRequest
     public string Nombre { get; set; } = default!;
     public DateOnly FechaNacimiento { get; set; }
 
-    public int IdTipoAdquisicion { get; set; }
+    public string AdquisicionPor { get; set; } = default!;
     public decimal? PrecioCompra { get; set; }
 
-    public int IdRaza { get; set; }
-    public int IdColor { get; set; }
-    public int IdSexo { get; set; }
+    public string Raza { get; set; } = default!;
+    public string Color { get; set; } = default!;
+    public string Sexo { get; set; } = default!;
 
     public string CodigoPadre { get; set; } = default!;
     public string CodigoMadre { get; set; } = default!;
 
-    public string NombreGranja { get; set; } = default!;
-    public int IdDistrito { get; set; }
-    public int IdDepartamento { get; set; }
-    public int IdProvincia { get; set; }
+    public string Granja { get; set; } = default!;
+    public string Distrito { get; set; } = default!;
+    public string Departamento { get; set; } = default!;
+    public string Provincia { get; set; } = default!;
 
-    public int IdTipoUtilizacion { get; set; }
+    public string AptoPara { get; set; } = default!;
     public DateOnly FechaEspecificacion { get; set; }
 
     public string? Observaciones { get; set; }
