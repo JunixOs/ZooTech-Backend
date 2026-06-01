@@ -1,0 +1,26 @@
+namespace ZooTech.Application.Common.Gateway.Repositories;
+
+public sealed record EditarVacunoData(
+    string Nombre,
+    int IdRaza,
+    string Raza,
+    int IdColor,
+    string Color,
+    int IdSexo,
+    string Sexo,
+    int IdGranja,
+    string Granja,
+    int IdDistrito,
+    string Distrito,
+    int IdDepartamento,
+    string Departamento,
+    int IdProvincia,
+    string Provincia,
+    int IdTipoUtilizacion,
+    string AptoPara,
+    DateOnly FechaEspecificacion,
+    string? Observaciones,
+    int IdTipoAdquisicion,
+    decimal? PrecioCompra,
+    string? RutaFoto,
+    DateTime ActualizadoEn);
