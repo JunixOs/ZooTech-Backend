@@ -18,17 +18,23 @@ using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Controllers;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// DbContext SQL Server
 builder.Services.AddDbContext<GanaderiaDbContext>(options =>
 {
-    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-        ?? builder.Configuration.GetConnectionString("DefaultString")
+    var connectionString = new[]
+        {
+            builder.Configuration.GetConnectionString("DefaultConnection"),
+            builder.Configuration.GetConnectionString("RemoteConnection"),
+            builder.Configuration.GetConnectionString("DefaultString")
+        }
+        .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value))
         ?? throw new InvalidOperationException("Falta la cadena de conexion DefaultConnection o DefaultString.");
 
-    options.UseSqlServer(connectionString);
+    options.UseSqlServer(connectionString, sqlOptions =>
+    {
+        sqlOptions.CommandTimeout(30);
+    });
 });
 
-// Controllers
 builder.Services
     .AddControllers()
     .AddApplicationPart(typeof(VacunoController).Assembly);
@@ -59,7 +65,6 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
     };
 });
 
-// Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -67,37 +72,32 @@ builder.Services.AddSwaggerGen(options =>
     options.SwaggerDoc("auth", new() { Title = "Authentication API", Version = "v1" });
     options.SwaggerDoc("users", new() { Title = "Users API", Version = "v1" });
 });
+builder.Services.AddOpenApi();
 
-// MediatR
 builder.Services.AddMediatR(typeof(RegistrarVacunoHandler).Assembly);
-
-// Pipeline de validación
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
-
-// FluentValidation
 builder.Services.AddValidatorsFromAssembly(typeof(RegistrarVacunoValidator).Assembly);
 
-// Repositorios y servicios
 builder.Services.AddScoped<IVacunoRepository, VacunoRepository>();
 builder.Services.AddScoped<IArchivoService, ArchivoService>();
 builder.Services.AddSingleton<ITimeProvider, SystemTimeProvider>();
 
-// Configuración para multipart/form-data
 builder.Services.Configure<FormOptions>(opt =>
 {
-    opt.MultipartBodyLengthLimit = 5 * 1024 * 1024; // 5 MB
+    opt.MultipartBodyLengthLimit = 5 * 1024 * 1024;
 });
 
-// CORS
 var frontendPort = builder.Configuration["Frontend:FrontendPort"];
 var frontendIP = builder.Configuration["Frontend:FrontendIP"];
 var frontendProtocol = builder.Configuration["Frontend:FrontendProtocol"];
+var frontendOrigin = $"{frontendProtocol}://{frontendIP}:{frontendPort}";
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy
-            .WithOrigins($"{frontendProtocol}://{frontendIP}:{frontendPort}")
+            .WithOrigins(frontendOrigin)
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -105,9 +105,9 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Swagger UI
 if (app.Environment.IsDevelopment())
 {
+    app.MapOpenApi();
     app.UseSwagger();
     app.UseSwaggerUI(options =>
     {
@@ -116,12 +116,11 @@ if (app.Environment.IsDevelopment())
         options.SwaggerEndpoint("/swagger/users/swagger.json", "Users API");
     });
 }
-
-// Middlewares
-if (!app.Environment.IsDevelopment())
+else
 {
     app.UseHttpsRedirection();
 }
+
 var storageBasePath = builder.Configuration["Storage:BasePath"];
 if (!string.IsNullOrWhiteSpace(storageBasePath))
 {
@@ -132,6 +131,7 @@ if (!string.IsNullOrWhiteSpace(storageBasePath))
         RequestPath = "/files"
     });
 }
+
 app.UseCors("AllowFrontend");
 app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseAuthorization();

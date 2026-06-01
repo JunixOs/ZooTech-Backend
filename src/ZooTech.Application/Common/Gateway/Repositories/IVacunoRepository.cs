@@ -24,4 +24,16 @@ public interface IVacunoRepository
     Task<int> ContarAsync(string? q, string? estado, CancellationToken ct = default);
 
     Task<Vacuno?> ObtenerPorIdAsync(int id, CancellationToken ct = default);
+
+    Task<Vacuno?> ObtenerPorCodigoAsync(string codigo, CancellationToken ct = default);
+
+    Task<bool> ExisteRegistroDuplicadoAsync(
+        string codigoExcluido,
+        EditarVacunoData data,
+        CancellationToken ct = default);
+
+    Task<Vacuno?> ActualizarAsync(
+        string codigo,
+        EditarVacunoData data,
+        CancellationToken ct = default);
 }

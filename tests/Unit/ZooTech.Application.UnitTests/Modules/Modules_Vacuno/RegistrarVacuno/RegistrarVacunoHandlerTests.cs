@@ -80,6 +80,20 @@ public sealed class RegistrarVacunoHandlerTests
         public Task<int> ContarAsync(string? q, string? estado, CancellationToken ct = default) => Task.FromResult(0);
 
         public Task<Vacuno?> ObtenerPorIdAsync(int id, CancellationToken ct = default) => Task.FromResult<Vacuno?>(null);
+
+        public Task<Vacuno?> ObtenerPorCodigoAsync(string codigo, CancellationToken ct = default) => Task.FromResult<Vacuno?>(null);
+
+        public Task<bool> ExisteRegistroDuplicadoAsync(
+            string codigoExcluido,
+            EditarVacunoData data,
+            CancellationToken ct = default)
+            => Task.FromResult(false);
+
+        public Task<Vacuno?> ActualizarAsync(
+            string codigo,
+            EditarVacunoData data,
+            CancellationToken ct = default)
+            => Task.FromResult<Vacuno?>(null);
     }
 
     private sealed class FakeArchivoService : IArchivoService

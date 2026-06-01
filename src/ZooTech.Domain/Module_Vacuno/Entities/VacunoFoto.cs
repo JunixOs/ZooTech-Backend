@@ -26,4 +26,9 @@ public class VacunoFoto
             RutaArchivo = rutaArchivo
         };
     }
+
+    public void ActualizarRuta(string rutaArchivo)
+    {
+        RutaArchivo = rutaArchivo;
+    }
 }

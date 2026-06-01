@@ -105,4 +105,40 @@ public class Vacuno
             ActualizadoEn = ahora
         };
     }
+
+    public void ActualizarRegistro(
+        string nombre,
+        int idRaza,
+        string raza,
+        int idColor,
+        string color,
+        int idSexo,
+        string sexo,
+        int idGranja,
+        string granja,
+        int idDistrito,
+        string distrito,
+        int idDepartamento,
+        string departamento,
+        int idProvincia,
+        string provincia,
+        DateTime actualizadoEn)
+    {
+        Nombre = nombre;
+        IdRaza = idRaza;
+        Raza = raza;
+        IdColor = idColor;
+        Color = color;
+        IdSexo = idSexo;
+        Sexo = sexo;
+        IdGranja = idGranja;
+        Granja = granja;
+        IdDistrito = idDistrito;
+        Distrito = distrito;
+        IdDepartamento = idDepartamento;
+        Departamento = departamento;
+        IdProvincia = idProvincia;
+        Provincia = provincia;
+        ActualizadoEn = actualizadoEn;
+    }
 }

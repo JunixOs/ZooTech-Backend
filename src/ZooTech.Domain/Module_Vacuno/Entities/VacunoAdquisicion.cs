@@ -29,4 +29,10 @@ public class VacunoAdquisicion
             PrecioCompra = precioCompra
         };
     }
+
+    public void Actualizar(int idTipoAdquisicion, decimal? precioCompra)
+    {
+        IdTipoAdquisicion = idTipoAdquisicion;
+        PrecioCompra = precioCompra;
+    }
 }

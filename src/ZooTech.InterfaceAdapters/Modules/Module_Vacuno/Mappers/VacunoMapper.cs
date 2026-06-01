@@ -85,6 +85,12 @@ public static class VacunoMapper
     public static string NombreSexo(int id) => Sexos.FirstOrDefault(x => x.Value == id).Key ?? "hembra";
     public static string NombreTipoAdquisicion(int id) => TiposAdquisicion.FirstOrDefault(x => x.Value == id).Key ?? "monta";
     public static string NombreTipoUtilizacion(int id) => TiposUtilizacion.FirstOrDefault(x => x.Value == id).Key ?? "produccion_leche";
+    public static int IdTipoAdquisicion(string valor) => Resolver(TiposAdquisicion, valor);
+    public static int IdRaza(string valor) => Resolver(Razas, valor);
+    public static int IdSexo(string valor) => Resolver(Sexos, valor);
+    public static int IdTipoUtilizacion(string valor) => Resolver(TiposUtilizacion, valor);
+    public static int IdColor(string valor) => ResolverColor(valor);
+    public static int IdUbigeo(string valor) => ResolverUbigeo(valor);
 
     private static int Resolver(Dictionary<string, int> catalogo, string valor)
     {

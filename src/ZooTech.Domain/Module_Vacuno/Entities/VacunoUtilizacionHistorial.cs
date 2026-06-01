@@ -32,4 +32,16 @@ public class VacunoUtilizacionHistorial
             Observaciones = observaciones
         };
     }
+
+    public void Actualizar(
+        int idTipoUtilizacion,
+        string aptoPara,
+        DateOnly fechaEspecificacion,
+        string? observaciones)
+    {
+        IdTipoUtilizacion = idTipoUtilizacion;
+        AptoPara = aptoPara;
+        FechaEspecificacion = fechaEspecificacion;
+        Observaciones = observaciones;
+    }
 }

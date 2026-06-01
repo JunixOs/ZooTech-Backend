@@ -114,6 +114,133 @@ public sealed class VacunoRepository : IVacunoRepository
             .FirstOrDefaultAsync(v => v.Id == id, ct);
     }
 
+    public async Task<Vacuno?> ObtenerPorCodigoAsync(string codigo, CancellationToken ct = default)
+    {
+        var codigoNormalizado = codigo.Trim().ToUpperInvariant();
+
+        return await _context.Vacunos
+            .Include(v => v.Adquisicion)
+            .Include(v => v.Utilizacion)
+            .Include(v => v.Foto)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(v => v.Codigo == codigoNormalizado, ct);
+    }
+
+    public async Task<bool> ExisteRegistroDuplicadoAsync(
+        string codigoExcluido,
+        EditarVacunoData data,
+        CancellationToken ct = default)
+    {
+        var codigoNormalizado = codigoExcluido.Trim().ToUpperInvariant();
+
+        return await _context.Vacunos
+            .AsNoTracking()
+            .AnyAsync(v =>
+                v.Codigo != codigoNormalizado
+                && v.Nombre == data.Nombre
+                && v.IdRaza == data.IdRaza
+                && v.IdColor == data.IdColor
+                && v.IdSexo == data.IdSexo
+                && v.IdGranja == data.IdGranja
+                && v.IdDistrito == data.IdDistrito
+                && v.IdDepartamento == data.IdDepartamento
+                && v.IdProvincia == data.IdProvincia,
+                ct);
+    }
+
+    public async Task<Vacuno?> ActualizarAsync(
+        string codigo,
+        EditarVacunoData data,
+        CancellationToken ct = default)
+    {
+        var codigoNormalizado = codigo.Trim().ToUpperInvariant();
+
+        await using var transaction = await _context.Database.BeginTransactionAsync(ct);
+
+        try
+        {
+            var vacuno = await _context.Vacunos
+                .Include(v => v.Adquisicion)
+                .Include(v => v.Utilizacion)
+                .Include(v => v.Foto)
+                .FirstOrDefaultAsync(v => v.Codigo == codigoNormalizado, ct);
+
+            if (vacuno is null)
+                return null;
+
+            vacuno.ActualizarRegistro(
+                data.Nombre,
+                data.IdRaza,
+                data.Raza,
+                data.IdColor,
+                data.Color,
+                data.IdSexo,
+                data.Sexo,
+                data.IdGranja,
+                data.Granja,
+                data.IdDistrito,
+                data.Distrito,
+                data.IdDepartamento,
+                data.Departamento,
+                data.IdProvincia,
+                data.Provincia,
+                data.ActualizadoEn);
+
+            if (vacuno.Adquisicion is null)
+            {
+                await _context.VacunosAdquisicion.AddAsync(
+                    VacunoAdquisicion.Crear(vacuno.Id, data.IdTipoAdquisicion, data.PrecioCompra),
+                    ct);
+            }
+            else
+            {
+                vacuno.Adquisicion.Actualizar(data.IdTipoAdquisicion, data.PrecioCompra);
+            }
+
+            if (vacuno.Utilizacion is null)
+            {
+                await _context.VacunosUtilizacion.AddAsync(
+                    VacunoUtilizacionHistorial.Crear(
+                        vacuno.Id,
+                        data.IdTipoUtilizacion,
+                        data.AptoPara,
+                        data.FechaEspecificacion,
+                        data.Observaciones),
+                    ct);
+            }
+            else
+            {
+                vacuno.Utilizacion.Actualizar(
+                    data.IdTipoUtilizacion,
+                    data.AptoPara,
+                    data.FechaEspecificacion,
+                    data.Observaciones);
+            }
+
+            if (!string.IsNullOrWhiteSpace(data.RutaFoto))
+            {
+                if (vacuno.Foto is null)
+                {
+                    await _context.VacunosFoto.AddAsync(VacunoFoto.Crear(vacuno.Id, data.RutaFoto), ct);
+                }
+                else
+                {
+                    vacuno.Foto.ActualizarRuta(data.RutaFoto);
+                }
+            }
+
+            await _context.SaveChangesAsync(ct);
+            await transaction.CommitAsync(ct);
+
+            return await ObtenerPorCodigoAsync(codigoNormalizado, ct);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(ct);
+            throw;
+        }
+    }
+
     private IQueryable<Vacuno> AplicarFiltros(string? q, string? estado)
     {
         var query = _context.Vacunos.AsQueryable();
