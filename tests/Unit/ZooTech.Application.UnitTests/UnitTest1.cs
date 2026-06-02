@@ -1,4 +1,4 @@
-﻿using ZooTech.Application.Common.Exceptions;
+using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Common;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.CreateOrdenio;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.ListOrdenios;
@@ -28,8 +28,7 @@ public class CreateOrdenioInteractorTests
             EncargadoUsuarioId: 2,
             Litros: 10,
             EstadoOrdenioCode: "ACTIVO",
-            Observaciones: null,
-            ActorUsuarioId: 2);
+            Observaciones: null);
 
         var action = () => interactor.HandleAsync(command, CancellationToken.None);
 
@@ -62,13 +61,16 @@ public class CreateOrdenioInteractorTests
         public Task<Ordenio?> GetByIdAsync(long id, CancellationToken cancellationToken)
             => Task.FromResult<Ordenio?>(null);
 
-        public Task<IReadOnlyList<OrdenioOutput>> ListAsync(ListOrdeniosQuery query, CancellationToken cancellationToken)
-            => Task.FromResult<IReadOnlyList<OrdenioOutput>>(Array.Empty<OrdenioOutput>());
+        public Task<(IReadOnlyList<OrdenioOutput> Items, int TotalCount)> ListAsync(ListOrdeniosQuery query, CancellationToken cancellationToken)
+            => Task.FromResult<(IReadOnlyList<OrdenioOutput> Items, int TotalCount)>((Array.Empty<OrdenioOutput>(), 0));
 
         public Task<Ordenio> AddAsync(Ordenio ordenio, CancellationToken cancellationToken)
             => Task.FromResult(ordenio);
 
         public Task<Ordenio> UpdateAsync(Ordenio ordenio, CancellationToken cancellationToken)
             => Task.FromResult(ordenio);
+
+        public Task<IReadOnlyList<VacunoSimpleOutput>> ListVacunosAsync(CancellationToken cancellationToken)
+            => Task.FromResult<IReadOnlyList<VacunoSimpleOutput>>(Array.Empty<VacunoSimpleOutput>());
     }
 }

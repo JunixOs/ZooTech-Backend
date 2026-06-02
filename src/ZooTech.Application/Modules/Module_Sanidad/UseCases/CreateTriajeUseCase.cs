@@ -22,10 +22,18 @@ public class CreateTriajeUseCase
         var codigo = await _repository.GenerateCodigoAsync();
         var now = _dateTimeProvider.ServerNow;
 
+        // Evitar conflictos con la restricción ck_triaje_fecha por desincronización de relojes (clock skew).
+        // Si la fecha/hora es futura o demasiado cercana al tiempo del servidor, la limitamos a 5 minutos en el pasado.
+        var fechaHora = request.FechaHora;
+        if (fechaHora > now.AddMinutes(-5))
+        {
+            fechaHora = now.AddMinutes(-5);
+        }
+
         var triaje = new Triaje
         {
             Codigo = codigo,
-            FechaHora = request.FechaHora,
+            FechaHora = fechaHora,
             VacunoId = request.VacunoId,
             TipoPesoCode = request.TipoPesoCode,
             PesoKg = request.PesoKg,

@@ -69,16 +69,36 @@ public class TriajeRepository : ITriajeRepository
 
     public async Task AddAsync(Triaje triaje)
     {
-        try
+        var entity = ToEntity(triaje);
+        _context.Triajes.Add(entity);
+
+        var maxRetries = 10;
+        var attempt = 0;
+        while (attempt < maxRetries)
         {
-            var entity = ToEntity(triaje);
-            _context.Triajes.Add(entity);
-            await _context.SaveChangesAsync();
-            triaje.Id = entity.id;
-        }
-        catch (DbUpdateException)
-        {
-            throw new InvalidOperationException("No se pudo registrar el triaje. Verifique que no exista un registro con el mismo vacuno, tipo de peso y fecha.");
+            try
+            {
+                await _context.SaveChangesAsync();
+                triaje.Id = entity.id;
+                return;
+            }
+            catch (DbUpdateException ex) when (ex.InnerException is Microsoft.Data.SqlClient.SqlException sqlEx && sqlEx.Number == 2627 && sqlEx.Message.Contains("uq_triaje_codigo"))
+            {
+                attempt++;
+                if (attempt >= maxRetries)
+                {
+                    throw new InvalidOperationException("No se pudo generar un código único de triaje tras varios intentos.");
+                }
+
+                // Generar un nuevo código e intentar de nuevo
+                var newCodigo = await GenerateCodigoAsync();
+                triaje.Codigo = newCodigo;
+                entity.codigo = newCodigo;
+            }
+            catch (DbUpdateException)
+            {
+                throw new InvalidOperationException("No se pudo registrar el triaje. Verifique que no exista un registro con el mismo vacuno, tipo de peso y fecha.");
+            }
         }
     }
 
@@ -105,14 +125,13 @@ public class TriajeRepository : ITriajeRepository
 
     public async Task<string> GenerateCodigoAsync()
     {
-        var codigos = await _context.Triajes
+        var codes = await _context.Triajes
             .Where(t => t.codigo.StartsWith("TRI"))
             .Select(t => t.codigo)
             .ToListAsync();
 
-        var maxNumber = codigos
-            .Select(codigo =>
-                int.TryParse(codigo[3..], out var number) ? number : 0)
+        var maxNumber = codes
+            .Select(c => c.Length > 3 && int.TryParse(c[3..], out var num) ? num : 0)
             .DefaultIfEmpty(0)
             .Max();
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -11,8 +11,8 @@ namespace ZooTech.Domain.Module_ProduccionLeche.Rules
 
         public static void ValidarLitros(decimal litros)
         {
-            if (litros < 0)
-                throw new ArgumentException("La cantidad de litros no puede ser negativa.");
+            if (litros <= 0)
+                throw new ArgumentException("La cantidad de litros debe ser mayor que cero.", nameof(litros));
         }
 
         public static void ValidarFechaHora(DateTime fechaHora)
