@@ -24,6 +24,7 @@ public class GetTriajeByIdUseCase
             Id = triaje.Id,
             Codigo = triaje.Codigo,
             FechaHora = triaje.FechaHora,
+            VacunoNombre= triaje.VacunoNombre,
             VacunoId = triaje.VacunoId,
             TipoPesoCode = triaje.TipoPesoCode,
             PesoKg = triaje.PesoKg,

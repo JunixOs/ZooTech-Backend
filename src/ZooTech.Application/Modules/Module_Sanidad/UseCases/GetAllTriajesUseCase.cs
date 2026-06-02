@@ -12,17 +12,25 @@ public class GetAllTriajesUseCase
         _repository = repository;
     }
 
-    public async Task<IEnumerable<TriajeResponse>> ExecuteAsync()
+    public async Task<PagedResponse<TriajeResponse>> ExecuteAsync(
+        int pagina,
+        int tamano,
+        string? fecha = null,
+        string? codigo = null,
+        string? nombre = null,
+        string? tipoPeso = null,
+        decimal? pesoKg = null)
     {
-        var triajes = await _repository.GetAllAsync();
+        var (triajes, total) = await _repository.GetAllAsync(
+            pagina, tamano, fecha, codigo, nombre, tipoPeso, pesoKg);
 
-        return triajes.Select(t => new TriajeResponse
+        var items = triajes.Select(t => new TriajeResponse
         {
             Id = t.Id,
             Codigo = t.Codigo,
             FechaHora = t.FechaHora,
             VacunoId = t.VacunoId,
-            VacunoNombre= t.VacunoNombre,
+            VacunoNombre = t.VacunoNombre,
             TipoPesoCode = t.TipoPesoCode,
             PesoKg = t.PesoKg,
             Observaciones = t.Observaciones,
@@ -30,5 +38,14 @@ public class GetAllTriajesUseCase
             EncargadoUsuarioId = t.EncargadoUsuarioId,
             CreatedAt = t.CreatedAt
         });
+
+        return new PagedResponse<TriajeResponse>
+        {
+            Data = items,
+            TotalRegistros = total,
+            Pagina = pagina,
+            Tamano = tamano,
+            TotalPaginas = (int)Math.Ceiling((double)total / tamano)
+        };
     }
 }
