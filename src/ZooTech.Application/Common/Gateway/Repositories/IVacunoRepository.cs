@@ -13,4 +13,6 @@ public interface IVacunoRepository
         string? q,
         int skip,
         int take);
+
+    Task<ZooTech.Application.Modules.Module_Vacunos.UseCases.GenerarArbolGenealogico.VacunoNodoDto?> GetArbolGenealogicoAsync(long vacunoId, int niveles);
 }

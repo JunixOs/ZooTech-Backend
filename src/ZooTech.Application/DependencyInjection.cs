@@ -1,4 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
+using ZooTech.Application.Modules.Module_Vacunos.UseCases.GenerarArbolGenealogico;
+using ZooTech.Application.Modules.Module_Vacunos.UseCases.ListarVacunos;
 
 namespace ZooTech.Application;
 
@@ -35,7 +37,8 @@ public static class DependencyInjection
         // ============================================
 
         // services.AddScoped<IMyService, MyService>();
-        services.AddScoped<ZooTech.Application.Modules.Module_Vacunos.UseCases.ListarVacunos.IListarVacunosInputPort, ZooTech.Application.Modules.Module_Vacunos.UseCases.ListarVacunos.ListarVacunosInteractor>();
+        services.AddScoped<IListarVacunosInputPort, ListarVacunosInteractor>();
+        services.AddScoped<IGenerarArbolGenealogicoInputPort, GenerarArbolGenealogicoInteractor>();
 
         return services;
     }

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using ZooTech.Application.Modules.Module_Vacunos.UseCases.GenerarArbolGenealogico;
 using ZooTech.Application.Modules.Module_Vacunos.UseCases.ListarVacunos;
 using ZooTech.Domain.Enums;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacunos.Presenters;
@@ -69,5 +70,24 @@ public class VacunosController : ControllerBase
         await _inputPort.Handle(command);
 
         return StatusCode(_presenter.StatusCode, _presenter.Response);
+    }
+
+    [HttpGet("{id}/genealogia")]
+    [Tags("Vacunos")]
+    public async Task<IActionResult> GenerarArbolGenealogico(
+        [FromRoute] long id,
+        [FromServices] IGenerarArbolGenealogicoInputPort arbolInputPort,
+        [FromServices] GenerarArbolGenealogicoPresenter arbolPresenter,
+        [FromQuery] int niveles = 4)
+    {
+        var command = new GenerarArbolGenealogicoCommand
+        {
+            VacunoId = id,
+            Niveles = niveles
+        };
+
+        await arbolInputPort.Handle(command);
+
+        return StatusCode(arbolPresenter.StatusCode, arbolPresenter.Response);
     }
 }
