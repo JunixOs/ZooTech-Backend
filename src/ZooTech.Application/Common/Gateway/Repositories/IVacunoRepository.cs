@@ -36,4 +36,6 @@ public interface IVacunoRepository
         string codigo,
         EditarVacunoData data,
         CancellationToken ct = default);
+
+    Task<IReadOnlyList<UbigeoOption>> ListarUbigeoAsync(CancellationToken ct = default);
 }

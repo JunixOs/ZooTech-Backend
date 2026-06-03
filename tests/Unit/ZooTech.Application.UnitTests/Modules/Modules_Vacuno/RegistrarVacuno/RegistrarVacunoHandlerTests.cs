@@ -94,6 +94,9 @@ public sealed class RegistrarVacunoHandlerTests
             EditarVacunoData data,
             CancellationToken ct = default)
             => Task.FromResult<Vacuno?>(null);
+
+        public Task<IReadOnlyList<UbigeoOption>> ListarUbigeoAsync(CancellationToken ct = default)
+            => Task.FromResult<IReadOnlyList<UbigeoOption>>([]);
     }
 
     private sealed class FakeArchivoService : IArchivoService

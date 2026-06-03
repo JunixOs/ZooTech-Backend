@@ -75,14 +75,17 @@ public sealed class VacunoController : ControllerBase
     }
 
     [HttpGet("options")]
-    public IActionResult ObtenerOpciones()
+    public async Task<IActionResult> ObtenerOpciones(CancellationToken cancellationToken)
     {
+        var ubigeo = await _vacunoRepository.ListarUbigeoAsync(cancellationToken);
+
         return Ok(new
         {
             adquisicionOptions = new[] { "monta", "compra" },
             razaOptions = new[] { "Jersey", "Holstein", "Angus", "Hereford", "Simmental", "Brown Swiss", "Brahman", "Charolais" },
             sexoOptions = new[] { "hembra", "macho" },
-            aptoParaOptions = new[] { "produccion_leche", "carne", "reproduccion" }
+            aptoParaOptions = new[] { "produccion_leche", "carne", "reproduccion" },
+            ubigeoOptions = ubigeo
         });
     }
 
@@ -155,11 +158,11 @@ public sealed class VacunoController : ControllerBase
             Sexo: request.Sexo.Trim().ToLowerInvariant(),
             IdGranja: VacunoMapper.IdUbigeo(request.Granja),
             Granja: request.Granja.Trim(),
-            IdDistrito: VacunoMapper.IdUbigeo(request.Distrito),
+            IdDistrito: VacunoMapper.IdUbigeo(request.CodigoDistrito, request.Distrito),
             Distrito: request.Distrito.Trim(),
-            IdDepartamento: VacunoMapper.IdUbigeo(request.Departamento),
+            IdDepartamento: VacunoMapper.IdUbigeo(request.CodigoDepartamento, request.Departamento),
             Departamento: request.Departamento.Trim(),
-            IdProvincia: VacunoMapper.IdUbigeo(request.Provincia),
+            IdProvincia: VacunoMapper.IdUbigeo(request.CodigoProvincia, request.Provincia),
             Provincia: request.Provincia.Trim(),
             IdTipoUtilizacion: VacunoMapper.IdTipoUtilizacion(request.AptoPara),
             AptoPara: request.AptoPara.Trim(),
@@ -241,10 +244,7 @@ public sealed class VacunoController : ControllerBase
         {
             (request.Nombre, "nombre"),
             (request.Color, "color"),
-            (request.Granja, "granja"),
-            (request.Distrito, "distrito"),
-            (request.Departamento, "departamento"),
-            (request.Provincia, "provincia")
+            (request.Granja, "granja")
         };
 
         var campoLargo = inputsLimitados.FirstOrDefault(campo => campo.Valor.Trim().Length > 15);

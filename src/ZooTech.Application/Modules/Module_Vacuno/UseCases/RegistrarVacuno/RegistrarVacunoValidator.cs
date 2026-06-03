@@ -86,19 +86,19 @@ public sealed class RegistrarVacunoValidator : AbstractValidator<RegistrarVacuno
             .GreaterThan(0).WithMessage("El distrito es obligatorio.");
         RuleFor(x => x.Distrito)
             .NotEmpty().WithMessage("El distrito es obligatorio.")
-            .MaximumLength(15).WithMessage("El distrito no puede exceder 15 caracteres.");
+            .MaximumLength(60).WithMessage("El distrito no puede exceder 60 caracteres.");
 
         RuleFor(x => x.IdDepartamento)
             .GreaterThan(0).WithMessage("El departamento es obligatorio.");
         RuleFor(x => x.Departamento)
             .NotEmpty().WithMessage("El departamento es obligatorio.")
-            .MaximumLength(15).WithMessage("El departamento no puede exceder 15 caracteres.");
+            .MaximumLength(60).WithMessage("El departamento no puede exceder 60 caracteres.");
 
         RuleFor(x => x.IdProvincia)
             .GreaterThan(0).WithMessage("La provincia es obligatoria.");
         RuleFor(x => x.Provincia)
             .NotEmpty().WithMessage("La provincia es obligatoria.")
-            .MaximumLength(15).WithMessage("La provincia no puede exceder 15 caracteres.");
+            .MaximumLength(60).WithMessage("La provincia no puede exceder 60 caracteres.");
 
         // ── Utilización ───────────────────────────────────────────────
         RuleFor(x => x.IdTipoUtilizacion)

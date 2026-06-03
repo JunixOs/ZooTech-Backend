@@ -64,11 +64,11 @@ public static class VacunoMapper
             CodigoPadre = request.CodigoPadre.Trim().ToUpperInvariant(),
             CodigoMadre = request.CodigoMadre.Trim().ToUpperInvariant(),
             NombreGranja = request.Granja.Trim(),
-            IdDistrito = ResolverUbigeo(request.Distrito),
+            IdDistrito = ResolverUbigeo(request.CodigoDistrito, request.Distrito),
             Distrito = request.Distrito.Trim(),
-            IdDepartamento = ResolverUbigeo(request.Departamento),
+            IdDepartamento = ResolverUbigeo(request.CodigoDepartamento, request.Departamento),
             Departamento = request.Departamento.Trim(),
-            IdProvincia = ResolverUbigeo(request.Provincia),
+            IdProvincia = ResolverUbigeo(request.CodigoProvincia, request.Provincia),
             Provincia = request.Provincia.Trim(),
             IdTipoUtilizacion = Resolver(TiposUtilizacion, request.AptoPara),
             AptoPara = request.AptoPara.Trim(),
@@ -114,9 +114,30 @@ public static class VacunoMapper
         };
     }
 
+    public static int IdUbigeo(string? codigo, string valor) => ResolverUbigeo(codigo, valor);
+
+    private static int ResolverUbigeo(string? codigo, string valor)
+    {
+        return int.TryParse(codigo, out var id) && id > 0
+            ? id
+            : ResolverUbigeo(valor);
+    }
+
     private static int ResolverUbigeo(string valor)
     {
-        return string.IsNullOrWhiteSpace(valor) ? 0 : Math.Abs(valor.Trim().ToUpperInvariant().GetHashCode() % 10000) + 1;
+        if (string.IsNullOrWhiteSpace(valor))
+            return 0;
+
+        unchecked
+        {
+            var hash = 17;
+            foreach (var character in valor.Trim().ToUpperInvariant())
+            {
+                hash = (hash * 31) + character;
+            }
+
+            return Math.Abs(hash % 10000) + 1;
+        }
     }
 
     /// <summary>

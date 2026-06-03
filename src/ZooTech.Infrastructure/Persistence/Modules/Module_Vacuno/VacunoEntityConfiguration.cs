@@ -70,17 +70,17 @@ public class VacunoEntityConfiguration :
         builder.Property(v => v.IdDistrito).HasColumnName("id_distrito");
         builder.Property(v => v.Distrito)
             .HasColumnName("distrito")
-            .HasMaxLength(15)
+            .HasMaxLength(60)
             .IsRequired();
         builder.Property(v => v.IdDepartamento).HasColumnName("id_departamento");
         builder.Property(v => v.Departamento)
             .HasColumnName("departamento")
-            .HasMaxLength(15)
+            .HasMaxLength(60)
             .IsRequired();
         builder.Property(v => v.IdProvincia).HasColumnName("id_provincia");
         builder.Property(v => v.Provincia)
             .HasColumnName("provincia")
-            .HasMaxLength(15)
+            .HasMaxLength(60)
             .IsRequired();
         builder.Property(v => v.IdEstado).HasColumnName("id_estado");
 

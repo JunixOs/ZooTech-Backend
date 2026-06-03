@@ -12,8 +12,11 @@ public sealed class EditarVacunoRequest
     public string Sexo { get; set; } = default!;
     public string Granja { get; set; } = default!;
     public string Distrito { get; set; } = default!;
+    public string? CodigoDistrito { get; set; }
     public string Departamento { get; set; } = default!;
+    public string? CodigoDepartamento { get; set; }
     public string Provincia { get; set; } = default!;
+    public string? CodigoProvincia { get; set; }
     public string AptoPara { get; set; } = default!;
     public DateOnly FechaEspecificacion { get; set; }
     public string? Observaciones { get; set; }

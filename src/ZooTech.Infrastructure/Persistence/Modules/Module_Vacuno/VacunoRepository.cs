@@ -1,3 +1,4 @@
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using ZooTech.Application.Common.Gateway.Repositories;
 using ZooTech.Domain.Module_Vacuno.Entities;
@@ -238,6 +239,64 @@ public sealed class VacunoRepository : IVacunoRepository
         {
             await transaction.RollbackAsync(ct);
             throw;
+        }
+    }
+
+    public async Task<IReadOnlyList<UbigeoOption>> ListarUbigeoAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            var departamentos = await _context.GeoDepartamentos
+                .AsNoTracking()
+                .OrderBy(departamento => departamento.nombre)
+                .Select(departamento => new
+                {
+                    departamento.codigo,
+                    departamento.nombre
+                })
+                .ToListAsync(ct);
+
+            var provincias = await _context.GeoProvincias
+                .AsNoTracking()
+                .OrderBy(provincia => provincia.nombre)
+                .Select(provincia => new
+                {
+                    provincia.codigo,
+                    provincia.nombre,
+                    provincia.departamento_codigo
+                })
+                .ToListAsync(ct);
+
+            var distritos = await _context.GeoDistritos
+                .AsNoTracking()
+                .OrderBy(distrito => distrito.nombre)
+                .Select(distrito => new
+                {
+                    distrito.codigo,
+                    distrito.nombre,
+                    distrito.provincia_codigo
+                })
+                .ToListAsync(ct);
+
+            return departamentos
+                .Select(departamento => new UbigeoOption(
+                    departamento.codigo,
+                    departamento.nombre,
+                    provincias
+                        .Where(provincia => provincia.departamento_codigo == departamento.codigo)
+                        .Select(provincia => new UbigeoOption(
+                            provincia.codigo,
+                            provincia.nombre,
+                            distritos
+                                .Where(distrito => distrito.provincia_codigo == provincia.codigo)
+                                .Select(distrito => new UbigeoOption(distrito.codigo, distrito.nombre, []))
+                                .ToList()))
+                        .ToList()))
+                .ToList();
+        }
+        catch (SqlException exception) when (exception.Number == 208)
+        {
+            return [];
         }
     }
 
