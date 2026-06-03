@@ -5,9 +5,9 @@ namespace ZooTech.Infrastructure.Tenant
 {
     public class TenantDatabaseMigrator : ITenantDatabaseMigrator
     {
-        private readonly GanaderiaDbContextFactory _ganaderiaDbContextFactory;
+        private readonly IGanaderiaDbContextFactory _ganaderiaDbContextFactory;
 
-        public TenantDatabaseMigrator(GanaderiaDbContextFactory ganaderiaDbContextFactory)
+        public TenantDatabaseMigrator(IGanaderiaDbContextFactory ganaderiaDbContextFactory)
         {
             _ganaderiaDbContextFactory = ganaderiaDbContextFactory;
         }

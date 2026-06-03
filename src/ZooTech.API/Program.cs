@@ -98,6 +98,9 @@ builder.Services.AddScoped<
     ICreateTenantOutputPort>(
         sp => sp.GetRequiredService<
             CreateTenantPresenter>());
+
+builder.Services.AddScoped<ITenantDatabaseMigrator , TenantDatabaseMigrator>();
+builder.Services.AddScoped<IGanaderiaDbContextFactory , GanaderiaDbContextFactory>();
 // ======= Configuracion DI =======
 
 var frontendPort = builder.Configuration["Frontend:FrontendPort"];
