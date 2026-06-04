@@ -19,10 +19,8 @@ public sealed class VacunosController : ControllerBase
         _listarReporteVacunosUseCase = listarReporteVacunosUseCase;
     }
 
-    /// <summary>
     /// Lista vacunos con filtros y paginacion.
     /// Aplica por defecto el rango de los ultimos 30 dias cuando no llegan fechas.
-    /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(VacunoListResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status400BadRequest)]

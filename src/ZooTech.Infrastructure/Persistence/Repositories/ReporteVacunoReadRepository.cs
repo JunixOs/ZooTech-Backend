@@ -34,14 +34,41 @@ public sealed class ReporteVacunoReadRepository : IReporteVacunoReadRepository
                 row.Nombre,
                 row.Raza,
                 row.Procedencia,
-                row.Estado))
+                DeterminarEstado(row.EstadoActualCode, row.EstadoActualNombre)))
             .ToList();
 
         return new ReporteVacunoListadoPage(items, total);
     }
 
+    private static string? NormalizeCatalogValue(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        return value.Trim().ToLowerInvariant().Replace(' ', '_');
+    }
+
+    private static string? DeterminarEstado(string? estadoCode, string? estadoNombre)
+    {
+        if (string.IsNullOrWhiteSpace(estadoCode))
+            return NormalizeCatalogValue(estadoNombre);
+
+        return estadoCode.ToUpperInvariant() switch
+        {
+            "ACTIVO" or "VIVO" => "vivo",
+            "MUERTO" or "FALLECIDO" or "BAJA" => "muerto",
+            _ => NormalizeCatalogValue(estadoNombre)
+        };
+    }
+
     private static object[] CreateParameters(ReporteVacunoListadoCriteria criteria, int offset)
     {
+        string estadoCodes = string.Empty;
+        var estado = criteria.Estado?.ToLowerInvariant();
+        
+        if (estado == "vivo") estadoCodes = "ACTIVO,VIVO";
+        else if (estado == "muerto") estadoCodes = "MUERTO,FALLECIDO,BAJA";
+
         return
         [
             new SqlParameter("@fechaDesde", System.Data.SqlDbType.Date) { Value = criteria.FechaDesde.ToDateTime(TimeOnly.MinValue) },
@@ -50,6 +77,7 @@ public sealed class ReporteVacunoReadRepository : IReporteVacunoReadRepository
             new SqlParameter("@raza", (object?)criteria.Raza ?? DBNull.Value),
             new SqlParameter("@procedencia", (object?)criteria.Procedencia ?? DBNull.Value),
             new SqlParameter("@estado", (object?)criteria.Estado ?? DBNull.Value),
+            new SqlParameter("@estadoCodes", estadoCodes),
             new SqlParameter("@aptoPara", (object?)criteria.AptoPara ?? DBNull.Value),
             new SqlParameter("@offset", offset),
             new SqlParameter("@limit", criteria.Limit)
@@ -65,11 +93,8 @@ WITH filtered_vacunos AS (
         v.nombre AS Nombre,
         r.nombre AS Raza,
         va.proveedor AS Procedencia,
-        CASE
-            WHEN veh.estado_code IN ('ACTIVO', 'VIVO') THEN 'vivo'
-            WHEN veh.estado_code IN ('MUERTO', 'FALLECIDO', 'BAJA') THEN 'muerto'
-            ELSE LOWER(cest.nombre)
-        END AS Estado,
+        veh.estado_code AS EstadoActualCode,
+        cest.nombre AS EstadoActualNombre,
         COUNT(*) OVER() AS TotalRegistros
     FROM dbo.vacuno v
     LEFT JOIN dbo.cat_raza r ON r.code = v.raza_code
@@ -109,8 +134,7 @@ WITH filtered_vacunos AS (
             @estado IS NULL
             OR veh.estado_code COLLATE Latin1_General_CI_AI = @estado COLLATE Latin1_General_CI_AI
             OR cest.nombre COLLATE Latin1_General_CI_AI = @estado COLLATE Latin1_General_CI_AI
-            OR (@estado = 'vivo' AND veh.estado_code IN ('ACTIVO', 'VIVO'))
-            OR (@estado = 'muerto' AND veh.estado_code IN ('MUERTO', 'FALLECIDO', 'BAJA'))
+            OR (@estadoCodes != '' AND veh.estado_code IN (SELECT value FROM STRING_SPLIT(@estadoCodes, ',')))
         )
         AND (
             @aptoPara IS NULL
@@ -125,7 +149,8 @@ SELECT
     Nombre,
     Raza,
     Procedencia,
-    Estado,
+    EstadoActualCode,
+    EstadoActualNombre,
     TotalRegistros
 FROM filtered_vacunos
 ORDER BY FechaRegistro DESC, Codigo ASC

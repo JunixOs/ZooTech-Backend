@@ -17,7 +17,9 @@ public sealed class ReporteVacunoListadoRow
 
     public string? Procedencia { get; set; }
 
-    public string? Estado { get; set; }
+    public string? EstadoActualCode { get; set; }
+
+    public string? EstadoActualNombre { get; set; }
 
     public int TotalRegistros { get; set; }
 }

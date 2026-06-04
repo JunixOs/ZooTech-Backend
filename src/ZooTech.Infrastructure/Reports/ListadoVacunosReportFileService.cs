@@ -2,12 +2,20 @@ using System.Globalization;
 using System.IO.Compression;
 using System.Net;
 using System.Text;
+using Microsoft.Extensions.Options;
 using ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ListarReporteVacunos;
+using ZooTech.Infrastructure.Storage;
 
 namespace ZooTech.Infrastructure.Reports;
 
 public sealed class ListadoVacunosReportFileService : IListadoVacunosReportFileService
 {
+    private readonly ReportStorageOptions _storageOptions;
+
+    public ListadoVacunosReportFileService(IOptions<ReportStorageOptions> storageOptions)
+    {
+        _storageOptions = storageOptions.Value;
+    }
     public async Task<ListadoVacunosReportFileResult> GenerateExcelAsync(
         IReadOnlyCollection<VacunoListadoItem> data,
         ReporteVacunoResumen resumen,
@@ -56,21 +64,20 @@ public sealed class ListadoVacunosReportFileService : IListadoVacunosReportFileS
         return new ListadoVacunosReportFileResult(fileName, BuildDownloadUrl(fileName));
     }
 
-    private static string GetOutputPath(string fileName)
+    private string GetOutputPath(string fileName)
     {
         var outputDirectory = Path.Combine(
             AppContext.BaseDirectory,
-            "wwwroot",
-            "reportes",
-            "vacunos");
+            _storageOptions.ReportesBasePath,
+            _storageOptions.ReportesVacunosPath);
 
         Directory.CreateDirectory(outputDirectory);
         return Path.Combine(outputDirectory, fileName);
     }
 
-    private static string BuildDownloadUrl(string fileName)
+    private string BuildDownloadUrl(string fileName)
     {
-        return $"/reportes/vacunos/{Uri.EscapeDataString(fileName)}";
+        return $"{_storageOptions.ReportesUrlBase}{Uri.EscapeDataString(fileName)}";
     }
 
     private static IReadOnlyList<string?> Row(params string?[] values) => values;

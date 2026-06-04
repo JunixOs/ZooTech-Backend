@@ -1,12 +1,20 @@
 using System.Globalization;
 using System.Net;
 using System.Text;
+using Microsoft.Extensions.Options;
 using ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ObtenerRegistroVacunoReporte;
+using ZooTech.Infrastructure.Storage;
 
 namespace ZooTech.Infrastructure.Reports;
 
 public sealed class RegistroVacunoPdfReportService : IRegistroVacunoPdfReportService
 {
+    private readonly ReportStorageOptions _storageOptions;
+
+    public RegistroVacunoPdfReportService(IOptions<ReportStorageOptions> storageOptions)
+    {
+        _storageOptions = storageOptions.Value;
+    }
     public async Task<RegistroVacunoPdfReportResult> GenerateAsync(
         RegistroVacunoDetalle vacuno,
         CancellationToken cancellationToken = default)
@@ -17,9 +25,8 @@ public sealed class RegistroVacunoPdfReportService : IRegistroVacunoPdfReportSer
 
         var outputDirectory = Path.Combine(
             AppContext.BaseDirectory,
-            "wwwroot",
-            "reportes",
-            "vacunos");
+            _storageOptions.ReportesBasePath,
+            _storageOptions.ReportesVacunosPath);
 
         Directory.CreateDirectory(outputDirectory);
 
@@ -29,7 +36,7 @@ public sealed class RegistroVacunoPdfReportService : IRegistroVacunoPdfReportSer
 
         await File.WriteAllBytesAsync(filePath, pdfBytes, cancellationToken);
 
-        var downloadUrl = $"/reportes/vacunos/{Uri.EscapeDataString(fileName)}";
+        var downloadUrl = $"{_storageOptions.ReportesUrlBase}{Uri.EscapeDataString(fileName)}";
         return new RegistroVacunoPdfReportResult(fileName, downloadUrl);
     }
 

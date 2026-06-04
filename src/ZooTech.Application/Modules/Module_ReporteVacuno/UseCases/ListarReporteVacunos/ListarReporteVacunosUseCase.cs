@@ -8,9 +8,6 @@ namespace ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ListarReport
 
 public sealed class ListarReporteVacunosUseCase : IListarReporteVacunosUseCase
 {
-    private static readonly string[] FormatosPermitidos = ["json", "pdf", "excel"];
-    private static readonly string[] EstadosPermitidos = ["vivo", "muerto"];
-    private static readonly string[] AptosPermitidos = ["produccion_leche", "carne", "reproduccion"];
 
     private readonly IReporteVacunoReadRepository _repository;
     private readonly IListadoVacunosReportFileService _reportFileService;
@@ -33,8 +30,8 @@ public sealed class ListarReporteVacunosUseCase : IListarReporteVacunosUseCase
         ListarReporteVacunosQuery query,
         CancellationToken cancellationToken = default)
     {
-        var formato = Normalize(query.Formato) ?? "json";
-        EnsureAllowed("formato", formato, FormatosPermitidos, "INVALID_REPORT_FORMAT", "El formato debe ser json, pdf o excel.", "Formato no permitido.");
+        var formato = Normalize(query.Formato) ?? ReporteVacunoConstants.FormatoDefault;
+        EnsureAllowed("formato", formato, ReporteVacunoConstants.FormatosPermitidos, "INVALID_REPORT_FORMAT", "El formato debe ser json, pdf o excel.", "Formato no permitido.");
 
         var rango = ReporteVacunoDateRangeResolver.Resolve(
             query.FechaDesde,
@@ -48,13 +45,13 @@ public sealed class ListarReporteVacunosUseCase : IListarReporteVacunosUseCase
         var estado = Normalize(query.Estado);
         if (estado is not null)
         {
-            EnsureAllowed("estado", estado, EstadosPermitidos, "VALIDATION_ERROR", "Los datos enviados no son validos.", "El estado debe ser vivo o muerto.");
+            EnsureAllowed("estado", estado, ReporteVacunoConstants.EstadosPermitidos, "VALIDATION_ERROR", "Los datos enviados no son validos.", "El estado debe ser vivo o muerto.");
         }
 
         var aptoPara = Normalize(query.AptoPara);
         if (aptoPara is not null)
         {
-            EnsureAllowed("aptoPara", aptoPara, AptosPermitidos, "VALIDATION_ERROR", "Los datos enviados no son validos.", "Valor de aptoPara no permitido.");
+            EnsureAllowed("aptoPara", aptoPara, ReporteVacunoConstants.AptosPermitidos, "VALIDATION_ERROR", "Los datos enviados no son validos.", "Valor de aptoPara no permitido.");
         }
 
         _logger.LogInformation(

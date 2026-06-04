@@ -24,10 +24,8 @@ public sealed class ReportesVacunosController : ControllerBase
         _listarReporteVacunosUseCase = listarReporteVacunosUseCase;
     }
 
-    /// <summary>
     /// Lista los reportes y graficos disponibles del modulo Vacuno.
     /// Aplica por defecto el rango de los ultimos 30 dias cuando no llegan fechas.
-    /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(ReportesDisponiblesResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status400BadRequest)]
@@ -40,13 +38,7 @@ public sealed class ReportesVacunosController : ControllerBase
         return Ok(ReportesDisponiblesMapper.ToDto(response));
     }
 
-    /// <summary>
     /// Genera el reporte listado de vacunos con filtros, rango de fechas y paginacion.
-    /// </summary>
-    /// <remarks>
-    /// Ejemplo:
-    /// GET /vacunos/reportes/listado?fechaDesde=2024-03-01&amp;fechaHasta=2024-03-31&amp;q=VACA001&amp;formato=json&amp;page=1&amp;limit=20
-    /// </remarks>
     [HttpGet("listado")]
     [ProducesResponseType(typeof(ListadoVacunosReporteResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status400BadRequest)]

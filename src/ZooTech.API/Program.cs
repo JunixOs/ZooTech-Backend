@@ -78,9 +78,13 @@ builder.Services.AddCors(options =>
         }
         else
         {
-            policy.WithOrigins("https://frontend-no-configurado.local")
-                  .AllowAnyHeader()
-                  .AllowAnyMethod();
+            var frontendUrl = builder.Configuration.GetValue<string>("Frontend:FrontendUrl");
+            if (!string.IsNullOrEmpty(frontendUrl))
+            {
+                policy.WithOrigins(frontendUrl)
+                      .AllowAnyHeader()
+                      .AllowAnyMethod();
+            }
         }
     });
 });

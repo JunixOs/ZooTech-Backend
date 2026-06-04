@@ -2,12 +2,21 @@ using System.Globalization;
 using System.IO.Compression;
 using System.Net;
 using System.Text;
+using Microsoft.Extensions.Options;
 using ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ObtenerRegistroVacunoReporte;
+using ZooTech.Infrastructure.Storage;
 
 namespace ZooTech.Infrastructure.Reports;
 
 public sealed class RegistroVacunoExcelReportService : IRegistroVacunoExcelReportService
 {
+    private readonly ReportStorageOptions _storageOptions;
+
+    public RegistroVacunoExcelReportService(IOptions<ReportStorageOptions> storageOptions)
+    {
+        _storageOptions = storageOptions.Value;
+    }
+
     public async Task<RegistroVacunoExcelReportResult> GenerateAsync(
         RegistroVacunoDetalle vacuno,
         CancellationToken cancellationToken = default)
@@ -18,9 +27,8 @@ public sealed class RegistroVacunoExcelReportService : IRegistroVacunoExcelRepor
 
         var outputDirectory = Path.Combine(
             AppContext.BaseDirectory,
-            "wwwroot",
-            "reportes",
-            "vacunos");
+            _storageOptions.ReportesBasePath,
+            _storageOptions.ReportesVacunosPath);
 
         Directory.CreateDirectory(outputDirectory);
 
@@ -44,7 +52,7 @@ public sealed class RegistroVacunoExcelReportService : IRegistroVacunoExcelRepor
             await AddEntryAsync(archive, "xl/worksheets/sheet1.xml", sheetXml, cancellationToken);
         }
 
-        var downloadUrl = $"/reportes/vacunos/{Uri.EscapeDataString(fileName)}";
+        var downloadUrl = $"{_storageOptions.ReportesUrlBase}{Uri.EscapeDataString(fileName)}";
         return new RegistroVacunoExcelReportResult(fileName, downloadUrl);
     }
 

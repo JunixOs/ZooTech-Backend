@@ -61,7 +61,7 @@ public sealed class RegistroVacunoReadRepository : IRegistroVacunoReadRepository
             row.FotoTamanoBytes,
             row.EstadoActualCode,
             row.EstadoActualNombre,
-            NormalizeCatalogValue(row.Estado),
+            DeterminarEstado(row.EstadoActualCode, row.EstadoActualNombre),
             row.FechaEstado,
             row.MotivoEstado,
             row.FechaRegistro,
@@ -80,6 +80,19 @@ public sealed class RegistroVacunoReadRepository : IRegistroVacunoReadRepository
         }
 
         return value.Trim().ToLowerInvariant().Replace(' ', '_');
+    }
+
+    private static string? DeterminarEstado(string? estadoCode, string? estadoNombre)
+    {
+        if (string.IsNullOrWhiteSpace(estadoCode))
+            return NormalizeCatalogValue(estadoNombre);
+
+        return estadoCode.ToUpperInvariant() switch
+        {
+            "ACTIVO" or "VIVO" => "vivo",
+            "MUERTO" or "FALLECIDO" or "BAJA" => "muerto",
+            _ => NormalizeCatalogValue(estadoNombre)
+        };
     }
 
     private const string Sql = """
@@ -112,11 +125,7 @@ SELECT
     v.observaciones AS Observaciones,
     veh.estado_code AS EstadoActualCode,
     cest.nombre AS EstadoActualNombre,
-    CASE
-        WHEN veh.estado_code IN ('ACTIVO', 'VIVO') THEN 'vivo'
-        WHEN veh.estado_code IN ('MUERTO', 'FALLECIDO', 'BAJA') THEN 'muerto'
-        ELSE LOWER(cest.nombre)
-    END AS Estado,
+    cest.nombre AS Estado,
     veh.fecha_estado AS FechaEstado,
     veh.motivo AS MotivoEstado,
     (
