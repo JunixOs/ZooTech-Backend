@@ -1,4 +1,5 @@
-﻿using ZooTech.Application.Common.Gateway.Time;
+using ZooTech.Application.Common.Exceptions;
+using ZooTech.Application.Common.Gateway.Time;
 using ZooTech.Application.Modules.Module_Sanidad.DTOs.Requests;
 using ZooTech.Application.Modules.Module_Sanidad.DTOs.Responses;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
@@ -18,6 +19,14 @@ public class UpdateTriajeUseCase
 
     public async Task<TriajeResponse?> ExecuteAsync(long id, TriajeRequest request)
     {
+        // 1. Validar reglas de negocio sobre relaciones foráneas
+        if (!await _repository.ExisteVacunoAsync(request.VacunoId))
+            throw new NotFoundException($"No se puede actualizar: El vacuno '{request.VacunoId}' no existe.");
+
+        if (!await _repository.ExisteTipoPesoAsync(request.TipoPesoCode))
+            throw new NotFoundException($"No se puede actualizar: El tipo de peso '{request.TipoPesoCode}' no existe o está inactivo.");
+
+        // 2. Proceder con la búsqueda y actualización segura
         var triaje = await _repository.GetByIdAsync(id);
 
         if (triaje is null)

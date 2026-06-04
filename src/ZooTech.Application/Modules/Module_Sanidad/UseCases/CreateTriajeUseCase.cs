@@ -1,4 +1,5 @@
-﻿using ZooTech.Application.Common.Gateway.Time;
+using ZooTech.Application.Common.Exceptions;
+using ZooTech.Application.Common.Gateway.Time;
 using ZooTech.Application.Modules.Module_Sanidad.DTOs.Requests;
 using ZooTech.Application.Modules.Module_Sanidad.DTOs.Responses;
 using ZooTech.Domain.Module_Sanidad.Entities;

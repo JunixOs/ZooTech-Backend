@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using ZooTech.Infrastructure.Persistence.Entities;
 
 namespace ZooTech.Infrastructure.Context;

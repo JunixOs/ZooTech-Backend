@@ -55,11 +55,10 @@ public class TriajeRepository : ITriajeRepository
         if (pesoKg.HasValue)
             query = query.Where(t => t.peso_kg == pesoKg);
 
-        query = query.OrderByDescending(t => t.fecha_hora);
-
         var total = await query.CountAsync();
 
         var entities = await query
+            .OrderByDescending(t => t.fecha_hora)
             .Skip((pagina - 1) * tamano)
             .Take(tamano)
             .ToListAsync();
@@ -105,16 +104,18 @@ public class TriajeRepository : ITriajeRepository
 
     public async Task<string> GenerateCodigoAsync()
     {
-        var codigos = await _context.Triajes
+        var maxCodigo = await _context.Triajes
+            .AsNoTracking()
             .Where(t => t.codigo.StartsWith("TRI"))
+            .OrderByDescending(t => t.codigo)
             .Select(t => t.codigo)
-            .ToListAsync();
+            .FirstOrDefaultAsync();
 
-        var maxNumber = codigos
-            .Select(codigo =>
-                int.TryParse(codigo[3..], out var number) ? number : 0)
-            .DefaultIfEmpty(0)
-            .Max();
+        int maxNumber = 0;
+        if (!string.IsNullOrEmpty(maxCodigo) && int.TryParse(maxCodigo[3..], out var parsedNumber))
+        {
+            maxNumber = parsedNumber;
+        }
 
         return $"TRI{maxNumber + 1:D3}";
     }
@@ -160,6 +161,16 @@ public class TriajeRepository : ITriajeRepository
             .ToListAsync();
     }
 
+    // Validaciones de existencia ultra rápidas (Uso de AnyAsync en vez de generar tracking o descargas)
+    public async Task<bool> ExisteVacunoAsync(long vacunoId)
+    {
+        return await _context.Vacunos.AnyAsync(v => v.id == vacunoId && v.deleted_at == null);
+    }
+
+    public async Task<bool> ExisteTipoPesoAsync(string tipoPesoCode)
+    {
+        return await _context.CatTipoPesos.AnyAsync(tp => tp.code == tipoPesoCode && tp.activo);
+    }
 
     // Mappers
     private static Triaje ToTriaje(triaje e) => new()
