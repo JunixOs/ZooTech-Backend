@@ -1,18 +1,25 @@
 using Microsoft.OpenApi;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
+using ZooTech.API.Configuration;
 using ZooTech.API.Endpoints;
 using ZooTech.API.Services;
 using ZooTech.Application;
 using ZooTech.Infrastructure;
 using ZooTech.InterfaceAdapters;
+using ZooTech.InterfaceAdapters.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddInterfaceAdapters();
+builder.Services.Configure<VacunoRequirementOptions>(
+    builder.Configuration.GetSection(VacunoRequirementOptions.SectionName));
 
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddControllers()
+    .AddApplicationPart(typeof(ZooTech.InterfaceAdapters.Modules.Module_ReporteVacuno.Controllers.ReportesVacunosController).Assembly);
 builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -35,7 +42,7 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddSingleton<IDemoAuthService, DemoAuthService>();
 // If a connection string is provided use EF repository against SQL Server, otherwise use in-memory
 var defaultConn = builder.Configuration.GetConnectionString("Default");
-if (!string.IsNullOrWhiteSpace(defaultConn))
+if (!builder.Environment.IsEnvironment("Testing") && !string.IsNullOrWhiteSpace(defaultConn))
 {
     builder.Services.AddDbContext<ZooTech.Infrastructure.Persistence.Context.GanaderiaDbContext>(options =>
         options.UseSqlServer(defaultConn));
@@ -64,6 +71,9 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+var generatedFilesRoot = Path.Combine(AppContext.BaseDirectory, "wwwroot");
+Directory.CreateDirectory(generatedFilesRoot);
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -72,6 +82,13 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowFrontend");
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(generatedFilesRoot),
+    RequestPath = string.Empty
+});
 
 app.MapGet("/api/health", () => Results.Ok(new
     {
@@ -85,6 +102,7 @@ app.MapGet("/api/health", () => Results.Ok(new
 
 app.MapAuthEndpoints();
 app.MapVacunoEndpoints();
+app.MapControllers();
 
 app.Run();
 

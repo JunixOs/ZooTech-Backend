@@ -3,6 +3,13 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ZooTech.Infrastructure.Persistence.Context;
 
+using ZooTech.Application.Common.Gateway.Time;
+using ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ListarReporteVacunos;
+using ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ObtenerRegistroVacunoReporte;
+using ZooTech.Infrastructure.Persistence.Repositories;
+using ZooTech.Infrastructure.Reports;
+using ZooTech.Infrastructure.Time;
+
 namespace ZooTech.Infrastructure;
 
 public static class DependencyInjection
@@ -31,14 +38,18 @@ public static class DependencyInjection
         // Repositories
         // ============================================
 
-        // services.AddScoped<IAnimalRepository, AnimalRepository>();
+        services.AddScoped<IReporteVacunoReadRepository, ReporteVacunoReadRepository>();
+        services.AddScoped<IRegistroVacunoReadRepository, RegistroVacunoReadRepository>();
+        services.AddScoped<IRegistroVacunoExcelReportService, RegistroVacunoExcelReportService>();
+        services.AddScoped<IRegistroVacunoPdfReportService, RegistroVacunoPdfReportService>();
+        services.AddScoped<IListadoVacunosReportFileService, ListadoVacunosReportFileService>();
 
         // ============================================
         // External Services
         // ============================================
 
         // services.AddScoped<IJwtService, JwtService>();
-        // services.AddScoped<IDateTimeProvider, DateTimeProvider>();
+        services.AddScoped<IDateTimeProvider, DateTimeProvider>();
 
         // ============================================
         // Caching
