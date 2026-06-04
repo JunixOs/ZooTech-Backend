@@ -1,6 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using ZooTech.Application.Common.Gateway.Caching;
+using ZooTech.Infrastructure.Caching;
 using ZooTech.Infrastructure.Persistence.Context;
 
 namespace ZooTech.Infrastructure;
@@ -44,7 +46,8 @@ public static class DependencyInjection
         // Caching
         // ============================================
 
-        // services.AddMemoryCache();
+        services.AddSingleton<GarnetCacheConnection>();
+        services.AddSingleton<IAppCacheService, GarnetCacheService>();
 
         return services;
     }
