@@ -6,30 +6,24 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ZooTech.Infrastructure.Persistence.Entities.MainTenantsDb;
 
-public partial class address
+[Index("code", Name = "UQ__features__357D4CF929F381D9", IsUnique = true)]
+public partial class feature
 {
     [Key]
     public long id { get; set; }
 
-    public long tenant_id { get; set; }
+    [StringLength(100)]
+    public string code { get; set; } = null!;
+
+    [StringLength(150)]
+    public string name { get; set; } = null!;
+
+    public string? description { get; set; }
 
     [StringLength(100)]
-    public string country { get; set; } = null!;
+    public string? category { get; set; }
 
-    [StringLength(100)]
-    public string state { get; set; } = null!;
-
-    [StringLength(100)]
-    public string province { get; set; } = null!;
-
-    [StringLength(100)]
-    public string city { get; set; } = null!;
-
-    [StringLength(200)]
-    public string address_line_1 { get; set; } = null!;
-
-    [StringLength(200)]
-    public string? address_line_2 { get; set; }
+    public bool is_active { get; set; }
 
     public string? metadata { get; set; }
 
@@ -42,7 +36,6 @@ public partial class address
     [Precision(3)]
     public DateTimeOffset? deleted_at { get; set; }
 
-    [ForeignKey("tenant_id")]
-    [InverseProperty("addresses")]
-    public virtual tenant tenant { get; set; } = null!;
+    [InverseProperty("feature")]
+    public virtual ICollection<tenant_feature> tenant_features { get; set; } = new List<tenant_feature>();
 }

@@ -6,7 +6,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ZooTech.Infrastructure.Persistence.Entities.MainTenantsDb;
 
-[Index("tenant_id", Name = "UQ__tenant_b__D6F29F3F39D50C33", IsUnique = true)]
+[Table("tenant_branding")]
+[Index("tenant_id", Name = "UQ__tenant_b__D6F29F3F54C8268B", IsUnique = true)]
 public partial class tenant_branding
 {
     [Key]
@@ -14,20 +15,21 @@ public partial class tenant_branding
 
     public long tenant_id { get; set; }
 
-    [StringLength(50)]
+    [StringLength(20)]
     public string? primary_color { get; set; }
 
-    [StringLength(50)]
+    [StringLength(20)]
     public string? secondary_color { get; set; }
 
-    [StringLength(1000)]
     public string? logo_url { get; set; }
 
     public string? metadata { get; set; }
 
-    public DateTime created_at { get; set; }
+    [Precision(3)]
+    public DateTimeOffset? created_at { get; set; }
 
-    public DateTime updated_at { get; set; }
+    [Precision(3)]
+    public DateTimeOffset? updated_at { get; set; }
 
     [ForeignKey("tenant_id")]
     [InverseProperty("tenant_branding")]

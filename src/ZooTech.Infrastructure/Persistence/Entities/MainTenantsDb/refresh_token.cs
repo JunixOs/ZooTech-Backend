@@ -6,9 +6,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ZooTech.Infrastructure.Persistence.Entities.MainTenantsDb;
 
-[Index("admin_user_id", Name = "IX_refresh_tokens_admin_user_id")]
+[Index("admin_user_id", Name = "IX_refresh_tokens_admin_user")]
 [Index("expires_at", Name = "IX_refresh_tokens_expires_at")]
-[Index("token", Name = "UX_refresh_tokens_token", IsUnique = true)]
+[Index("token", Name = "UQ__refresh___CA90DA7AADB5E62E", IsUnique = true)]
 public partial class refresh_token
 {
     [Key]
@@ -24,11 +24,14 @@ public partial class refresh_token
 
     public bool is_revoked { get; set; }
 
-    public DateTime expires_at { get; set; }
+    [Precision(3)]
+    public DateTimeOffset expires_at { get; set; }
 
-    public DateTime created_at { get; set; }
+    [Precision(3)]
+    public DateTimeOffset? created_at { get; set; }
 
-    public DateTime? revoked_at { get; set; }
+    [Precision(3)]
+    public DateTimeOffset? revoked_at { get; set; }
 
     [ForeignKey("admin_user_id")]
     [InverseProperty("refresh_tokens")]
