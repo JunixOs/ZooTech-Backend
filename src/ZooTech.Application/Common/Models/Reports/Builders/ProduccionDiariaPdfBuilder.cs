@@ -47,11 +47,20 @@ public class ProduccionDiariaPdfBuilder : IDocument
                     col.Item().Column(inner =>
                     {
                         inner.Spacing(5);
-                        inner.Item().Text($"Período: {FormatearFecha(_reporte.FechaDesde)} al {FormatearFecha(_reporte.FechaHasta)}")
+
+                        inner.Item()
+                            .AlignCenter()
+                            .Text($"Período: {FormatearFecha(_reporte.FechaDesde)} al {FormatearFecha(_reporte.FechaHasta)}")
                             .SemiBold();
 
-                        if (!string.IsNullOrEmpty(_reporte.NombreVacuno))
-                            inner.Item().Text($"Vacuno: {_reporte.NombreVacuno}");
+                        if (!string.IsNullOrWhiteSpace(_reporte.NombreVacuno))
+                        {
+                            inner.Item()
+                                .AlignCenter()
+                                .Text($"Vacuno: {_reporte.NombreVacuno}")
+                                .SemiBold()
+                                .FontColor(Colors.Grey.Darken2);
+                        }
                     });
 
                     if (!_reporte.Items.Any())
@@ -72,57 +81,61 @@ public class ProduccionDiariaPdfBuilder : IDocument
                                 cols.RelativeColumn(2);
                             });
 
-                            // ✅ Usar IContainer en lugar de dynamic
                             tabla.Header(header =>
                             {
-                                header.Cell().Element(EstiloEncabezado).Text("Fecha");
-                                header.Cell().Element(EstiloEncabezado).Text("Litros");
-                                header.Cell().Element(EstiloEncabezado).Text("Ordenios");
-                                header.Cell().Element(EstiloEncabezado).Text("Prom/Ord");
+                                header.Cell().Element(EstiloEncabezado)
+                                    .AlignCenter().Text("Fecha");
+
+                                header.Cell().Element(EstiloEncabezado)
+                                    .AlignCenter().Text("Litros");
+
+                                header.Cell().Element(EstiloEncabezado)
+                                    .AlignCenter().Text("Ordenios");
+
+                                header.Cell().Element(EstiloEncabezado)
+                                    .AlignCenter().Text("Prom/Ord");
                             });
 
                             foreach (var item in _reporte.Items)
                             {
-                                tabla.Cell().Element(EstiloCelda).Text(item.Fecha.ToString("dd/MM/yyyy"));
-                                tabla.Cell().Element(EstiloCelda).AlignRight().Text($"{item.TotalLitros:N2}");
-                                tabla.Cell().Element(EstiloCelda).AlignRight().Text(item.CantidadOrdenios.ToString());
-                                tabla.Cell().Element(EstiloCelda).AlignRight()
+                                tabla.Cell().Element(EstiloCelda)
+                                    .AlignCenter()
+                                    .Text(item.Fecha.ToString("dd/MM/yyyy"));
+
+                                tabla.Cell().Element(EstiloCelda)
+                                    .AlignCenter()
+                                    .Text($"{item.TotalLitros:N2}");
+
+                                tabla.Cell().Element(EstiloCelda)
+                                    .AlignCenter()
+                                    .Text(item.CantidadOrdenios.ToString());
+
+                                tabla.Cell().Element(EstiloCelda)
+                                    .AlignCenter()
                                     .Text($"{(item.CantidadOrdenios > 0 ? item.TotalLitros / item.CantidadOrdenios : 0):N2}");
                             }
 
-                            // ✅ Fila de total corregida (el span debe ir en la columna correcta)
-                            tabla.Cell().ColumnSpan(3).Element(EstiloCelda)
-                                .AlignRight().Text("TOTAL").SemiBold();
-                            tabla.Cell().Element(EstiloCelda)
-                                .AlignRight().Text($"{_reporte.TotalLitrosPeriodo:N2}").SemiBold();
+                            tabla.Cell().ColumnSpan(1).Element(EstiloCeldaTotal)
+                                .AlignCenter()
+                                .Text("TOTAL")
+                                .SemiBold();
+
+                            tabla.Cell().Element(EstiloCeldaTotal)
+                                .AlignCenter()
+                                .Text($"{_reporte.TotalLitrosPeriodo:N2}")
+                                .SemiBold();
+
+                            tabla.Cell().Element(EstiloCeldaTotal)
+                                .AlignCenter()
+                                .Text("")
+                                .SemiBold();
+
+                            tabla.Cell().Element(EstiloCeldaTotal)
+                                .AlignCenter()
+                                .Text("")
+                                .SemiBold();
                         });
                     }
-
-                    col.Item()
-                        .PaddingTop(10)
-                        .BorderTop(1)
-                        .BorderColor(Colors.Grey.Lighten2)
-                        .PaddingTop(10)
-                        .Column(inner =>
-                        {
-                            inner.Spacing(5);
-
-                            inner.Item().Row(row =>
-                            {
-                                row.RelativeItem().Text("Total Ordenios:");
-                                row.RelativeItem().AlignRight()
-                                    .Text(_reporte.TotalOrdenios.ToString())
-                                    .SemiBold().FontSize(12);
-                            });
-
-                            inner.Item().Row(row =>
-                            {
-                                row.RelativeItem().Text("Promedio por Ordenio:");
-                                row.RelativeItem().AlignRight()
-                                    .Text($"{_reporte.PromedioPorOrdenio:N2} L")
-                                    .SemiBold().FontSize(12);
-                            });
-                        });
                 });
 
             page.Footer()
@@ -140,18 +153,30 @@ public class ProduccionDiariaPdfBuilder : IDocument
         });
     }
 
-    // ✅ Métodos estáticos con IContainer en lugar de Action<dynamic>
     private static IContainer EstiloEncabezado(IContainer container)
         => container
             .DefaultTextStyle(x => x.SemiBold().FontColor(Colors.White))
             .Background(Colors.Pink.Darken2)
-            .Padding(5);
+            .PaddingVertical(6)
+            .PaddingHorizontal(5)
+            .AlignMiddle();
 
     private static IContainer EstiloCelda(IContainer container)
         => container
             .BorderBottom(1)
             .BorderColor(Colors.Grey.Lighten2)
-            .Padding(5);
+            .PaddingVertical(6)
+            .PaddingHorizontal(5)
+            .AlignMiddle();
+
+    private static IContainer EstiloCeldaTotal(IContainer container)
+        => container
+            .BorderTop(1)
+            .BorderBottom(1)
+            .BorderColor(Colors.Grey.Lighten2)
+            .PaddingVertical(7)
+            .PaddingHorizontal(5)
+            .AlignMiddle();
 
     private static string FormatearFecha(DateTime? fecha)
         => fecha.HasValue ? fecha.Value.ToString("dd/MM/yyyy") : "N/A";

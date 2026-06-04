@@ -66,13 +66,19 @@ public class GenerateReportePdfInteractor : IGenerateReportePdfInputPort
 
     private static string GenerarNombreArchivo(GenerateReportePdfQuery query)
     {
-        var fechaDesde = query.FechaDesde?.ToString("yyyyMMdd") ?? "desde";
-        var fechaHasta = query.FechaHasta?.ToString("yyyyMMdd") ?? "hasta";
+        var fechaDesde = query.FechaDesde?.ToString("yyyyMMdd");
+        var fechaHasta = query.FechaHasta?.ToString("yyyyMMdd");
         var vacunoId = query.VacunoId.HasValue ? $"_vacuno_{query.VacunoId}" : string.Empty;
 
-        
+        var fecha_Now = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+        var name = "reporte_produccion";
 
-        return $"reporte_produccion_{fechaDesde}_{fechaHasta}{vacunoId}.pdf";
+        if ( string.IsNullOrEmpty(fechaDesde) && string.IsNullOrEmpty(fechaHasta))
+        {
+            return $"{name}_{vacunoId}_{fecha_Now}.pdf";
+        }
+
+        return $"{name}_{fechaDesde}_{fechaHasta}{vacunoId}_{fecha_Now}.pdf";
     }
 }
 
