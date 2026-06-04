@@ -4,6 +4,7 @@ using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Delet
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GetOrdenioById;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.ListOrdenios;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.UpdateOrdenio;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Reportes.GetReporteDiario;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.DTOs.Responses;
 
@@ -61,4 +62,8 @@ public static class ProduccionLecheMapper
             output.Observaciones,
             output.CreatedAt,
             output.UpdatedAt);
+
+    public static GetReporteDiarioResponse ToResponse(GetReporteDiarioOutput output)
+        => new(output.Items.Select(x => new ReporteDiarioItemResponse(x.Fecha, x.TotalLitros, x.CantidadOrdenios)).ToList());
 }
+

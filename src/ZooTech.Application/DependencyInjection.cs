@@ -4,6 +4,8 @@ using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Delet
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GetOrdenioById;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.ListOrdenios;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.UpdateOrdenio;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Reportes.GetReporteDiario;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Reportes.GenerateReportePdf;
 
 namespace ZooTech.Application;
 
@@ -44,6 +46,8 @@ public static class DependencyInjection
         services.AddScoped<IListOrdeniosInputPort, ListOrdeniosInteractor>();
         services.AddScoped<IUpdateOrdenioInputPort, UpdateOrdenioInteractor>();
         services.AddScoped<IDeleteOrdenioInputPort, DeleteOrdenioInteractor>();
+        services.AddScoped<IGetReporteDiarioInputPort, GetReporteDiarioInteractor>();
+        services.AddScoped<IGenerateReportePdfInputPort, GenerateReportePdfInteractor>();
 
         return services;
     }

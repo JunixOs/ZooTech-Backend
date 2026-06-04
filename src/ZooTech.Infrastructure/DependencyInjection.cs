@@ -2,8 +2,10 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Ports;
+using ZooTech.Application.Common.Gateway.Services;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Persistence.Modules.Module_ProduccionLeche.Repositories;
+using ZooTech.Infrastructure.Common.Services.PdfGenerator;
 
 namespace ZooTech.Infrastructure;
 
@@ -39,8 +41,7 @@ public static class DependencyInjection
         // External Services
         // ============================================
 
-        // services.AddScoped<IJwtService, JwtService>();
-        // services.AddScoped<IDateTimeProvider, DateTimeProvider>();
+        services.AddScoped<IPdfGeneratorService, PdfGeneratorService>();
 
         // ============================================
         // Caching

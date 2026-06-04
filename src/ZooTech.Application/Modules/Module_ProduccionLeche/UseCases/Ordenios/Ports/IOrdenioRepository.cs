@@ -16,6 +16,11 @@ public interface IOrdenioRepository
     Task<Ordenio> AddAsync(Ordenio ordenio, CancellationToken cancellationToken);
     Task<Ordenio> UpdateAsync(Ordenio ordenio, CancellationToken cancellationToken);
     Task<IReadOnlyList<VacunoSimpleOutput>> ListVacunosAsync(CancellationToken cancellationToken);
+
+    // Producción diaria: devuelve fecha, total litros y cantidad de ordeños
+    Task<IReadOnlyList<ProduccionDiariaItem>> GetProduccionDiariaAsync(DateTime? fechaDesde, DateTime? fechaHasta, long? vacunoId, CancellationToken cancellationToken);
 }
 
 public sealed record VacunoSimpleOutput(long Id, string Codigo, string Nombre, string RazaCode);
+
+public sealed record ProduccionDiariaItem(DateTime Fecha, decimal TotalLitros, int CantidadOrdenios);

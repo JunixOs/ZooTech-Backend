@@ -98,6 +98,40 @@ public sealed class OrdenioRepository : IOrdenioRepository
         return (items, totalCount);
     }
 
+    public async Task<IReadOnlyList<ProduccionDiariaItem>> GetProduccionDiariaAsync(DateTime? fechaDesde, DateTime? fechaHasta, long? vacunoId, CancellationToken cancellationToken)
+    {
+        var queryable = _dbContext.ordenios
+            .AsNoTracking()
+            .Where(x => x.deleted_at == null)
+            .AsQueryable();
+
+        if (vacunoId.HasValue)
+        {
+            queryable = queryable.Where(x => x.vacuno_id == vacunoId.Value);
+        }
+
+        if (fechaDesde.HasValue)
+        {
+            queryable = queryable.Where(x => x.fecha_hora >= fechaDesde.Value);
+        }
+
+        if (fechaHasta.HasValue)
+        {
+            queryable = queryable.Where(x => x.fecha_hora <= fechaHasta.Value);
+        }
+
+        var grouped = await queryable
+            .GroupBy(x => x.fecha_hora.Date)
+            .ToListAsync(cancellationToken);
+
+        var items = grouped
+            .Select(g => new ProduccionDiariaItem(g.Key, g.Sum(x => x.litros), g.Count()))
+            .OrderByDescending(x => x.Fecha)
+            .ToList();
+
+        return items;
+    }
+
     public async Task<Ordenio> AddAsync(Ordenio ordenio, CancellationToken cancellationToken)
     {
         var entity = ToEntity(ordenio);
