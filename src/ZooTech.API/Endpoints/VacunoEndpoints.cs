@@ -17,11 +17,20 @@ public static class VacunoEndpoints
 
         group.MapGet("/", (
                 string? search,
+                DateOnly? fechaDesde,
+                DateOnly? fechaHasta,
+                string? estado,
                 int? page,
                 int? pageSize,
                 IVacunoRepository repository) =>
             {
-                var response = repository.Search(search, page ?? 1, pageSize ?? 10);
+                var response = repository.Search(
+                    search,
+                    page ?? 1,
+                    pageSize ?? 10,
+                    fechaDesde,
+                    fechaHasta,
+                    estado);
                 return Results.Ok(response);
             })
             .WithName("ListarVacunos")

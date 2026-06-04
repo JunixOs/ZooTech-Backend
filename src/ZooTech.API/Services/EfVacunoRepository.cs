@@ -16,13 +16,18 @@ public sealed class EfVacunoRepository : IVacunoRepository
         _db = db;
     }
 
-    public PagedResponse<VacunoResponse> Search(string? search, int page, int pageSize)
+    public PagedResponse<VacunoResponse> Search(
+        string? search,
+        int page,
+        int pageSize,
+        DateOnly? fechaDesde = null,
+        DateOnly? fechaHasta = null,
+        string? estado = null)
     {
         page = Math.Max(page, 1);
         pageSize = Math.Clamp(pageSize, 1, 100);
 
-        var query = _db.vacunos.AsQueryable()
-            .Where(v => v.deleted_at == null);
+        var query = _db.vacunos.AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -34,6 +39,28 @@ public sealed class EfVacunoRepository : IVacunoRepository
                 EF.Functions.Like(v.color_code, $"%{term}%") ||
                 EF.Functions.Like(v.sexo_code, $"%{term}%") ||
                 EF.Functions.Like(v.granja.nombre, $"%{term}%"));
+        }
+
+        if (fechaDesde is not null)
+        {
+            query = query.Where(v => v.fecha_registro >= fechaDesde.Value);
+        }
+
+        if (fechaHasta is not null)
+        {
+            query = query.Where(v => v.fecha_registro <= fechaHasta.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(estado))
+        {
+            if (string.Equals(estado, "eliminado", StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.Where(v => v.deleted_at != null);
+            }
+            else if (string.Equals(estado, "activo", StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.Where(v => v.deleted_at == null);
+            }
         }
 
         var totalItems = query.Count();

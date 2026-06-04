@@ -4,7 +4,13 @@ namespace ZooTech.API.Services;
 
 public interface IVacunoRepository
 {
-    PagedResponse<VacunoResponse> Search(string? search, int page, int pageSize);
+    PagedResponse<VacunoResponse> Search(
+        string? search,
+        int page,
+        int pageSize,
+        DateOnly? fechaDesde = null,
+        DateOnly? fechaHasta = null,
+        string? estado = null);
     VacunoResponse? GetByCodigo(string codigo, VerVacunoParametros? parametros = null);
     VacunoResponse Create(RegistrarVacunoRequest request);
     VacunoResponse? Update(string codigo, UpdateVacunoRequest request);
@@ -22,15 +28,20 @@ public sealed class InMemoryVacunoRepository : IVacunoRepository
     private readonly object syncRoot = new();
     private readonly List<VacunoResponse> vacunos = SeedVacunos();
 
-    public PagedResponse<VacunoResponse> Search(string? search, int page, int pageSize)
+    public PagedResponse<VacunoResponse> Search(
+        string? search,
+        int page,
+        int pageSize,
+        DateOnly? fechaDesde = null,
+        DateOnly? fechaHasta = null,
+        string? estado = null)
     {
         page = Math.Max(page, 1);
         pageSize = Math.Clamp(pageSize, 1, 100);
 
         lock (syncRoot)
         {
-            var query = vacunos
-                .Where(v => !string.Equals(v.Estado, "eliminado", StringComparison.OrdinalIgnoreCase));
+            var query = vacunos.AsEnumerable();
 
             if (!string.IsNullOrWhiteSpace(search))
             {
@@ -47,6 +58,22 @@ public sealed class InMemoryVacunoRepository : IVacunoRepository
                     Contains(v.Provincia, term) ||
                     Contains(v.AptoPara, term) ||
                     Contains(v.Estado, term));
+            }
+
+            if (fechaDesde is not null)
+            {
+                query = query.Where(v => TryParseDate(v.FechaRegistroFuncion, out var fecha) && fecha >= fechaDesde.Value);
+            }
+
+            if (fechaHasta is not null)
+            {
+                query = query.Where(v => TryParseDate(v.FechaRegistroFuncion, out var fecha) && fecha <= fechaHasta.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(estado))
+            {
+                var estadoNormalizado = NormalizeEstado(estado);
+                query = query.Where(v => string.Equals(NormalizeEstado(v.Estado), estadoNormalizado, StringComparison.OrdinalIgnoreCase));
             }
 
             var filtered = query
@@ -254,6 +281,18 @@ public sealed class InMemoryVacunoRepository : IVacunoRepository
     private static bool Contains(string value, string term)
     {
         return value.Contains(term, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool TryParseDate(string value, out DateOnly date)
+    {
+        return DateOnly.TryParse(value, out date);
+    }
+
+    private static string NormalizeEstado(string? estado)
+    {
+        return string.Equals(estado, "eliminado", StringComparison.OrdinalIgnoreCase)
+            ? "eliminado"
+            : "activo";
     }
 
     private static bool MatchesCodigo(
