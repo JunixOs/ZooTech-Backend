@@ -1,22 +1,20 @@
 using ZooTech.Application;
 using ZooTech.Infrastructure;
-
+using ZooTech.Infrastructure.Configuration;
+using ZooTech.InterfaceAdapters;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.Controllers;
-using ZooTech.Infrastructure.Persistence.Repositories.Reproduccion;
+using ZooTech.Infrastructure.Persistence.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-// builder.Services.AddOpenApi();
-
-// ======= Configuracion Swagger =======
 builder.Services
     .AddControllers()
     .AddApplicationPart(typeof(HomeController).Assembly)
-    .AddApplicationPart(typeof(CeloController).Assembly);
+    .AddApplicationPart(typeof(CeloController).Assembly)
+    .AddApplicationPart(typeof(ProduccionLecheController).Assembly);
+
 builder.Services.AddEndpointsApiExplorer();
+
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("auth", new()
@@ -38,31 +36,30 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-builder.Services.AddApplication();
-
-builder.Services.AddInfrastructure(
-    builder.Configuration);
+builder.Services
+    .AddApplication()
+    .AddInfrastructure(builder.Configuration)
+    .AddInterfaceAdapters();
 
 builder.Services.AddScoped<CeloRepository>();
-
-var frontendPort = builder.Configuration["Frontend:FrontendPort"];
-var frontendIP = builder.Configuration["Frontend:FrontendIP"];
-var frontendProtocol = builder.Configuration["Frontend:FrontendProtocol"];
+builder.Services.AddSanidadServices(builder.Configuration);
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowFrontend",
-        policy =>
-        {
-            policy.WithOrigins($"{frontendProtocol}://{frontendIP}:{frontendPort}")
-                .AllowAnyHeader()
-                .AllowAnyMethod();
-        });
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        var frontendPort = builder.Configuration["Frontend:FrontendPort"];
+        var frontendIP = builder.Configuration["Frontend:FrontendIP"];
+        var frontendProtocol = builder.Configuration["Frontend:FrontendProtocol"];
+
+        policy.WithOrigins($"{frontendProtocol}://{frontendIP}:{frontendPort}")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
 });
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -81,10 +78,9 @@ if (app.Environment.IsDevelopment())
             "/swagger/users/swagger.json",
             "Users API");
     });
-
-    // app.MapOpenApi();
 }
 
+<<<<<<< HEAD
 app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 app.UseAuthorization();
