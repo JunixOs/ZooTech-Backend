@@ -1,7 +1,7 @@
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ListarReporteVacunos;
 using ZooTech.Infrastructure.Persistence.Context;
+using ZooTech.Infrastructure.Persistence.Entities;
 
 namespace ZooTech.Infrastructure.Persistence.Repositories;
 
@@ -18,134 +18,170 @@ public sealed class ReporteVacunoReadRepository : IReporteVacunoReadRepository
         ReporteVacunoListadoCriteria criteria,
         CancellationToken cancellationToken = default)
     {
-        var offset = (criteria.Page - 1) * criteria.Limit;
-
-        var rows = await _context.ReporteVacunoListadoRows
-            .FromSqlRaw(Sql, CreateParameters(criteria, offset))
+        var query = _context.vacunos
             .AsNoTracking()
-            .ToListAsync(cancellationToken);
+            .AsSplitQuery()
+            .Include(vacuno => vacuno.raza_codeNavigation)
+            .Include(vacuno => vacuno.granja)
+                .ThenInclude(granja => granja.distrito_codigoNavigation)
+                .ThenInclude(distrito => distrito.provincia_codigoNavigation)
+                .ThenInclude(provincia => provincia.departamento_codigoNavigation)
+            .Include(vacuno => vacuno.vacuno_estado_historials)
+                .ThenInclude(historial => historial.estado_codeNavigation)
+            .Include(vacuno => vacuno.vacuno_utilizacion_historials)
+                .ThenInclude(historial => historial.tipo_utilizacion_codeNavigation)
+            .Where(vacuno => vacuno.deleted_at == null)
+            .Where(vacuno => vacuno.fecha_registro >= criteria.FechaDesde)
+            .Where(vacuno => vacuno.fecha_registro <= criteria.FechaHasta);
 
-        var total = rows.FirstOrDefault()?.TotalRegistros ?? 0;
-        var items = rows
-            .Select(row => new VacunoListadoItem(
-                row.Id,
-                row.Codigo,
-                row.FechaRegistro,
-                row.Nombre,
-                row.Raza,
-                row.Procedencia,
-                row.Estado))
+        if (!string.IsNullOrWhiteSpace(criteria.Q))
+        {
+            var term = criteria.Q.Trim();
+            query = query.Where(vacuno =>
+                EF.Functions.Like(vacuno.codigo, $"%{term}%") ||
+                EF.Functions.Like(vacuno.nombre, $"%{term}%"));
+        }
+
+        if (!string.IsNullOrWhiteSpace(criteria.Codigo))
+        {
+            var codigo = criteria.Codigo.Trim();
+            query = query.Where(vacuno => EF.Functions.Like(vacuno.codigo, $"%{codigo}%"));
+        }
+
+        if (!string.IsNullOrWhiteSpace(criteria.Nombre))
+        {
+            var nombre = criteria.Nombre.Trim();
+            query = query.Where(vacuno => EF.Functions.Like(vacuno.nombre, $"%{nombre}%"));
+        }
+
+        var records = await query.ToListAsync(cancellationToken);
+        var filtered = records
+            .Select(ToListadoItem)
+            .Where(item => Matches(item.FechaRegistro, criteria.FechaRegistro))
+            .Where(item => Matches(item.Raza, criteria.Raza))
+            .Where(item => Matches(item.Procedencia, criteria.Procedencia))
+            .Where(item => MatchesEstado(item.Estado, criteria.Estado))
+            .Where(item => MatchesAptoPara(records, item.Id, criteria.AptoPara))
+            .OrderByDescending(item => item.FechaRegistro)
+            .ThenBy(item => item.Codigo, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-        return new ReporteVacunoListadoPage(items, total);
+        var offset = (criteria.Page - 1) * criteria.Limit;
+        var pageItems = filtered
+            .Skip(offset)
+            .Take(criteria.Limit)
+            .ToList();
+
+        return new ReporteVacunoListadoPage(pageItems, filtered.Count);
     }
 
-    private static object[] CreateParameters(ReporteVacunoListadoCriteria criteria, int offset)
+    private static VacunoListadoItem ToListadoItem(vacuno vacuno)
     {
-        return
-        [
-            new SqlParameter("@fechaDesde", System.Data.SqlDbType.Date) { Value = criteria.FechaDesde.ToDateTime(TimeOnly.MinValue) },
-            new SqlParameter("@fechaHasta", System.Data.SqlDbType.Date) { Value = criteria.FechaHasta.ToDateTime(TimeOnly.MinValue) },
-            new SqlParameter("@q", (object?)criteria.Q ?? DBNull.Value),
-            new SqlParameter("@codigo", (object?)criteria.Codigo ?? DBNull.Value),
-            new SqlParameter("@fechaRegistro", (object?)criteria.FechaRegistro ?? DBNull.Value),
-            new SqlParameter("@nombre", (object?)criteria.Nombre ?? DBNull.Value),
-            new SqlParameter("@raza", (object?)criteria.Raza ?? DBNull.Value),
-            new SqlParameter("@procedencia", (object?)criteria.Procedencia ?? DBNull.Value),
-            new SqlParameter("@estado", (object?)criteria.Estado ?? DBNull.Value),
-            new SqlParameter("@aptoPara", (object?)criteria.AptoPara ?? DBNull.Value),
-            new SqlParameter("@offset", offset),
-            new SqlParameter("@limit", criteria.Limit)
-        ];
+        var estado = ResolveEstado(vacuno);
+
+        return new VacunoListadoItem(
+            vacuno.id,
+            FormatCodigo(vacuno.codigo),
+            vacuno.fecha_registro,
+            vacuno.nombre,
+            vacuno.raza_codeNavigation?.nombre ?? vacuno.raza_code,
+            BuildProcedencia(
+                vacuno.granja?.nombre,
+                vacuno.granja?.distrito_codigoNavigation?.nombre,
+                vacuno.granja?.distrito_codigoNavigation?.provincia_codigoNavigation?.nombre,
+                vacuno.granja?.distrito_codigoNavigation?.provincia_codigoNavigation?.departamento_codigoNavigation?.nombre),
+            estado);
     }
 
-    private const string Sql = """
-WITH filtered_vacunos AS (
-    SELECT
-        v.id AS Id,
-        v.codigo AS Codigo,
-        v.fecha_registro AS FechaRegistro,
-        v.nombre AS Nombre,
-        r.nombre AS Raza,
-        va.proveedor AS Procedencia,
-        CASE
-            WHEN veh.estado_code IN ('ACTIVO', 'VIVO') THEN 'vivo'
-            WHEN veh.estado_code IN ('MUERTO', 'FALLECIDO', 'BAJA') THEN 'muerto'
-            ELSE LOWER(cest.nombre)
-        END AS Estado,
-        COUNT(*) OVER() AS TotalRegistros
-    FROM dbo.vacuno v
-    LEFT JOIN dbo.cat_raza r ON r.code = v.raza_code
-    LEFT JOIN dbo.vacuno_adquisicion va ON va.vacuno_id = v.id
-    LEFT JOIN dbo.vacuno_estado_historial veh ON veh.vacuno_id = v.id
-        AND veh.id = (
-            SELECT MAX(veh2.id)
-            FROM dbo.vacuno_estado_historial veh2
-            WHERE veh2.vacuno_id = v.id
-        )
-    LEFT JOIN dbo.cat_estado_vacuno cest ON cest.code = veh.estado_code
-    LEFT JOIN dbo.vacuno_utilizacion_historial vuh_latest ON vuh_latest.vacuno_id = v.id
-        AND vuh_latest.id = (
-            SELECT MAX(vuh2.id)
-            FROM dbo.vacuno_utilizacion_historial vuh2
-            WHERE vuh2.vacuno_id = v.id
-        )
-    LEFT JOIN dbo.cat_tipo_utilizacion ctu ON ctu.code = vuh_latest.tipo_utilizacion_code
-    WHERE
-        v.deleted_at IS NULL
-        AND v.fecha_registro >= @fechaDesde
-        AND v.fecha_registro < DATEADD(DAY, 1, @fechaHasta)
-        AND (
-            @q IS NULL
-            OR v.codigo COLLATE Latin1_General_CI_AI LIKE '%' + @q + '%'
-            OR v.nombre COLLATE Latin1_General_CI_AI LIKE '%' + @q + '%'
-        )
-        AND (
-            @codigo IS NULL
-            OR v.codigo COLLATE Latin1_General_CI_AI LIKE '%' + @codigo + '%'
-        )
-        AND (
-            @fechaRegistro IS NULL
-            OR CONVERT(varchar(10), v.fecha_registro, 23) LIKE '%' + @fechaRegistro + '%'
-            OR CONVERT(varchar(10), v.fecha_registro, 103) LIKE '%' + @fechaRegistro + '%'
-        )
-        AND (
-            @nombre IS NULL
-            OR v.nombre COLLATE Latin1_General_CI_AI LIKE '%' + @nombre + '%'
-        )
-        AND (
-            @raza IS NULL
-            OR r.nombre COLLATE Latin1_General_CI_AI LIKE '%' + @raza + '%'
-        )
-        AND (
-            @procedencia IS NULL
-            OR va.proveedor COLLATE Latin1_General_CI_AI LIKE '%' + @procedencia + '%'
-        )
-        AND (
-            @estado IS NULL
-            OR veh.estado_code COLLATE Latin1_General_CI_AI = @estado COLLATE Latin1_General_CI_AI
-            OR cest.nombre COLLATE Latin1_General_CI_AI = @estado COLLATE Latin1_General_CI_AI
-            OR (@estado = 'vivo' AND veh.estado_code IN ('ACTIVO', 'VIVO'))
-            OR (@estado = 'muerto' AND veh.estado_code IN ('MUERTO', 'FALLECIDO', 'BAJA'))
-        )
-        AND (
-            @aptoPara IS NULL
-            OR ctu.code COLLATE Latin1_General_CI_AI = @aptoPara COLLATE Latin1_General_CI_AI
-            OR ctu.nombre COLLATE Latin1_General_CI_AI LIKE '%' + @aptoPara + '%'
-        )
-)
-SELECT
-    Id,
-    Codigo,
-    FechaRegistro,
-    Nombre,
-    Raza,
-    Procedencia,
-    Estado,
-    TotalRegistros
-FROM filtered_vacunos
-ORDER BY FechaRegistro DESC, Codigo ASC
-OFFSET @offset ROWS
-FETCH NEXT @limit ROWS ONLY;
-""";
+    private static string ResolveEstado(vacuno vacuno)
+    {
+        var latest = vacuno.vacuno_estado_historials
+            .OrderByDescending(historial => historial.id)
+            .FirstOrDefault();
+        var code = latest?.estado_code ?? string.Empty;
+        var name = latest?.estado_codeNavigation?.nombre ?? string.Empty;
+        var value = string.IsNullOrWhiteSpace(code) ? name : code;
+
+        if (MatchesAny(value, "MUERTO", "FALLECIDO", "BAJA", "INACTIVO"))
+        {
+            return "muerto";
+        }
+
+        return "vivo";
+    }
+
+    private static bool MatchesAptoPara(
+        IReadOnlyCollection<vacuno> records,
+        long vacunoId,
+        string? filter)
+    {
+        if (string.IsNullOrWhiteSpace(filter))
+        {
+            return true;
+        }
+
+        var vacuno = records.FirstOrDefault(item => item.id == vacunoId);
+        var latest = vacuno?.vacuno_utilizacion_historials
+            .OrderByDescending(historial => historial.id)
+            .FirstOrDefault();
+
+        return Matches(latest?.tipo_utilizacion_code, filter) ||
+            Matches(latest?.tipo_utilizacion_codeNavigation?.nombre, filter);
+    }
+
+    private static bool Matches(DateOnly value, string? filter)
+    {
+        if (string.IsNullOrWhiteSpace(filter))
+        {
+            return true;
+        }
+
+        var term = filter.Trim();
+        return value.ToString("yyyy-MM-dd").Contains(term, StringComparison.OrdinalIgnoreCase) ||
+            value.ToString("dd/MM/yyyy").Contains(term, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool Matches(string? value, string? filter)
+    {
+        return string.IsNullOrWhiteSpace(filter) ||
+            (!string.IsNullOrWhiteSpace(value) &&
+             value.Contains(filter.Trim(), StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool MatchesEstado(string? value, string? filter)
+    {
+        return string.IsNullOrWhiteSpace(filter) ||
+            string.Equals(value, NormalizeEstadoFilter(filter), StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizeEstadoFilter(string value)
+    {
+        return MatchesAny(value, "MUERTO", "FALLECIDO", "BAJA", "INACTIVO")
+            ? "muerto"
+            : "vivo";
+    }
+
+    private static bool MatchesAny(string value, params string[] options)
+    {
+        return options.Any(option =>
+            string.Equals(value, option, StringComparison.OrdinalIgnoreCase) ||
+            value.Contains(option, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string BuildProcedencia(params string?[] values)
+    {
+        return string.Join(", ", values.Where(value => !string.IsNullOrWhiteSpace(value)));
+    }
+
+    private static string FormatCodigo(string codigo)
+    {
+        if (codigo.Contains('_') ||
+            !codigo.StartsWith("VAC", StringComparison.OrdinalIgnoreCase) ||
+            !codigo[3..].All(char.IsDigit))
+        {
+            return codigo;
+        }
+
+        return codigo.Insert(3, "_");
+    }
 }

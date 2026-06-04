@@ -229,12 +229,14 @@ public sealed class EfVacunoRepository : IVacunoRepository
 
     private static string FormatCodigo(string codigo)
     {
-        if (codigo.Contains('_')) return codigo;
-        if (codigo.Length > 3)
+        if (codigo.Contains('_') ||
+            !codigo.StartsWith("VAC", StringComparison.OrdinalIgnoreCase) ||
+            !codigo[3..].All(char.IsDigit))
         {
-            return codigo.Insert(3, "_");
+            return codigo;
         }
-        return codigo;
+
+        return codigo.Insert(3, "_");
     }
 
     private vacuno? FindByNormalizedCodigo(string codigo)
