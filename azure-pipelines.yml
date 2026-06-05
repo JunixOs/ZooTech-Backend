@@ -2,7 +2,11 @@ trigger:
   branches:
     include:
       - develop
-
+pr:
+  branches:
+    include:
+      - develop
+      
 pool:
   name: 'Default'
 
