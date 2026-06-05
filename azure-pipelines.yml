@@ -11,12 +11,11 @@ variables:
 
 steps:
   - script: |
-      dotnet tool install --global dotnet-sonarscanner
-      dotnet tool install --global dotnet-coverage
+      echo Tools already installed
     displayName: 'Install tools'
 
   - script: |
-      dotnet sonarscanner begin /k:"zootech-backend" /n:"ZooTech Backend" /d:sonar.token="$(SONAR_TOKEN)" /d:sonar.host.url="$(SONAR_HOST_URL)" /d:sonar.cs.vscoveragexml.reportsPaths="coverage.xml"
+      D:\tools\dotnet-sonarscanner begin /k:"zootech-backend" /n:"ZooTech Backend" /d:sonar.token="$(SONAR_TOKEN)" /d:sonar.host.url="$(SONAR_HOST_URL)" /d:sonar.cs.vscoveragexml.reportsPaths="coverage.xml"
     displayName: 'SonarQube Begin'
 
   - script: |
@@ -24,9 +23,9 @@ steps:
     displayName: 'Build'
 
   - script: |
-      dotnet-coverage collect "dotnet test ""ZooTech Backend - Solution.slnx"" --no-build" -f xml -o "coverage.xml"
+      D:\tools\dotnet-coverage collect "dotnet test ""ZooTech Backend - Solution.slnx"" --no-build" -f xml -o "coverage.xml"
     displayName: 'Test & Coverage'
 
   - script: |
-      dotnet sonarscanner end /d:sonar.token="$(SONAR_TOKEN)"
+      D:\tools\dotnet-sonarscanner end /d:sonar.token="$(SONAR_TOKEN)"
     displayName: 'SonarQube End'
