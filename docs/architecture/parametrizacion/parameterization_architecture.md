@@ -20,436 +20,1152 @@ sequenceDiagram
     participant API2 as API Instancia 2
     participant FE as Frontend Clients (Tenant A)
 
-    Admin->>API1: Guardar Setting (Tenant A, MAX_PETS_PER_OWNER = 10)
-    API1->>DB: Actualizar Tabla tenant_settings
-    API1->>Redis: Invalidad Caché L2 (Evict "tenant:A:settings")
-    API1->>API1: Evict L1 Local Cache (Tenant A)
-    API1->>Redis: Publicar en Canal Pub/Sub ("tenant-sync" -> Tenant A, Code)
+    Admin->>API1: PUT /api/v1/admin/tenants/{id}/parameters/settings/MAX_COWS_LIMIT
+    API1->>DB: Actualizar tenant_setting
+    API1->>Redis: DELETE key "tenant:{id}:config"
+    API1->>API1: Evict L1 Local Cache (ConcurrentDictionary)
+    API1->>Redis: PUBLISH "tenant-config-invalidation" "{tenantId}"
     
     par Paralelo en todas las instancias
-        Redis-->>API2: Suscripción recibe Invalidad Event (Tenant A)
-        API2->>API2: Evict L1 Local Cache (Tenant A)
+        Redis-->>API2: SUBSCRIBE recibe evento
+        API2->>API2: Evict L1 Local Cache (tenant:{id})
     and Difusión a Frontends mediante SignalR
-        API1->>Redis: Redis Backplane SignalR (Grupo "tenant:A")
-        Redis-->>FE: Broadcast SignalR "ParameterUpdated" (Code)
+        API1->>Redis: SignalR Backplane → Grupo "tenant:{id}"
+        Redis-->>FE: SignalR ClientMethod "ParameterUpdated" { Type, Code }
     end
 
-    Note over API1, API2: Siguiente petición de usuario carga valores limpios desde DB/L2
+    Note over API1, API2: Siguiente request recarga snapshot desde DB/L2
+```
+
+### Diagrama de Flujo de Lectura de Configuración (Casos de Uso)
+
+```mermaid
+flowchart LR
+    UC[Use Case Handler] --> TC[ITenantConfiguration]
+    TC --> L1{L1 Cache<br/>ConcurrentDictionary<br/>Hit?}
+    L1 -->|Yes| VAL[Return T]
+    L1 -->|No| L2{L2 Cache<br/>Redis<br/>Hit?}
+    L2 -->|Yes| L1SET[L1.Set + Return T]
+    L2 -->|No| DB[Query TenantCatalogDb]
+    DB --> L2SET[L2.Set + L1.Set + Return T]
 ```
 
 ---
 
-## 🏛️ 2. Estructura de Carpetas Propuesta (Con T4 en Infraestructura)
+## 🏛️ 2. Estructura de Carpetas Propuesta
 
-Los nuevos componentes se integran dentro de la estructura de **Clean Architecture** de la siguiente manera:
+Los nuevos componentes se integran dentro de la estructura de **Clean Architecture** respetando la regla de dependencias:
 
 ```text
 ZooTech-Backend - Solution/
+├── .config/
+│   └── dotnet-tools.json                  ← NUEVO: Tool manifest para dotnet-t4
+│
+├── scripts/
+│   └── watch-db-params.ps1                ← NUEVO: Watcher de BD en desarrollo
+│
 ├── src/
 │   ├── ZooTech.Domain/
-│   │   ├── Parameters/               <-- Estructuras base de tipado
-│   │   │   ├── FeatureDefinition.cs
-│   │   │   ├── SettingDefinition.cs
-│   │   │   └── RuleDefinition.cs
-│   │   └── Generated/                <-- Archivo C# generado por el T4 de Infraestructura
-│   │       └── ZooParameters.cs      <-- [GENERADO] Clases estáticas de definición
+│   │   ├── Parameters/                    ← NUEVO: Estructuras base tipadas
+│   │   │   ├── SettingDefinition.cs       ← Definición genérica SettingDefinition<T>
+│   │   │   ├── FeatureFlag.cs             ← Definición de feature flag
+│   │   │   └── RuleSchema.cs              ← Definición de esquema de regla
+│   │   └── Generated/                     ← NUEVO: Código generado por T4
+│   │       └── ZooParameters.cs           ← [GENERADO] Clases estáticas de definición
 │   │
 │   ├── ZooTech.Application/
 │   │   ├── Common/
 │   │   │   └── Gateway/
-│   │   │       └── Configuration/    <-- Puertos de Acceso a Configuración
-│   │   │           ├── ITenantConfiguration.cs
-│   │   │           └── TenantConfigurationSnapshot.cs
+│   │   │       ├── Configuration/         ← NUEVO: Puertos de acceso a configuración
+│   │   │       │   ├── ITenantConfiguration.cs
+│   │   │       │   ├── ITenantConfigurationRepository.cs
+│   │   │       │   ├── ICacheInvalidationPublisher.cs
+│   │   │       │   └── TenantConfigurationSnapshot.cs
+│   │   │       └── SignalR/               ← NUEVO: Puerto de notificación SignalR
+│   │   │           └── IParameterSyncNotifier.cs
 │   │   └── Modules/
-│   │       └── Module_Tenancing/     <-- NUEVO: Casos de uso CRUD de parámetros
+│   │       └── Module_Tenancing/
 │   │           └── UseCases/
-│   │               ├── GetTenantConfiguration/
-│   │               ├── UpdateTenantParameter/
-│   │               └── ResetTenantParameter/
+│   │               ├── GetTenantConfiguration/      ← NUEVO
+│   │               ├── UpdateTenantParameter/        ← NUEVO
+│   │               └── ResetTenantParameter/         ← NUEVO
 │   │
 │   ├── ZooTech.Infrastructure/
-│   │   ├── Configuration/            <-- NUEVO: Scripts de generación T4
-│   │   │   └── ZooParameters.tt      <-- [T4] Compila BD y escribe en Domain
-│   │   ├── Persistence/
-│   │   │   ├── Context/
-│   │   │   │   └── TenantCatalogDb.cs <-- [COMPLETADO] Mapeo de nuevas tablas
-│   │   │   └── Entities/
-│   │   │       └── MainTenantsDb/    <-- [COMPLETADO] Entidades de parametrización EF Core
-│   │   └── Caching/                  <-- Implementación del Snapshot y Caché Híbrido
-│   │       ├── TenantConfigurationService.cs
-│   │       └── RedisSyncSubscriber.cs
+│   │   ├── Configuration/                 ← NUEVO: T4 Template
+│   │   │   └── ZooParameters.tt
+│   │   ├── Parameterization/              ← NUEVO: Implementaciones
+│   │   │   ├── TenantConfigurationService.cs
+│   │   │   ├── TenantConfigurationRepository.cs
+│   │   │   ├── CacheInvalidationPublisher.cs
+│   │   │   └── RedisSyncSubscriber.cs     ← IHostedService
+│   │   └── Persistence/
+│   │       ├── Context/
+│   │       │   └── TenantCatalogDb.cs     ← MODIFICADO: Agregar DbSets faltantes
+│   │       └── Entities/
+│   │           └── MainTenantsDb/
+│   │               └── tenant.cs          ← MODIFICADO: Agregar navegación tenant_settings
 │   │
 │   ├── ZooTech.InterfaceAdapters/
 │   │   ├── Modules/
-│   │   │   └── Module_Tenancing/     <-- NUEVO: Controladores y DTOs CRUD de parámetros
+│   │   │   └── Module_Tenancing/          ← NUEVOS endpoints y DTOs
 │   │   │       ├── Controllers/
 │   │   │       │   └── TenantParametersController.cs
-│   │   │       └── DTOs/
-│   │   └── SignalR/
-│   │       ├── ParameterSyncHub.cs
-│   │       └── HubGroups.cs
+│   │   │       ├── DTOs/
+│   │   │       │   ├── Requests/
+│   │   │       │   └── Responses/
+│   │   │       └── Mappers/
+│   │   └── SignalR/                       ← NUEVO: Hub de SignalR
+│   │       └── ParameterSyncHub.cs
 │   │
 │   └── ZooTech.API/
-│       ├── Program.cs
-│       └── appsettings.json
+│       ├── Program.cs                     ← MODIFICADO: Registrar SignalR + nuevos servicios
+│       └── appsettings.json               ← MODIFICADO: Agregar SignalR config
 ```
 
 ---
 
-## ⚡ 3. Decisiones Técnicas y Justificación
+## 🚨 3. Correcciones Críticas vs. Documento Original
 
-### A. Ubicación del T4: ¿Domain vs Infrastructure?
-* **El Problema**: Los casos de uso (capa de `Application`) y el propio `Domain` necesitan consumir los parámetros fuertemente tipados (`ZooSettings.Billing.MaxPetsPerOwner`). Si generamos las clases estáticas dentro de la capa de `Infrastructure`, violaríamos la regla de dependencia de Clean Architecture, ya que `Application` y `Domain` no pueden referenciar a `Infrastructure`.
-* **La Solución**: Colocar el archivo de diseño **`ZooParameters.tt` dentro de la capa de `Infrastructure`** (donde se concentran las dependencias de base de datos, ADO.NET y drivers de SQL Server), pero configurarlo para que escriba su salida compilada **`ZooParameters.cs` directamente en el directorio de `ZooTech.Domain`**.
+### ⛔ Violación de Clean Architecture en Handlers (CORREGIDO)
 
-### B. Compilación Automática de T4 (`ZooParameters.tt`)
-Para automatizar la ejecución del archivo `.tt` y mantener sincronizado el código C# con los cambios de base de datos, se estructuran dos estrategias:
+**Problema original:** Los handlers `GetTenantConfigurationQueryHandler`, `UpdateTenantParameterCommandHandler` y `ResetTenantParameterCommandHandler` referenciaban directamente `TenantCatalogDb` y `IConnectionMultiplexer` (StackExchange.Redis). Esto viola la regla de dependencias — Application NO puede depender de Infrastructure.
 
-#### 1. Compilación Automática al Iniciar/Construir la Aplicación (MSBuild Target)
-Se agrega un target de MSBuild en el archivo del proyecto `ZooTech.Infrastructure.csproj`. Este se ejecuta automáticamente antes de compilar la aplicación (en local, restauración de paquetes y procesos de CI/CD), garantizando que las clases de C# correspondan exactamente a lo que está en la base de datos de desarrollo antes de que levante el servidor de ASP.NET Core:
-
-```xml
-<!-- Añadir a ZooTech.Infrastructure.csproj -->
-<Target Name="GenerateZooParameters" BeforeTargets="BeforeBuild">
-  <Message Importance="High" Text="[T4] Regenerando parámetros de dominio a partir de la BD de control plano..." />
-  <Exec Command="dotnet t4 $(ProjectDir)Configuration\ZooParameters.tt -o $(SolutionDir)src\ZooTech.Domain\Generated\ZooParameters.cs" />
-</Target>
-```
-*   *(Nota: Requiere la instalación de la herramienta global de dotnet `dotnet-t4` ejecutando `dotnet tool restore` o `dotnet tool install --global dotnet-t4` en el entorno).*
-
-#### 2. Compilación en Caliente ante Cambios en Base de Datos (File Watcher / Dev Watcher)
-Durante el desarrollo, si un desarrollador o administrador agrega un nuevo setting/feature/rule a la base de datos del catálogo plano:
-*   **Watcher de Base de Datos (Development Time)**: Se añade un script utilitario en la carpeta `scripts/watch-db-params.ps1` que sondea la tabla de definiciones cada 5 segundos buscando cambios en la fecha máxima de `updated_at`. Si detecta modificaciones, ejecuta la herramienta `dotnet-t4` para regenerar el archivo `.cs` al vuelo sin necesidad de detener y levantar manualmente el IDE.
-*   **Soporte de Fallback Dinámico en Tiempo de Ejecución (Purity Loss Mitigation)**: Si se añade una nueva clave a la BD en producción/caliente y no se ha recompilado la aplicación, la clase estática de C# (`ZooSettings`) no tendrá la constante. El servicio de configuración híbrido debe resolver esto con elegancia: si un caso de uso solicita un string dinámico (vía método de escape de emergencia `_config.GetRaw("NUEVO_SETTING")`), la infraestructura lo resolverá desde base de datos sin lanzar excepciones catastróficas.
-
----
-
-## 🏛️ 4. Flujo End-to-End: Visualización, Modificación y Eliminación (CRUD) de Parámetros
-
-El CRUD de configuraciones se implementa desacoplado del acceso directo a base de datos del tenant, operando sobre el Control Plane DB (`TenantCatalogDb`).
+**Corrección:** Todos los handlers deben usar **interfaces de puerto (Gateway Ports)** definidas en `Application.Common.Gateway`:
 
 ```mermaid
 graph LR
-    Controller[TenantParametersController] -->|DTOs| Mediator[MediatR]
-    Mediator -->|Command/Query| UseCases[Use Cases: Get / Update / Reset]
-    UseCases -->|Entities| EFCore[TenantCatalogDb]
-    UseCases -->|Invalidation| Redis[Redis L2 / PubSub]
+    Handler[Use Case Handler<br/>Application] --> Port[Gateway Interface<br/>Application]
+    Impl[Implementation<br/>Infrastructure] --> Port
+    Handler -.->|DI injects| Impl
 ```
 
-### A. Capa de Dominio (Domain)
-No requerimos lógica de negocio compleja para persistir estos registros, pero creamos DTOs de salida y puertos limpios.
+### ⛔ `setting_definition` y `tenant_setting` NO están en TenantCatalogDb (CORREGIDO)
 
-### B. Capa de Aplicación (Application Use Cases)
+**Problema:** Las entidades `setting_definition.cs` y `tenant_setting.cs` existen como archivos en `Persistence/Entities/MainTenantsDb/` pero **NO tienen DbSet declarado** en `TenantCatalogDb.cs` y **NO tienen configuración Fluent API**. El documento original asumía que estaban completamente cableadas.
 
-#### 1. Obtener Configuración de un Tenant (`GetTenantConfiguration`)
-*   **Query**: `GetTenantConfigurationQuery`
-*   **Handler**: `GetTenantConfigurationQueryHandler`
-*   Retorna la lista de todas las definiciones globales mezcladas con los valores asignados específicamente a ese tenant. Si el tenant no tiene un valor registrado, se indica que usa el "Global Default".
+**Corrección:** Antes de implementar cualquier caso de uso, se deben:
+1. Agregar `DbSet<setting_definition>` y `DbSet<tenant_setting>` en `TenantCatalogDb`
+2. Agregar la configuración Fluent API correspondiente en `OnModelCreating`
+3. Agregar la navegación `tenant_settings` en la entidad `tenant.cs`
+
+### ⛔ Dualidad de sistemas de settings (ACLARADO)
+
+El TenantCatalogDb contiene **DOS sistemas de configuración diferentes** que no deben confundirse:
+
+| Sistema | Tablas | Propósito | Uso en esta feature |
+|---|---|---|---|
+| **Setting Definitions** | `setting_definition` + `tenant_setting` | Configuraciones tipadas con validación y valores por defecto globales | ✅ Usado para parametrización |
+| **Business Settings** | `business_setting` + `business_setting_parameter` + `business_setting_parameter_value` | Configuración de negocio con patrón actor_type/actor_id (polimórfico) | ❌ No usado (sistema existente aparte) |
+
+### ⛔ `GeneralResponseDTO<T>` es `internal` (CORREGIDO)
+
+**Problema:** La clase `GeneralResponseDTO<T>` en `Application.Common.Models` está marcada como `internal`, lo que impide usarla desde `InterfaceAdapters` (ensamblado diferente).
+
+**Corrección:** Cambiar a `public` o crear un DTO equivalente en InterfaceAdapters.
+
+### ⛔ Controller inyecta Infrastructure directamente (CORREGIDO)
+
+**Problema:** El `TenantSettingsAdminController` del governance doc inyectaba `TenantCatalogDb` e `IConnectionMultiplexer` directamente. Los controllers deben usar únicamente MediatR.
+
+**Corrección:** Todo el CRUD de parámetros se maneja via `IMediator.Send(command/query)` y el controller solo recibe/retorna DTOs.
+
+---
+
+## 🏛️ 4. Especificación Detallada de Componentes
+
+### A. Capa de Dominio (Domain) — Estructuras Tipadas
+
+#### `SettingDefinition<T>` (Domain/Parameters/)
 
 ```csharp
-namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.GetTenantConfiguration;
+namespace ZooTech.Domain.Parameters;
 
-using MediatR;
-
-public record GetTenantConfigurationQuery(long TenantId) : IRequest<TenantConfigurationDto>;
-
-public record TenantConfigurationDto(
-    long TenantId,
-    List<TenantSettingItemDto> Settings,
-    List<TenantFeatureItemDto> Features
-);
-
-public record TenantSettingItemDto(string Code, string Name, string Category, string Value, string DefaultValue, bool IsCustomized);
-public record TenantFeatureItemDto(string Code, string Name, string Category, bool IsEnabled, bool DefaultValue, bool IsCustomized);
-```
-
-Manejador de la Consulta:
-
-```csharp
-namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.GetTenantConfiguration;
-
-using MediatR;
-using Microsoft.EntityFrameworkCore;
-using ZooTech.Infrastructure.Persistence.Context;
-
-public class GetTenantConfigurationQueryHandler : IRequestHandler<GetTenantConfigurationQuery, TenantConfigurationDto>
+public class SettingDefinition<T>
 {
-    private readonly TenantCatalogDb _context;
+    public string Code { get; }
+    public string Category { get; }
+    public T DefaultValue { get; }
+    public string? Description { get; }
+    public Type ValueType => typeof(T);
 
-    public GetTenantConfigurationQueryHandler(TenantCatalogDb context)
+    public SettingDefinition(
+        string code,
+        string category,
+        T defaultValue,
+        string? description = null
+    )
     {
-        _context = context;
-    }
-
-    public async Task<TenantConfigurationDto> Handle(GetTenantConfigurationQuery request, CancellationToken cancellationToken)
-    {
-        // 1. Obtener todas las definiciones globales de la plataforma
-        var globalSettings = await _context.setting_definitions.ToListAsync(cancellationToken);
-        var globalFeatures = await _context.features.Where(f => f.deleted_at == null).ToListAsync(cancellationToken);
-
-        // 2. Obtener configuraciones personalizadas del Tenant específico
-        var tenantSettings = await _context.tenant_settings
-            .Where(ts => ts.tenant_id == request.TenantId)
-            .ToDictionaryAsync(ts => ts.setting_definition_id, ts => ts.value, cancellationToken);
-
-        var tenantFeatures = await _context.tenant_features
-            .Where(tf => tf.tenant_id == request.TenantId)
-            .ToDictionaryAsync(tf => tf.feature_id, tf => tf.is_enabled, cancellationToken);
-
-        // 3. Cruzar datos (Merge)
-        var settingsList = globalSettings.Select(def => {
-            bool hasCustom = tenantSettings.TryGetValue(def.id, out var customValue);
-            return new TenantSettingItemDto(
-                def.code ?? "",
-                def.name ?? "",
-                def.category ?? "General",
-                hasCustom ? customValue ?? "" : def.default_value ?? "",
-                def.default_value ?? "",
-                hasCustom
-            );
-        }).ToList();
-
-        var featuresList = globalFeatures.Select(def => {
-            bool hasCustom = tenantFeatures.TryGetValue(def.id, out var customVal);
-            return new TenantFeatureItemDto(
-                def.code,
-                def.name,
-                def.category ?? "General",
-                hasCustom ? customVal : def.is_active,
-                def.is_active,
-                hasCustom
-            );
-        }).ToList();
-
-        return new TenantConfigurationDto(request.TenantId, settingsList, featuresList);
+        Code = code;
+        Category = category;
+        DefaultValue = defaultValue;
+        Description = description;
     }
 }
 ```
 
-#### 2. Modificar Parámetro de un Tenant (`UpdateTenantParameter`)
-*   **Command**: `UpdateTenantParameterCommand`
-*   **Handler**: `UpdateTenantParameterCommandHandler`
-*   Actualiza (o crea si no existía) la relación personalizada del tenant en `tenant_settings` o `tenant_features`. Invalida la caché local y publica la actualización.
+#### `FeatureFlag` (Domain/Parameters/)
 
+```csharp
+namespace ZooTech.Domain.Parameters;
+
+public class FeatureFlag
+{
+    public string Code { get; }
+    public string Category { get; }
+    public bool DefaultValue { get; }
+    public string? Description { get; }
+
+    public FeatureFlag(
+        string code,
+        string category,
+        bool defaultValue,
+        string? description = null
+    )
+    {
+        Code = code;
+        Category = category;
+        DefaultValue = defaultValue;
+        Description = description;
+    }
+}
+```
+
+#### `RuleSchema` (Domain/Parameters/)
+
+```csharp
+namespace ZooTech.Domain.Parameters;
+
+public class RuleSchema
+{
+    public string Code { get; }
+    public string Module { get; }
+    public string? ConditionSchema { get; }
+    public string? ActionSchema { get; }
+
+    public RuleSchema(
+        string code,
+        string module,
+        string? conditionSchema = null,
+        string? actionSchema = null
+    )
+    {
+        Code = code;
+        Module = module;
+        ConditionSchema = conditionSchema;
+        ActionSchema = actionSchema;
+    }
+}
+```
+
+#### Salida Generada por T4: `ZooParameters.cs`
+
+Ejemplo de lo que el T4 debe generar basándose en la BD:
+
+```csharp
+namespace ZooTech.Domain.Generated;
+
+using ZooTech.Domain.Parameters;
+
+public static class ZooSettings
+{
+    public static class Billing
+    {
+        public static readonly SettingDefinition<int> MaxCowsLimit =
+            new("MAX_COWS_LIMIT", "Billing", 100, "Límite de Vacunos Registrados");
+        public static readonly SettingDefinition<int> MaxVeterinariansLimit =
+            new("MAX_VETERINARIANS_LIMIT", "Billing", 5, "Límite Máximo de Veterinarios Activos");
+    }
+
+    public static class General
+    {
+        public static readonly SettingDefinition<string> CompanyName =
+            new("COMPANY_NAME", "General", "ZooTech", "Nombre de la empresa");
+    }
+}
+
+public static class ZooFeatures
+{
+    public static class Production
+    {
+        public static readonly FeatureFlag MilkAnalysis =
+            new("PROD_MILK_ANALYSIS", "Production", true, "Módulo de Análisis Avanzado de Calidad de Leche");
+    }
+}
+
+public static class ZooRules
+{
+    public static class Health
+    {
+        public static readonly RuleSchema RemindVaccination =
+            new("REMIND_VACCINATION", "Health");
+    }
+}
+```
+
+### B. Capa de Aplicación (Application) — Puertos y Casos de Uso
+
+#### Puerto: `ITenantConfiguration` (Gateway/Configuration/)
+
+Interfaz principal que los casos de uso consumen para leer configuraciones tipadas:
+
+```csharp
+namespace ZooTech.Application.Common.Gateway.Configuration;
+
+using ZooTech.Domain.Parameters;
+
+public interface ITenantConfiguration
+{
+    T Get<T>(SettingDefinition<T> setting);
+    bool IsEnabled(FeatureFlag feature);
+    string? GetRaw(string code);
+}
+```
+
+#### Puerto: `ITenantConfigurationRepository` (Gateway/Configuration/)
+
+Repositorio abstracto para operaciones CRUD sobre la configuración del tenant:
+
+```csharp
+namespace ZooTech.Application.Common.Gateway.Configuration;
+
+public interface ITenantConfigurationRepository
+{
+    Task<TenantConfigurationSnapshot> GetSnapshotAsync(long tenantId);
+    Task<bool> UpsertSettingAsync(long tenantId, string settingCode, string value);
+    Task<bool> UpsertFeatureAsync(long tenantId, string featureCode, bool isEnabled);
+    Task<bool> DeleteTenantSettingAsync(long tenantId, string settingCode);
+    Task<bool> DeleteTenantFeatureAsync(long tenantId, string featureCode);
+}
+```
+
+#### Puerto: `ICacheInvalidationPublisher` (Gateway/Configuration/)
+
+Puerto para la invalidación de caché (L2 + Pub/Sub + SignalR):
+
+```csharp
+namespace ZooTech.Application.Common.Gateway.Configuration;
+
+public interface ICacheInvalidationPublisher
+{
+    Task InvalidateTenantConfigAsync(long tenantId, string parameterType, string code);
+}
+```
+
+#### Puerto: `IParameterSyncNotifier` (Gateway/SignalR/)
+
+Puerto para notificar a clientes frontend via SignalR:
+
+```csharp
+namespace ZooTech.Application.Common.Gateway.SignalR;
+
+public interface IParameterSyncNotifier
+{
+    Task NotifyParameterUpdatedAsync(long tenantId, string parameterType, string code);
+}
+```
+
+#### Modelo: `TenantConfigurationSnapshot` (Gateway/Configuration/)
+
+Snapshot de la configuración completa de un tenant:
+
+```csharp
+namespace ZooTech.Application.Common.Gateway.Configuration;
+
+public class TenantConfigurationSnapshot
+{
+    public long TenantId { get; set; }
+    public Dictionary<string, string> Settings { get; set; } = new();
+    public Dictionary<string, bool> Features { get; set; } = new();
+    public DateTimeOffset LoadedAt { get; set; } = DateTimeOffset.UtcNow;
+}
+```
+
+#### Enum: `ParameterType`
+
+Reemplaza el uso de strings "Setting"/"Feature" en los comandos:
+
+```csharp
+namespace ZooTech.Application.Modules.Module_Tenancing.UseCases;
+
+public enum ParameterType
+{
+    Setting,
+    Feature
+}
+```
+
+#### Caso de Uso: `GetTenantConfiguration`
+
+```
+GetTenantConfiguration/
+├── GetTenantConfigurationQuery.cs       ← IRequest<TenantConfigurationDto>
+├── GetTenantConfigurationHandler.cs     ← IRequestHandler (usa ITenantConfigurationRepository)
+├── GetTenantConfigurationValidator.cs   ← AbstractValidator
+└── GetTenantConfigurationDto.cs         ← DTOs de salida
+```
+
+**Query:**
+```csharp
+namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.GetTenantConfiguration;
+
+using MediatR;
+
+public record GetTenantConfigurationQuery(long TenantId) : IRequest<GetTenantConfigurationDto>;
+```
+
+**DTOs:**
+```csharp
+namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.GetTenantConfiguration;
+
+public record GetTenantConfigurationDto(
+    long TenantId,
+    List<SettingItemDto> Settings,
+    List<FeatureItemDto> Features
+);
+
+public record SettingItemDto(
+    string Code,
+    string Name,
+    string Category,
+    string DataType,
+    string Value,
+    string DefaultValue,
+    bool IsCustomized,
+    string? ValidationSchema
+);
+
+public record FeatureItemDto(
+    string Code,
+    string Name,
+    string Category,
+    bool IsEnabled,
+    bool DefaultValue,
+    bool IsCustomized
+);
+```
+
+**Handler:**
+```csharp
+namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.GetTenantConfiguration;
+
+using MediatR;
+using ZooTech.Application.Common.Gateway.Configuration;
+
+public class GetTenantConfigurationHandler
+    : IRequestHandler<GetTenantConfigurationQuery, GetTenantConfigurationDto>
+{
+    private readonly ITenantConfigurationRepository _repository;
+
+    public GetTenantConfigurationHandler(ITenantConfigurationRepository repository)
+    {
+        _repository = repository;
+    }
+
+    public async Task<GetTenantConfigurationDto> Handle(
+        GetTenantConfigurationQuery request,
+        CancellationToken cancellationToken
+    )
+    {
+        var snapshot = await _repository.GetSnapshotAsync(request.TenantId);
+        // El handler construye el DTO cruzando definiciones globales con valores del tenant
+        // La lógica de merge se implementa en el repositorio o aquí
+        return snapshot.ToDto();
+    }
+}
+```
+
+**Validator:**
+```csharp
+namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.GetTenantConfiguration;
+
+using FluentValidation;
+
+public class GetTenantConfigurationValidator : AbstractValidator<GetTenantConfigurationQuery>
+{
+    public GetTenantConfigurationValidator()
+    {
+        RuleFor(x => x.TenantId)
+            .GreaterThan(0).WithMessage("El ID del tenant debe ser mayor a 0.");
+    }
+}
+```
+
+#### Caso de Uso: `UpdateTenantParameter`
+
+```
+UpdateTenantParameter/
+├── UpdateTenantParameterCommand.cs
+├── UpdateTenantParameterHandler.cs
+└── UpdateTenantParameterValidator.cs
+```
+
+**Command:**
 ```csharp
 namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.UpdateTenantParameter;
 
 using MediatR;
+using ZooTech.Application.Modules.Module_Tenancing.UseCases;
 
 public record UpdateTenantParameterCommand(
     long TenantId,
-    string ParameterType, // "Setting" o "Feature"
+    ParameterType ParameterType,
     string Code,
-    string Value // Si es Feature, pasa como "true" o "false"
+    string Value
 ) : IRequest<bool>;
 ```
 
-Manejador del Comando:
-
+**Handler:**
 ```csharp
 namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.UpdateTenantParameter;
 
 using MediatR;
-using Microsoft.EntityFrameworkCore;
-using StackExchange.Redis;
-using ZooTech.Infrastructure.Persistence.Context;
-using ZooTech.Infrastructure.Persistence.Entities.MainTenantsDb;
+using ZooTech.Application.Common.Gateway.Configuration;
 
-public class UpdateTenantParameterCommandHandler : IRequestHandler<UpdateTenantParameterCommand, bool>
+public class UpdateTenantParameterHandler
+    : IRequestHandler<UpdateTenantParameterCommand, bool>
 {
-    private readonly TenantCatalogDb _context;
-    private readonly IConnectionMultiplexer _redis;
+    private readonly ITenantConfigurationRepository _repository;
+    private readonly ICacheInvalidationPublisher _cachePublisher;
+    private readonly IParameterSyncNotifier _signalRNotifier;
 
-    public UpdateTenantParameterCommandHandler(TenantCatalogDb context, IConnectionMultiplexer redis)
+    public UpdateTenantParameterHandler(
+        ITenantConfigurationRepository repository,
+        ICacheInvalidationPublisher cachePublisher,
+        IParameterSyncNotifier signalRNotifier
+    )
     {
-        _context = context;
-        _redis = redis;
+        _repository = repository;
+        _cachePublisher = cachePublisher;
+        _signalRNotifier = signalRNotifier;
     }
 
-    public async Task<bool> Handle(UpdateTenantParameterCommand request, CancellationToken cancellationToken)
+    public async Task<bool> Handle(
+        UpdateTenantParameterCommand request,
+        CancellationToken cancellationToken
+    )
     {
-        bool isUpdated = false;
-
-        if (request.ParameterType.Equals("Setting", StringComparison.OrdinalIgnoreCase))
+        bool result = request.ParameterType switch
         {
-            var definition = await _context.setting_definitions
-                .FirstOrDefaultAsync(sd => sd.code == request.Code, cancellationToken);
-            if (definition == null) return false;
+            ParameterType.Setting => await _repository.UpsertSettingAsync(
+                request.TenantId, request.Code, request.Value),
+            ParameterType.Feature => await _repository.UpsertFeatureAsync(
+                request.TenantId, request.Code, bool.Parse(request.Value)),
+            _ => false
+        };
 
-            var tenantSetting = await _context.tenant_settings
-                .FirstOrDefaultAsync(ts => ts.tenant_id == request.TenantId && ts.setting_definition_id == definition.id, cancellationToken);
-
-            if (tenantSetting == null)
-            {
-                tenantSetting = new tenant_setting
-                {
-                    tenant_id = request.TenantId,
-                    setting_definition_id = definition.id,
-                    value = request.Value,
-                    updated_at = DateTimeOffset.UtcNow
-                };
-                _context.tenant_settings.Add(tenantSetting);
-            }
-            else
-            {
-                tenantSetting.value = request.Value;
-                tenantSetting.updated_at = DateTimeOffset.UtcNow;
-            }
-            isUpdated = true;
-        }
-        else if (request.ParameterType.Equals("Feature", StringComparison.OrdinalIgnoreCase))
+        if (result)
         {
-            var feature = await _context.features
-                .FirstOrDefaultAsync(f => f.code == request.Code && f.deleted_at == null, cancellationToken);
-            if (feature == null) return false;
+            await _cachePublisher.InvalidateTenantConfigAsync(
+                request.TenantId,
+                request.ParameterType.ToString(),
+                request.Code
+            );
 
-            var tenantFeature = await _context.tenant_features
-                .FirstOrDefaultAsync(tf => tf.tenant_id == request.TenantId && tf.feature_id == feature.id, cancellationToken);
-
-            bool isEnabledValue = bool.Parse(request.Value);
-
-            if (tenantFeature == null)
-            {
-                tenantFeature = new tenant_feature
-                {
-                    tenant_id = request.TenantId,
-                    feature_id = feature.id,
-                    is_enabled = isEnabledValue,
-                    enabled_at = DateTimeOffset.UtcNow,
-                    updated_at = DateTimeOffset.UtcNow
-                };
-                _context.tenant_features.Add(tenantFeature);
-            }
-            else
-            {
-                tenantFeature.is_enabled = isEnabledValue;
-                tenantFeature.updated_at = DateTimeOffset.UtcNow;
-            }
-            isUpdated = true;
+            await _signalRNotifier.NotifyParameterUpdatedAsync(
+                request.TenantId,
+                request.ParameterType.ToString(),
+                request.Code
+            );
         }
 
-        if (isUpdated)
-        {
-            await _context.SaveChangesAsync(cancellationToken);
-
-            // === PROCESO DE INVALIDACIÓN EN CASCADA ===
-            var redisDb = _redis.GetDatabase();
-            string cacheKey = $"tenant:{request.TenantId}:config";
-            
-            // 1. Eliminar de L2 (Redis)
-            await redisDb.KeyDeleteAsync(cacheKey);
-
-            // 2. Notificar a todas las APIs vía Pub/Sub (Evict de L1 local)
-            var publisher = _redis.GetSubscriber();
-            await publisher.PublishAsync("tenant-config-invalidation", request.TenantId.ToString());
-        }
-
-        return isUpdated;
+        return result;
     }
 }
 ```
 
-#### 3. Eliminar Configuración Personalizada / Restablecer por Defecto (`ResetTenantParameter`)
-*   **Command**: `ResetTenantParameterCommand`
-*   **Handler**: `ResetTenantParameterCommandHandler`
-*   Elimina la personalización del tenant, obligando al sistema a resolver el valor por defecto global establecido en el catálogo.
+**Validator:**
+```csharp
+namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.UpdateTenantParameter;
 
+using FluentValidation;
+
+public class UpdateTenantParameterValidator : AbstractValidator<UpdateTenantParameterCommand>
+{
+    public UpdateTenantParameterValidator()
+    {
+        RuleFor(x => x.TenantId)
+            .GreaterThan(0).WithMessage("El ID del tenant debe ser mayor a 0.");
+
+        RuleFor(x => x.ParameterType)
+            .IsInEnum().WithMessage("Tipo de parámetro inválido.");
+
+        RuleFor(x => x.Code)
+            .NotEmpty().WithMessage("El código del parámetro es requerido.")
+            .MaximumLength(100).WithMessage("El código no puede exceder 100 caracteres.");
+
+        RuleFor(x => x.Value)
+            .NotNull().WithMessage("El valor no puede ser nulo.");
+    }
+}
+```
+
+#### Caso de Uso: `ResetTenantParameter`
+
+```
+ResetTenantParameter/
+├── ResetTenantParameterCommand.cs
+├── ResetTenantParameterHandler.cs
+└── ResetTenantParameterValidator.cs
+```
+
+**Command:**
 ```csharp
 namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.ResetTenantParameter;
 
 using MediatR;
+using ZooTech.Application.Modules.Module_Tenancing.UseCases;
 
 public record ResetTenantParameterCommand(
     long TenantId,
-    string ParameterType, // "Setting" o "Feature"
+    ParameterType ParameterType,
     string Code
 ) : IRequest<bool>;
 ```
 
-Manejador del Comando:
-
+**Handler:**
 ```csharp
 namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.ResetTenantParameter;
 
 using MediatR;
-using Microsoft.EntityFrameworkCore;
-using StackExchange.Redis;
-using ZooTech.Infrastructure.Persistence.Context;
+using ZooTech.Application.Common.Gateway.Configuration;
 
-public class ResetTenantParameterCommandHandler : IRequestHandler<ResetTenantParameterCommand, bool>
+public class ResetTenantParameterHandler
+    : IRequestHandler<ResetTenantParameterCommand, bool>
 {
-    private readonly TenantCatalogDb _context;
-    private readonly IConnectionMultiplexer _redis;
+    private readonly ITenantConfigurationRepository _repository;
+    private readonly ICacheInvalidationPublisher _cachePublisher;
+    private readonly IParameterSyncNotifier _signalRNotifier;
 
-    public ResetTenantParameterCommandHandler(TenantCatalogDb context, IConnectionMultiplexer redis)
+    public ResetTenantParameterHandler(
+        ITenantConfigurationRepository repository,
+        ICacheInvalidationPublisher cachePublisher,
+        IParameterSyncNotifier signalRNotifier
+    )
     {
-        _context = context;
-        _redis = redis;
+        _repository = repository;
+        _cachePublisher = cachePublisher;
+        _signalRNotifier = signalRNotifier;
     }
 
-    public async Task<bool> Handle(ResetTenantParameterCommand request, CancellationToken cancellationToken)
+    public async Task<bool> Handle(
+        ResetTenantParameterCommand request,
+        CancellationToken cancellationToken
+    )
     {
-        bool isDeleted = false;
-
-        if (request.ParameterType.Equals("Setting", StringComparison.OrdinalIgnoreCase))
+        bool result = request.ParameterType switch
         {
-            var setting = await _context.tenant_settings
-                .FirstOrDefaultAsync(ts => ts.tenant_id == request.TenantId && ts.setting_definition.code == request.Code, cancellationToken);
-            
-            if (setting != null)
-            {
-                _context.tenant_settings.Remove(setting);
-                isDeleted = true;
-            }
-        }
-        else if (request.ParameterType.Equals("Feature", StringComparison.OrdinalIgnoreCase))
+            ParameterType.Setting => await _repository.DeleteTenantSettingAsync(
+                request.TenantId, request.Code),
+            ParameterType.Feature => await _repository.DeleteTenantFeatureAsync(
+                request.TenantId, request.Code),
+            _ => false
+        };
+
+        if (result)
         {
-            var feature = await _context.tenant_features
-                .FirstOrDefaultAsync(tf => tf.tenant_id == request.TenantId && tf.feature.code == request.Code, cancellationToken);
-            
-            if (feature != null)
-            {
-                _context.tenant_features.Remove(feature);
-                isDeleted = true;
-            }
-        }
+            await _cachePublisher.InvalidateTenantConfigAsync(
+                request.TenantId,
+                request.ParameterType.ToString(),
+                request.Code
+            );
 
-        if (isDeleted)
-        {
-            await _context.SaveChangesAsync(cancellationToken);
-
-            // === INVALIDACIÓN EN CASCADA ===
-            var redisDb = _redis.GetDatabase();
-            string cacheKey = $"tenant:{request.TenantId}:config";
-            await redisDb.KeyDeleteAsync(cacheKey);
-
-            var publisher = _redis.GetSubscriber();
-            await publisher.PublishAsync("tenant-config-invalidation", request.TenantId.ToString());
+            await _signalRNotifier.NotifyParameterUpdatedAsync(
+                request.TenantId,
+                request.ParameterType.ToString(),
+                request.Code
+            );
         }
 
-        return isDeleted;
+        return result;
     }
 }
 ```
 
-### C. Capa de Adaptadores de Interfaz (InterfaceAdapters)
+**Validator:**
+```csharp
+namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.ResetTenantParameter;
 
-#### Controladores e Interacción HTTP
-El controlador expone los tres métodos necesarios para la administración de configuraciones del tenant. Recibe las llamadas HTTP, mapea los parámetros hacia los comandos de `MediatR` y retorna las estructuras.
+using FluentValidation;
+
+public class ResetTenantParameterValidator : AbstractValidator<ResetTenantParameterCommand>
+{
+    public ResetTenantParameterValidator()
+    {
+        RuleFor(x => x.TenantId)
+            .GreaterThan(0).WithMessage("El ID del tenant debe ser mayor a 0.");
+
+        RuleFor(x => x.ParameterType)
+            .IsInEnum().WithMessage("Tipo de parámetro inválido.");
+
+        RuleFor(x => x.Code)
+            .NotEmpty().WithMessage("El código del parámetro es requerido.")
+            .MaximumLength(100).WithMessage("El código no puede exceder 100 caracteres.");
+    }
+}
+```
+
+### C. Capa de Infraestructura (Infrastructure) — Implementaciones
+
+#### `TenantConfigurationService` (Parameterization/)
+
+Implementa `ITenantConfiguration` con caché híbrida L1/L2:
+
+```csharp
+namespace ZooTech.Infrastructure.Parameterization;
+
+using System.Collections.Concurrent;
+using System.Text.Json;
+using ZooTech.Application.Common.Gateway.Configuration;
+using ZooTech.Application.Common.Gateway.Context;
+using ZooTech.Domain.Parameters;
+using StackExchange.Redis;
+
+public class TenantConfigurationService : ITenantConfiguration
+{
+    private readonly ITenantContext _tenantContext;
+    private readonly ITenantConfigurationRepository _repository;
+    private readonly IConnectionMultiplexer _redis;
+
+    private static readonly ConcurrentDictionary<long, TenantConfigurationSnapshot> L1Cache = new();
+
+    public TenantConfigurationService(
+        ITenantContext tenantContext,
+        ITenantConfigurationRepository repository,
+        IConnectionMultiplexer redis
+    )
+    {
+        _tenantContext = tenantContext;
+        _repository = repository;
+        _redis = redis;
+    }
+
+    public T Get<T>(SettingDefinition<T> setting)
+    {
+        var snapshot = GetOrLoadSnapshot();
+
+        if (snapshot.Settings.TryGetValue(setting.Code, out var rawValue))
+        {
+            return ConvertValue<T>(rawValue, setting.DefaultValue);
+        }
+
+        return setting.DefaultValue;
+    }
+
+    public bool IsEnabled(FeatureFlag feature)
+    {
+        var snapshot = GetOrLoadSnapshot();
+
+        if (snapshot.Features.TryGetValue(feature.Code, out var isEnabled))
+        {
+            return isEnabled;
+        }
+
+        return feature.DefaultValue;
+    }
+
+    public string? GetRaw(string code)
+    {
+        var snapshot = GetOrLoadSnapshot();
+
+        return snapshot.Settings.TryGetValue(code, out var value) ? value : null;
+    }
+
+    public static void EvictL1(long tenantId)
+    {
+        L1Cache.TryRemove(tenantId, out _);
+    }
+
+    private TenantConfigurationSnapshot GetOrLoadSnapshot()
+    {
+        var tenantId = _tenantContext.TenantId;
+
+        if (L1Cache.TryGetValue(tenantId, out var cached))
+            return cached;
+
+        var redisDb = _redis.GetDatabase();
+        var redisKey = $"tenant:{tenantId}:config";
+        var redisValue = redisDb.StringGet(redisKey);
+
+        if (redisValue.HasValue)
+        {
+            var snapshot = JsonSerializer.Deserialize<TenantConfigurationSnapshot>(redisValue!);
+            if (snapshot is not null)
+            {
+                L1Cache[tenantId] = snapshot;
+                return snapshot;
+            }
+        }
+
+        var loaded = _repository.GetSnapshotAsync(tenantId).GetAwaiter().GetResult();
+        L1Cache[tenantId] = loaded;
+
+        var serialized = JsonSerializer.Serialize(loaded);
+        redisDb.StringSet(redisKey, serialized, TimeSpan.FromMinutes(10));
+
+        return loaded;
+    }
+
+    private static T ConvertValue<T>(string rawValue, T fallback)
+    {
+        try
+        {
+            return (T)Convert.ChangeType(rawValue, typeof(T));
+        }
+        catch
+        {
+            return fallback;
+        }
+    }
+}
+```
+
+#### `TenantConfigurationRepository` (Parameterization/)
+
+Implementa `ITenantConfigurationRepository` usando `TenantCatalogDb`:
+
+```csharp
+namespace ZooTech.Infrastructure.Parameterization;
+
+using Microsoft.EntityFrameworkCore;
+using ZooTech.Application.Common.Gateway.Configuration;
+using ZooTech.Infrastructure.Persistence.Context;
+
+public class TenantConfigurationRepository : ITenantConfigurationRepository
+{
+    private readonly TenantCatalogDb _context;
+
+    public TenantConfigurationRepository(TenantCatalogDb context)
+    {
+        _context = context;
+    }
+
+    public async Task<TenantConfigurationSnapshot> GetSnapshotAsync(long tenantId)
+    {
+        var globalSettings = await _context.setting_definitions
+            .AsNoTracking()
+            .ToListAsync();
+
+        var tenantSettings = await _context.tenant_settings
+            .AsNoTracking()
+            .Where(ts => ts.tenant_id == tenantId)
+            .ToDictionaryAsync(ts => ts.setting_definition_id, ts => ts.value ?? "");
+
+        var globalFeatures = await _context.features
+            .AsNoTracking()
+            .Where(f => f.deleted_at == null)
+            .ToListAsync();
+
+        var tenantFeatures = await _context.tenant_features
+            .AsNoTracking()
+            .Where(tf => tf.tenant_id == tenantId)
+            .ToDictionaryAsync(tf => tf.feature_id, tf => tf.is_enabled);
+
+        var settings = new Dictionary<string, string>();
+        foreach (var def in globalSettings)
+        {
+            if (def.code is null) continue;
+            var value = tenantSettings.TryGetValue(def.id, out var custom)
+                ? custom
+                : def.default_value ?? "";
+            settings[def.code] = value;
+        }
+
+        var features = new Dictionary<string, bool>();
+        foreach (var feat in globalFeatures)
+        {
+            var isEnabled = tenantFeatures.TryGetValue(feat.id, out var custom)
+                ? custom
+                : feat.is_active;
+            features[feat.code] = isEnabled;
+        }
+
+        return new TenantConfigurationSnapshot
+        {
+            TenantId = tenantId,
+            Settings = settings,
+            Features = features,
+            LoadedAt = DateTimeOffset.UtcNow
+        };
+    }
+
+    public async Task<bool> UpsertSettingAsync(long tenantId, string settingCode, string value)
+    {
+        var definition = await _context.setting_definitions
+            .FirstOrDefaultAsync(sd => sd.code == settingCode);
+
+        if (definition is null) return false;
+
+        var existing = await _context.tenant_settings
+            .FirstOrDefaultAsync(ts => ts.tenant_id == tenantId
+                && ts.setting_definition_id == definition.id);
+
+        if (existing is null)
+        {
+            _context.tenant_settings.Add(new()
+            {
+                tenant_id = tenantId,
+                setting_definition_id = definition.id,
+                value = value,
+                updated_at = DateTimeOffset.UtcNow
+            });
+        }
+        else
+        {
+            existing.value = value;
+            existing.updated_at = DateTimeOffset.UtcNow;
+        }
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> UpsertFeatureAsync(long tenantId, string featureCode, bool isEnabled)
+    {
+        var feature = await _context.features
+            .FirstOrDefaultAsync(f => f.code == featureCode && f.deleted_at == null);
+
+        if (feature is null) return false;
+
+        var existing = await _context.tenant_features
+            .FirstOrDefaultAsync(tf => tf.tenant_id == tenantId
+                && tf.feature_id == feature.id);
+
+        if (existing is null)
+        {
+            _context.tenant_features.Add(new()
+            {
+                tenant_id = tenantId,
+                feature_id = feature.id,
+                is_enabled = isEnabled,
+                enabled_at = DateTime.UtcNow,
+                updated_at = DateTime.UtcNow
+            });
+        }
+        else
+        {
+            existing.is_enabled = isEnabled;
+            existing.updated_at = DateTime.UtcNow;
+        }
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> DeleteTenantSettingAsync(long tenantId, string settingCode)
+    {
+        var definition = await _context.setting_definitions
+            .FirstOrDefaultAsync(sd => sd.code == settingCode);
+
+        if (definition is null) return false;
+
+        var existing = await _context.tenant_settings
+            .FirstOrDefaultAsync(ts => ts.tenant_id == tenantId
+                && ts.setting_definition_id == definition.id);
+
+        if (existing is null) return false;
+
+        _context.tenant_settings.Remove(existing);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> DeleteTenantFeatureAsync(long tenantId, string featureCode)
+    {
+        var feature = await _context.features
+            .FirstOrDefaultAsync(f => f.code == featureCode && f.deleted_at == null);
+
+        if (feature is null) return false;
+
+        var existing = await _context.tenant_features
+            .FirstOrDefaultAsync(tf => tf.tenant_id == tenantId
+                && tf.feature_id == feature.id);
+
+        if (existing is null) return false;
+
+        _context.tenant_features.Remove(existing);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+}
+```
+
+#### `CacheInvalidationPublisher` (Parameterization/)
+
+Implementa `ICacheInvalidationPublisher`:
+
+```csharp
+namespace ZooTech.Infrastructure.Parameterization;
+
+using StackExchange.Redis;
+using ZooTech.Application.Common.Gateway.Configuration;
+
+public class CacheInvalidationPublisher : ICacheInvalidationPublisher
+{
+    private readonly IConnectionMultiplexer _redis;
+
+    public CacheInvalidationPublisher(IConnectionMultiplexer redis)
+    {
+        _redis = redis;
+    }
+
+    public async Task InvalidateTenantConfigAsync(
+        long tenantId,
+        string parameterType,
+        string code
+    )
+    {
+        var db = _redis.GetDatabase();
+        var cacheKey = $"tenant:{tenantId}:config";
+
+        await db.KeyDeleteAsync(cacheKey);
+
+        TenantConfigurationService.EvictL1(tenantId);
+
+        var subscriber = _redis.GetSubscriber();
+        await subscriber.PublishAsync(
+            new RedisChannel("tenant-config-invalidation", RedisChannel.PatternMode.Literal),
+            tenantId.ToString()
+        );
+    }
+}
+```
+
+#### `RedisSyncSubscriber` (Parameterization/) — IHostedService
+
+```csharp
+namespace ZooTech.Infrastructure.Parameterization;
+
+using Microsoft.Extensions.Hosting;
+using StackExchange.Redis;
+
+public class RedisSyncSubscriber : BackgroundService
+{
+    private readonly IConnectionMultiplexer _redis;
+
+    public RedisSyncSubscriber(IConnectionMultiplexer redis)
+    {
+        _redis = redis;
+    }
+
+    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        var subscriber = _redis.GetSubscriber();
+
+        subscriber.Subscribe(
+            new RedisChannel("tenant-config-invalidation", RedisChannel.PatternMode.Literal),
+            (channel, message) =>
+            {
+                if (long.TryParse(message, out var tenantId))
+                {
+                    TenantConfigurationService.EvictL1(tenantId);
+                }
+            }
+        );
+
+        return Task.CompletedTask;
+    }
+
+    public override Task StopAsync(CancellationToken cancellationToken)
+    {
+        _redis.GetSubscriber().UnsubscribeAll();
+        return base.StopAsync(cancellationToken);
+    }
+}
+```
+
+#### `SignalRNotifier` (Parameterization/)
+
+Implementa `IParameterSyncNotifier`:
+
+```csharp
+namespace ZooTech.Infrastructure.Parameterization;
+
+using Microsoft.AspNetCore.SignalR;
+using ZooTech.Application.Common.Gateway.SignalR;
+using ZooTech.InterfaceAdapters.SignalR;
+
+public class SignalRNotifier : IParameterSyncNotifier
+{
+    private readonly IHubContext<ParameterSyncHub> _hubContext;
+
+    public SignalRNotifier(IHubContext<ParameterSyncHub> hubContext)
+    {
+        _hubContext = hubContext;
+    }
+
+    public async Task NotifyParameterUpdatedAsync(
+        long tenantId,
+        string parameterType,
+        string code
+    )
+    {
+        await _hubContext.Clients
+            .Group($"tenant:{tenantId}")
+            .SendAsync("ParameterUpdated", new
+            {
+                Type = parameterType,
+                Code = code,
+                UpdatedAt = DateTimeOffset.UtcNow
+            });
+    }
+}
+```
+
+> **⚠️ Nota arquitectónica:** `SignalRNotifier` reside en Infrastructure pero necesita referenciar `ParameterSyncHub` de InterfaceAdapters, creando una dependencia circular. Para resolver esto, se debe definir `IParameterSyncNotifier` en Application (como puerto) y la implementación puede vivir en InterfaceAdapters (ya que `IHubContext<T>` es de ASP.NET Core), o bien mover el Hub a Infrastructure. La opción recomendada es: **mover `ParameterSyncHub` a Infrastructure** para evitar la dependencia circular, ya que InterfaceAdapters ya depende de Application pero Infrastructure NO depende de InterfaceAdapters.
+
+**Solución recomendada:** Colocar `ParameterSyncHub` en `Infrastructure/SignalR/` y `SignalRNotifier` también en `Infrastructure/Parameterization/`.
+
+### D. SignalR Hub (Infrastructure/SignalR/)
+
+```csharp
+namespace ZooTech.Infrastructure.SignalR;
+
+using Microsoft.AspNetCore.SignalR;
+
+public class ParameterSyncHub : Hub
+{
+    public override async Task OnConnectedAsync()
+    {
+        var tenantId = Context.GetHttpContext()?.Request.Query["tenantId"].ToString();
+
+        if (!string.IsNullOrEmpty(tenantId))
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, $"tenant:{tenantId}");
+        }
+
+        await base.OnConnectedAsync();
+    }
+
+    public override async Task OnDisconnectedAsync(Exception? exception)
+    {
+        var tenantId = Context.GetHttpContext()?.Request.Query["tenantId"].ToString();
+
+        if (!string.IsNullOrEmpty(tenantId))
+        {
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"tenant:{tenantId}");
+        }
+
+        await base.OnDisconnectedAsync(exception);
+    }
+}
+```
+
+### E. InterfaceAdapters — Controller y DTOs
+
+#### `TenantParametersController`
 
 ```csharp
 namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers;
 
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
+using ZooTech.Application.Modules.Module_Tenancing.UseCases;
 using ZooTech.Application.Modules.Module_Tenancing.UseCases.GetTenantConfiguration;
 using ZooTech.Application.Modules.Module_Tenancing.UseCases.UpdateTenantParameter;
 using ZooTech.Application.Modules.Module_Tenancing.UseCases.ResetTenantParameter;
-using ZooTech.InterfaceAdapters.DTOs;
 
 [ApiController]
-[Route("api/v1/tenants/{tenantId}/parameters")]
+[Route("api/v1/admin/tenants/{tenantId}/parameters")]
 public class TenantParametersController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -463,78 +1179,167 @@ public class TenantParametersController : ControllerBase
     public async Task<IActionResult> GetConfig(long tenantId)
     {
         var result = await _mediator.Send(new GetTenantConfigurationQuery(tenantId));
-        return Ok(GeneralResponseDTO<TenantConfigurationDto>.Ok(result));
+        return Ok(new { success = true, data = result });
     }
 
     [HttpPut("{paramType}/{code}")]
     public async Task<IActionResult> UpdateConfig(
-        long tenantId, 
-        string paramType, 
-        string code, 
-        [FromBody] UpdateParameterRequest request)
+        long tenantId,
+        string paramType,
+        string code,
+        [FromBody] UpdateParameterRequestDto request
+    )
     {
-        var success = await _mediator.Send(new UpdateTenantParameterCommand(tenantId, paramType, code, request.Value));
-        
-        if (!success)
-        {
-            return BadRequest(GeneralResponseDTO<string>.Fail("No se pudo actualizar el parámetro. Valide el código y tipo."));
-        }
-        
-        return Ok(GeneralResponseDTO<string>.Ok("Parámetro actualizado y propagado con éxito."));
+        if (!Enum.TryParse<ParameterType>(paramType, true, out var type))
+            return BadRequest(new { success = false, error = "Tipo de parámetro inválido. Use 'Setting' o 'Feature'." });
+
+        var result = await _mediator.Send(new UpdateTenantParameterCommand(tenantId, type, code, request.Value));
+
+        if (!result)
+            return NotFound(new { success = false, error = "Parámetro no encontrado." });
+
+        return Ok(new { success = true, message = "Parámetro actualizado y propagado." });
     }
 
     [HttpDelete("{paramType}/{code}")]
     public async Task<IActionResult> ResetConfig(long tenantId, string paramType, string code)
     {
-        var success = await _mediator.Send(new ResetTenantParameterCommand(tenantId, paramType, code));
-        
-        if (!success)
-        {
-            return BadRequest(GeneralResponseDTO<string>.Fail("No se pudo restablecer el parámetro o ya utiliza el valor predeterminado global."));
-        }
-        
-        return Ok(GeneralResponseDTO<string>.Ok("Configuración del tenant restablecida al valor global."));
+        if (!Enum.TryParse<ParameterType>(paramType, true, out var type))
+            return BadRequest(new { success = false, error = "Tipo de parámetro inválido. Use 'Setting' o 'Feature'." });
+
+        var result = await _mediator.Send(new ResetTenantParameterCommand(tenantId, type, code));
+
+        if (!result)
+            return NotFound(new { success = false, error = "Configuración personalizada no encontrada." });
+
+        return Ok(new { success = true, message = "Configuración restablecida al valor global." });
     }
 }
+```
 
-public record UpdateParameterRequest(string Value);
+#### DTO de Request
+
+```csharp
+namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.DTOs.Requests;
+
+public record UpdateParameterRequestDto(string Value);
 ```
 
 ---
 
-## 📋 5. Plan de Sincronización e Implementación Actualizado
+## ⚡ 5. T4 Template — `ZooParameters.tt`
 
-El plan contempla la adición de la fase de APIs para la administración de parámetros:
+### Ubicación
+`src/ZooTech.Infrastructure/Configuration/ZooParameters.tt`
 
-```mermaid
-gantt
-    title Plan de Desarrollo Actualizado
-    dateFormat  YYYY-MM-DD
-    section Fase 1: Mapeo y Entidades
-    Crear y Mapear Entidades (Completado) :done, d1, 2026-06-03, 1d
-    section Fase 2: T4 y Dominio
-    Escribir archivo .tt en Infraestructura : active, d2, 2026-06-04, 2d
-    Configurar Target MSBuild para compilación automática : d3, after d2, 1d
-    section Fase 3: Caché L1/L2
-    Implementar servicio de caché híbrido : d4, 2026-06-07, 3d
-    Implementar Worker Redis Pub/Sub : d5, after d4, 1d
-    section Fase 4: SignalR & Front
-    Configurar Redis Backplane y Hub : d6, 2026-06-11, 2d
-    section Fase 5: CRUD de Parámetros
-    Casos de uso MediatR (Get, Update, Reset) : d7, 2026-06-13, 2d
-    Controlador HTTP en InterfaceAdapters : d8, after d7, 1d
-    section Fase 6: Casos de Uso Core
-    Refactorizar Casos de Uso de Hato Ganadero : d9, 2026-06-16, 2d
+### Pre-requisitos
+1. Instalar herramienta: `dotnet tool install dotnet-t4`
+2. Crear manifest: `.config/dotnet-tools.json`
+
+```json
+{
+  "version": 1,
+  "isRoot": true,
+  "tools": {
+    "dotnet-t4": {
+      "version": "3.0.0",
+      "commands": ["t4"]
+    }
+  }
+}
 ```
 
-### Orden de Desarrollo Inmediato
+### Comando de generación manual
 
-1.  **Fase T4 y Automatización**:
-    *   Definir los tipos `SettingDefinition`, `FeatureDefinition` y `RuleDefinition`.
-    *   Escribir el Target de MSBuild en `ZooTech.Infrastructure.csproj`.
-    *   Colocar la plantilla `ZooParameters.tt` en `ZooTech.Infrastructure/Configuration/`.
-2.  **Caché e Infraestructura**: Implementar `TenantConfigurationService` y `RedisSyncSubscriber`.
-3.  **Implementación CRUD de Parámetros (Fase 5)**:
-    *   Crear los casos de uso en `ZooTech.Application` y el controlador `TenantParametersController` en `ZooTech.InterfaceAdapters` para habilitar el consumo de negocio.
-4.  **SignalR**: Habilitar el hub de SignalR con el backplane de Redis y suscribir el frontend.
-5.  **Propagación de Eventos**: Asegurar que al modificar configuraciones a través del API, se publique el evento de invalidación en Redis y SignalR.
+```powershell
+dotnet t4 src/ZooTech.Infrastructure/Configuration/ZooParameters.tt -o src/ZooTech.Domain/Generated/ZooParameters.cs
+```
+
+### MSBuild Target (agregar a `ZooTech.Infrastructure.csproj`)
+
+```xml
+<Target Name="GenerateZooParameters" BeforeTargets="BeforeBuild">
+  <Message Importance="High" Text="[T4] Regenerando parámetros de dominio desde BD..." />
+  <Exec Command="dotnet t4 &quot;$(ProjectDir)Configuration\ZooParameters.tt&quot; -o &quot;$(SolutionDir)src\ZooTech.Domain\Generated\ZooParameters.cs&quot;" />
+</Target>
+```
+
+### Esquema del T4 (pseudo-código)
+
+El archivo `.tt` debe:
+1. Conectarse a la BD de control plano via ADO.NET directo (`Microsoft.Data.SqlClient`)
+2. Consultar `setting_definitions` (code, name, category, data_type, default_value)
+3. Consultar `features` (code, name, category, is_active) donde `deleted_at IS NULL`
+4. Consultar `rule_definitions` (code, name, module, condition_schema, action_schema)
+5. Agrupar settings por `category`
+6. Generar clases estáticas anidadas:
+   - `ZooSettings.{Category}.{PascalName} = new SettingDefinition<{MappedType}>(...)`
+   - `ZooFeatures.{Category}.{PascalName} = new FeatureFlag(...)`
+   - `ZooRules.{Module}.{PascalName} = new RuleSchema(...)`
+7. Mapeo de data_type a C#: `INT` → `int`, `BOOLEAN` → `bool`, `DECIMAL` → `decimal`, `STRING` → `string`, `DATETIME` → `string`
+
+---
+
+## 📋 6. Registro de Dependency Injection
+
+### `ZooTech.Application/DependencyInjection.cs` — Sin cambios
+Los puertos no se registran en Application.
+
+### `ZooTech.Infrastructure/DependencyInjection.cs` — Agregar
+
+```csharp
+// Configuration
+services.AddScoped<ITenantConfiguration, TenantConfigurationService>();
+services.AddScoped<ITenantConfigurationRepository, TenantConfigurationRepository>();
+services.AddScoped<ICacheInvalidationPublisher, CacheInvalidationPublisher>();
+services.AddScoped<IParameterSyncNotifier, SignalRNotifier>();
+
+// Background Services
+services.AddHostedService<RedisSyncSubscriber>();
+```
+
+### `ZooTech.API/Program.cs` — Agregar
+
+```csharp
+// SignalR
+builder.Services.AddSignalR()
+    .AddStackExchangeRedis(config["Redis:ConnectionString"] ?? "");
+
+// Hub endpoint
+app.MapHub<ParameterSyncHub>("/hubs/parameters");
+
+// CORS update (agregar SignalR)
+policy.AllowCredentials();
+```
+
+### Paquetes NuGet a agregar
+
+| Paquete | Proyecto |
+|---|---|
+| `Microsoft.AspNetCore.SignalR.StackExchangeRedis` | `ZooTech.API` |
+| `dotnet-t4` (tool) | Solution root (`.config/dotnet-tools.json`) |
+
+---
+
+## 🔄 7. Modificaciones a Archivos Existentes
+
+### `TenantCatalogDb.cs` — Agregar DbSets
+
+```csharp
+public virtual DbSet<setting_definition> setting_definitions { get; set; }
+public virtual DbSet<tenant_setting> tenant_settings { get; set; }
+```
+
+### `tenant.cs` — Agregar navegación
+
+```csharp
+[InverseProperty("tenant")]
+public virtual ICollection<tenant_setting> tenant_settings { get; set; } = new List<tenant_setting>();
+```
+
+### `GeneralResponseDTO<T>` — Cambiar visibilidad
+
+Cambiar de `internal` a `public` en `Application/Common/Models/GeneralResponseDTO.cs`.
+
+### `appsettings.json` — Sin cambios estructurales
+Las keys de Redis ya existen. No se requieren nuevas keys.

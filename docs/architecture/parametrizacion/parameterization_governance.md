@@ -14,230 +14,403 @@ graph TD
     Param --> Feature[2. Features - Feature Flags]
     Param --> Rule[3. Rules - Reglas de Negocio]
 
-    Setting --> SetEx["Ej: Límite de Vacunos (Int: 50)"]
-    Feature --> FeatEx["Ej: Módulo de Inseminación (Bool: ON/OFF)"]
-    Rule --> RuleEx["Ej: Alerta Vacunación (Condición + Acción)"]
+    Setting --> SetEx["Ej: MAX_COWS_LIMIT (Int: 100)"]
+    Feature --> FeatEx["Ej: PROD_MILK_ANALYSIS (Bool: ON/OFF)"]
+    Rule --> RuleEx["Ej: REMIND_VACCINATION (Condición + Acción)"]
 ```
 
 | Tipo | ¿Qué es? | Tipo de Dato | Mutabilidad en Ejecución | Ejemplo Práctico |
 | :--- | :--- | :--- | :--- | :--- |
-| **Settings** | Valores de control que modifican el *comportamiento* de una funcionalidad existente. | Fuertemente tipado (int, string, bool, decimal). | Alta (Editado por Tenant o Admin). | `MAX_PETS_PER_OWNER` |
-| **Features** | Interruptores binarios (ON/OFF) que activan o desactivan *módulos completos* (por suscripción o despliegue progresivo). | Booleano implícito. | Baja (Normalmente atado a planes de pago). | `INVENTORY_MODULE` |
+| **Settings** | Valores de control que modifican el *comportamiento* de una funcionalidad existente. | Fuertemente tipado (int, string, bool, decimal). | Alta (Editado por Admin via API). | `MAX_COWS_LIMIT` |
+| **Features** | Interruptores binarios (ON/OFF) que activan o desactivan *módulos completos* (por suscripción o despliegue progresivo). | Booleano implícito. | Baja (Normalmente atado a planes de pago). | `PROD_MILK_ANALYSIS` |
 | **Rules** | Lógica estructurada dinámica (esquemas JSON de condiciones y acciones) que orquesta decisiones de negocio. | Objeto complejo (JSON). | Media (Personalizado por tenant). | `REMIND_VACCINATION` |
 
 ---
 
-## 🛠️ 2. Flujo de Trabajo para Desarrolladores (Paso a Paso)
+## 🗄️ 2. Esquema Real de Base de Datos (Tablas Involucradas)
 
-Cuando un desarrollador necesita agregar un nuevo parámetro, debe seguir estrictamente este flujo para no romper la compilación ni generar desajustes entre los ambientes (Dev, Staging, Prod):
+### Sistema de Setting Definitions (usado en esta feature)
+
+```
+setting_definition                      tenant_setting
+├── id (long, PK)                       ├── tenant_id (long, PK, FK→tenant)
+├── code (string?, nvarchar 100)        ├── setting_definition_id (long, PK, FK→setting_definition)
+├── name (string?, nvarchar 150)        ├── value (string?)
+├── category (string?, nvarchar 100)    ├── metadata (string?)
+├── data_type (string?, nvarchar 30)    └── updated_at (DateTimeOffset?, Precision 3)
+├── default_value (string?)
+├── validation_schema (string?)
+├── is_required (bool?)
+├── is_sensitive (bool?)
+├── metadata (string?)
+├── created_at (DateTimeOffset?, Precision 3)
+└── updated_at (DateTimeOffset?, Precision 3)
+```
+
+### Sistema de Features (ya cableado en DbContext)
+
+```
+feature                                 tenant_feature
+├── id (long, PK)                       ├── tenant_id (long, PK, FK→tenant)
+├── code (string, varchar 100, UNIQUE)  ├── feature_id (long, PK, FK→feature)
+├── name (string, varchar 150)          ├── is_enabled (bool)
+├── description (string?)               ├── enabled_at (DateTime?)
+├── category (string?, varchar 100)     ├── expires_at (DateTime?)
+├── is_active (bool)                    ├── metadata (string?)
+├── metadata (string?)                  └── updated_at (DateTime?)
+├── created_at (DateTime)
+├── updated_at (DateTime?)
+└── deleted_at (DateTime?)
+```
+
+### Sistema de Rules (ya cableado en DbContext)
+
+```
+rule_definition                         tenant_business_rule
+├── id (long, PK)                       ├── tenant_id (long, PK, FK→tenant)
+├── code (string?, varchar 100)         ├── rule_definition_id (long, PK, FK→rule_definition)
+├── name (string?, varchar 150)         ├── is_active (bool)
+├── module (string?, varchar 100)       ├── priority (int?)
+├── condition_schema (string?)          ├── rule_version (int?)
+├── action_schema (string?)             ├── execution_mode (string?, varchar 50)
+├── metadata (string?)                  ├── custom_condition (string?)
+├── created_at (DateTime)               ├── custom_action (string?)
+└── updated_at (DateTime?)              ├── metadata (string?)
+                                        └── updated_at (DateTime?)
+```
+
+### ⚠️ Sistema Business Settings (NO usar para esta feature)
+
+Existe un sistema paralelo **NO relacionado** con la parametrización:
+```
+business_setting → business_setting_parameter → business_setting_parameter_value
+```
+Este sistema usa un patrón polimórfico (`actor_type` + `actor_id`) y está diseñado para otro propósito. **No se modifica ni se utiliza en esta implementación.**
+
+---
+
+## 🛠️ 3. Flujo de Trabajo para Desarrolladores (Paso a Paso)
+
+Cuando un desarrollador necesita agregar un nuevo parámetro, debe seguir estrictamente este flujo:
 
 ```mermaid
 stateDiagram-v2
-    [*] --> 1_Definir_SQL : Diseñar Insert en Script de Migración
-    1_Definir_SQL --> 2_Correr_Migracion : Aplicar Migración en BD Desarrollo
-    2_Correr_Migracion --> 3_Ejecutar_T4 : Correr ZooParameters.tt en Infraestructura
-    3_Ejecutar_T4 --> 4_Uso_Tipado : Consumir en Casos de Uso (Application)
-    4_Uso_Tipado --> 5_Provisionar_Default : Correr Script de Poblamiento para Tenants Activos
-    5_Provisionar_Default --> [*] : Despliegue en CI/CD
+    [*] --> 1_Definir_SQL : Diseñar INSERT en Script SQL
+    1_Definir_SQL --> 2_Correr_SQL : Ejecutar en BD de Desarrollo
+    2_Correr_SQL --> 3_Ejecutar_T4 : dotnet t4 ZooParameters.tt
+    3_Ejecutar_T4 --> 4_Verificar_Compilacion : dotnet build
+    4_Verificar_Compilacion --> 5_Consumir_Tipado : Usar ZooSettings.X.Y en Use Cases
+    5_Consumir_Tipado --> 6_Provisionar_Tenants : Script INSERT para tenants existentes
+    6_Provisionar_Tenants --> [*] : Commit + CI/CD
 ```
 
 ### Paso 1: Diseñar e Insertar la Definición Global (SQL)
-Toda definición nace en la base de datos de control plano (`TenantCatalogDb`). El desarrollador debe crear un script de migración SQL.
 
-### Paso 2: Ejecutar la Generación de Código (T4)
-El desarrollador ejecuta el archivo [ZooParameters.tt](file:///C:/Users/yonel/Desktop/Proyectos%20Programacion/.NET/Aplicaciones/ZooTech/ZooTech-Backend%20-%20Solution/src/ZooTech.Infrastructure/Configuration/ZooParameters.tt) desde Visual Studio o mediante consola (`dotnet t4`). Esto regenerará el archivo [ZooParameters.cs](file:///C:/Users/yonel/Desktop/Proyectos%20Programacion/.NET/Aplicaciones/ZooTech/ZooTech-Backend%20-%20Solution/src/ZooTech.Domain/Generated/ZooParameters.cs) en el proyecto de Dominio.
+Toda definición nace en la base de datos de control plano (`TenantCatalogDb`).
 
-### Paso 3: Consumir en el Código (Application/Domain)
-El desarrollador ahora tiene acceso autocompletado y tipado. No se permiten strings mágicos.
+### Paso 2: Ejecutar en BD de Desarrollo
 
-### Paso 4: Script de Migración de Datos para Tenants
-Si un setting es obligatorio, se debe proveer un script que inserte el valor por defecto para todos los tenants existentes en la tabla `tenant_settings`.
+Ejecutar el script SQL directamente contra la BD del catálogo plano en ambiente de desarrollo.
+
+### Paso 3: Ejecutar el T4
+
+```powershell
+dotnet t4 src/ZooTech.Infrastructure/Configuration/ZooParameters.tt -o src/ZooTech.Domain/Generated/ZooParameters.cs
+```
+
+Esto regenera `ZooParameters.cs` en la capa de Dominio.
+
+### Paso 4: Verificar Compilación
+
+```powershell
+dotnet build
+```
+
+Confirmar que el código generado compila correctamente y que las nuevas constantes están disponibles con autocompletado.
+
+### Paso 5: Consumir en Casos de Uso
+
+Usar las clases estáticas generadas en lugar de strings mágicos:
+
+```csharp
+int maxCows = _config.Get(ZooSettings.Billing.MaxCowsLimit);
+```
+
+### Paso 6: Provisionar Tenants Existentes
+
+Si el setting es obligatorio (`is_required = 1`), ejecutar un INSERT para poblar `tenant_settings` de todos los tenants activos.
 
 ---
 
-## 📝 3. Plantillas y Contratos de Inserción SQL (Base de Datos)
-
-Para mantener la base de datos limpia y ordenada, se deben usar las siguientes plantillas SQL al crear parámetros:
+## 📝 4. Plantillas y Contratos de Inserción SQL
 
 ### A. Contrato para un nuevo **Setting**
-*   **Regla de Nombramiento**: `UPPER_SNAKE_CASE` para el `code` y clasificarlo en una `category` existente o nueva en `PascalCase`.
+
+**Regla de nombramiento:** `UPPER_SNAKE_CASE` para el `code`. Clasificar en una `category` existente o nueva en `PascalCase`.
 
 ```sql
--- Agregar Definición Global
-INSERT INTO setting_definitions (code, name, category, data_type, default_value, validation_schema, is_required, is_sensitive, created_at, updated_at)
+INSERT INTO setting_definitions (
+    code, name, category, data_type, default_value,
+    validation_schema, is_required, is_sensitive, metadata,
+    created_at, updated_at
+)
 VALUES (
-    'MAX_VETERINARIANS_LIMIT',                  -- code
-    'Límite Máximo de Veterinarios Activos',    -- name
-    'Billing',                                  -- category (Determina la sub-clase en C#)
-    'INT',                                      -- data_type (INT | BOOLEAN | DECIMAL | STRING)
-    '5',                                        -- default_value
-    '{"minimum": 1, "maximum": 100}',           -- validation_schema (JSON para validar en el Admin API)
-    1,                                          -- is_required
-    0,                                          -- is_sensitive (Si se enmascara en auditoría)
+    'MAX_VETERINARIANS_LIMIT',
+    N'Límite Máximo de Veterinarios Activos',
+    'Billing',
+    'INT',
+    '5',
+    N'{"minimum": 1, "maximum": 100}',
+    1,
+    0,
+    NULL,
     SYSDATETIMEOFFSET(),
     SYSDATETIMEOFFSET()
 );
 
--- Poblar valor por defecto para todos los tenants existentes (Evita excepciones de valor faltante)
 INSERT INTO tenant_settings (tenant_id, setting_definition_id, value, updated_at)
-SELECT t.id, (SELECT id FROM setting_definitions WHERE code = 'MAX_VETERINARIANS_LIMIT'), '5', SYSDATETIMEOFFSET()
-FROM tenants t;
+SELECT
+    t.id,
+    (SELECT id FROM setting_definitions WHERE code = 'MAX_VETERINARIANS_LIMIT'),
+    '5',
+    SYSDATETIMEOFFSET()
+FROM tenants t
+WHERE t.deleted_at IS NULL;
 ```
 
 ### B. Contrato para una nueva **Feature**
-*   **Regla de Nombramiento**: Prefijo del módulo seguido de la funcionalidad, ej. `PROD_MILK_ANALYSIS`.
+
+**Regla de nombramiento:** Prefijo del módulo + funcionalidad en `UPPER_SNAKE_CASE`.
 
 ```sql
-INSERT INTO features (code, name, description, category, is_active, created_at, updated_at)
+INSERT INTO features (
+    code, name, description, category, is_active, metadata,
+    created_at, updated_at
+)
 VALUES (
     'PROD_MILK_ANALYSIS',
-    'Módulo de Análisis Avanzado de Calidad de Leche',
-    'Habilita el ingreso de datos de laboratorio, acidez y porcentaje de grasa en los ordeños.',
+    N'Módulo de Análisis Avanzado de Calidad de Leche',
+    N'Habilita el ingreso de datos de laboratorio, acidez y porcentaje de grasa en los ordeños.',
     'Production',
-    1, -- Activo por defecto en la plataforma
-    SYSDATETIMEOFFSET(),
-    SYSDATETIMEOFFSET()
+    1,
+    NULL,
+    GETDATE(),
+    GETDATE()
+);
+
+INSERT INTO tenant_features (tenant_id, feature_id, is_enabled, updated_at)
+SELECT
+    t.id,
+    (SELECT id FROM features WHERE code = 'PROD_MILK_ANALYSIS'),
+    1,
+    GETDATE()
+FROM tenants t
+WHERE t.deleted_at IS NULL;
+```
+
+### C. Contrato para una nueva **Rule**
+
+```sql
+INSERT INTO rule_definitions (
+    code, name, module, condition_schema, action_schema, metadata,
+    created_at
+)
+VALUES (
+    'REMIND_VACCINATION',
+    N'Recordatorio de Vacunación',
+    'Health',
+    N'{"type":"object","properties":{"days_before":{"type":"integer"}}}',
+    N'{"type":"object","properties":{"notification_type":{"type":"string"}}}',
+    NULL,
+    GETDATE()
 );
 ```
 
 ---
 
-## 💻 4. Ejemplo Práctico: Implementación de Código de Extremo a Extremo
+## 💻 5. Ejemplo Práctico: Implementación de Código de Extremo a Extremo
 
-### Escenario:
+### Escenario
+
 El equipo de Producto solicita limitar la cantidad de vacas que un tenant puede registrar en base a su plan de suscripción (`MAX_COWS_LIMIT`).
 
 ### 1. Inserción en Base de Datos (DBA/Dev)
-Se corre el script SQL:
+
 ```sql
-INSERT INTO setting_definitions (code, name, category, data_type, default_value, is_required, created_at)
-VALUES ('MAX_COWS_LIMIT', 'Límite de Vacunos Registrados', 'Billing', 'INT', '100', 1, SYSDATETIMEOFFSET());
+INSERT INTO setting_definitions (
+    code, name, category, data_type, default_value,
+    is_required, created_at, updated_at
+)
+VALUES (
+    'MAX_COWS_LIMIT',
+    N'Límite de Vacunos Registrados',
+    'Billing',
+    'INT',
+    '100',
+    1,
+    SYSDATETIMEOFFSET(),
+    SYSDATETIMEOFFSET()
+);
 ```
 
 ### 2. Generación T4 (Auto-generado en `ZooParameters.cs`)
-Tras ejecutar el T4, la clase se actualiza automáticamente en la capa de Dominio:
+
 ```csharp
-namespace ZooTech.Domain.Generated
+namespace ZooTech.Domain.Generated;
+
+using ZooTech.Domain.Parameters;
+
+public static class ZooSettings
 {
-    public static class ZooSettings
+    public static class Billing
     {
-        public static class Billing
-        {
-            /// <summary>
-            /// Límite de Vacunos Registrados
-            /// </summary>
-            public static readonly SettingDefinition<int> MaxCowsLimit = new("MAX_COWS_LIMIT", 100);
-        }
+        public static readonly SettingDefinition<int> MaxCowsLimit =
+            new("MAX_COWS_LIMIT", "Billing", 100, "Límite de Vacunos Registrados");
     }
 }
 ```
 
-### 3. Implementación en la Lógica del Caso de Uso (Backend Dev)
-El programador inyecta `ITenantConfiguration` en el caso de uso de registro de vacas:
+### 3. Consumo en Caso de Uso (Backend Dev)
+
+El caso de uso inyecta `ITenantConfiguration` (puerto de Application) y usa la constante tipada:
 
 ```csharp
 namespace ZooTech.Application.Modules.Module_Ganaderia.UseCases.RegisterVacuno;
 
-public class RegisterVacunoInteractor
+using MediatR;
+using ZooTech.Application.Common.Gateway.Configuration;
+using ZooTech.Application.Common.Gateway.Context;
+using ZooTech.Domain.Generated;
+
+public class RegisterVacunoHandler : IRequestHandler<RegisterVacunoCommand, Unit>
 {
-    private readonly IVacunoRepository _vacunoRepository;
     private readonly ITenantConfiguration _config;
     private readonly ITenantContext _tenantContext;
 
-    public RegisterVacunoInteractor(
-        IVacunoRepository vacunoRepository,
+    public RegisterVacunoHandler(
         ITenantConfiguration config,
-        ITenantContext tenantContext)
+        ITenantContext tenantContext
+    )
     {
-        _vacunoRepository = vacunoRepository;
         _config = config;
         _tenantContext = tenantContext;
     }
 
-    public async Task Handle(RegisterVacunoCommand cmd)
+    public async Task<Unit> Handle(RegisterVacunoCommand cmd, CancellationToken ct)
     {
-        // Obtener el límite configurado para este Tenant específico (Caché L1 rápida)
         int maxCowsAllowed = _config.Get(ZooSettings.Billing.MaxCowsLimit);
-        
-        int currentCowsCount = await _vacunoRepository.CountActiveByTenantAsync(_tenantContext.TenantId);
 
-        if (currentCowsCount >= maxCowsAllowed)
-        {
-            throw new BusinessRuleException($"Límite de suscripción alcanzado. Máximo permitido: {maxCowsAllowed} vacas.");
-        }
+        // ... lógica de conteo y validación ...
 
-        // Proceder con el registro...
+        return Unit.Value;
     }
 }
 ```
 
----
-
-## 🔄 5. Contrato de API para Actualización e Invalidad (Sincronización)
-
-Cuando un administrador modifica un valor de configuración a través del panel de control, el endpoint del API debe ejecutar la invalidación local y global en cascada.
-
-### Ejemplo de Controlador de Gestión de Parámetros:
+### 4. Verificación de Feature Flag
 
 ```csharp
-namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers;
+bool isMilkAnalysisEnabled = _config.IsEnabled(ZooFeatures.Production.MilkAnalysis);
 
-[ApiController]
-[Route("api/v1/admin/tenants/{tenantId}/settings")]
-public class TenantSettingsAdminController : ControllerBase
+if (!isMilkAnalysisEnabled)
 {
-    private readonly TenantCatalogDb _context;
-    private readonly IConnectionMultiplexer _redis;
-    private readonly IHubContext<ParameterSyncHub> _hubContext;
-
-    public TenantSettingsAdminController(
-        TenantCatalogDb context, 
-        IConnectionMultiplexer redis,
-        IHubContext<ParameterSyncHub> hubContext)
-    {
-        _context = context;
-        _redis = redis;
-        _hubContext = hubContext;
-    }
-
-    [HttpPut("{settingCode}")]
-    public async Task<IActionResult> UpdateSetting(long tenantId, string settingCode, [FromBody] UpdateSettingRequestDto request)
-    {
-        // 1. Guardar en Base de Datos de Control Plane
-        var dbSetting = await _context.tenant_settings
-            .Include(ts => ts.setting_definition)
-            .FirstOrDefaultAsync(ts => ts.tenant_id == tenantId && ts.setting_definition.code == settingCode);
-
-        if (dbSetting == null) return NotFound();
-
-        dbSetting.value = request.NewValue;
-        dbSetting.updated_at = DateTimeOffset.UtcNow;
-        await _context.SaveChangesAsync();
-
-        // 2. Invalidar Caché L2 (Redis Key)
-        var redisDb = _redis.GetDatabase();
-        string cacheKey = $"tenant:{tenantId}:config";
-        await redisDb.KeyDeleteAsync(cacheKey);
-
-        // 3. Notificar a todas las APIs vía Redis Pub/Sub (Invalidación de Caché L1)
-        var publisher = _redis.GetSubscriber();
-        await publisher.PublishAsync("tenant-config-invalidation", tenantId.ToString());
-
-        // 4. Notificar a los clientes Frontend conectados vía SignalR
-        await _hubContext.Clients.Group($"tenant:{tenantId}")
-            .SendAsync("ParameterUpdated", new { Type = "Setting", Code = settingCode });
-
-        return Ok(GeneralResponseDTO<string>.Ok("Configuración actualizada y sincronizada en clúster."));
-    }
+    throw new NotFoundException("FEATURE_DISABLED", "El módulo de análisis de leche no está habilitado.");
 }
 ```
 
 ---
 
-## 🚨 6. Acuerdos de Niveles de Servicio Internos (SLA Técnicos)
+## 🔄 6. Contrato de API para Actualización y Sincronización
 
-Para asegurar estabilidad en producción, el equipo acuerda las siguientes métricas de rendimiento:
+Cuando un administrador modifica un valor de configuración a través del panel, el flujo sigue estrictamente MediatR:
 
-1.  **Latencia de Lectura**: El acceso a configuraciones desde cualquier caso de uso en la capa de aplicación debe tomar **menos de 2 microsegundos** gracias a la caché L1 local en memoria.
-2.  **Tiempo de Sincronización en Clúster**: El desfase entre la actualización de una configuración por el administrador y su reflejo en todos los pods de Kubernetes / balanceador del backend no debe exceder **los 200 milisegundos**.
-3.  **Manejo de Caída de Caché**: Si el servidor de Redis queda fuera de servicio, el backend debe degradarse con elegancia (Graceful Degradation) consultando directamente a la base de datos de control plano mediante SQL sin generar errores de disponibilidad de servicio (HTTP 503).
+### Endpoint
+
+```
+PUT /api/v1/admin/tenants/{tenantId}/parameters/{paramType}/{code}
+Body: { "value": "10" }
+```
+
+### Flujo Interno
+
+```
+Controller → IMediator.Send(UpdateTenantParameterCommand)
+  → ValidationBehavior (FluentValidation)
+  → UpdateTenantParameterHandler
+    → ITenantConfigurationRepository.UpsertSettingAsync()     [DB write]
+    → ICacheInvalidationPublisher.InvalidateTenantConfigAsync() [Redis L2 + Pub/Sub + L1]
+    → IParameterSyncNotifier.NotifyParameterUpdatedAsync()     [SignalR]
+```
+
+El controller **solo** usa `IMediator`. No tiene conocimiento de Redis, SignalR ni TenantCatalogDb.
+
+---
+
+## 🚨 7. Acuerdos de Niveles de Servicio Internos (SLA Técnicos)
+
+| Métrica | Objetivo | Mecanismo |
+|---|---|---|
+| **Latencia de lectura (L1)** | < 1 μs | `ConcurrentDictionary` en memoria del proceso |
+| **Latencia de lectura (L2)** | < 5 ms | Redis `StringGet` |
+| **Latencia de lectura (DB fallback)** | < 50 ms | EF Core query a `TenantCatalogDb` |
+| **Sincronización en clúster** | < 200 ms | Redis Pub/Sub + evicción L1 en todas las instancias |
+| **Notificación frontend** | < 500 ms | SignalR con backplane Redis |
+| **Degradación sin Redis** | Lectura directa a DB | `TenantConfigurationService` catch exception y consulta DB |
+
+### Manejo de Caída de Redis (Graceful Degradation)
+
+Si Redis está fuera de servicio:
+1. `TenantConfigurationService` falla al consultar L2 → catch silencioso
+2. Consulta directa a `TenantCatalogDb` via `ITenantConfigurationRepository`
+3. El valor se almacena solo en L1 (memoria local)
+4. No se publica invalidación → cada instancia refresca según TTL de L1 (10 min)
+5. **NO** se genera HTTP 503 — el sistema sigue operativo
+
+---
+
+## 📊 8. Mapeo de `data_type` SQL → Tipo C#
+
+| `data_type` en BD | Tipo C# en `SettingDefinition<T>` | Conversión |
+|---|---|---|
+| `INT` | `int` | `int.Parse()` |
+| `BOOLEAN` | `bool` | `bool.Parse()` |
+| `DECIMAL` | `decimal` | `decimal.Parse()` |
+| `STRING` | `string` | Sin conversión |
+| `DATETIME` | `string` | Almacenado como ISO 8601 string |
+
+El T4 usa este mapeo para generar el tipo genérico correcto.
+
+---
+
+## 🔐 9. Consideraciones de Seguridad
+
+1. **Settings marcados `is_sensitive = 1`**: No deben exponerse en la respuesta del API de consulta (`GetTenantConfiguration`). El `TenantConfigurationRepository` debe enmascarar o omitir estos valores.
+2. **Autorización del endpoint**: El `TenantParametersController` debe requerir rol de administrador (implementar cuando el módulo de identidad esté activo).
+3. **Validación de `validation_schema`**: El JSON de validación debe verificarse antes de aceptar un nuevo valor en `UpdateTenantParameter`. Esta validación se ejecuta en el `UpdateTenantParameterValidator` de FluentValidation.
+
+---
+
+## 🧪 10. Estrategia de Pruebas para Parametrización
+
+### Pruebas Unitarias
+
+| Componente | Archivo de Test | Lo que se prueba |
+|---|---|---|
+| `TenantConfigurationService.Get<T>()` | `TenantConfigurationServiceUnitTests.cs` | Lectura desde L1, fallback a default, conversión de tipos |
+| `TenantConfigurationService.IsEnabled()` | (mismo archivo) | Feature flags habilitados/deshabilitados |
+| `UpdateTenantParameterHandler` | `UpdateTenantParameterHandlerUnitTests.cs` | Upsert exitoso, invalidación de caché llamada, notificación SignalR llamada |
+| `ResetTenantParameterHandler` | `ResetTenantParameterHandlerUnitTests.cs` | Delete exitoso, handling de "no existe" |
+| `GetTenantConfigurationHandler` | `GetTenantConfigurationHandlerUnitTests.cs` | Merge correcto de valores globales + personalizados |
+| `TenantConfigurationRepository` | `TenantConfigurationRepositoryUnitTests.cs` | Upsert/Get/Delete con EF Core InMemory |
+| `CacheInvalidationPublisher` | `CacheInvalidationPublisherUnitTests.cs` | Llamada a Redis KeyDelete + PublishAsync |
+| Validadores | `UpdateTenantParameterValidatorUnitTests.cs` | Validaciones FluentValidation |
+
+### Pruebas de Integración
+
+| Escenario | Proyecto |
+|---|---|
+| GET config → verifica merge de settings globales + tenant | `ZooTech.API.IntegrationTests` |
+| PUT setting → verifica persistencia + invalidación | `ZooTech.API.IntegrationTests` |
+| DELETE setting → verifica reset + invalidación | `ZooTech.API.IntegrationTests` |
+| SignalR Hub connection + group join | `ZooTech.InterfaceAdapters.IntegrationTests` |
+| Redis Pub/Sub subscriber recibe evento | `ZooTech.Infrastructure.IntegrationTests` |
