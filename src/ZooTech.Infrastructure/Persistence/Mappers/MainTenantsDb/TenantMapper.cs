@@ -11,14 +11,14 @@ namespace ZooTech.Infrastructure.Persistence.Mappers.MainTenantsDb
             return TenantDomainEntity.Create(
                 tenantEntity.id,
                 tenantEntity.code,
-                tenantEntity.sub_domain,
+                tenantEntity.subdomain,
                 tenantEntity.display_name,
                 tenantEntity.legal_name,
                 tenantEntity.email,
                 tenantEntity.phone,
                 tenantEntity.status,
                 tenantEntity.created_at,
-                tenantEntity.updated_at
+                tenantEntity.updated_at.GetValueOrDefault()
             );
         }
 
@@ -27,7 +27,7 @@ namespace ZooTech.Infrastructure.Persistence.Mappers.MainTenantsDb
             return new tenant
             {
                 code = tenantDomainEntity.Code,
-                sub_domain = tenantDomainEntity.SubDomain,
+                subdomain = tenantDomainEntity.SubDomain,
                 display_name = tenantDomainEntity.DisplayName,
                 legal_name = tenantDomainEntity.LegalName,
                 email = tenantDomainEntity.Email,

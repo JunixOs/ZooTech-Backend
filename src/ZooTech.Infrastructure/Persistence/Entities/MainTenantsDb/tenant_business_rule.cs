@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace ZooTech.Infrastructure.Persistence.Entities.MainTenantsDb;
 
 [PrimaryKey("tenant_id", "rule_definition_id")]
+[Index("rule_definition_id", Name = "IX_tenant_business_rules_rule_definition_id")]
 public partial class tenant_business_rule
 {
     [Key]
@@ -22,6 +23,7 @@ public partial class tenant_business_rule
     public int? rule_version { get; set; }
 
     [StringLength(50)]
+    [Unicode(false)]
     public string? execution_mode { get; set; }
 
     public string? custom_condition { get; set; }
@@ -30,8 +32,8 @@ public partial class tenant_business_rule
 
     public string? metadata { get; set; }
 
-    [Precision(3)]
-    public DateTimeOffset? updated_at { get; set; }
+    [Column(TypeName = "datetime")]
+    public DateTime? updated_at { get; set; }
 
     [ForeignKey("rule_definition_id")]
     [InverseProperty("tenant_business_rules")]

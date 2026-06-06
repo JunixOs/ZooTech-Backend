@@ -51,7 +51,7 @@ namespace ZooTech.Infrastructure.UnitTests.Tenant
                 {
                     id = 1,
                     code = "TENANT_1",
-                    sub_domain = "tenant1",
+                    subdomain = "tenant1",
                     display_name = "Granja Tenant 1",
                     legal_name = "Granja Tenant 1 S.A.C",
                     email = "tenant1@gmail.com",
@@ -66,7 +66,7 @@ namespace ZooTech.Infrastructure.UnitTests.Tenant
                             state = "Huanuco",
                             province = "Huanuco",
                             city = "Huanuco",
-                            address_line1 = "Av. Abtao 1001",
+                            address_line_1 = "Av. Abtao 1001",
                             created_at = DateTime.Now
                         },
                     tenant_database_connection =
@@ -145,7 +145,7 @@ namespace ZooTech.Infrastructure.UnitTests.Tenant
                 {
                     id = 1,
                     code = "TENANT_1",
-                    sub_domain = "tenant1",
+                    subdomain = "tenant1",
                     display_name = "Granja Tenant 1",
                     legal_name = "Granja Tenant 1 S.A.C",
                     email = "tenant1@gmail.com",
@@ -160,7 +160,7 @@ namespace ZooTech.Infrastructure.UnitTests.Tenant
                             state = "Huanuco",
                             province = "Huanuco",
                             city = "Huanuco",
-                            address_line1 = "Av. Abtao 1001",
+                            address_line_1 = "Av. Abtao 1001",
                             created_at = DateTime.Now
                         },
                     tenant_database_connection =

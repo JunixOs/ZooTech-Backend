@@ -6,50 +6,60 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ZooTech.Infrastructure.Persistence.Entities.MainTenantsDb;
 
-[Index("code", Name = "UQ__tenants__357D4CF9ADE2F5DB", IsUnique = true)]
-[Index("subdomain", Name = "UQ__tenants__E956860B905B77E0", IsUnique = true)]
+[Index("code", Name = "IX_tenants_code")]
+[Index("subdomain", Name = "IX_tenants_subdomain")]
+[Index("code", Name = "UQ__tenants__357D4CF91DD98DFB", IsUnique = true)]
+[Index("subdomain", Name = "UQ__tenants__E956860B07C1DC0F", IsUnique = true)]
 public partial class tenant
 {
     [Key]
     public long id { get; set; }
 
     [StringLength(50)]
+    [Unicode(false)]
     public string code { get; set; } = null!;
 
     [StringLength(50)]
+    [Unicode(false)]
     public string subdomain { get; set; } = null!;
 
     [StringLength(150)]
+    [Unicode(false)]
     public string display_name { get; set; } = null!;
 
     [StringLength(200)]
+    [Unicode(false)]
     public string legal_name { get; set; } = null!;
 
     [StringLength(150)]
+    [Unicode(false)]
     public string email { get; set; } = null!;
 
     [StringLength(50)]
+    [Unicode(false)]
     public string phone { get; set; } = null!;
 
     [StringLength(100)]
+    [Unicode(false)]
     public string timezone { get; set; } = null!;
 
     [StringLength(30)]
+    [Unicode(false)]
     public string status { get; set; } = null!;
 
     public string? metadata { get; set; }
 
-    [Precision(3)]
-    public DateTimeOffset? created_at { get; set; }
+    [Column(TypeName = "datetime")]
+    public DateTime created_at { get; set; }
 
-    [Precision(3)]
-    public DateTimeOffset? updated_at { get; set; }
+    [Column(TypeName = "datetime")]
+    public DateTime? updated_at { get; set; }
 
-    [Precision(3)]
-    public DateTimeOffset? deleted_at { get; set; }
+    [Column(TypeName = "datetime")]
+    public DateTime? deleted_at { get; set; }
 
     [InverseProperty("tenant")]
-    public virtual ICollection<address> addresses { get; set; } = new List<address>();
+    public virtual address? address { get; set; }
 
     [InverseProperty("tenant")]
     public virtual tenant_branding? tenant_branding { get; set; }
@@ -62,7 +72,4 @@ public partial class tenant
 
     [InverseProperty("tenant")]
     public virtual ICollection<tenant_feature> tenant_features { get; set; } = new List<tenant_feature>();
-
-    [InverseProperty("tenant")]
-    public virtual ICollection<tenant_setting> tenant_settings { get; set; } = new List<tenant_setting>();
 }

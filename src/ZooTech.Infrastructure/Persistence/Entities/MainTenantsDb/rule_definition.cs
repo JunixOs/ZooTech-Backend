@@ -6,19 +6,22 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ZooTech.Infrastructure.Persistence.Entities.MainTenantsDb;
 
-[Index("code", Name = "UQ__rule_def__357D4CF9146481DC", IsUnique = true)]
+[Index("code", Name = "UQ__rule_def__357D4CF99F03CA87", IsUnique = true)]
 public partial class rule_definition
 {
     [Key]
     public long id { get; set; }
 
     [StringLength(100)]
+    [Unicode(false)]
     public string? code { get; set; }
 
     [StringLength(150)]
+    [Unicode(false)]
     public string? name { get; set; }
 
     [StringLength(100)]
+    [Unicode(false)]
     public string? module { get; set; }
 
     public string? condition_schema { get; set; }
@@ -27,11 +30,11 @@ public partial class rule_definition
 
     public string? metadata { get; set; }
 
-    [Precision(3)]
-    public DateTimeOffset? created_at { get; set; }
+    [Column(TypeName = "datetime")]
+    public DateTime created_at { get; set; }
 
-    [Precision(3)]
-    public DateTimeOffset? updated_at { get; set; }
+    [Column(TypeName = "datetime")]
+    public DateTime? updated_at { get; set; }
 
     [InverseProperty("rule_definition")]
     public virtual ICollection<tenant_business_rule> tenant_business_rules { get; set; } = new List<tenant_business_rule>();

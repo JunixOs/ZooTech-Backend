@@ -10,6 +10,7 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Mappers
             ToCommand(
                 CreateTenantRequestDto dto)
         {
+
             return new CreateTenantCommand
             {
                 Code = dto.Code,
@@ -26,28 +27,27 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Mappers
 
                 TimeZone = dto.TimeZone,
 
-                TenantAddress =
-                    new TenantAddress
-                    {
-                        Country =
-                            dto.TenantAddress.Country,
+                TenantAddress = new TenantAddress
+                {
+                    Country =
+                        dto.TenantAddress.Country,
 
-                        State =
-                            dto.TenantAddress.State,
+                    State =
+                        dto.TenantAddress.State,
 
-                        Province =
-                            dto.TenantAddress.Province,
+                    Province =
+                        dto.TenantAddress.Province,
 
-                        City =
-                            dto.TenantAddress.City,
+                    City =
+                        dto.TenantAddress.City,
 
-                        AddressLine_1 =
-                            dto.TenantAddress.AddressLine1,
+                    AddressLine_1 =
+                        dto.TenantAddress.AddressLine1,
 
-                        AddressLine_2 =
-                            dto.TenantAddress.AddressLine2
-                            ?? string.Empty
-                    },
+                    AddressLine_2 =
+                        dto.TenantAddress.AddressLine2
+                        ?? string.Empty
+                },
 
                 TenantBranding =
                     new TenantBranding

@@ -16,13 +16,17 @@ public partial class TenantCatalogDb : DbContext
 
     public virtual DbSet<admin_user> admin_users { get; set; }
 
+    public virtual DbSet<business_setting> business_settings { get; set; }
+
+    public virtual DbSet<business_setting_parameter> business_setting_parameters { get; set; }
+
+    public virtual DbSet<business_setting_parameter_value> business_setting_parameter_values { get; set; }
+
     public virtual DbSet<feature> features { get; set; }
 
     public virtual DbSet<refresh_token> refresh_tokens { get; set; }
 
     public virtual DbSet<rule_definition> rule_definitions { get; set; }
-
-    public virtual DbSet<setting_definition> setting_definitions { get; set; }
 
     public virtual DbSet<tenant> tenants { get; set; }
 
@@ -34,45 +38,72 @@ public partial class TenantCatalogDb : DbContext
 
     public virtual DbSet<tenant_feature> tenant_features { get; set; }
 
-    public virtual DbSet<tenant_setting> tenant_settings { get; set; }
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<address>(entity =>
         {
-            entity.HasKey(e => e.id).HasName("PK__addresse__3213E83FA9ED44E4");
+            entity.HasKey(e => e.id).HasName("PK__addresse__3213E83F410EB871");
 
-            entity.Property(e => e.created_at).HasDefaultValueSql("(sysdatetimeoffset())");
-            entity.Property(e => e.updated_at).HasDefaultValueSql("(sysdatetimeoffset())");
+            entity.Property(e => e.created_at).HasDefaultValueSql("(getdate())");
 
-            entity.HasOne(d => d.tenant).WithMany(p => p.addresses)
+            entity.HasOne(d => d.tenant).WithOne(p => p.address)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_addresses_tenants");
         });
 
         modelBuilder.Entity<admin_user>(entity =>
         {
-            entity.HasKey(e => e.id).HasName("PK__admin_us__3213E83F1F07B287");
+            entity.HasKey(e => e.id).HasName("PK__admin_us__3213E83FC486451E");
 
-            entity.Property(e => e.created_at).HasDefaultValueSql("(sysdatetimeoffset())");
+            entity.Property(e => e.created_at).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.is_active).HasDefaultValue(true);
-            entity.Property(e => e.updated_at).HasDefaultValueSql("(sysdatetimeoffset())");
+        });
+
+        modelBuilder.Entity<business_setting>(entity =>
+        {
+            entity.HasKey(e => e.id).HasName("PK__business__3213E83F14AAF967");
+
+            entity.Property(e => e.created_at).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.is_active).HasDefaultValue(true);
+        });
+
+        modelBuilder.Entity<business_setting_parameter>(entity =>
+        {
+            entity.HasKey(e => e.id).HasName("PK__business__3213E83FB7178823");
+
+            entity.Property(e => e.created_at).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.is_active).HasDefaultValue(true);
+
+            entity.HasOne(d => d.business_setting).WithMany(p => p.business_setting_parameters)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_business_setting_parameters_business_settings");
+        });
+
+        modelBuilder.Entity<business_setting_parameter_value>(entity =>
+        {
+            entity.HasKey(e => e.id).HasName("PK__business__3213E83F9656E3AA");
+
+            entity.Property(e => e.created_at).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.is_active).HasDefaultValue(true);
+
+            entity.HasOne(d => d.business_setting_parameter).WithMany(p => p.business_setting_parameter_values)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_business_setting_parameter_values_parameters");
         });
 
         modelBuilder.Entity<feature>(entity =>
         {
-            entity.HasKey(e => e.id).HasName("PK__features__3213E83FCFCB01E1");
+            entity.HasKey(e => e.id).HasName("PK__features__3213E83F36F48103");
 
-            entity.Property(e => e.created_at).HasDefaultValueSql("(sysdatetimeoffset())");
+            entity.Property(e => e.created_at).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.is_active).HasDefaultValue(true);
-            entity.Property(e => e.updated_at).HasDefaultValueSql("(sysdatetimeoffset())");
         });
 
         modelBuilder.Entity<refresh_token>(entity =>
         {
-            entity.HasKey(e => e.id).HasName("PK__refresh___3213E83FB0E1F619");
+            entity.HasKey(e => e.id).HasName("PK__refresh___3213E83FF24B3943");
 
-            entity.Property(e => e.created_at).HasDefaultValueSql("(sysdatetimeoffset())");
+            entity.Property(e => e.created_at).HasDefaultValueSql("(getdate())");
 
             entity.HasOne(d => d.admin_user).WithMany(p => p.refresh_tokens)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -81,37 +112,24 @@ public partial class TenantCatalogDb : DbContext
 
         modelBuilder.Entity<rule_definition>(entity =>
         {
-            entity.HasKey(e => e.id).HasName("PK__rule_def__3213E83F312ED06F");
+            entity.HasKey(e => e.id).HasName("PK__rule_def__3213E83F46A7485F");
 
-            entity.Property(e => e.created_at).HasDefaultValueSql("(sysdatetimeoffset())");
-            entity.Property(e => e.updated_at).HasDefaultValueSql("(sysdatetimeoffset())");
-        });
-
-        modelBuilder.Entity<setting_definition>(entity =>
-        {
-            entity.HasKey(e => e.id).HasName("PK__setting___3213E83FF8C698B8");
-
-            entity.Property(e => e.created_at).HasDefaultValueSql("(sysdatetimeoffset())");
-            entity.Property(e => e.is_required).HasDefaultValue(false);
-            entity.Property(e => e.is_sensitive).HasDefaultValue(false);
-            entity.Property(e => e.updated_at).HasDefaultValueSql("(sysdatetimeoffset())");
+            entity.Property(e => e.created_at).HasDefaultValueSql("(getdate())");
         });
 
         modelBuilder.Entity<tenant>(entity =>
         {
-            entity.HasKey(e => e.id).HasName("PK__tenants__3213E83F90873C7A");
+            entity.HasKey(e => e.id).HasName("PK__tenants__3213E83F7B29AD44");
 
-            entity.Property(e => e.created_at).HasDefaultValueSql("(sysdatetimeoffset())", "DF_tenants_created_at");
+            entity.Property(e => e.created_at).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.status).HasDefaultValue("TRIAL", "DF_tenants_status");
-            entity.Property(e => e.updated_at).HasDefaultValueSql("(sysdatetimeoffset())", "DF_tenants_updated_at");
         });
 
         modelBuilder.Entity<tenant_branding>(entity =>
         {
-            entity.HasKey(e => e.id).HasName("PK__tenant_b__3213E83F73C9C569");
+            entity.HasKey(e => e.id).HasName("PK__tenant_b__3213E83F48B5F337");
 
-            entity.Property(e => e.created_at).HasDefaultValueSql("(sysdatetimeoffset())");
-            entity.Property(e => e.updated_at).HasDefaultValueSql("(sysdatetimeoffset())");
+            entity.Property(e => e.created_at).HasDefaultValueSql("(getdate())");
 
             entity.HasOne(d => d.tenant).WithOne(p => p.tenant_branding)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -120,6 +138,8 @@ public partial class TenantCatalogDb : DbContext
 
         modelBuilder.Entity<tenant_business_rule>(entity =>
         {
+            entity.Property(e => e.is_active).HasDefaultValue(true);
+
             entity.HasOne(d => d.rule_definition).WithMany(p => p.tenant_business_rules)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_tenant_business_rules_rules");
@@ -131,11 +151,10 @@ public partial class TenantCatalogDb : DbContext
 
         modelBuilder.Entity<tenant_database_connection>(entity =>
         {
-            entity.HasKey(e => e.id).HasName("PK__tenant_d__3213E83F5018054E");
+            entity.HasKey(e => e.id).HasName("PK__tenant_d__3213E83F6A1F3347");
 
-            entity.Property(e => e.created_at).HasDefaultValueSql("(sysdatetimeoffset())");
+            entity.Property(e => e.created_at).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.is_active).HasDefaultValue(true);
-            entity.Property(e => e.updated_at).HasDefaultValueSql("(sysdatetimeoffset())");
 
             entity.HasOne(d => d.tenant).WithOne(p => p.tenant_database_connection)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -153,17 +172,6 @@ public partial class TenantCatalogDb : DbContext
             entity.HasOne(d => d.tenant).WithMany(p => p.tenant_features)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_tenant_features_tenants");
-        });
-
-        modelBuilder.Entity<tenant_setting>(entity =>
-        {
-            entity.HasOne(d => d.setting_definition).WithMany(p => p.tenant_settings)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_tenant_settings_definitions");
-
-            entity.HasOne(d => d.tenant).WithMany(p => p.tenant_settings)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_tenant_settings_tenants");
         });
 
         OnModelCreatingPartial(modelBuilder);

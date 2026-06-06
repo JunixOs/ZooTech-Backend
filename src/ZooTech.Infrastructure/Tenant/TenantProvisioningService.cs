@@ -30,18 +30,6 @@ namespace ZooTech.Infrastructure.Tenant
         {
             var tenantDbName = $"ZooTech_{cmd.Code.Replace("-", "_")}_Db";
 
-            address addressEntity = new address
-            {
-                country = cmd.TenantAddress.Country,
-                state = cmd.TenantAddress.State,
-                province = cmd.TenantAddress.Province,
-                city = cmd.TenantAddress.City,
-                address_line1 = cmd.TenantAddress.AddressLine_1,
-                address_line2 = cmd.TenantAddress.AddressLine_2,
-                metadata = cmd.TenantAddress.Metadata,
-                created_at = DateTime.Now
-            };
-
             tenant_database_connection tenantDatabaseConnectionEntity = new tenant_database_connection
             {
                 database_name = tenantDbName,
@@ -51,16 +39,26 @@ namespace ZooTech.Infrastructure.Tenant
             var tenant = new tenant
             {
                 code = cmd.Code,
-                sub_domain = cmd.SubDomain,
+                subdomain = cmd.SubDomain,
                 display_name = cmd.DisplayName,
                 legal_name = cmd.LegalName,
                 email = cmd.Email,
                 phone = cmd.Phone,
-                address = addressEntity,
+                address = new address
+                    {
+                        country = cmd.TenantAddress.Country,
+                        state = cmd.TenantAddress.State,
+                        province = cmd.TenantAddress.Province,
+                        city = cmd.TenantAddress.City,
+                        address_line_1 = cmd.TenantAddress.AddressLine_1,
+                        address_line_2 = cmd.TenantAddress.AddressLine_2,
+                        metadata = cmd.TenantAddress.Metadata,
+                        created_at = cmd.TenantAddress.CreatedAt
+                    },
                 tenant_database_connection = tenantDatabaseConnectionEntity,
                 status = cmd.Status,
                 metadata = cmd.Metadata,
-                created_at = DateTime.Now
+                created_at = cmd.CreatedAt
             };
 
             try

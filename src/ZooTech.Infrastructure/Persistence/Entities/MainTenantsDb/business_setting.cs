@@ -6,8 +6,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ZooTech.Infrastructure.Persistence.Entities.MainTenantsDb;
 
-[Index("code", Name = "UQ__features__357D4CF99419908E", IsUnique = true)]
-public partial class feature
+[Index("code", Name = "UQ__business__357D4CF96440C9C1", IsUnique = true)]
+public partial class business_setting
 {
     [Key]
     public long id { get; set; }
@@ -20,11 +20,9 @@ public partial class feature
     [Unicode(false)]
     public string name { get; set; } = null!;
 
-    public string? description { get; set; }
-
-    [StringLength(100)]
+    [StringLength(300)]
     [Unicode(false)]
-    public string? category { get; set; }
+    public string? description { get; set; }
 
     public bool is_active { get; set; }
 
@@ -36,9 +34,6 @@ public partial class feature
     [Column(TypeName = "datetime")]
     public DateTime? updated_at { get; set; }
 
-    [Column(TypeName = "datetime")]
-    public DateTime? deleted_at { get; set; }
-
-    [InverseProperty("feature")]
-    public virtual ICollection<tenant_feature> tenant_features { get; set; } = new List<tenant_feature>();
+    [InverseProperty("business_setting")]
+    public virtual ICollection<business_setting_parameter> business_setting_parameters { get; set; } = new List<business_setting_parameter>();
 }
