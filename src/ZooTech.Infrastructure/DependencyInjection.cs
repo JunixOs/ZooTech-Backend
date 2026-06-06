@@ -1,8 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Ports;
 using ZooTech.Application.Common.Gateway.Services;
+using ZooTech.Application.Common.Gateway.Caching;
+using ZooTech.Infrastructure.Caching;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Persistence.Modules.Module_ProduccionLeche.Repositories;
 using ZooTech.Infrastructure.Common.Services.PdfGenerator;
@@ -47,7 +49,8 @@ public static class DependencyInjection
         // Caching
         // ============================================
 
-        // services.AddMemoryCache();
+        services.AddSingleton<GarnetCacheConnection>();
+        services.AddSingleton<IAppCacheService, GarnetCacheService>();
 
         return services;
     }
