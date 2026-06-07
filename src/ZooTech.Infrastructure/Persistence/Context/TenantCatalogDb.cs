@@ -16,17 +16,17 @@ public partial class TenantCatalogDb : DbContext
 
     public virtual DbSet<admin_user> admin_users { get; set; }
 
-    public virtual DbSet<business_setting> business_settings { get; set; }
-
-    public virtual DbSet<business_setting_parameter> business_setting_parameters { get; set; }
-
-    public virtual DbSet<business_setting_parameter_value> business_setting_parameter_values { get; set; }
-
     public virtual DbSet<feature> features { get; set; }
 
     public virtual DbSet<refresh_token> refresh_tokens { get; set; }
 
     public virtual DbSet<rule_definition> rule_definitions { get; set; }
+
+    public virtual DbSet<setting_definition> setting_definitions { get; set; }
+
+    public virtual DbSet<setting_group> setting_groups { get; set; }
+
+    public virtual DbSet<setting_value> setting_values { get; set; }
 
     public virtual DbSet<tenant> tenants { get; set; }
 
@@ -42,9 +42,7 @@ public partial class TenantCatalogDb : DbContext
     {
         modelBuilder.Entity<address>(entity =>
         {
-            entity.HasKey(e => e.id).HasName("PK__addresse__3213E83F410EB871");
-
-            entity.Property(e => e.created_at).HasDefaultValueSql("(getdate())");
+            entity.HasKey(e => e.id).HasName("PK__addresse__3213E83F2A1CE467");
 
             entity.HasOne(d => d.tenant).WithOne(p => p.address)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -53,57 +51,21 @@ public partial class TenantCatalogDb : DbContext
 
         modelBuilder.Entity<admin_user>(entity =>
         {
-            entity.HasKey(e => e.id).HasName("PK__admin_us__3213E83FC486451E");
+            entity.HasKey(e => e.id).HasName("PK__admin_us__3213E83FADAAD8C1");
 
-            entity.Property(e => e.created_at).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.is_active).HasDefaultValue(true);
-        });
-
-        modelBuilder.Entity<business_setting>(entity =>
-        {
-            entity.HasKey(e => e.id).HasName("PK__business__3213E83F14AAF967");
-
-            entity.Property(e => e.created_at).HasDefaultValueSql("(getdate())");
-            entity.Property(e => e.is_active).HasDefaultValue(true);
-        });
-
-        modelBuilder.Entity<business_setting_parameter>(entity =>
-        {
-            entity.HasKey(e => e.id).HasName("PK__business__3213E83FB7178823");
-
-            entity.Property(e => e.created_at).HasDefaultValueSql("(getdate())");
-            entity.Property(e => e.is_active).HasDefaultValue(true);
-
-            entity.HasOne(d => d.business_setting).WithMany(p => p.business_setting_parameters)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_business_setting_parameters_business_settings");
-        });
-
-        modelBuilder.Entity<business_setting_parameter_value>(entity =>
-        {
-            entity.HasKey(e => e.id).HasName("PK__business__3213E83F9656E3AA");
-
-            entity.Property(e => e.created_at).HasDefaultValueSql("(getdate())");
-            entity.Property(e => e.is_active).HasDefaultValue(true);
-
-            entity.HasOne(d => d.business_setting_parameter).WithMany(p => p.business_setting_parameter_values)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_business_setting_parameter_values_parameters");
         });
 
         modelBuilder.Entity<feature>(entity =>
         {
-            entity.HasKey(e => e.id).HasName("PK__features__3213E83F36F48103");
+            entity.HasKey(e => e.id).HasName("PK__features__3213E83FF3AD3B21");
 
-            entity.Property(e => e.created_at).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.is_active).HasDefaultValue(true);
         });
 
         modelBuilder.Entity<refresh_token>(entity =>
         {
-            entity.HasKey(e => e.id).HasName("PK__refresh___3213E83FF24B3943");
-
-            entity.Property(e => e.created_at).HasDefaultValueSql("(getdate())");
+            entity.HasKey(e => e.id).HasName("PK__refresh___3213E83F4FEA8FD2");
 
             entity.HasOne(d => d.admin_user).WithMany(p => p.refresh_tokens)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -112,24 +74,54 @@ public partial class TenantCatalogDb : DbContext
 
         modelBuilder.Entity<rule_definition>(entity =>
         {
-            entity.HasKey(e => e.id).HasName("PK__rule_def__3213E83F46A7485F");
+            entity.HasKey(e => e.id).HasName("PK__rule_def__3213E83F8C01BFE9");
 
-            entity.Property(e => e.created_at).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.is_active).HasDefaultValue(true);
+        });
+
+        modelBuilder.Entity<setting_definition>(entity =>
+        {
+            entity.HasKey(e => e.id).HasName("PK__setting___3213E83F756D7E44");
+
+            entity.Property(e => e.is_active).HasDefaultValue(true);
+
+            entity.HasOne(d => d.setting_group).WithMany(p => p.setting_definitions)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_setting_definitions_setting_groups");
+        });
+
+        modelBuilder.Entity<setting_group>(entity =>
+        {
+            entity.HasKey(e => e.id).HasName("PK__setting___3213E83FA740E537");
+
+            entity.Property(e => e.is_active).HasDefaultValue(true);
+        });
+
+        modelBuilder.Entity<setting_value>(entity =>
+        {
+            entity.HasKey(e => e.id).HasName("PK__setting___3213E83FDD128C8E");
+
+            entity.Property(e => e.is_active).HasDefaultValue(true);
+
+            entity.HasOne(d => d.setting_definition).WithMany(p => p.setting_values)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_setting_values_setting_definitions");
+
+            entity.HasOne(d => d.tenant).WithMany(p => p.setting_values)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_setting_values_tenants");
         });
 
         modelBuilder.Entity<tenant>(entity =>
         {
-            entity.HasKey(e => e.id).HasName("PK__tenants__3213E83F7B29AD44");
+            entity.HasKey(e => e.id).HasName("PK__tenants__3213E83F68B39E8A");
 
-            entity.Property(e => e.created_at).HasDefaultValueSql("(getdate())");
-            entity.Property(e => e.status).HasDefaultValue("TRIAL", "DF_tenants_status");
+            entity.Property(e => e.status).HasDefaultValue("TRIAL");
         });
 
         modelBuilder.Entity<tenant_branding>(entity =>
         {
-            entity.HasKey(e => e.id).HasName("PK__tenant_b__3213E83F48B5F337");
-
-            entity.Property(e => e.created_at).HasDefaultValueSql("(getdate())");
+            entity.HasKey(e => e.id).HasName("PK__tenant_b__3213E83F8BF57181");
 
             entity.HasOne(d => d.tenant).WithOne(p => p.tenant_branding)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -139,10 +131,11 @@ public partial class TenantCatalogDb : DbContext
         modelBuilder.Entity<tenant_business_rule>(entity =>
         {
             entity.Property(e => e.is_active).HasDefaultValue(true);
+            entity.Property(e => e.rule_version).HasDefaultValue(1);
 
             entity.HasOne(d => d.rule_definition).WithMany(p => p.tenant_business_rules)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_tenant_business_rules_rules");
+                .HasConstraintName("FK_tenant_business_rules_rule_definitions");
 
             entity.HasOne(d => d.tenant).WithMany(p => p.tenant_business_rules)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -151,9 +144,8 @@ public partial class TenantCatalogDb : DbContext
 
         modelBuilder.Entity<tenant_database_connection>(entity =>
         {
-            entity.HasKey(e => e.id).HasName("PK__tenant_d__3213E83F6A1F3347");
+            entity.HasKey(e => e.id).HasName("PK__tenant_d__3213E83F61A809C6");
 
-            entity.Property(e => e.created_at).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.is_active).HasDefaultValue(true);
 
             entity.HasOne(d => d.tenant).WithOne(p => p.tenant_database_connection)

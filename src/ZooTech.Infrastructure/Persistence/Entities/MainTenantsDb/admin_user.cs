@@ -6,12 +6,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ZooTech.Infrastructure.Persistence.Entities.MainTenantsDb;
 
-[Index("email", Name = "UQ__admin_us__AB6E61648CDDD8AC", IsUnique = true)]
-[Index("username", Name = "UQ__admin_us__F3DBC57261271ED8", IsUnique = true)]
+[Index("email", Name = "UQ__admin_us__AB6E61641462461F", IsUnique = true)]
+[Index("username", Name = "UQ__admin_us__F3DBC572FC02884C", IsUnique = true)]
 public partial class admin_user
 {
     [Key]
-    public long id { get; set; }
+    public int id { get; set; }
 
     [StringLength(150)]
     [Unicode(false)]
@@ -21,7 +21,8 @@ public partial class admin_user
     [Unicode(false)]
     public string? username { get; set; }
 
-    public string? password_hash { get; set; }
+    [Unicode(false)]
+    public string password_hash { get; set; } = null!;
 
     [StringLength(100)]
     [Unicode(false)]
@@ -39,7 +40,7 @@ public partial class admin_user
     public string? metadata { get; set; }
 
     [Column(TypeName = "datetime")]
-    public DateTime created_at { get; set; }
+    public DateTime? created_at { get; set; }
 
     [Column(TypeName = "datetime")]
     public DateTime? updated_at { get; set; }

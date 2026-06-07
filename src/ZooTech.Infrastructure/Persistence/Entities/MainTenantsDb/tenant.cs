@@ -6,14 +6,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ZooTech.Infrastructure.Persistence.Entities.MainTenantsDb;
 
-[Index("code", Name = "IX_tenants_code")]
-[Index("subdomain", Name = "IX_tenants_subdomain")]
-[Index("code", Name = "UQ__tenants__357D4CF91DD98DFB", IsUnique = true)]
-[Index("subdomain", Name = "UQ__tenants__E956860B07C1DC0F", IsUnique = true)]
+[Index("code", Name = "UQ__tenants__357D4CF9BCD87FD5", IsUnique = true)]
+[Index("subdomain", Name = "UQ__tenants__E956860BD48158C8", IsUnique = true)]
 public partial class tenant
 {
     [Key]
-    public long id { get; set; }
+    public int id { get; set; }
 
     [StringLength(50)]
     [Unicode(false)]
@@ -50,7 +48,7 @@ public partial class tenant
     public string? metadata { get; set; }
 
     [Column(TypeName = "datetime")]
-    public DateTime created_at { get; set; }
+    public DateTime? created_at { get; set; }
 
     [Column(TypeName = "datetime")]
     public DateTime? updated_at { get; set; }
@@ -60,6 +58,9 @@ public partial class tenant
 
     [InverseProperty("tenant")]
     public virtual address? address { get; set; }
+
+    [InverseProperty("tenant")]
+    public virtual ICollection<setting_value> setting_values { get; set; } = new List<setting_value>();
 
     [InverseProperty("tenant")]
     public virtual tenant_branding? tenant_branding { get; set; }

@@ -6,11 +6,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ZooTech.Infrastructure.Persistence.Entities.MainTenantsDb;
 
-[Index("code", Name = "UQ__features__357D4CF99419908E", IsUnique = true)]
+[Index("code", Name = "UQ__features__357D4CF9DA7C46EA", IsUnique = true)]
 public partial class feature
 {
     [Key]
-    public long id { get; set; }
+    public int id { get; set; }
 
     [StringLength(100)]
     [Unicode(false)]
@@ -20,6 +20,7 @@ public partial class feature
     [Unicode(false)]
     public string name { get; set; } = null!;
 
+    [Unicode(false)]
     public string? description { get; set; }
 
     [StringLength(100)]
@@ -31,7 +32,7 @@ public partial class feature
     public string? metadata { get; set; }
 
     [Column(TypeName = "datetime")]
-    public DateTime created_at { get; set; }
+    public DateTime? created_at { get; set; }
 
     [Column(TypeName = "datetime")]
     public DateTime? updated_at { get; set; }

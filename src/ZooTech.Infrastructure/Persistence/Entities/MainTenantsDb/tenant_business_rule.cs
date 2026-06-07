@@ -7,20 +7,19 @@ using Microsoft.EntityFrameworkCore;
 namespace ZooTech.Infrastructure.Persistence.Entities.MainTenantsDb;
 
 [PrimaryKey("tenant_id", "rule_definition_id")]
-[Index("rule_definition_id", Name = "IX_tenant_business_rules_rule_definition_id")]
 public partial class tenant_business_rule
 {
     [Key]
-    public long tenant_id { get; set; }
+    public int tenant_id { get; set; }
 
     [Key]
-    public long rule_definition_id { get; set; }
+    public int rule_definition_id { get; set; }
 
     public bool is_active { get; set; }
 
-    public int? priority { get; set; }
+    public int priority { get; set; }
 
-    public int? rule_version { get; set; }
+    public int rule_version { get; set; }
 
     [StringLength(50)]
     [Unicode(false)]
@@ -33,7 +32,13 @@ public partial class tenant_business_rule
     public string? metadata { get; set; }
 
     [Column(TypeName = "datetime")]
+    public DateTime? created_at { get; set; }
+
+    [Column(TypeName = "datetime")]
     public DateTime? updated_at { get; set; }
+
+    [Column(TypeName = "datetime")]
+    public DateTime? deleted_at { get; set; }
 
     [ForeignKey("rule_definition_id")]
     [InverseProperty("tenant_business_rules")]

@@ -6,37 +6,25 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ZooTech.Infrastructure.Persistence.Entities.MainTenantsDb;
 
-[Index("tenant_id", Name = "UQ__addresse__D6F29F3F7BCB37A9", IsUnique = true)]
-public partial class address
+[Index("tenant_id", "setting_definition_id", "actor_type", "actor_id", Name = "UX_setting_values", IsUnique = true)]
+public partial class setting_value
 {
     [Key]
     public int id { get; set; }
 
     public int tenant_id { get; set; }
 
-    [StringLength(100)]
-    [Unicode(false)]
-    public string country { get; set; } = null!;
+    public int setting_definition_id { get; set; }
 
-    [StringLength(100)]
+    [StringLength(50)]
     [Unicode(false)]
-    public string state { get; set; } = null!;
+    public string actor_type { get; set; } = null!;
 
-    [StringLength(100)]
-    [Unicode(false)]
-    public string province { get; set; } = null!;
+    public int? actor_id { get; set; }
 
-    [StringLength(100)]
-    [Unicode(false)]
-    public string city { get; set; } = null!;
+    public string value { get; set; } = null!;
 
-    [StringLength(200)]
-    [Unicode(false)]
-    public string address_line_1 { get; set; } = null!;
-
-    [StringLength(200)]
-    [Unicode(false)]
-    public string? address_line_2 { get; set; }
+    public bool is_active { get; set; }
 
     public string? metadata { get; set; }
 
@@ -49,7 +37,11 @@ public partial class address
     [Column(TypeName = "datetime")]
     public DateTime? deleted_at { get; set; }
 
+    [ForeignKey("setting_definition_id")]
+    [InverseProperty("setting_values")]
+    public virtual setting_definition setting_definition { get; set; } = null!;
+
     [ForeignKey("tenant_id")]
-    [InverseProperty("address")]
+    [InverseProperty("setting_values")]
     public virtual tenant tenant { get; set; } = null!;
 }
