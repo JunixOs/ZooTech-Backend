@@ -115,12 +115,12 @@ Implementa las interfaces definidas en Application. Contiene toda la lógica de 
 ZooTech.Infrastructure/
 ├── Persistence/
 │   ├── Context/
-│   │   ├── TenantCatalogDb.cs           # DbContext GLOBAL (catálogo de tenants)
+│   │   ├── TenantCatalogDb.cs           # DbContext GLOBAL (catálogo de tenants) ✅ COMPLETO
 │   │   ├── GanaderiaDbContext.cs        # DbContext POR TENANT (ganadería)
 │   │   ├── GanaderiaDbContextFactory.cs # Factory para cualquier connection string (provisioning)
 │   │   └── IGanaderiaDbContextFactory.cs
 │   ├── Entities/
-│   │   ├── MainTenantsDb/               # 15 entidades EF para TenantCatalogDb
+│   │   ├── MainTenantsDb/               # 16 entidades EF para TenantCatalogDb
 │   │   └── GanaderiaDb/                 # 47+ entidades EF para GanaderiaDbContext
 │   ├── Mappers/
 │   │   └── MainTenantsDb/
@@ -153,14 +153,17 @@ ZooTech.Infrastructure/
 | `tenant_database_connections` | Conexión de BD del tenant (1 a 1 con tenant) |
 | `tenant_brandings` | Branding del tenant (1 a 1) |
 | `addresses` | Dirección del tenant (1 a 1) |
-| `admin_users` | Usuarios administradores + refresh tokens |
-| `features` | Catálogo de funcionalidades disponibles |
+| `admin_users` | Usuarios administradores |
+| `refresh_tokens` | Tokens de refresco de admin_users |
+| `setting_groups` | Grupos de configuración (reemplaza el campo `category`) |
+| `setting_definitions` | Definiciones globales de settings (FK → setting_group) |
+| `setting_values` | Valores de settings por tenant/actor (patrón polimórfico actor_type/actor_id) |
+| `features` | Catálogo de funcionalidades disponibles (feature flags) |
 | `tenant_features` | Asignación features ↔ tenant (muchos a muchos) |
 | `rule_definitions` | Definiciones de reglas de negocio |
-| `tenant_business_rules` | Reglas asignadas a tenant |
-| `business_settings`, `business_setting_parameters`, `business_setting_parameter_values` | Configuración parametrizable |
-| `setting_definition`, `tenant_setting` | Configuraciones por tenant |
-| `refresh_tokens` | Tokens de refresco de admin_users |
+| `tenant_business_rules` | Reglas asignadas a tenant (muchos a muchos) |
+
+> **⚠️ `tenant_setting.cs`**: Existe como archivo en `Persistence/Entities/MainTenantsDb/` pero es una **entidad orphaned** — no tiene DbSet ni Fluent API en TenantCatalogDb. Fue reemplazada por `setting_values`.
 
 #### Base de Datos por Tenant: `GanaderiaDbContext` (Esquema Ganadero)
 
@@ -386,6 +389,7 @@ TenantProvisioningService.ProvisionAsync(CreateTenantCommand)
 | `Application.Common.Validator.IValidator` | Interfaz no utilizada |
 | `Application.Common.Gateway.Configuration.IConfiguration` | Interfaz vacía |
 | `Infrastructure.Persistence.Repositories.MainTenantsDb.TenantRepository` | Stub vacío |
+| `Infrastructure.Persistence.Entities.MainTenantsDb.tenant_setting.cs` | Entidad orphaned (sin DbSet, sin Fluent API, sin navegación) — reemplazada por `setting_value` |
 | `InterfaceAdapters.Modules.Module_ProduccionLeche.Presentes/` | ⚠️ Typo en carpeta (Presentes → Presenters) |
 
 ### Cobertura de Pruebas
@@ -454,8 +458,11 @@ Se está implementando un sistema de parametrización multi-tenant con código f
 **Resumen de lo que agrega esta feature:**
 - 3 tipos de parámetros: `Settings` (valores tipados), `Features` (flags ON/OFF), `Rules` (esquemas JSON)
 - Código C# estático fuertemente tipado (`ZooSettings.Billing.MaxCowsLimit`) generado automáticamente por T4 desde la BD
+- Agrupación de settings por entidad `setting_group` (reemplaza el campo `category`)
+- Valores por tenant via `setting_value` con patrón polimórfico `actor_type`/`actor_id`
 - Caché híbrida L1 (ConcurrentDictionary en memoria) + L2 (Redis) con invalidación en cascada
 - Sincronización multi-instancia via Redis Pub/Sub
 - Notificación a frontend en tiempo real via SignalR con backplane Redis
 - CRUD de parámetros por tenant via API REST + MediatR
-- Cableado de entidades `setting_definition` y `tenant_setting` en `TenantCatalogDb` (actualmente sin DbSet)
+- Modelo de datos ya actualizado: `setting_group`, `setting_definition` (FK a grupo), `setting_value`, `TenantCatalogDb` cableado
+- **⚠️ `tenant_setting.cs` es código muerto** — debe eliminarse antes de implementar

@@ -232,60 +232,32 @@ Debe compilar sin errores. Si falla, revisar que todas las interfaces y clases r
 
 ## 📂 Fase 3: Capa de Infraestructura — Implementaciones
 
-### Paso 3.1: Modificar entidades existentes
+### Paso 3.1: Limpiar código muerto
 
-**3.1.1 — Agregar DbSets a TenantCatalogDb**
+**3.1.1 — Eliminar `tenant_setting.cs` (entidad orphaned)**
 
-**Archivo:** `src/ZooTech.Infrastructure/Persistence/Context/TenantCatalogDb.cs`
+**Archivo a eliminar:** `src/ZooTech.Infrastructure/Persistence/Entities/MainTenantsDb/tenant_setting.cs`
 
-Agregar estas dos líneas en la clase:
+Esta entidad NO tiene DbSet en `TenantCatalogDb`, NO tiene Fluent API, NO tiene navegación desde `tenant.cs`, y usa tipos `long` inconsistentes con el modelo actual (`int`). Fue reemplazada por `setting_value.cs`.
 
-```csharp
-public virtual DbSet<setting_definition> setting_definitions { get; set; }
-public virtual DbSet<tenant_setting> tenant_settings { get; set; }
-```
+**3.1.2 — Verificar que TenantCatalogDb ya está actualizado**
 
-Agregar configuración Fluent API en `OnModelCreating` (antes de `OnModelCreatingPartial`):
+El `TenantCatalogDb.cs` ya tiene los DbSets y Fluent API necesarios. Verificar que existan:
 
 ```csharp
-modelBuilder.Entity<setting_definition>(entity =>
-{
-    entity.HasKey(e => e.id);
-    entity.Property(e => e.code).HasMaxLength(100);
-    entity.Property(e => e.name).HasMaxLength(150);
-    entity.Property(e => e.category).HasMaxLength(100);
-    entity.Property(e => e.data_type).HasMaxLength(30);
-    entity.Property(e => e.created_at).HasPrecision(3);
-    entity.Property(e => e.updated_at).HasPrecision(3);
-    entity.HasIndex(e => e.code).IsUnique().HasDatabaseName("UQ__setting___357D4CF980FA33C6");
-});
-
-modelBuilder.Entity<tenant_setting>(entity =>
-{
-    entity.HasKey(e => new { e.tenant_id, e.setting_definition_id });
-    entity.Property(e => e.updated_at).HasPrecision(3);
-
-    entity.HasOne(d => d.setting_definition)
-        .WithMany(p => p.tenant_settings)
-        .HasForeignKey(d => d.setting_definition_id);
-
-    entity.HasOne(d => d.tenant)
-        .WithMany(p => p.tenant_settings)
-        .HasForeignKey(d => d.tenant_id)
-        .OnDelete(DeleteBehavior.ClientSetNull);
-});
+public virtual DbSet<setting_group> setting_groups { get; set; }       // ✅ Ya existe
+public virtual DbSet<setting_definition> setting_definitions { get; set; }  // ✅ Ya existe
+public virtual DbSet<setting_value> setting_values { get; set; }        // ✅ Ya existe
 ```
 
-**3.1.2 — Agregar navegación tenant_settings a tenant.cs**
-
-**Archivo:** `src/ZooTech.Infrastructure/Persistence/Entities/MainTenantsDb/tenant.cs`
-
-Agregar esta propiedad de navegación:
+**3.1.3 — Verificar que `tenant.cs` ya tiene navegación `setting_values`**
 
 ```csharp
 [InverseProperty("tenant")]
-public virtual ICollection<tenant_setting> tenant_settings { get; set; } = new List<tenant_setting>();
+public virtual ICollection<setting_value> setting_values { get; set; }  // ✅ Ya existe
 ```
+
+Si cualquiera de estas verificaciones falla, reportar al usuario antes de continuar.
 
 ### Paso 3.2: Crear implementaciones de parametrización
 
@@ -586,19 +558,26 @@ Tests a implementar:
 **Archivo:** `tests/Unit/ZooTech.Infrastructure.UnitTests/Parameterization/TenantConfigurationRepositoryUnitTests.cs`
 
 ```
-Usar EF Core InMemory database.
+Usar EF Core InMemory database. Crear datos de prueba con setting_group + setting_definition + setting_value.
 
 Tests a implementar:
 1. GetSnapshotAsync_Should_Merge_Global_And_Tenant_Values
 2. GetSnapshotAsync_Should_Return_Defaults_When_No_Tenant_Values
-3. UpsertSettingAsync_Should_Create_New_Record_When_Not_Exists
-4. UpsertSettingAsync_Should_Update_Existing_Record
-5. UpsertSettingAsync_Should_Return_False_When_Definition_Not_Found
-6. DeleteTenantSettingAsync_Should_Remove_Record
-7. DeleteTenantSettingAsync_Should_Return_False_When_Not_Found
-8. UpsertFeatureAsync_Should_Create_New_Record
-9. UpsertFeatureAsync_Should_Update_Existing_Record
-10. DeleteTenantFeatureAsync_Should_Remove_Record
+3. GetSnapshotAsync_Should_Filter_Deleted_Settings (deleted_at != null)
+4. GetSnapshotAsync_Should_Only_Include_Active_Settings (is_active = true)
+5. UpsertSettingAsync_Should_Create_New_SettingValue_With_ActorType_TENANT
+6. UpsertSettingAsync_Should_Update_Existing_SettingValue
+7. UpsertSettingAsync_Should_Return_False_When_Definition_Not_Found
+8. UpsertSettingAsync_Should_Return_False_When_Definition_Inactive
+9. DeleteTenantSettingAsync_Should_SoftDelete_SettingValue (set deleted_at + is_active=false)
+10. DeleteTenantSettingAsync_Should_Return_False_When_Not_Found
+11. UpsertFeatureAsync_Should_Create_New_TenantFeature
+12. UpsertFeatureAsync_Should_Update_Existing_TenantFeature
+13. DeleteTenantFeatureAsync_Should_Remove_TenantFeature
+
+Nota: Para tests de setting_value, usar la convención actor_type = "TENANT" y actor_id = null.
+Nota: EF Core InMemory no soporta índices únicos compuestos ni [Index] attributes.
+Ignorar las restricciones de índice único en los tests.
 ```
 
 **Archivo:** `tests/Unit/ZooTech.Infrastructure.UnitTests/Parameterization/CacheInvalidationPublisherUnitTests.cs`
@@ -741,13 +720,13 @@ Confirmar que:
 
 | # | Ruta | Cambio |
 |---|---|---|
-| 1 | `src/ZooTech.Infrastructure/Persistence/Context/TenantCatalogDb.cs` | Agregar DbSets + Fluent API |
-| 2 | `src/ZooTech.Infrastructure/Persistence/Entities/MainTenantsDb/tenant.cs` | Agregar navegación `tenant_settings` |
-| 3 | `src/ZooTech.Infrastructure/DependencyInjection.cs` | Registrar servicios de parametrización |
-| 4 | `src/ZooTech.Infrastructure/ZooTech.Infrastructure.csproj` | Agregar MSBuild Target |
-| 5 | `src/ZooTech.Application/Common/Models/GeneralResponseDTO.cs` | Cambiar `internal` a `public` |
-| 6 | `src/ZooTech.API/Program.cs` | SignalR + Hub mapping + CORS |
-| 7 | `src/ZooTech.API/ZooTech.API.csproj` | Agregar SignalR.StackExchangeRedis |
+| 1 | `src/ZooTech.Infrastructure/DependencyInjection.cs` | Registrar servicios de parametrización |
+| 2 | `src/ZooTech.Infrastructure/ZooTech.Infrastructure.csproj` | Agregar MSBuild Target |
+| 3 | `src/ZooTech.Application/Common/Models/GeneralResponseDTO.cs` | Cambiar `internal` a `public` |
+| 4 | `src/ZooTech.API/Program.cs` | SignalR + Hub mapping + CORS |
+| 5 | `src/ZooTech.API/ZooTech.API.csproj` | Agregar SignalR.StackExchangeRedis |
+
+> **Nota:** `TenantCatalogDb.cs` y `tenant.cs` ya están actualizados con los DbSets, Fluent API y navegaciones necesarias. No requieren modificación.
 
 ### Archivos Eliminados
 
@@ -755,6 +734,7 @@ Confirmar que:
 |---|---|---|
 | 1 | `src/ZooTech.Domain/Class1.cs` | Stub autogenerado |
 | 2 | `src/ZooTech.Application/Common/Gateway/Configuration/IConfiguration.cs` | Interfaz vacía reemplazada |
+| 3 | `src/ZooTech.Infrastructure/Persistence/Entities/MainTenantsDb/tenant_setting.cs` | Entidad orphaned (sin DbSet, sin Fluent API, sin navegación) |
 
 ---
 
@@ -779,7 +759,7 @@ Confirmar que:
 
 1. Verificar que `dotnet-t4` esté instalado: `dotnet tool list`
 2. Verificar que la connection string en `appsettings.Development.json` sea válida
-3. Verificar que la BD `zootech_main_tenant` tenga las tablas `setting_definitions`, `features`, `rule_definitions`
+3. Verificar que la BD `zootech_main_tenant` tenga las tablas `setting_groups`, `setting_definitions`, `features`, `rule_definitions`
 4. Si la BD no está disponible: el T4 debe generar un stub vacío que compile (ver Paso 6.1 nota sobre error handling)
 5. Como fallback: usar el stub manual creado en Paso 1.2
 

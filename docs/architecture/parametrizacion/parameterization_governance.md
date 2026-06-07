@@ -29,36 +29,50 @@ graph TD
 
 ## 🗄️ 2. Esquema Real de Base de Datos (Tablas Involucradas)
 
-### Sistema de Setting Definitions (usado en esta feature)
+### Sistema de Setting Groups + Definitions + Values
 
 ```
-setting_definition                      tenant_setting
-├── id (long, PK)                       ├── tenant_id (long, PK, FK→tenant)
-├── code (string?, nvarchar 100)        ├── setting_definition_id (long, PK, FK→setting_definition)
-├── name (string?, nvarchar 150)        ├── value (string?)
-├── category (string?, nvarchar 100)    ├── metadata (string?)
-├── data_type (string?, nvarchar 30)    └── updated_at (DateTimeOffset?, Precision 3)
-├── default_value (string?)
-├── validation_schema (string?)
-├── is_required (bool?)
-├── is_sensitive (bool?)
+setting_group                             setting_definition
+├── id (int, PK)                          ├── id (int, PK)
+├── code (string, varchar 100, UNIQUE)    ├── setting_group_id (int, FK→setting_group)
+├── name (string, varchar 150)            ├── code (string, varchar 100)
+├── description (string?, varchar 300)    ├── name (string, varchar 150)
+├── is_active (bool)                      ├── description (string?, varchar 300)
+├── metadata (string?)                    ├── data_type (string, varchar 50)
+├── created_at (DateTime?)                ├── default_value (string?)
+├── updated_at (DateTime?)                ├── validation_schema (string?)
+└── deleted_at (DateTime?)                ├── is_required (bool)
+                                          ├── is_sensitive (bool)
+setting_value                             ├── is_active (bool)
+├── id (int, PK)                          ├── metadata (string?)
+├── tenant_id (int, FK→tenant)           ├── created_at (DateTime?)
+├── setting_definition_id (int, FK→sd)   ├── updated_at (DateTime?)
+├── actor_type (string, varchar 50)       └── deleted_at (DateTime?)
+├── actor_id (int?)                       
+├── value (string)                        UNIQUE: (setting_group_id, code) en setting_definition
+├── is_active (bool)                      UNIQUE: (tenant_id, setting_definition_id, actor_type, actor_id) en setting_value
 ├── metadata (string?)
-├── created_at (DateTimeOffset?, Precision 3)
-└── updated_at (DateTimeOffset?, Precision 3)
+├── created_at (DateTime?)
+├── updated_at (DateTime?)
+└── deleted_at (DateTime?)
 ```
+
+> **Patrón `actor_type`/`actor_id`:** `setting_value` usa un modelo polimórfico. Para valores a nivel de tenant, la convención es `actor_type = "TENANT"` y `actor_id = null`. Otros actores (sucursales, usuarios) pueden tener sus propios valores con `actor_type = "BRANCH"` o `"USER"`.
+
+> **⚠️ `tenant_setting.cs` es código muerto:** Existe como archivo pero NO tiene DbSet, Fluent API ni navegación. Debe eliminarse.
 
 ### Sistema de Features (ya cableado en DbContext)
 
 ```
-feature                                 tenant_feature
-├── id (long, PK)                       ├── tenant_id (long, PK, FK→tenant)
-├── code (string, varchar 100, UNIQUE)  ├── feature_id (long, PK, FK→feature)
-├── name (string, varchar 150)          ├── is_enabled (bool)
-├── description (string?)               ├── enabled_at (DateTime?)
-├── category (string?, varchar 100)     ├── expires_at (DateTime?)
-├── is_active (bool)                    ├── metadata (string?)
-├── metadata (string?)                  └── updated_at (DateTime?)
-├── created_at (DateTime)
+feature                                   tenant_feature
+├── id (int, PK)                          ├── tenant_id (int, PK, FK→tenant)
+├── code (string, varchar 100, UNIQUE)    ├── feature_id (int, PK, FK→feature)
+├── name (string, varchar 150)            ├── is_enabled (bool)
+├── description (string?)                 ├── enabled_at (DateTime?)
+├── category (string?, varchar 100)       ├── expires_at (DateTime?)
+├── is_active (bool)                      ├── updated_at (DateTime?)
+├── metadata (string?)                    └── metadata (string?)
+├── created_at (DateTime?)
 ├── updated_at (DateTime?)
 └── deleted_at (DateTime?)
 ```
@@ -66,26 +80,20 @@ feature                                 tenant_feature
 ### Sistema de Rules (ya cableado en DbContext)
 
 ```
-rule_definition                         tenant_business_rule
-├── id (long, PK)                       ├── tenant_id (long, PK, FK→tenant)
-├── code (string?, varchar 100)         ├── rule_definition_id (long, PK, FK→rule_definition)
-├── name (string?, varchar 150)         ├── is_active (bool)
-├── module (string?, varchar 100)       ├── priority (int?)
-├── condition_schema (string?)          ├── rule_version (int?)
-├── action_schema (string?)             ├── execution_mode (string?, varchar 50)
-├── metadata (string?)                  ├── custom_condition (string?)
-├── created_at (DateTime)               ├── custom_action (string?)
-└── updated_at (DateTime?)              ├── metadata (string?)
-                                        └── updated_at (DateTime?)
+rule_definition                           tenant_business_rule
+├── id (int, PK)                          ├── tenant_id (int, PK, FK→tenant)
+├── code (string, varchar 100, UNIQUE)    ├── rule_definition_id (int, PK, FK→rule_definition)
+├── name (string, varchar 150)            ├── is_active (bool)
+├── module (string?, varchar 100)         ├── priority (int)
+├── description (string?)                 ├── rule_version (int, default 1)
+├── condition_schema (string?)            ├── execution_mode (string?, varchar 50)
+├── action_schema (string?)               ├── custom_condition (string?)
+├── is_active (bool)                      ├── custom_action (string?)
+├── metadata (string?)                    ├── metadata (string?)
+├── created_at (DateTime?)                ├── created_at (DateTime?)
+├── updated_at (DateTime?)                ├── updated_at (DateTime?)
+└── deleted_at (DateTime?)                └── deleted_at (DateTime?)
 ```
-
-### ⚠️ Sistema Business Settings (NO usar para esta feature)
-
-Existe un sistema paralelo **NO relacionado** con la parametrización:
-```
-business_setting → business_setting_parameter → business_setting_parameter_value
-```
-Este sistema usa un patrón polimórfico (`actor_type` + `actor_id`) y está diseñado para otro propósito. **No se modifica ni se utiliza en esta implementación.**
 
 ---
 
@@ -138,7 +146,7 @@ int maxCows = _config.Get(ZooSettings.Billing.MaxCowsLimit);
 
 ### Paso 6: Provisionar Tenants Existentes
 
-Si el setting es obligatorio (`is_required = 1`), ejecutar un INSERT para poblar `tenant_settings` de todos los tenants activos.
+Si el setting es obligatorio (`is_required = 1`), ejecutar un INSERT para poblar `setting_values` de todos los tenants activos con `actor_type = 'TENANT'`.
 
 ---
 
@@ -146,34 +154,48 @@ Si el setting es obligatorio (`is_required = 1`), ejecutar un INSERT para poblar
 
 ### A. Contrato para un nuevo **Setting**
 
-**Regla de nombramiento:** `UPPER_SNAKE_CASE` para el `code`. Clasificar en una `category` existente o nueva en `PascalCase`.
+**Regla de nombramiento:** `UPPER_SNAKE_CASE` para el `code`. Asignar a un `setting_group` existente (por `code`).
 
 ```sql
+-- 1. (Si es necesario) Crear el grupo de settings
+INSERT INTO setting_groups (code, name, description, is_active, created_at)
+VALUES ('Billing', N'Facturación y Límites', N'Parámetros de facturación y límites de suscripción', 1, GETDATE());
+
+-- 2. Agregar Definición Global
 INSERT INTO setting_definitions (
-    code, name, category, data_type, default_value,
-    validation_schema, is_required, is_sensitive, metadata,
+    setting_group_id, code, name, description, data_type, default_value,
+    validation_schema, is_required, is_sensitive, is_active,
     created_at, updated_at
 )
 VALUES (
+    (SELECT id FROM setting_groups WHERE code = 'Billing'),
     'MAX_VETERINARIANS_LIMIT',
     N'Límite Máximo de Veterinarios Activos',
-    'Billing',
+    N'Cantidad máxima de veterinarios que pueden operar simultáneamente.',
     'INT',
     '5',
     N'{"minimum": 1, "maximum": 100}',
     1,
     0,
-    NULL,
-    SYSDATETIMEOFFSET(),
-    SYSDATETIMEOFFSET()
+    1,
+    GETDATE(),
+    GETDATE()
 );
 
-INSERT INTO tenant_settings (tenant_id, setting_definition_id, value, updated_at)
+-- 3. Poblar valor por defecto para todos los tenants existentes
+INSERT INTO setting_values (
+    tenant_id, setting_definition_id, actor_type, actor_id, value,
+    is_active, created_at, updated_at
+)
 SELECT
     t.id,
     (SELECT id FROM setting_definitions WHERE code = 'MAX_VETERINARIANS_LIMIT'),
+    'TENANT',
+    NULL,
     '5',
-    SYSDATETIMEOFFSET()
+    1,
+    GETDATE(),
+    GETDATE()
 FROM tenants t
 WHERE t.deleted_at IS NULL;
 ```
@@ -184,7 +206,7 @@ WHERE t.deleted_at IS NULL;
 
 ```sql
 INSERT INTO features (
-    code, name, description, category, is_active, metadata,
+    code, name, description, category, is_active,
     created_at, updated_at
 )
 VALUES (
@@ -193,16 +215,16 @@ VALUES (
     N'Habilita el ingreso de datos de laboratorio, acidez y porcentaje de grasa en los ordeños.',
     'Production',
     1,
-    NULL,
     GETDATE(),
     GETDATE()
 );
 
-INSERT INTO tenant_features (tenant_id, feature_id, is_enabled, updated_at)
+INSERT INTO tenant_features (tenant_id, feature_id, is_enabled, enabled_at, updated_at)
 SELECT
     t.id,
     (SELECT id FROM features WHERE code = 'PROD_MILK_ANALYSIS'),
     1,
+    GETDATE(),
     GETDATE()
 FROM tenants t
 WHERE t.deleted_at IS NULL;
@@ -212,16 +234,18 @@ WHERE t.deleted_at IS NULL;
 
 ```sql
 INSERT INTO rule_definitions (
-    code, name, module, condition_schema, action_schema, metadata,
-    created_at
+    code, name, module, description, condition_schema, action_schema,
+    is_active, created_at, updated_at
 )
 VALUES (
     'REMIND_VACCINATION',
     N'Recordatorio de Vacunación',
     'Health',
+    N'Genera recordatorios automáticos antes de fechas de vacunación programadas.',
     N'{"type":"object","properties":{"days_before":{"type":"integer"}}}',
     N'{"type":"object","properties":{"notification_type":{"type":"string"}}}',
-    NULL,
+    1,
+    GETDATE(),
     GETDATE()
 );
 ```
@@ -238,18 +262,20 @@ El equipo de Producto solicita limitar la cantidad de vacas que un tenant puede 
 
 ```sql
 INSERT INTO setting_definitions (
-    code, name, category, data_type, default_value,
-    is_required, created_at, updated_at
+    setting_group_id, code, name, description, data_type, default_value,
+    is_required, is_active, created_at, updated_at
 )
 VALUES (
+    (SELECT id FROM setting_groups WHERE code = 'Billing'),
     'MAX_COWS_LIMIT',
     N'Límite de Vacunos Registrados',
-    'Billing',
+    N'Cantidad máxima de vacunos activos permitidos por tenant.',
     'INT',
     '100',
     1,
-    SYSDATETIMEOFFSET(),
-    SYSDATETIMEOFFSET()
+    1,
+    GETDATE(),
+    GETDATE()
 );
 ```
 
