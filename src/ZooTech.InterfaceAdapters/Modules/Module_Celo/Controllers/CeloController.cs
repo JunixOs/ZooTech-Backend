@@ -34,4 +34,23 @@ public class CeloController : ControllerBase
 
         return Ok(GeneralResponseDTO<List<CeloItemResponse>>.Ok(response));
     }
+
+    [HttpGet("vacas-en-celo")]
+    public async Task<IActionResult> ListarVacasEnCelo(CancellationToken cancellationToken)
+    {
+        var items = await _listarCelosUseCase.ExecuteAsync(cancellationToken);
+
+        var response = items.Select((item, index) => new
+        {
+            id = index + 1,
+            codigo = item.CodigoVacuno,
+            nombre = item.NombreVacuno,
+            diasRestante = 0,
+            estado = "En celo",
+            vecesEnCelo = item.VecesEnCelo,
+            crias = 0
+        }).ToList();
+
+        return Ok(GeneralResponseDTO<object>.Ok(response));
+    }
 }

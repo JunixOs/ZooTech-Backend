@@ -80,7 +80,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-<<<<<<< HEAD
+
 app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 app.UseAuthorization();
