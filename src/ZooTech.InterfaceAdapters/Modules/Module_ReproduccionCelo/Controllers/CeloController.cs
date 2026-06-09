@@ -59,5 +59,27 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_ReproduccionCelo.Controllers
                 mensaje = "¡Celo editado con éxito!"
             });
         }
+
+        [HttpDelete("eliminar")]
+        public async Task<IActionResult> EliminarCelo(
+            [FromBody] EliminarCeloDTO dto)
+        {
+            var resultado = await _repository.EliminarCeloAsync(
+                dto.Id,
+                dto.MotivoEliminacion);
+
+            if (!resultado)
+            {
+                return NotFound(new
+                {
+                    mensaje = "No se encontró el registro de celo"
+                });
+            }
+
+            return Ok(new
+            {
+                mensaje = "¡Celo eliminado con éxito!"
+            });
+        }
     }
 }

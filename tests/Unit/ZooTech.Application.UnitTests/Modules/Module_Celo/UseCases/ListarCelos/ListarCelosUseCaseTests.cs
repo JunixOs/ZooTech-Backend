@@ -36,6 +36,14 @@ public class FakeCeloRepository : ICeloRepository
     {
         return Task.FromResult(true);
     }
+
+    public Task<bool> EliminarCeloAsync(
+    long id,
+    string motivoEliminacion,
+    CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(true);
+    }
 }
 
 public class ListarCelosUseCaseTests

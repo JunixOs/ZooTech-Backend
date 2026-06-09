@@ -75,4 +75,25 @@ public class CeloRepository : ICeloRepository
 
         return true;
     }
+
+    public async Task<bool> EliminarCeloAsync(
+    long id,
+    string motivoEliminacion,
+    CancellationToken cancellationToken = default)
+    {
+        var celo = await _context.celo_registros
+            .FirstOrDefaultAsync(
+                c => c.id == id && c.deleted_at == null,
+                cancellationToken);
+
+        if (celo == null)
+            return false;
+
+        celo.deleted_at = DateTime.UtcNow;
+        celo.motivo_eliminacion = motivoEliminacion;
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return true;
+    }
 }

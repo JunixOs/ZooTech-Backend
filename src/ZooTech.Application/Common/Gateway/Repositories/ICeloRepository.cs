@@ -12,4 +12,9 @@ public interface ICeloRepository
         string? observaciones,
         List<string> caracteristicaCodes,
         CancellationToken cancellationToken = default);
+
+    Task<bool> EliminarCeloAsync(
+    long id,
+    string motivoEliminacion,
+    CancellationToken cancellationToken = default);
 }
