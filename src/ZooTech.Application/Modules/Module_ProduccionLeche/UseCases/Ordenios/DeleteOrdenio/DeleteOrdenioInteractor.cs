@@ -15,7 +15,7 @@ public sealed class DeleteOrdenioInteractor : IDeleteOrdenioInputPort
     public async Task HandleAsync(long id, DeleteOrdenioCommand command, CancellationToken cancellationToken)
     {
         var existing = await _repository.GetByIdAsync(id, cancellationToken)
-            ?? throw new NotFoundException("No se encontró el ordeño solicitado.");
+            ?? throw new NotFoundException("ORDENIO_NOT_FOUND", $"No se encontró el ordeño solicitado {id}.");
 
         try
         {

@@ -1,6 +1,8 @@
+using Asp.Versioning;
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi;
 using ZooTech.Application;
 using ZooTech.Application.Common.Behaviors;
 using ZooTech.Application.Common.Gateway.Context;
@@ -11,6 +13,7 @@ using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant.Ports;
 using ZooTech.Infrastructure;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Tenant;
+using ZooTech.InterfaceAdapters;
 using ZooTech.InterfaceAdapters.Middleware;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
 using ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Presenters;

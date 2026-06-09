@@ -1,8 +1,7 @@
 ﻿using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using System;
-using System.Collections.Generic;
-using System.Text;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Reportes.GenerateReporteExcel;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Reportes.GetReporteDiario;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Reportes.GenerateReportePdf;
 
@@ -36,6 +35,30 @@ public class ReporteLecheController : ControllerBase
         var output = await inputPort.HandleAsync(query, cancellationToken);
         var response = ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Mappers.ProduccionLecheMapper.ToResponse(output);
         return Ok(response);
+    }
+
+    [HttpGet("diario/excel")]
+    public async Task<IActionResult> GenerateReporteExcel(
+        [FromQuery] DateTime? fechaDesde,
+        [FromQuery] DateTime? fechaHasta,
+        [FromQuery] long? vacunoId,
+        [FromServices] IGenerateReporteExcelInputPort inputPort,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var query = new GenerateReporteExcelQuery(fechaDesde, fechaHasta, vacunoId);
+            var output = await inputPort.HandleAsync(query, cancellationToken);
+
+            return File(
+                output.ExcelBytes,
+                output.ContentType,
+                output.FileName);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = "Error al generar el Excel", details = ex.Message });
+        }
     }
 
     [HttpGet("diario/pdf")]

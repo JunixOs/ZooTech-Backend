@@ -40,23 +40,28 @@ public sealed class ProduccionLecheController : ControllerBase
             
             nombre = x.Nombre,
             raza = x.RazaCode,
-            ultimoRegistro = "2023-10-01",
-            promedio = "15L"
         }).ToList();
         return Ok(new { data = mappedList });
     }
 
     [HttpPost]
     public async Task<IActionResult> Create(
-        [FromBody] CreateOrdenioRequest request,
-        [FromServices] ICreateOrdenioInputPort inputPort,
-        CancellationToken cancellationToken)
+     [FromBody] CreateOrdenioRequest request,
+     [FromServices] ICreateOrdenioInputPort inputPort,
+     CancellationToken cancellationToken)
     {
         try
         {
-            var output = await inputPort.HandleAsync(ProduccionLecheMapper.ToCommand(request), cancellationToken);
+            var output = await inputPort.HandleAsync(
+                ProduccionLecheMapper.ToCommand(request),
+                cancellationToken);
+
             var response = ProduccionLecheMapper.ToResponse(output);
-            return Created($"/v1/produccion-leche/{response.Data.Id}", response);
+
+            return CreatedAtAction(
+                nameof(GetById),
+                new { id = response.Data.Id },
+                response);
         }
         catch (ConflictException ex)
         {
