@@ -321,31 +321,33 @@ Agregar antes del cierre `</Project>`:
 </Target>
 ```
 
-> **Nota:** `IgnoreExitCode="true"` permite que el build continúe si el T4 falla (ej. sin conexión a BD).
+> **Nota:** `IgnoreExitCode="true"` permite que el build continúe si el T4 falla (ej. sin conexión a BD, connection string vacía, o BD no disponible).
 
-### Paso 3.6: Crear archivo T4
+### Paso 3.6: Crear archivo T4 (enfoque fusionado)
 
 **Archivo:** `src/ZooTech.Infrastructure/Configuration/ZooParameters.tt`
 
-Crear el archivo T4 que:
-1. Se conecta a la BD via ADO.NET (`Microsoft.Data.SqlClient`)
-2. Lee la connection string desde `appsettings.Development.json` (sección `ConnectionStrings:TenantCatalogConnection`)
-3. Consulta las 3 tablas: `setting_definitions`, `features`, `rule_definitions`
-4. Genera `ZooParameters.cs` siguiendo el formato de `parameterization_architecture.md` sección 4.A
+El T4 utiliza el **enfoque fusionado** documentado en `parameterization_architecture.md` sección 5. Características clave:
 
-El T4 debe:
-- Agrupar settings por `category` y generar sub-clases dentro de `ZooSettings`
-- Mapear `data_type` SQL a tipos C# (INT→int, BOOLEAN→bool, DECIMAL→decimal, STRING→string)
-- Convertir `UPPER_SNAKE_CASE` codes a `PascalCase` para nombres de campos
-- Agrupar features por `category` y generar sub-clases dentro de `ZooFeatures`
-- Agrupar rules por `module` y generar sub-clases dentro de `ZooRules`
-- Manejar errores de conexión con try/catch (generar stub vacío si falla)
+| Aspecto | Detalle |
+|---|---|
+| **Driver SQL** | `Microsoft.Data.SqlClient` (no `System.Data.SqlClient`) |
+| **Connection string** | Leída de `appsettings.Development.json` → `ConnectionStrings:TenantCatalogConnection` |
+| **Query de settings** | `COALESCE(sv.value, sd.default_value)` vía LEFT JOIN a `setting_values` (actor_type='TENANT') |
+| **Queries adicionales** | `features` y `rule_definitions` para generar `ZooFeatures` y `ZooRules` |
+| **Salida tipada** | `SettingDefinition<T>`, `FeatureFlag`, `RuleSchema` (compatibilidad con `ITenantConfiguration`) |
+| **Limpieza JSON** | `ExtractJsonValue()` para valores envueltos en JSON de la BD |
+| **Formato de valores** | `FormatValue()` con escape correcto y sufijos de tipo C# |
+| **Nombres** | `ToPascalCase()` con prefijo `_` si inicia con dígito |
+| **Fallback** | Si la connection string está vacía o la BD no está disponible, genera stub vacío |
+
+Ver especificación completa del template, queries SQL y funciones helper en `parameterization_architecture.md` sección 5.
 
 **Verificación:**
 ```powershell
 dotnet build src/ZooTech.Infrastructure/ZooTech.Infrastructure.csproj
 ```
-Debe compilar sin errores.
+Debe compilar sin errores. Si la BD no está disponible, el archivo generado será el stub vacío (verifica que exista `ZooParameters.cs`).
 
 ---
 
@@ -438,36 +440,73 @@ La solución completa debe compilar sin errores.
 
 ---
 
-## 📂 Fase 6: T4 Template Completo
+## 📂 Fase 6: T4 Template — Verificación y Generación
 
 ### Paso 6.1: Escribir el T4 Template
 
 **Archivo:** `src/ZooTech.Infrastructure/Configuration/ZooParameters.tt`
 
-El template debe:
+El template implementa el **enfoque fusionado** descrito en `parameterization_architecture.md` sección 5. La estructura del archivo debe ser:
 
 ```
-<#@ template language="C#" #>
+<#@ template language="C#" debug="false" hostspecific="true" #>
 <#@ output extension=".cs" #>
+<#@ assembly name="System.Core" #>
+<#@ assembly name="System.Data" #>
 <#@ assembly name="Microsoft.Data.SqlClient" #>
-<#@ import namespace="Microsoft.Data.SqlClient" #>
-<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System" #>
 <#@ import namespace="System.Linq" #>
-<#@ import namespace="System.Globalization" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="Microsoft.Data.SqlClient" #>
+<#@ import namespace="System.Text.RegularExpressions" #>
 <#@ import namespace="System.IO" #>
 
-[Control code: leer connection string de appsettings]
-[Control code: conectar a BD]
-[Control code: SELECT * FROM setting_definitions]
-[Control code: SELECT * FROM features WHERE deleted_at IS NULL]
-[Control code: SELECT * FROM rule_definitions]
+[Bloque 1] Leer connection string de appsettings.Development.json
+           usando Host.ResolvePath + Regex para extraer TenantCatalogConnection
 
-[Output: namespace ZooTech.Domain.Generated;]
-[Output: using ZooTech.Domain.Parameters;]
-[Output: public static class ZooSettings { ... }]
-[Output: public static class ZooFeatures { ... }]
-[Output: public static class ZooRules { ... }]
+[Bloque 2] Si connectionString está vacía → generar stub vacío y salir
+
+[Bloque 3] Query de Settings (con COALESCE):
+           SELECT sd.code, sd.name, sd.description, sd.data_type,
+                  COALESCE(sv.value, sd.default_value) AS FinalValue,
+                  sg.code AS GroupCode
+           FROM setting_definitions sd
+           INNER JOIN setting_groups sg ON sd.setting_group_id = sg.id
+           LEFT JOIN setting_values sv ON sd.id = sv.setting_definition_id
+             AND sv.actor_type = 'TENANT' AND sv.actor_id IS NULL
+             AND sv.is_active = 1 AND sv.deleted_at IS NULL
+           WHERE sd.is_active = 1 AND sd.deleted_at IS NULL
+             AND sg.is_active = 1 AND sg.deleted_at IS NULL
+           ORDER BY sg.code, sd.code
+
+[Bloque 4] Query de Features:
+           SELECT code, name, category, description, is_active
+           FROM features WHERE deleted_at IS NULL ORDER BY category, code
+
+[Bloque 5] Query de Rules:
+           SELECT code, name, module, description, condition_schema, action_schema
+           FROM rule_definitions WHERE deleted_at IS NULL ORDER BY module, code
+
+[Bloque 6] Generar ZooSettings.{GroupCode} con:
+           - ExtractJsonValue(FinalValue) para limpiar JSON envuelto
+           - MapToCSharpType(DataType) para tipo genérico T
+           - FormatValue(limpio, csharpType) para DefaultValue
+           - XML doc comment con código, tipo y descripción
+
+[Bloque 7] Generar ZooFeatures.{Category} con FeatureFlag(...)
+
+[Bloque 8] Generar ZooRules.{Module} con RuleSchema(...)
+
+[Bloque 9] Funciones helper en <#+ ... #>:
+           - ParameterItem class
+           - ExtractJsonValue(string)
+           - MapToCSharpType(string)
+           - FormatValue(string, string)
+           - ToPascalCase(string)
 ```
+
+> **Referencia:** Ver código completo de las funciones helper, queries SQL y bloques de generación en `parameterization_architecture.md` sección 5.
 
 ### Paso 6.2: Ejecutar T4 manualmente para generar código
 
@@ -480,6 +519,8 @@ dotnet t4 src/ZooTech.Infrastructure/Configuration/ZooParameters.tt -o src/ZooTe
 ```powershell
 dotnet build src/ZooTech.Domain/ZooTech.Domain.csproj
 ```
+
+Debe compilar sin errores. Si la BD no está disponible, el archivo generado será el stub vacío (`ZooSettings { }`, `ZooFeatures { }`, `ZooRules { }`), que compila correctamente. Verificar que exista `src/ZooTech.Domain/Generated/ZooParameters.cs`.
 
 ---
 
@@ -758,10 +799,11 @@ Confirmar que:
 ### Si T4 falla
 
 1. Verificar que `dotnet-t4` esté instalado: `dotnet tool list`
-2. Verificar que la connection string en `appsettings.Development.json` sea válida
-3. Verificar que la BD `zootech_main_tenant` tenga las tablas `setting_groups`, `setting_definitions`, `features`, `rule_definitions`
-4. Si la BD no está disponible: el T4 debe generar un stub vacío que compile (ver Paso 6.1 nota sobre error handling)
-5. Como fallback: usar el stub manual creado en Paso 1.2
+2. Verificar que la connection string en `appsettings.Development.json` → `ConnectionStrings:TenantCatalogConnection` sea válida y no esté vacía
+3. Verificar que la BD `zootech_main_tenant` tenga las tablas `setting_groups`, `setting_definitions`, `setting_values`, `features`, `rule_definitions`
+4. El T4 del enfoque fusionado incluye manejo automático de errores: si la connection string está vacía o la BD no está disponible, genera un stub vacío (`ZooSettings { }`, `ZooFeatures { }`, `ZooRules { }`) que compila correctamente (ver sección 5 de `parameterization_architecture.md`)
+5. `IgnoreExitCode="true"` en el MSBuild Target (Paso 3.5) permite que `dotnet build` continúe aunque el T4 falle
+6. Como fallback manual: usar el stub creado en Paso 1.2
 
 ### Si la app no arranca
 
