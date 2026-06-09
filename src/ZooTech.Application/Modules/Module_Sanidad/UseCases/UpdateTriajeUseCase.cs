@@ -16,7 +16,7 @@ public class UpdateTriajeUseCase
         _dateTimeProvider = dateTimeProvider;
     }
 
-    public async Task<TriajeResponse?> ExecuteAsync(long id, TriajeRequest request)
+    public async Task<TriajeResponse?> ExecuteAsync(long id, ActualizarTriajeRequest request)
     {
         var triaje = await _repository.GetByIdAsync(id);
 

@@ -17,6 +17,8 @@ public class TriajeController : ControllerBase
     private readonly GetAllTipoPesosUseCase _getTipoPesosUseCase;
     private readonly GetAllVacunosUseCase _getVacunosUseCase;
     private readonly GetHistorialByVacunoIdUseCase _getHistorialUseCase;
+    private readonly GetDetallesTriajeByVacunoIdUseCase _getDetallesUseCase;
+    private readonly DownloadReporteTriajesUseCase _downloadReporteUseCase;
 
     public TriajeController(
         GetAllTriajesUseCase getAllUseCase,
@@ -26,7 +28,9 @@ public class TriajeController : ControllerBase
         DeleteTriajeUseCase deleteUseCase,
             GetAllTipoPesosUseCase getTipoPesosUseCase,
             GetAllVacunosUseCase getVacunosUseCase,
-            GetHistorialByVacunoIdUseCase getHistorialUseCase)
+            GetHistorialByVacunoIdUseCase getHistorialUseCase,
+            GetDetallesTriajeByVacunoIdUseCase getDetallesUseCase,
+            DownloadReporteTriajesUseCase downloadReporteUseCase)
     {
         _getAllUseCase = getAllUseCase;
         _getByIdUseCase = getByIdUseCase;
@@ -36,6 +40,8 @@ public class TriajeController : ControllerBase
         _getTipoPesosUseCase = getTipoPesosUseCase;
         _getVacunosUseCase = getVacunosUseCase;
         _getHistorialUseCase = getHistorialUseCase;
+        _getDetallesUseCase = getDetallesUseCase;
+        _downloadReporteUseCase = downloadReporteUseCase;
     }
 
     [HttpGet]
@@ -78,7 +84,7 @@ public class TriajeController : ControllerBase
     }
 
     [HttpPut("{id:long}")]
-    public async Task<ActionResult<TriajeResponse>> Update(long id, [FromBody] TriajeRequest request)
+    public async Task<ActionResult<TriajeResponse>> Update(long id, [FromBody] ActualizarTriajeRequest request)
     {
         var result = await _updateUseCase.ExecuteAsync(id, request);
 
@@ -118,5 +124,35 @@ public class TriajeController : ControllerBase
     {
         var result = await _getHistorialUseCase.ExecuteAsync(vacunoId);
         return Ok(result);
+    }
+
+    [HttpGet("vacuno/{vacunoId:long}/detalles")]
+    public async Task<ActionResult<IEnumerable<TriajeDetallePorVacunoResponse>>> GetDetallesPorVacuno(long vacunoId)
+    {
+        var result = await _getDetallesUseCase.ExecuteAsync(vacunoId);
+        return Ok(result);
+    }
+
+    [HttpGet("reporte/descargar")]
+    public async Task<IActionResult> DownloadReporte(
+        [FromQuery] string formato,
+        [FromQuery] string? fecha = null,
+        [FromQuery] string? codigo = null,
+        [FromQuery] string? nombre = null,
+        [FromQuery] string? tipoPeso = null,
+        [FromQuery] decimal? pesoKg = null)
+    {
+        try
+        {
+            var result = await _downloadReporteUseCase.ExecuteAsync(
+                formato, fecha, codigo, nombre, tipoPeso, pesoKg);
+
+            Response.Headers["X-Download-Message"] = result.Message;
+            return File(result.Content, result.ContentType, result.FileName);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 }

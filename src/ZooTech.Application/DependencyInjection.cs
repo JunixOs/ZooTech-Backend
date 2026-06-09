@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
+using ZooTech.Application.Modules.Module_Sanidad.Services;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases;
 
 namespace ZooTech.Application;
@@ -8,7 +9,6 @@ public static class DependencyInjection
     public static IServiceCollection AddApplication(
         this IServiceCollection services)
     {
-
         // ============================================
         // Use Cases - Module_Sanidad
         // ============================================
@@ -20,7 +20,9 @@ public static class DependencyInjection
         services.AddScoped<GetAllTipoPesosUseCase>();
         services.AddScoped<GetAllVacunosUseCase>();
         services.AddScoped<GetHistorialByVacunoIdUseCase>();
-
+        services.AddScoped<GetDetallesTriajeByVacunoIdUseCase>();
+        services.AddScoped<DownloadReporteTriajesUseCase>();
+        services.AddScoped<TriajeReporteFileService>();
 
         // ============================================
         // MediatR

@@ -35,9 +35,9 @@ public class CreateTriajeUseCase
             CreatedAt = now,
             UpdatedAt = now
         };
-
+        
         await _repository.AddAsync(triaje);
-
+        
         return new TriajeResponse
         {
             Id = triaje.Id,
@@ -53,3 +53,4 @@ public class CreateTriajeUseCase
         };
     }
 }
+

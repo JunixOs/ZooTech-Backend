@@ -24,4 +24,5 @@ public interface ITriajeRepository
     Task<IEnumerable<VacunoOption>> GetAllVacunosAsync();
 
     Task<IEnumerable<TriajeHistorialItem>> GetHistorialByVacunoIdAsync(long vacunoId);
+    Task<IEnumerable<TriajeDetallePorVacunoItem>> GetDetallesByVacunoIdAsync(long vacunoId);
 }
