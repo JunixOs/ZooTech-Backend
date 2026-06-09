@@ -1,10 +1,6 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using ZooTech.InterfaceAdapters.DTOs;
+using ZooTech.Application.Common.Models;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers
 {

@@ -1,10 +1,15 @@
+using Microsoft.EntityFrameworkCore;
 using ZooTech.Application;
 using ZooTech.Infrastructure;
 using ZooTech.Infrastructure.Configuration;
+using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.InterfaceAdapters;
+using ZooTech.InterfaceAdapters.Middleware;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// ======= Configuracion Swagger =======
 builder.Services
     .AddControllers()
     .AddApplicationPart(typeof(HomeController).Assembly)
@@ -40,6 +45,22 @@ builder.Services
 
 builder.Services.AddSanidadServices(builder.Configuration);
 
+// ======= Configuracion Context BD Tenant Principal =======
+builder.Services.AddDbContext<TenantCatalogDb>(options =>
+{
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("TenantCatalogConnection"));
+});
+// ======= Configuracion Context BD Tenant Principal =======
+
+// ======= Configuracion DI =======
+builder.Services.AddMemoryCache();
+// ======= Configuracion DI =======
+
+var frontendPort = builder.Configuration["Frontend:FrontendPort"] ?? "5000";
+var frontendIP = builder.Configuration["Frontend:FrontendIP"] ?? "localhost";
+var frontendProtocol = builder.Configuration["Frontend:FrontendProtocol"] ?? "http";
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
@@ -56,6 +77,12 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// ===== Configurar Middlewares =====
+app.UseMiddleware<TenantResolutionMiddleware>();
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+// ===== Configurar Middlewares =====
+
+// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -76,9 +103,11 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseCors("AllowFrontend");
 //app.UseHttpsRedirection();
+app.UseCors("AllowFrontend");
 app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+public partial class Program { }
