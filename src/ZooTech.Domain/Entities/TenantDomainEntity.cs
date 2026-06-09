@@ -4,30 +4,29 @@ namespace ZooTech.Domain.Entities
 {
     public class TenantDomainEntity
     {
-        public long Id { get; set; }
-        public string Code { get; private set; }
-        public string SubDomain { get; set; }
-        public string DisplayName { get; set; }
-        public string LegalName { get; set; }
-        public string Email { get; set; }
-        public string Phone { get; set; }
-
-        public TenantStatus Status { get; set; }
-        public string Metadata {get; set;}
+        public int Id { get; private set; }
+        public string Code { get; private set; } = default!;
+        public string SubDomain { get; private set; } = default!;
+        public string DisplayName { get; private set; } = default!;
+        public string LegalName { get; private set; } = default!;
+        public string Email { get; private set; } = default!;
+        public string Phone { get; private set; } = default!;
+        public TenantStatus Status { get; private set; }
+        public string Metadata { get; private set; } = default!;
         public DateTime CreatedAt { get; private set; }
-        public DateTime UpdatedAt { get; set; }
-    
+        public DateTime UpdatedAt { get; private set; }
+
         private TenantDomainEntity() { }
 
         public static TenantDomainEntity Create(
-            long id,
+            int id,
             string code,
             string subDomain,
             string displayName,
             string legalName,
             string email,
             string phone,
-            string status,
+            TenantStatus status,
             DateTime? createdAt,
             DateTime updatedAt
         )
@@ -41,10 +40,23 @@ namespace ZooTech.Domain.Entities
                 LegalName = legalName,
                 Email = email,
                 Phone = phone,
-                Status = Enum.Parse<TenantStatus>(status),
-                CreatedAt = createdAt.GetValueOrDefault(DateTime.Now),
+                Status = status,
+                CreatedAt = createdAt.GetValueOrDefault(DateTime.UtcNow),
                 UpdatedAt = updatedAt
             };
+        }
+
+        public void UpdateContactInfo(string email, string phone)
+        {
+            Email = email;
+            Phone = phone;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void UpdateStatus(TenantStatus status)
+        {
+            Status = status;
+            UpdatedAt = DateTime.UtcNow;
         }
     }
 }

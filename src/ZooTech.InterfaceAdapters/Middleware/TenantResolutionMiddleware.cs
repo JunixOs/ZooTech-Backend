@@ -9,7 +9,7 @@ namespace ZooTech.InterfaceAdapters.Middleware
     {
         private readonly RequestDelegate _next;
         private readonly string _baseDomain;
-        private readonly string _adminSubDomain;
+        private readonly string? _adminSubDomain;
 
         public TenantResolutionMiddleware(
             RequestDelegate next,
@@ -17,7 +17,8 @@ namespace ZooTech.InterfaceAdapters.Middleware
         )
         {
             _next = next;
-            _baseDomain = config["MultiTenant:BaseDomain"];
+            _baseDomain = config["MultiTenant:BaseDomain"]
+                ?? throw new InvalidOperationException("Missing configuration: MultiTenant:BaseDomain");
             _adminSubDomain = config["MultiTenant:AdminSubDomain"];
         }
 
@@ -31,7 +32,7 @@ namespace ZooTech.InterfaceAdapters.Middleware
 
             var subDomain = ExtractSubDomain(host);
 
-            if(subDomain == null)
+            if (subDomain == null)
             {
                 context.Response.StatusCode = 404;
                 return;
@@ -39,9 +40,8 @@ namespace ZooTech.InterfaceAdapters.Middleware
 
             var tenant = await tenantStore.GetBySubDomainAsync(subDomain);
 
-            if(tenant == null)
+            if (tenant == null)
             {
-                // TODO: Modificar para que coincida con api-contract.md
                 context.Response.StatusCode = 404;
                 return;
             }
@@ -58,7 +58,7 @@ namespace ZooTech.InterfaceAdapters.Middleware
 
         private string? ExtractSubDomain(string host)
         {
-            if(!host.EndsWith("." + _baseDomain))
+            if (!host.EndsWith("." + _baseDomain))
             {
                 return null;
             }

@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using FluentValidation;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ZooTech.Application;
 
@@ -7,34 +8,13 @@ public static class DependencyInjection
     public static IServiceCollection AddApplication(
         this IServiceCollection services)
     {
-        // ============================================
-        // MediatR
-        // ============================================
+        services.AddMediatR(cfg =>
+            cfg.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly));
 
-        // services.AddMediatR(cfg =>
-        // {
-        //     cfg.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly);
-        // });
+        services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
 
-        // ============================================
-        // FluentValidation
-        // ============================================
-
-        // services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
-
-        // ============================================
-        // Pipeline Behaviors
-        // ============================================
-
-        // services.AddTransient(
-        //     typeof(IPipelineBehavior<,>),
-        //     typeof(ValidationBehavior<,>));
-
-        // ============================================
-        // Use Cases / Services
-        // ============================================
-
-        // services.AddScoped<IMyService, MyService>();
+        services.AddTransient(typeof(MediatR.IPipelineBehavior<,>), typeof(Common.Behaviors.ValidationBehavior<,>));
+        services.AddTransient(typeof(MediatR.IPipelineBehavior<,>), typeof(Common.Behaviors.LoggingBehavior<,>));
 
         return services;
     }

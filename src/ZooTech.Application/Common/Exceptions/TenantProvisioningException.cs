@@ -13,5 +13,10 @@ namespace ZooTech.Application.Common.Exceptions
         )
         {
         }
+
+        public TenantProvisioningException(string message, Exception innerException)
+            : base("TENANT_PROVISIONING_ERORR", message, null)
+        {
+        }
     }
 }

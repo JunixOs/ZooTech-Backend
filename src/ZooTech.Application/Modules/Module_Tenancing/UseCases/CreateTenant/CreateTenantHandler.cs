@@ -1,28 +1,45 @@
 using MediatR;
-using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant;
-using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant.Ports;
+using ZooTech.Application.Common.Exceptions;
+using ZooTech.Application.Common.Gateway.Tenant;
 
-namespace ZooTech.Application.Modules.Module_Tenancing.UseCases
+namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant
 {
     public class CreateTenantHandler
-        : IRequestHandler<CreateTenantCommand, Unit>
+        : IRequestHandler<CreateTenantCommand, CreateTenantResult>
     {
-        private readonly ICreateTenantInputPort
-            _inputPort;
+        private readonly ITenantProvisioningService _provisioningService;
 
-        public CreateTenantHandler(
-            ICreateTenantInputPort inputPort)
+        public CreateTenantHandler(ITenantProvisioningService provisioningService)
         {
-            _inputPort = inputPort;
+            _provisioningService = provisioningService;
         }
 
-        public async Task<Unit> Handle(
+        public async Task<CreateTenantResult> Handle(
             CreateTenantCommand request,
             CancellationToken cancellationToken)
         {
-            await _inputPort.Handle(request);
+            var success = await _provisioningService.ProvisionAsync(request);
 
-            return Unit.Value;
+            if (!success)
+            {
+                throw new TenantProvisioningException();
+            }
+
+            return new CreateTenantResult
+            {
+                Code = request.Code,
+                SubDomain = request.SubDomain,
+                DisplayName = request.DisplayName,
+                LegalName = request.LegalName
+            };
         }
+    }
+
+    public class CreateTenantResult
+    {
+        public string Code { get; init; } = default!;
+        public string SubDomain { get; init; } = default!;
+        public string DisplayName { get; init; } = default!;
+        public string LegalName { get; init; } = default!;
     }
 }

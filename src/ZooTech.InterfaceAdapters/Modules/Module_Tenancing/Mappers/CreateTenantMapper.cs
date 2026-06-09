@@ -6,88 +6,47 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Mappers
 {
     public static class CreateTenantMapper
     {
-        public static CreateTenantCommand
-            ToCommand(
-                CreateTenantRequestDto dto)
+        public static CreateTenantCommand ToCommand(CreateTenantRequestDto dto)
         {
-
             return new CreateTenantCommand
             {
                 Code = dto.Code,
-
                 SubDomain = dto.SubDomain,
-
                 DisplayName = dto.DisplayName,
-
                 LegalName = dto.LegalName,
-
                 Email = dto.Email,
-
                 Phone = dto.Phone,
-
                 TimeZone = dto.TimeZone,
-
                 TenantAddress = new TenantAddress
                 {
-                    Country =
-                        dto.TenantAddress.Country,
-
-                    State =
-                        dto.TenantAddress.State,
-
-                    Province =
-                        dto.TenantAddress.Province,
-
-                    City =
-                        dto.TenantAddress.City,
-
-                    AddressLine_1 =
-                        dto.TenantAddress.AddressLine1,
-
-                    AddressLine_2 =
-                        dto.TenantAddress.AddressLine2
-                        ?? string.Empty
+                    Country = dto.TenantAddress.Country,
+                    State = dto.TenantAddress.State,
+                    Province = dto.TenantAddress.Province,
+                    City = dto.TenantAddress.City,
+                    AddressLine_1 = dto.TenantAddress.AddressLine1,
+                    AddressLine_2 = dto.TenantAddress.AddressLine2 ?? string.Empty
                 },
-
-                TenantBranding =
-                    new TenantBranding
-                    {
-                        PrimaryColor =
-                            dto.TenantBranding
-                                .PrimaryColor,
-
-                        SecondaryColor =
-                            dto.TenantBranding
-                                .SecondaryColor,
-
-                        LogoUrl =
-                            dto.TenantBranding
-                                .LogoUrl
-                    },
-
-                TenantDatabaseConnection =
-                    new TenantDatabaseConnection
-                    {
-                        IsActive =
-                            dto.TenantDatabaseConnection
-                                .IsActive
-                    }
+                TenantBranding = new TenantBranding
+                {
+                    PrimaryColor = dto.TenantBranding.PrimaryColor,
+                    SecondaryColor = dto.TenantBranding.SecondaryColor,
+                    LogoUrl = dto.TenantBranding.LogoUrl
+                },
+                TenantDatabaseConnection = new TenantDatabaseConnection
+                {
+                    IsActive = dto.TenantDatabaseConnection.IsActive
+                }
             };
         }
 
-        public static CreateTenantResponseDto
-            ToResponseDto(
-                CreateTenantOutput output)
+        public static CreateTenantResponseDto ToResponseDto(CreateTenantResult result)
         {
             return new CreateTenantResponseDto
             {
-                Code = output.Code,
-
-                SubDomain = output.SubDomain,
-
-                DisplayName = output.DisplayName,
-
-                LegalName = output.LegalName
+                Code = result.Code,
+                SubDomain = result.SubDomain,
+                DisplayName = result.DisplayName,
+                LegalName = result.LegalName
             };
         }
     }

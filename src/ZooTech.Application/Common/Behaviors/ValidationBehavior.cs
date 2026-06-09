@@ -3,7 +3,7 @@ using MediatR;
 
 namespace ZooTech.Application.Common.Behaviors
 {
-    public class ValidationBehavior<TRequest , TResponse> : IPipelineBehavior<TRequest , TResponse> where TRequest : notnull
+    public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse> where TRequest : notnull
     {
         private readonly IEnumerable<IValidator<TRequest>> _validators;
 
@@ -30,13 +30,9 @@ namespace ZooTech.Application.Common.Behaviors
                     .Where(f => f != null)
                     .ToList();
 
-                if(failures.Count != 0)
+                if (failures.Count != 0)
                 {
-                    throw new ZooTech.Application.Common.Exceptions.ValidationException(
-                        failures
-                            .Select(f => f.ErrorMessage)
-                            .ToList()
-                    );
+                    throw new Exceptions.ValidationException(failures);
                 }
             }
 

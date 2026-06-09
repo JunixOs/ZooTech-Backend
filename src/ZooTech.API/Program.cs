@@ -1,25 +1,12 @@
-using FluentValidation;
-using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ZooTech.Application;
-using ZooTech.Application.Common.Behaviors;
-using ZooTech.Application.Common.Gateway.Context;
-using ZooTech.Application.Common.Gateway.Tenant;
-using ZooTech.Application.Modules.Module_Tenancing.UseCases;
-using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant;
-using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant.Ports;
 using ZooTech.Infrastructure;
 using ZooTech.Infrastructure.Persistence.Context;
-using ZooTech.Infrastructure.Tenant;
+using ZooTech.InterfaceAdapters;
 using ZooTech.InterfaceAdapters.Middleware;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
-using ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Presenters;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-// builder.Services.AddOpenApi();
 
 // ======= Configuracion Swagger =======
 builder.Services
@@ -48,9 +35,8 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 builder.Services.AddApplication();
-
-builder.Services.AddInfrastructure(
-    builder.Configuration);
+builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddInterfaceAdapters();
 
 // ======= Configuracion Context BD Tenant Principal =======
 builder.Services.AddDbContext<TenantCatalogDb>(options =>
@@ -62,50 +48,11 @@ builder.Services.AddDbContext<TenantCatalogDb>(options =>
 
 // ======= Configuracion DI =======
 builder.Services.AddMemoryCache();
-// MediatR
-builder.Services.AddMediatR(cfg =>
-{
-    cfg.RegisterServicesFromAssembly(
-        typeof(CreateTenantHandler)
-            .Assembly);
-});
-// FluentValidation
-builder.Services
-    .AddValidatorsFromAssembly(
-        typeof(CreateTenantValidator)
-            .Assembly);
-
-// ======= Registro de Validators =======
-builder.Services.AddValidatorsFromAssembly(
-    typeof(CreateTenantValidator).Assembly
-);
-// ======= Registro de Validators =======
-
-// ======= Registro de Behaviors =======
-builder.Services.AddTransient(
-    typeof(ZooTech.Application.Common.Behaviors.IPipelineBehavior<,>),
-    typeof(ValidationBehavior<,>)
-);
-// ======= Registro de Behaviors =======
-
-builder.Services.AddScoped<ITenantStore , TenantStore>();
-builder.Services.AddScoped<ITenantContext , TenantContext>();
-builder.Services.AddScoped<ITenantProvisioningService , TenantProvisioningService>();
-
-builder.Services.AddTransient<ICreateTenantInputPort , CreateTenantInteractor>();
-builder.Services.AddTransient<CreateTenantPresenter>();
-builder.Services.AddScoped<
-    ICreateTenantOutputPort>(
-        sp => sp.GetRequiredService<
-            CreateTenantPresenter>());
-
-builder.Services.AddScoped<ITenantDatabaseMigrator , TenantDatabaseMigrator>();
-builder.Services.AddScoped<IGanaderiaDbContextFactory , GanaderiaDbContextFactory>();
 // ======= Configuracion DI =======
 
-var frontendPort = builder.Configuration["Frontend:FrontendPort"];
-var frontendIP = builder.Configuration["Frontend:FrontendIP"];
-var frontendProtocol = builder.Configuration["Frontend:FrontendProtocol"];
+var frontendPort = builder.Configuration["Frontend:FrontendPort"] ?? "5000";
+var frontendIP = builder.Configuration["Frontend:FrontendIP"] ?? "localhost";
+var frontendProtocol = builder.Configuration["Frontend:FrontendProtocol"] ?? "http";
 
 builder.Services.AddCors(options =>
 {
@@ -144,12 +91,13 @@ if (app.Environment.IsDevelopment())
             "/swagger/users/swagger.json",
             "Users API");
     });
-
-    // app.MapOpenApi();
 }
 
 app.UseHttpsRedirection();
+app.UseCors("AllowFrontend");
 app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+public partial class Program { }

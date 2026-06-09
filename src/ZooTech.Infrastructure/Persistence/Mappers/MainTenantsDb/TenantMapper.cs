@@ -16,7 +16,7 @@ namespace ZooTech.Infrastructure.Persistence.Mappers.MainTenantsDb
                 tenantEntity.legal_name,
                 tenantEntity.email,
                 tenantEntity.phone,
-                tenantEntity.status,
+                Enum.Parse<TenantStatus>(tenantEntity.status),
                 tenantEntity.created_at,
                 tenantEntity.updated_at.GetValueOrDefault()
             );

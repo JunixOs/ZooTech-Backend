@@ -1,6 +1,8 @@
+using System.Text.RegularExpressions;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Common.Gateway.Tenant;
 using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant;
 using ZooTech.Infrastructure.Persistence.Context;
@@ -8,7 +10,6 @@ using ZooTech.Infrastructure.Persistence.Entities.MainTenantsDb;
 
 namespace ZooTech.Infrastructure.Tenant
 {
-    // TODO: TenantProvisioningService Culminar implementacion
     public class TenantProvisioningService : ITenantProvisioningService
     {
         private readonly TenantCatalogDb _tenantCatalogDb;
@@ -16,7 +17,7 @@ namespace ZooTech.Infrastructure.Tenant
         private readonly ITenantDatabaseMigrator _tenantDatabaseMigrator;
 
         public TenantProvisioningService(
-            TenantCatalogDb tenantCatalogDb, 
+            TenantCatalogDb tenantCatalogDb,
             IConfiguration config,
             ITenantDatabaseMigrator tenantDatabaseMigrator
         )
@@ -28,9 +29,9 @@ namespace ZooTech.Infrastructure.Tenant
 
         public async Task<bool> ProvisionAsync(CreateTenantCommand cmd)
         {
-            var tenantDbName = $"ZooTech_{cmd.Code.Replace("-", "_")}_Db";
+            var tenantDbName = SanitizeDbName(cmd.Code);
 
-            tenant_database_connection tenantDatabaseConnectionEntity = new tenant_database_connection
+            var tenantDatabaseConnectionEntity = new tenant_database_connection
             {
                 database_name = tenantDbName,
                 is_active = cmd.TenantDatabaseConnection.IsActive
@@ -44,21 +45,30 @@ namespace ZooTech.Infrastructure.Tenant
                 legal_name = cmd.LegalName,
                 email = cmd.Email,
                 phone = cmd.Phone,
+                timezone = cmd.TimeZone,
                 address = new address
-                    {
-                        country = cmd.TenantAddress.Country,
-                        state = cmd.TenantAddress.State,
-                        province = cmd.TenantAddress.Province,
-                        city = cmd.TenantAddress.City,
-                        address_line_1 = cmd.TenantAddress.AddressLine_1,
-                        address_line_2 = cmd.TenantAddress.AddressLine_2,
-                        metadata = cmd.TenantAddress.Metadata,
-                        created_at = cmd.TenantAddress.CreatedAt
-                    },
+                {
+                    country = cmd.TenantAddress.Country,
+                    state = cmd.TenantAddress.State,
+                    province = cmd.TenantAddress.Province,
+                    city = cmd.TenantAddress.City,
+                    address_line_1 = cmd.TenantAddress.AddressLine_1,
+                    address_line_2 = cmd.TenantAddress.AddressLine_2,
+                    metadata = cmd.TenantAddress.Metadata,
+                    created_at = DateTime.UtcNow
+                },
+                tenant_branding = new tenant_branding
+                {
+                    primary_color = cmd.TenantBranding.PrimaryColor,
+                    secondary_color = cmd.TenantBranding.SecondaryColor,
+                    logo_url = cmd.TenantBranding.LogoUrl,
+                    metadata = cmd.TenantBranding.Metadata,
+                    created_at = DateTime.UtcNow
+                },
                 tenant_database_connection = tenantDatabaseConnectionEntity,
-                status = cmd.Status,
+                status = cmd.Status.ToString(),
                 metadata = cmd.Metadata,
-                created_at = cmd.CreatedAt
+                created_at = DateTime.UtcNow
             };
 
             try
@@ -66,23 +76,25 @@ namespace ZooTech.Infrastructure.Tenant
                 _tenantCatalogDb.tenants.Add(tenant);
                 await _tenantCatalogDb.SaveChangesAsync();
 
-                // Crear Base de datos para el tenant
                 var template = _config.GetConnectionString("TenantTemplate");
                 var builder = new SqlConnectionStringBuilder(template);
-
-                builder.InitialCatalog = tenantDbName; // Aqui va el nomobre de la base de datos
-
+                builder.InitialCatalog = tenantDbName;
                 var conn = builder.ConnectionString;
 
-                await _tenantDatabaseMigrator.MigrateAsync(conn); // Se necesitan permisos para crear la BD
+                await _tenantDatabaseMigrator.MigrateAsync(conn);
 
                 return true;
             }
             catch (Exception ex)
             {
-                return false;
+                throw new TenantProvisioningException("Error al provisionar tenant", ex);
             }
+        }
 
+        private static string SanitizeDbName(string code)
+        {
+            var sanitized = Regex.Replace(code, @"[^a-zA-Z0-9_]", "_");
+            return $"ZooTech_{sanitized}_Db";
         }
     }
 }

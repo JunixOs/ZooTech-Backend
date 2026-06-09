@@ -1,5 +1,5 @@
 using FluentValidation;
-using ZooTech.Application.Common.Validator;
+using ZooTech.Domain.Enums;
 
 namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant
 {
@@ -15,8 +15,7 @@ namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant
             RuleFor(x => x.SubDomain)
                 .NotEmpty()
                 .Matches("^[a-z0-9-]+$")
-                .WithMessage(
-                    "Subdominio inválido.");
+                .WithMessage("Subdominio inválido.");
 
             RuleFor(x => x.DisplayName)
                 .NotEmpty()
@@ -39,31 +38,20 @@ namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant
                 .WithMessage("El teléfono es requerido.");
 
             RuleFor(x => x.Status)
-                .Must(status =>
-                    new[]
-                    {
-                        "TRIAL",
-                        "ACTIVE",
-                        "SUSPENDED",
-                        "INACTIVE"
-                    }.Contains(status))
-                .WithMessage(
-                    "Estado inválido.");
+                .IsInEnum()
+                .WithMessage("Estado inválido.");
 
             RuleFor(x => x.TenantAddress)
                 .NotNull()
-                .SetValidator(
-                    new TenantAddressValidator());
+                .SetValidator(new TenantAddressValidator());
 
             RuleFor(x => x.TenantBranding)
                 .NotNull()
-                .SetValidator(
-                    new TenantBrandingValidator());
+                .SetValidator(new TenantBrandingValidator());
 
             RuleFor(x => x.TenantDatabaseConnection)
                 .NotNull()
-                .SetValidator(
-                    new TenantDatabaseConnectionValidator());
+                .SetValidator(new TenantDatabaseConnectionValidator());
         }
     }
 
@@ -96,8 +84,7 @@ namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant
         {
             RuleFor(x => x.PrimaryColor)
                 .Matches("^#([A-Fa-f0-9]{6})$")
-                .WithMessage(
-                    "Color hexadecimal inválido.");
+                .WithMessage("Color hexadecimal inválido.");
 
             RuleFor(x => x.SecondaryColor)
                 .Matches("^#([A-Fa-f0-9]{6})$");
@@ -105,11 +92,8 @@ namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant
             RuleFor(x => x.LogoUrl)
                 .Must(url =>
                     string.IsNullOrWhiteSpace(url)
-                    || Uri.IsWellFormedUriString(
-                        url,
-                        UriKind.Absolute))
-                .WithMessage(
-                    "LogoUrl inválido.");
+                    || Uri.IsWellFormedUriString(url, UriKind.Absolute))
+                .WithMessage("LogoUrl inválido.");
         }
     }
 

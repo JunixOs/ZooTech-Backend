@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using ZooTech.Application.Common.Gateway.Tenant;
+using ZooTech.Domain.Enums;
 using ZooTech.Infrastructure.Persistence.Context;
 
 namespace ZooTech.Infrastructure.Tenant
@@ -10,27 +11,28 @@ namespace ZooTech.Infrastructure.Tenant
         private readonly TenantCatalogDb _tenantCatalogDb;
         private readonly IMemoryCache _cache;
 
-        public TenantStore(TenantCatalogDb tenantCatalogDb , IMemoryCache cache)
+        public TenantStore(TenantCatalogDb tenantCatalogDb, IMemoryCache cache)
         {
             _tenantCatalogDb = tenantCatalogDb;
             _cache = cache;
         }
+
         public async Task<TenantInfo?> GetBySubDomainAsync(string subDomain)
         {
             var cacheKey = $"tenant:{subDomain}";
 
-            if(_cache.TryGetValue(cacheKey, out TenantInfo tenantCached))
+            if (_cache.TryGetValue(cacheKey, out TenantInfo? tenantCached))
             {
                 return tenantCached;
             }
 
             var tenantInDb = await _tenantCatalogDb.tenants
-                .AsNoTracking() // Esto usalo para mejorar rendimiento cuando solo vas a consultar datos
+                .AsNoTracking()
                 .Include(t => t.address)
                 .Include(t => t.tenant_database_connection)
                 .FirstOrDefaultAsync(t => t.subdomain == subDomain);
 
-            if(tenantInDb == null || tenantInDb.status.Equals("INACTIVE") || !tenantInDb.tenant_database_connection.is_active)
+            if (tenantInDb == null || tenantInDb.status == TenantStatus.INACTIVE.ToString() || !tenantInDb.tenant_database_connection.is_active)
             {
                 return null;
             }
@@ -41,7 +43,7 @@ namespace ZooTech.Infrastructure.Tenant
                 SubDomain = tenantInDb.subdomain,
                 Code = tenantInDb.code,
                 DatabaseName = tenantInDb.tenant_database_connection.database_name,
-                Status = tenantInDb.status,
+                Status = Enum.Parse<TenantStatus>(tenantInDb.status),
                 Email = tenantInDb.email
             };
 

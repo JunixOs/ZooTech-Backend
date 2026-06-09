@@ -1,10 +1,9 @@
 using ZooTech.Domain.Entities;
 
-namespace ZooTech.Application.Common.Gateway.Repositories.MainTenantsDb
+namespace ZooTech.Application.Common.Gateway.Repositories.MainTenantsDb;
+
+public interface ITenantRepository
 {
-    public interface ITenantRepository
-    {
-        Task<TenantDomainEntity> GetByIdAsync();
-        Task<List<TenantDomainEntity>> ListAllAsync();
-    }
+    Task<TenantDomainEntity?> GetByIdAsync(int id);
+    Task<List<TenantDomainEntity>> ListAllAsync();
 }
