@@ -2,6 +2,7 @@ using ZooTech.Application.Common.Gateway.Time;
 using ZooTech.Application.Modules.Module_Sanidad.DTOs.Requests;
 using ZooTech.Application.Modules.Module_Sanidad.DTOs.Responses;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
+using ZooTech.Domain.Module_Sanidad.Rules;
 
 namespace ZooTech.Application.Modules.Module_Sanidad.UseCases;
 
@@ -18,6 +19,10 @@ public class UpdateTriajeUseCase
 
     public async Task<TriajeResponse?> ExecuteAsync(long id, TriajeRequest request)
     {
+        TriajeRule.ValidarTipoPesoCode(request.TipoPesoCode);
+        TriajeRule.ValidarPesoKg(request.PesoKg);
+        TriajeRule.ValidarObservaciones(request.Observaciones);
+
         var triaje = await _repository.GetByIdAsync(id);
 
         if (triaje is null)

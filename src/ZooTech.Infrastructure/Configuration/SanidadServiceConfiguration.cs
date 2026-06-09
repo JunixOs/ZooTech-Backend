@@ -1,7 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
+using ZooTech.Domain.Module_Sanidad.Entities;
 using ZooTech.Infrastructure.Context;
 using ZooTech.Infrastructure.Persistence.Modules.Module_Sanidad.Repositories;
 
@@ -19,6 +20,11 @@ public static class SanidadServiceConfiguration
                 ?? throw new InvalidOperationException("ConnectionString 'DefaultConnection' not found.")));
         services.AddScoped<IDateTimeProvider, DateTimeProvider>();
         services.AddScoped<ITriajeRepository, TriajeRepository>();
+
+        var toleranceStr = configuration["SanidadSettings:ToleranciaRelojMinutos"];
+        var tolerance = int.TryParse(toleranceStr, out var val) ? val : 5;
+        var settings = new SanidadSettings { ToleranciaRelojMinutos = tolerance };
+        services.AddSingleton(settings);
 
         return services;
     }
