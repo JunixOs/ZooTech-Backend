@@ -6,7 +6,7 @@ using ZooTech.InterfaceAdapters;
 using ZooTech.InterfaceAdapters.Middleware;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ZooTech API – GET /vacunos/reportes/listado
+// GET /vacunos/reportes/listado
 // ─────────────────────────────────────────────────────────────────────────────
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,11 +27,11 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1", new()
+    options.SwaggerDoc("v2", new()
     {
-        Title = "ZOO | Módulo Vacuno – TK02",
-        Version = "v1",
-        Description = "Endpoint TK02: GET /vacunos/reportes/listado – " +
+        Title = "Módulo Vacuno",
+        Version = "v2",
+        Description = "Endpoint GET /vacunos/reportes/listado – " +
                       "Reporte listado de vacunos con filtros, búsqueda y paginación."
     });
 
@@ -54,7 +54,6 @@ builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
-// En desarrollo y producción se controla desde configuración o variables de entorno:
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("FrontendCors", policy =>
@@ -95,10 +94,8 @@ var app = builder.Build();
 // Pipeline HTTP
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Middleware global de manejo de excepciones
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-// Swagger UI
 var swaggerEnabled = app.Environment.IsDevelopment()
     || app.Configuration.GetValue<bool>("Swagger:Enabled");
 
@@ -107,7 +104,7 @@ if (swaggerEnabled)
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "ZooTech TK02 v1");
+        c.SwaggerEndpoint("/swagger/v2/swagger.json", "ZooTech TK02 v2");
         c.RoutePrefix = string.Empty; // Swagger en raíz: http://localhost:5085
     });
 }

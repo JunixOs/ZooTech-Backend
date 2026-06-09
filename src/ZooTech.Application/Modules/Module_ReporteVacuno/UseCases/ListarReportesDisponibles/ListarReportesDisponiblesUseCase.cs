@@ -1,5 +1,8 @@
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 using ZooTech.Application.Common.Gateway.Time;
+using ZooTech.Application.Common.Gateway.Context;
+using ZooTech.Application.Common.Gateway.Configuration;
 using ZooTech.Application.Modules.Module_ReporteVacuno.Common;
 
 namespace ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ListarReportesDisponibles;
@@ -7,47 +10,46 @@ namespace ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ListarReport
 public sealed class ListarReportesDisponiblesUseCase : IListarReportesDisponiblesUseCase
 {
     private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly ISettingProvider _settingProvider;
+    private readonly ITenantContext _tenantContext;
     private readonly ILogger<ListarReportesDisponiblesUseCase> _logger;
 
     public ListarReportesDisponiblesUseCase(
         IDateTimeProvider dateTimeProvider,
+        ISettingProvider settingProvider,
+        ITenantContext tenantContext,
         ILogger<ListarReportesDisponiblesUseCase> logger)
     {
         _dateTimeProvider = dateTimeProvider;
+        _settingProvider = settingProvider;
+        _tenantContext = tenantContext;
         _logger = logger;
     }
 
-    public ReportesDisponiblesResponse Handle(ListarReportesDisponiblesQuery query)
+    public async Task<ReportesDisponiblesResponse> HandleAsync(ListarReportesDisponiblesQuery query, CancellationToken cancellationToken = default)
     {
+        var defaultDays = await _settingProvider.GetSettingAsync<int>("REPORTS_DEFAULT_DAYS", _tenantContext.TenantId);
+        var dateFormat = await _settingProvider.GetSettingAsync<string>("REPORTS_DATE_FORMAT", _tenantContext.TenantId);
+
         var rango = ReporteVacunoDateRangeResolver.Resolve(
             query.FechaDesde,
             query.FechaHasta,
-            _dateTimeProvider.Today);
+            _dateTimeProvider.Today,
+            defaultDays,
+            dateFormat);
 
         _logger.LogInformation(
             "[ReporteVacuno] rango aplicado: [{FechaDesde} - {FechaHasta}]",
             rango.FechaDesde,
             rango.FechaHasta);
 
+        var catalogJson = await _settingProvider.GetSettingAsync<string>("REPORTS_AVAILABLE_CATALOG", _tenantContext.TenantId);
+        var catalog = string.IsNullOrWhiteSpace(catalogJson)
+            ? []
+            : JsonSerializer.Deserialize<ReporteDisponibleItem[]>(catalogJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
+
         return new ReportesDisponiblesResponse(
-            [
-                new ReporteDisponibleItem(
-                    "listado_vacunos",
-                    "Reporte listado de vacunos",
-                    "Lista de vacunos filtrados por fechas, estado y procedencia."),
-                new ReporteDisponibleItem(
-                    "registro_vacuno",
-                    "Reporte registro por vacuno",
-                    "Detalle completo del vacuno y su historial relacionado."),
-                new ReporteDisponibleItem(
-                    "grafico_genealogico",
-                    "Grafico genealogico",
-                    "Arbol genealogico del vacuno hasta 4 niveles."),
-                new ReporteDisponibleItem(
-                    "grafico_actividad",
-                    "Grafico de actividad",
-                    "Cantidad de vacunos en actividad por periodo.")
-            ],
+            catalog,
             new ReportesDisponiblesFiltros(
                 rango.FechaDesde,
                 rango.FechaHasta,

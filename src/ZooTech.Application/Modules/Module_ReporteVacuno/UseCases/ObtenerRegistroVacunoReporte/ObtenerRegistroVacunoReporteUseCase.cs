@@ -1,23 +1,30 @@
 using ZooTech.Application.Common.Exceptions;
 
+using ZooTech.Application.Common.Gateway.Context;
+using ZooTech.Application.Common.Gateway.Configuration;
+
 namespace ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ObtenerRegistroVacunoReporte;
 
 public sealed class ObtenerRegistroVacunoReporteUseCase : IObtenerRegistroVacunoReporteUseCase
 {
-    private static readonly string[] FormatosPermitidos = ["json", "pdf", "excel"];
-
     private readonly IRegistroVacunoReadRepository _repository;
     private readonly IRegistroVacunoExcelReportService _excelReportService;
     private readonly IRegistroVacunoPdfReportService _pdfReportService;
+    private readonly ISettingProvider _settingProvider;
+    private readonly ITenantContext _tenantContext;
 
     public ObtenerRegistroVacunoReporteUseCase(
         IRegistroVacunoReadRepository repository,
         IRegistroVacunoExcelReportService excelReportService,
-        IRegistroVacunoPdfReportService pdfReportService)
+        IRegistroVacunoPdfReportService pdfReportService,
+        ISettingProvider settingProvider,
+        ITenantContext tenantContext)
     {
         _repository = repository;
         _excelReportService = excelReportService;
         _pdfReportService = pdfReportService;
+        _settingProvider = settingProvider;
+        _tenantContext = tenantContext;
     }
 
     public async Task<RegistroVacunoReporteResponse> HandleAsync(
@@ -32,8 +39,11 @@ public sealed class ObtenerRegistroVacunoReporteUseCase : IObtenerRegistroVacuno
                 [new ApplicationErrorDetail("vacunoId", "El ID del vacuno debe ser mayor que cero.")]);
         }
 
+        var allowedFormatsRaw = await _settingProvider.GetSettingAsync<string[]>("REPORTS_ALLOWED_FORMATS", _tenantContext.TenantId);
+        var allowedFormats = allowedFormatsRaw is { Length: > 0 } ? allowedFormatsRaw : ["json", "pdf", "excel"];
+
         var formato = Normalize(query.Formato) ?? "json";
-        EnsureFormatoValido(formato);
+        EnsureFormatoValido(formato, allowedFormats);
 
         var detalle = await _repository.ObtenerRegistroAsync(query.VacunoId, cancellationToken);
 
@@ -78,13 +88,13 @@ public sealed class ObtenerRegistroVacunoReporteUseCase : IObtenerRegistroVacuno
         return string.IsNullOrWhiteSpace(normalized) ? null : normalized.ToLowerInvariant();
     }
 
-    private static void EnsureFormatoValido(string formato)
+    private static void EnsureFormatoValido(string formato, string[] allowedFormats)
     {
-        if (!FormatosPermitidos.Contains(formato, StringComparer.OrdinalIgnoreCase))
+        if (!allowedFormats.Contains(formato, StringComparer.OrdinalIgnoreCase))
         {
             throw new ApplicationRuleException(
                 "INVALID_REPORT_FORMAT",
-                "El formato debe ser json, pdf o excel.",
+                $"El formato debe ser uno de los permitidos: {string.Join(", ", allowedFormats)}.",
                 [new ApplicationErrorDetail("formato", "Formato no permitido.")]);
         }
     }

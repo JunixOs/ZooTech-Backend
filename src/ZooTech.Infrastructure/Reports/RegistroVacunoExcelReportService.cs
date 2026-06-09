@@ -2,8 +2,11 @@ using System.Globalization;
 using System.IO.Compression;
 using System.Net;
 using System.Text;
+using System.Text.Json;
 using Microsoft.Extensions.Options;
 using ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ObtenerRegistroVacunoReporte;
+using ZooTech.Application.Common.Gateway.Context;
+using ZooTech.Application.Common.Gateway.Configuration;
 using ZooTech.Infrastructure.Storage;
 
 namespace ZooTech.Infrastructure.Reports;
@@ -11,29 +14,56 @@ namespace ZooTech.Infrastructure.Reports;
 public sealed class RegistroVacunoExcelReportService : IRegistroVacunoExcelReportService
 {
     private readonly ReportStorageOptions _storageOptions;
+    private readonly ISettingProvider _settingProvider;
+    private readonly ITenantContext _tenantContext;
 
-    public RegistroVacunoExcelReportService(IOptions<ReportStorageOptions> storageOptions)
+    public RegistroVacunoExcelReportService(
+        IOptions<ReportStorageOptions> storageOptions,
+        ISettingProvider settingProvider,
+        ITenantContext tenantContext)
     {
         _storageOptions = storageOptions.Value;
+        _settingProvider = settingProvider;
+        _tenantContext = tenantContext;
     }
 
     public async Task<RegistroVacunoExcelReportResult> GenerateAsync(
         RegistroVacunoDetalle vacuno,
         CancellationToken cancellationToken = default)
     {
+        var cultureStr = await _settingProvider.GetSettingAsync<string>("REPORTS_CULTURE_INFO", _tenantContext.TenantId);
+        var culture = string.IsNullOrWhiteSpace(cultureStr) ? CultureInfo.InvariantCulture : new CultureInfo(cultureStr);
+
+        var namePattern = await _settingProvider.GetSettingAsync<string>("REPORTS_NAME_PATTERN", _tenantContext.TenantId);
+        if (string.IsNullOrWhiteSpace(namePattern)) namePattern = "reporte_{0}_{1}.xlsx";
+
+        var headersJson = await _settingProvider.GetSettingAsync<string>("REPORTS_EXCEL_HEADERS", _tenantContext.TenantId);
+        var headers = string.IsNullOrWhiteSpace(headersJson)
+            ? new Dictionary<string, string>()
+            : JsonSerializer.Deserialize<Dictionary<string, string>>(headersJson) ?? new Dictionary<string, string>();
+
         var codigo = SanitizeFileNamePart(vacuno.Codigo);
-        var fecha = DateTime.UtcNow.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
-        var fileName = $"reporte_{codigo}_{fecha}.xlsx";
+        var fecha = DateTime.UtcNow.ToString("yyyyMMdd", culture);
+        var fileName = string.Format(culture, namePattern, codigo, fecha);
+
+        var basePath = await _settingProvider.GetSettingAsync<string>("REPORTS_BASE_PATH", _tenantContext.TenantId);
+        if (string.IsNullOrWhiteSpace(basePath)) basePath = _storageOptions.ReportesBasePath;
+
+        var vacunosPath = await _settingProvider.GetSettingAsync<string>("REPORTS_VACUNOS_PATH", _tenantContext.TenantId);
+        if (string.IsNullOrWhiteSpace(vacunosPath)) vacunosPath = _storageOptions.ReportesVacunosPath;
+
+        var urlBase = await _settingProvider.GetSettingAsync<string>("REPORTS_URL_BASE", _tenantContext.TenantId);
+        if (string.IsNullOrWhiteSpace(urlBase)) urlBase = _storageOptions.ReportesUrlBase;
 
         var outputDirectory = Path.Combine(
             AppContext.BaseDirectory,
-            _storageOptions.ReportesBasePath,
-            _storageOptions.ReportesVacunosPath);
+            basePath,
+            vacunosPath);
 
         Directory.CreateDirectory(outputDirectory);
 
         var filePath = Path.Combine(outputDirectory, fileName);
-        var sheetXml = BuildWorksheetXml(vacuno);
+        var sheetXml = BuildWorksheetXml(vacuno, culture, headers);
 
         await using var fileStream = new FileStream(
             filePath,
@@ -52,57 +82,59 @@ public sealed class RegistroVacunoExcelReportService : IRegistroVacunoExcelRepor
             await AddEntryAsync(archive, "xl/worksheets/sheet1.xml", sheetXml, cancellationToken);
         }
 
-        var downloadUrl = $"{_storageOptions.ReportesUrlBase}{Uri.EscapeDataString(fileName)}";
+        var downloadUrl = $"{urlBase}{Uri.EscapeDataString(fileName)}";
         return new RegistroVacunoExcelReportResult(fileName, downloadUrl);
     }
 
     private static IReadOnlyList<string?> Row(params string?[] values) => values;
 
-    private static string BuildWorksheetXml(RegistroVacunoDetalle v)
+    private static string BuildWorksheetXml(RegistroVacunoDetalle v, CultureInfo culture, Dictionary<string, string> headers)
     {
+        string Header(string key, string defaultVal) => headers.TryGetValue(key, out var val) ? val : defaultVal;
+
         var rows = new List<IReadOnlyList<string?>>
         {
-            Row("Reporte de registro por vacuno", null),
-            Row("Fecha de generación", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)),
+            Row(Header("title", "Reporte de registro por vacuno"), null),
+            Row(Header("gen_date", "Fecha de generación"), DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", culture)),
             Row(null, null),
-            Row("Datos de Identificación", null),
-            Row("ID", v.Id.ToString(CultureInfo.InvariantCulture)),
-            Row("Código", v.Codigo),
-            Row("Nombre", v.Nombre),
-            Row("Fecha de nacimiento", FormatDate(v.FechaNacimiento)),
-            Row("Sexo", v.Sexo),
-            Row("Raza", v.Raza),
-            Row("Color", v.Color),
-            Row("Estado", v.Estado),
-            Row("Fecha de registro", FormatDate(v.FechaRegistro)),
+            Row(Header("id_data", "Datos de Identificación"), null),
+            Row(Header("id", "ID"), v.Id.ToString(culture)),
+            Row(Header("code", "Código"), v.Codigo),
+            Row(Header("name", "Nombre"), v.Nombre),
+            Row(Header("birth_date", "Fecha de nacimiento"), FormatDate(v.FechaNacimiento, culture)),
+            Row(Header("sex", "Sexo"), v.Sexo),
+            Row(Header("breed", "Raza"), v.Raza),
+            Row(Header("color", "Color"), v.Color),
+            Row(Header("status", "Estado"), v.Estado),
+            Row(Header("reg_date", "Fecha de registro"), FormatDate(v.FechaRegistro, culture)),
             Row(null, null),
-            Row("Trazabilidad", null),
-            Row("Código padre", v.CodigoPadre),
-            Row("Código madre", v.CodigoMadre),
-            Row("Código abuelo", v.CodigoAbuelo),
-            Row("Código abuela", v.CodigoAbuela),
-            Row("Granja", v.Granja),
-            Row("Distrito", v.Distrito),
-            Row("Provincia", v.Provincia),
-            Row("Departamento", v.Departamento),
-            Row("Procedencia", v.Procedencia),
-            Row("Adquisición por", v.AdquisicionPor),
-            Row("Precio compra", FormatDecimal(v.PrecioCompra)),
-            Row("Fecha adquisición", FormatDate(v.FechaAdquisicion)),
+            Row(Header("traceability", "Trazabilidad"), null),
+            Row(Header("sire_code", "Código padre"), v.CodigoPadre),
+            Row(Header("dam_code", "Código madre"), v.CodigoMadre),
+            Row(Header("gsire_code", "Código abuelo"), v.CodigoAbuelo),
+            Row(Header("gdam_code", "Código abuela"), v.CodigoAbuela),
+            Row(Header("farm", "Granja"), v.Granja),
+            Row(Header("district", "Distrito"), v.Distrito),
+            Row(Header("province", "Provincia"), v.Provincia),
+            Row(Header("department", "Departamento"), v.Departamento),
+            Row(Header("origin", "Procedencia"), v.Procedencia),
+            Row(Header("acquired_by", "Adquisición por"), v.AdquisicionPor),
+            Row(Header("purchase_price", "Precio compra"), FormatDecimal(v.PrecioCompra, culture)),
+            Row(Header("purchase_date", "Fecha adquisición"), FormatDate(v.FechaAdquisicion, culture)),
             Row(null, null),
-            Row("Especialización", null),
-            Row("Apto para", v.AptoPara),
-            Row("Fecha especificación", FormatDate(v.FechaEspecificacion)),
+            Row(Header("specialization", "Especialización"), null),
+            Row(Header("apt_for", "Apto para"), v.AptoPara),
+            Row(Header("spec_date", "Fecha especificación"), FormatDate(v.FechaEspecificacion, culture)),
             Row(null, null),
-            Row("Observaciones", null),
-            Row("Observaciones", v.Observaciones),
-            Row("Motivo estado", v.MotivoEstado),
+            Row(Header("observations_title", "Observaciones"), null),
+            Row(Header("observations", "Observaciones"), v.Observaciones),
+            Row(Header("status_reason", "Motivo estado"), v.MotivoEstado),
             Row(null, null),
-            Row("Auditoría", null),
-            Row("Creado por", v.CreadoPor),
-            Row("Creado en", FormatDateTime(v.CreadoEn)),
-            Row("Actualizado por", v.ActualizadoPor),
-            Row("Actualizado en", FormatDateTime(v.ActualizadoEn))
+            Row(Header("audit", "Auditoría"), null),
+            Row(Header("created_by", "Creado por"), v.CreadoPor),
+            Row(Header("created_at", "Creado en"), FormatDateTime(v.CreadoEn, culture)),
+            Row(Header("updated_by", "Actualizado por"), v.ActualizadoPor),
+            Row(Header("updated_at", "Actualizado en"), FormatDateTime(v.ActualizadoEn, culture))
         };
 
         var sb = new StringBuilder();
@@ -176,11 +208,11 @@ public sealed class RegistroVacunoExcelReportService : IRegistroVacunoExcelRepor
 
     private static string Xml(string value) => WebUtility.HtmlEncode(value) ?? string.Empty;
 
-    private static string FormatDate(DateOnly? date) => date?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? string.Empty;
+    private static string FormatDate(DateOnly? date, CultureInfo culture) => date?.ToString("yyyy-MM-dd", culture) ?? string.Empty;
 
-    private static string FormatDecimal(decimal? value) => value?.ToString("0.##", CultureInfo.InvariantCulture) ?? string.Empty;
+    private static string FormatDecimal(decimal? value, CultureInfo culture) => value?.ToString("0.##", culture) ?? string.Empty;
 
-    private static string FormatDateTime(DateTime? value) => value?.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) ?? string.Empty;
+    private static string FormatDateTime(DateTime? value, CultureInfo culture) => value?.ToString("yyyy-MM-dd HH:mm:ss", culture) ?? string.Empty;
 
     private const string ContentTypesXml = """
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>

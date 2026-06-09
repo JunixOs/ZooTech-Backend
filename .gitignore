@@ -217,5 +217,3 @@ copilot/
 .cache/
 *.md
 *.json
-/Formato auxiliar del codigo para respuesta.txt
-/src/ZooTech.Infrastructure/Configuration/Dev/LocalFallbackSettingProvider.cs

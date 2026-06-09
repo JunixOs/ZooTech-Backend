@@ -2,6 +2,8 @@ using System.Globalization;
 using Microsoft.Extensions.Logging;
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Common.Gateway.Time;
+using ZooTech.Application.Common.Gateway.Context;
+using ZooTech.Application.Common.Gateway.Configuration;
 using ZooTech.Application.Modules.Module_ReporteVacuno.Common;
 
 namespace ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ListarReporteVacunos;
@@ -12,17 +14,23 @@ public sealed class ListarReporteVacunosUseCase : IListarReporteVacunosUseCase
     private readonly IReporteVacunoReadRepository _repository;
     private readonly IListadoVacunosReportFileService _reportFileService;
     private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly ISettingProvider _settingProvider;
+    private readonly ITenantContext _tenantContext;
     private readonly ILogger<ListarReporteVacunosUseCase> _logger;
 
     public ListarReporteVacunosUseCase(
         IReporteVacunoReadRepository repository,
         IListadoVacunosReportFileService reportFileService,
         IDateTimeProvider dateTimeProvider,
+        ISettingProvider settingProvider,
+        ITenantContext tenantContext,
         ILogger<ListarReporteVacunosUseCase> logger)
     {
         _repository = repository;
         _reportFileService = reportFileService;
         _dateTimeProvider = dateTimeProvider;
+        _settingProvider = settingProvider;
+        _tenantContext = tenantContext;
         _logger = logger;
     }
 
@@ -30,13 +38,20 @@ public sealed class ListarReporteVacunosUseCase : IListarReporteVacunosUseCase
         ListarReporteVacunosQuery query,
         CancellationToken cancellationToken = default)
     {
-        var formato = Normalize(query.Formato) ?? ReporteVacunoConstants.FormatoDefault;
-        EnsureAllowed("formato", formato, ReporteVacunoConstants.FormatosPermitidos, "INVALID_REPORT_FORMAT", "El formato debe ser json, pdf o excel.", "Formato no permitido.");
+        var defaultDays = await _settingProvider.GetSettingAsync<int>("REPORTS_DEFAULT_DAYS", _tenantContext.TenantId);
+        var dateFormat = await _settingProvider.GetSettingAsync<string>("REPORTS_DATE_FORMAT", _tenantContext.TenantId);
+        var allowedFormatsRaw = await _settingProvider.GetSettingAsync<string[]>("REPORTS_ALLOWED_FORMATS", _tenantContext.TenantId);
+        var allowedFormats = allowedFormatsRaw is { Length: > 0 } ? allowedFormatsRaw : ["json", "pdf", "excel"];
+
+        var formato = Normalize(query.Formato) ?? "json";
+        EnsureAllowed("formato", formato, allowedFormats, "INVALID_REPORT_FORMAT", "El formato debe ser json, pdf o excel.", "Formato no permitido.");
 
         var rango = ReporteVacunoDateRangeResolver.Resolve(
             query.FechaDesde,
             query.FechaHasta,
-            _dateTimeProvider.Today);
+            _dateTimeProvider.Today,
+            defaultDays,
+            dateFormat);
 
         var page = ParsePositiveIntOrDefault(query.Page, "page", 1);
         var limit = ParsePositiveIntOrDefault(query.Limit, "limit", 20);
@@ -45,13 +60,15 @@ public sealed class ListarReporteVacunosUseCase : IListarReporteVacunosUseCase
         var estado = Normalize(query.Estado);
         if (estado is not null)
         {
-            EnsureAllowed("estado", estado, ReporteVacunoConstants.EstadosPermitidos, "VALIDATION_ERROR", "Los datos enviados no son validos.", "El estado debe ser vivo o muerto.");
+            var allowedEstados = new[] { "vivo", "muerto" };
+            EnsureAllowed("estado", estado, allowedEstados, "VALIDATION_ERROR", "Los datos enviados no son validos.", "El estado debe ser vivo o muerto.");
         }
 
         var aptoPara = Normalize(query.AptoPara);
         if (aptoPara is not null)
         {
-            EnsureAllowed("aptoPara", aptoPara, ReporteVacunoConstants.AptosPermitidos, "VALIDATION_ERROR", "Los datos enviados no son validos.", "Valor de aptoPara no permitido.");
+            var allowedAptos = new[] { "reproduccion", "produccion_leche", "produccion_carne", "venta", "descarte" };
+            EnsureAllowed("aptoPara", aptoPara, allowedAptos, "VALIDATION_ERROR", "Los datos enviados no son validos.", "Valor de aptoPara no permitido.");
         }
 
         _logger.LogInformation(

@@ -1,8 +1,11 @@
 using System.Globalization;
 using System.Net;
 using System.Text;
+using System.Text.Json;
 using Microsoft.Extensions.Options;
 using ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ObtenerRegistroVacunoReporte;
+using ZooTech.Application.Common.Gateway.Context;
+using ZooTech.Application.Common.Gateway.Configuration;
 using ZooTech.Infrastructure.Storage;
 
 namespace ZooTech.Infrastructure.Reports;
@@ -10,39 +13,66 @@ namespace ZooTech.Infrastructure.Reports;
 public sealed class RegistroVacunoPdfReportService : IRegistroVacunoPdfReportService
 {
     private readonly ReportStorageOptions _storageOptions;
+    private readonly ISettingProvider _settingProvider;
+    private readonly ITenantContext _tenantContext;
 
-    public RegistroVacunoPdfReportService(IOptions<ReportStorageOptions> storageOptions)
+    public RegistroVacunoPdfReportService(
+        IOptions<ReportStorageOptions> storageOptions,
+        ISettingProvider settingProvider,
+        ITenantContext tenantContext)
     {
         _storageOptions = storageOptions.Value;
+        _settingProvider = settingProvider;
+        _tenantContext = tenantContext;
     }
     public async Task<RegistroVacunoPdfReportResult> GenerateAsync(
         RegistroVacunoDetalle vacuno,
         CancellationToken cancellationToken = default)
     {
+        var cultureStr = await _settingProvider.GetSettingAsync<string>("REPORTS_CULTURE_INFO", _tenantContext.TenantId);
+        var culture = string.IsNullOrWhiteSpace(cultureStr) ? CultureInfo.InvariantCulture : new CultureInfo(cultureStr);
+
+        var namePattern = await _settingProvider.GetSettingAsync<string>("REPORTS_NAME_PATTERN", _tenantContext.TenantId);
+        if (string.IsNullOrWhiteSpace(namePattern)) namePattern = "reporte_{0}_{1}.pdf";
+
+        var headersJson = await _settingProvider.GetSettingAsync<string>("REPORTS_EXCEL_HEADERS", _tenantContext.TenantId);
+        var headers = string.IsNullOrWhiteSpace(headersJson)
+            ? new Dictionary<string, string>()
+            : JsonSerializer.Deserialize<Dictionary<string, string>>(headersJson) ?? new Dictionary<string, string>();
+
         var codigo = SanitizeFileNamePart(vacuno.Codigo);
-        var fecha = DateTime.UtcNow.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
-        var fileName = $"reporte_{codigo}_{fecha}.pdf";
+        var fecha = DateTime.UtcNow.ToString("yyyyMMdd", culture);
+        var fileName = string.Format(culture, namePattern, codigo, fecha);
+
+        var basePath = await _settingProvider.GetSettingAsync<string>("REPORTS_BASE_PATH", _tenantContext.TenantId);
+        if (string.IsNullOrWhiteSpace(basePath)) basePath = _storageOptions.ReportesBasePath;
+
+        var vacunosPath = await _settingProvider.GetSettingAsync<string>("REPORTS_VACUNOS_PATH", _tenantContext.TenantId);
+        if (string.IsNullOrWhiteSpace(vacunosPath)) vacunosPath = _storageOptions.ReportesVacunosPath;
+
+        var urlBase = await _settingProvider.GetSettingAsync<string>("REPORTS_URL_BASE", _tenantContext.TenantId);
+        if (string.IsNullOrWhiteSpace(urlBase)) urlBase = _storageOptions.ReportesUrlBase;
 
         var outputDirectory = Path.Combine(
             AppContext.BaseDirectory,
-            _storageOptions.ReportesBasePath,
-            _storageOptions.ReportesVacunosPath);
+            basePath,
+            vacunosPath);
 
         Directory.CreateDirectory(outputDirectory);
 
         var filePath = Path.Combine(outputDirectory, fileName);
         var image = TryLoadJpegImage(vacuno);
-        var pdfBytes = BuildPdf(vacuno, image);
+        var pdfBytes = BuildPdf(vacuno, image, culture, headers);
 
         await File.WriteAllBytesAsync(filePath, pdfBytes, cancellationToken);
 
-        var downloadUrl = $"{_storageOptions.ReportesUrlBase}{Uri.EscapeDataString(fileName)}";
+        var downloadUrl = $"{urlBase}{Uri.EscapeDataString(fileName)}";
         return new RegistroVacunoPdfReportResult(fileName, downloadUrl);
     }
 
-    private static byte[] BuildPdf(RegistroVacunoDetalle v, JpegImageInfo? image)
+    private static byte[] BuildPdf(RegistroVacunoDetalle v, JpegImageInfo? image, CultureInfo culture, Dictionary<string, string> headers)
     {
-        var lines = BuildLines(v, image is not null);
+        var lines = BuildLines(v, image is not null, culture, headers);
         var content = BuildPageContent(lines, image);
         var objects = new List<byte[]>();
 
@@ -67,53 +97,55 @@ public sealed class RegistroVacunoPdfReportService : IRegistroVacunoPdfReportSer
         return BuildPdfFile(objects);
     }
 
-    private static IReadOnlyList<PdfLine> BuildLines(RegistroVacunoDetalle v, bool hasImage)
+    private static IReadOnlyList<PdfLine> BuildLines(RegistroVacunoDetalle v, bool hasImage, CultureInfo culture, Dictionary<string, string> headers)
     {
+        string Header(string key, string defaultVal) => headers.TryGetValue(key, out var val) ? val : defaultVal;
+
         var lines = new List<PdfLine>
         {
             new("ZooTech | Modulo Vacuno", 18, true),
-            new("Reporte de registro por vacuno", 14, true),
-            new($"Generado: {DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)}", 9, false),
+            new(Header("title", "Reporte de registro por vacuno"), 14, true),
+            new($"{Header("gen_date", "Generado")}: {DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", culture)}", 9, false),
             new("", 8, false),
-            new("Datos de Identificacion", 12, true),
-            Row("ID", v.Id.ToString(CultureInfo.InvariantCulture)),
-            Row("Codigo", v.Codigo),
-            Row("Nombre", v.Nombre),
-            Row("Fecha de nacimiento", FormatDate(v.FechaNacimiento)),
-            Row("Sexo", v.Sexo),
-            Row("Raza", v.Raza),
-            Row("Color", v.Color),
-            Row("Estado", v.Estado),
-            Row("Fecha de registro", FormatDate(v.FechaRegistro)),
+            new(Header("id_data", "Datos de Identificacion"), 12, true),
+            Row(Header("id", "ID"), v.Id.ToString(culture)),
+            Row(Header("code", "Codigo"), v.Codigo),
+            Row(Header("name", "Nombre"), v.Nombre),
+            Row(Header("birth_date", "Fecha de nacimiento"), FormatDate(v.FechaNacimiento, culture)),
+            Row(Header("sex", "Sexo"), v.Sexo),
+            Row(Header("breed", "Raza"), v.Raza),
+            Row(Header("color", "Color"), v.Color),
+            Row(Header("status", "Estado"), v.Estado),
+            Row(Header("reg_date", "Fecha de registro"), FormatDate(v.FechaRegistro, culture)),
             new("", 8, false),
-            new("Trazabilidad", 12, true),
-            Row("Codigo padre", v.CodigoPadre),
-            Row("Codigo madre", v.CodigoMadre),
-            Row("Codigo abuelo", v.CodigoAbuelo),
-            Row("Codigo abuela", v.CodigoAbuela),
-            Row("Granja", v.Granja),
-            Row("Distrito", v.Distrito),
-            Row("Provincia", v.Provincia),
-            Row("Departamento", v.Departamento),
-            Row("Procedencia", v.Procedencia),
-            Row("Adquisicion por", v.AdquisicionPor),
-            Row("Precio compra", FormatDecimal(v.PrecioCompra)),
-            Row("Fecha adquisicion", FormatDate(v.FechaAdquisicion)),
+            new(Header("traceability", "Trazabilidad"), 12, true),
+            Row(Header("sire_code", "Codigo padre"), v.CodigoPadre),
+            Row(Header("dam_code", "Codigo madre"), v.CodigoMadre),
+            Row(Header("gsire_code", "Codigo abuelo"), v.CodigoAbuelo),
+            Row(Header("gdam_code", "Codigo abuela"), v.CodigoAbuela),
+            Row(Header("farm", "Granja"), v.Granja),
+            Row(Header("district", "Distrito"), v.Distrito),
+            Row(Header("province", "Provincia"), v.Provincia),
+            Row(Header("department", "Departamento"), v.Departamento),
+            Row(Header("origin", "Procedencia"), v.Procedencia),
+            Row(Header("acquired_by", "Adquisicion por"), v.AdquisicionPor),
+            Row(Header("purchase_price", "Precio compra"), FormatDecimal(v.PrecioCompra, culture)),
+            Row(Header("purchase_date", "Fecha adquisicion"), FormatDate(v.FechaAdquisicion, culture)),
             new("", 8, false),
-            new("Especializacion", 12, true),
-            Row("Apto para", v.AptoPara),
-            Row("Fecha especificacion", FormatDate(v.FechaEspecificacion)),
+            new(Header("specialization", "Especializacion"), 12, true),
+            Row(Header("apt_for", "Apto para"), v.AptoPara),
+            Row(Header("spec_date", "Fecha especificacion"), FormatDate(v.FechaEspecificacion, culture)),
             new("", 8, false),
-            new("Observaciones", 12, true),
-            Row("Observaciones", v.Observaciones),
-            Row("Motivo estado", v.MotivoEstado),
+            new(Header("observations_title", "Observaciones"), 12, true),
+            Row(Header("observations", "Observaciones"), v.Observaciones),
+            Row(Header("status_reason", "Motivo estado"), v.MotivoEstado),
             Row("Foto", hasImage ? "Incluida en el reporte" : "Sin foto disponible o formato no compatible"),
             new("", 8, false),
-            new("Auditoria", 12, true),
-            Row("Creado por", v.CreadoPor),
-            Row("Creado en", FormatDateTime(v.CreadoEn)),
-            Row("Actualizado por", v.ActualizadoPor),
-            Row("Actualizado en", FormatDateTime(v.ActualizadoEn))
+            new(Header("audit", "Auditoria"), 12, true),
+            Row(Header("created_by", "Creado por"), v.CreadoPor),
+            Row(Header("created_at", "Creado en"), FormatDateTime(v.CreadoEn, culture)),
+            Row(Header("updated_by", "Actualizado por"), v.ActualizadoPor),
+            Row(Header("updated_at", "Actualizado en"), FormatDateTime(v.ActualizadoEn, culture))
         };
 
         return lines;
@@ -343,11 +375,11 @@ public sealed class RegistroVacunoPdfReportService : IRegistroVacunoPdfReportSer
              .Replace("\r", " ", StringComparison.Ordinal)
              .Replace("\n", " ", StringComparison.Ordinal);
 
-    private static string FormatDate(DateOnly? date) => date?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? string.Empty;
+    private static string FormatDate(DateOnly? date, CultureInfo culture) => date?.ToString("yyyy-MM-dd", culture) ?? string.Empty;
 
-    private static string FormatDecimal(decimal? value) => value?.ToString("0.##", CultureInfo.InvariantCulture) ?? string.Empty;
+    private static string FormatDecimal(decimal? value, CultureInfo culture) => value?.ToString("0.##", culture) ?? string.Empty;
 
-    private static string FormatDateTime(DateTime? value) => value?.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) ?? string.Empty;
+    private static string FormatDateTime(DateTime? value, CultureInfo culture) => value?.ToString("yyyy-MM-dd HH:mm:ss", culture) ?? string.Empty;
 
     private static byte[] Ascii(string value) => Encoding.ASCII.GetBytes(WebUtility.HtmlDecode(value));
 

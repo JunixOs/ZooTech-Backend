@@ -10,6 +10,10 @@ using ZooTech.Infrastructure.Persistence.Repositories;
 using ZooTech.Infrastructure.Reports;
 using ZooTech.Infrastructure.Storage;
 using ZooTech.Infrastructure.Time;
+using ZooTech.Infrastructure.Tenant;
+using ZooTech.Application.Common.Gateway.Configuration;
+using ZooTech.Application.Common.Gateway.Context;
+using ZooTech.Infrastructure.Configuration.Dev;
 
 namespace ZooTech.Infrastructure;
 
@@ -17,7 +21,7 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services,
-        IConfiguration configuration)
+        Microsoft.Extensions.Configuration.IConfiguration configuration)
     {
         // ============================================
         // Configuration Options
@@ -72,6 +76,22 @@ public static class DependencyInjection
 
         // services.AddScoped<IJwtService, JwtService>();
         services.AddScoped<IDateTimeProvider, DateTimeProvider>();
+
+        var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+        if (env == "Development" || string.IsNullOrWhiteSpace(env))
+        {
+            services.AddSingleton<ISettingProvider, LocalFallbackSettingProvider>();
+        }
+        else
+        {
+            // TODO: Compañero implementará el Setting Provider real.
+            // services.AddScoped<ISettingProvider, RealSettingProvider>();
+        }
+
+        // ============================================
+        // Tenant
+        // ============================================
+        services.AddScoped<ITenantContext, TenantContext>();
 
         // ============================================
         // Caching

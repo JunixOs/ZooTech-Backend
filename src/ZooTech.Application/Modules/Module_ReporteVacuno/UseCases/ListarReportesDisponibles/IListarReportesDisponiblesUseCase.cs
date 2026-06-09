@@ -2,5 +2,5 @@ namespace ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ListarReport
 
 public interface IListarReportesDisponiblesUseCase
 {
-    ReportesDisponiblesResponse Handle(ListarReportesDisponiblesQuery query);
+    Task<ReportesDisponiblesResponse> HandleAsync(ListarReportesDisponiblesQuery query, CancellationToken cancellationToken = default);
 }

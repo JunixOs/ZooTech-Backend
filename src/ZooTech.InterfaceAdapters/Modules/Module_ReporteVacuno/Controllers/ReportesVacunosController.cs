@@ -30,10 +30,10 @@ public sealed class ReportesVacunosController : ControllerBase
     [ProducesResponseType(typeof(ReportesDisponiblesResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status500InternalServerError)]
-    public IActionResult Disponibles([FromQuery] ReportesDisponiblesQueryDto query)
+    public async Task<IActionResult> Disponibles([FromQuery] ReportesDisponiblesQueryDto query, CancellationToken cancellationToken)
     {
         var applicationQuery = ReportesDisponiblesMapper.ToApplicationQuery(query);
-        var response = _listarReportesDisponiblesUseCase.Handle(applicationQuery);
+        var response = await _listarReportesDisponiblesUseCase.HandleAsync(applicationQuery, cancellationToken);
 
         return Ok(ReportesDisponiblesMapper.ToDto(response));
     }

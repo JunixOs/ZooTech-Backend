@@ -10,10 +10,12 @@ public static class ReporteVacunoDateRangeResolver
     public static ReporteVacunoDateRange Resolve(
         string? fechaDesde,
         string? fechaHasta,
-        DateOnly serverToday)
+        DateOnly serverToday,
+        int defaultDays,
+        string dateFormat)
     {
-        var hasta = ParseDate(fechaHasta, "fechaHasta") ?? serverToday;
-        var desde = ParseDate(fechaDesde, "fechaDesde") ?? hasta.AddDays(-30);
+        var hasta = ParseDate(fechaHasta, "fechaHasta", dateFormat) ?? serverToday;
+        var desde = ParseDate(fechaDesde, "fechaDesde", dateFormat) ?? hasta.AddDays(-defaultDays);
 
         if (desde > hasta)
         {
@@ -26,7 +28,7 @@ public static class ReporteVacunoDateRangeResolver
         return new ReporteVacunoDateRange(desde, hasta);
     }
 
-    private static DateOnly? ParseDate(string? value, string field)
+    private static DateOnly? ParseDate(string? value, string field, string dateFormat)
     {
         if (string.IsNullOrWhiteSpace(value))
         {
@@ -35,7 +37,7 @@ public static class ReporteVacunoDateRangeResolver
 
         if (DateOnly.TryParseExact(
             value.Trim(),
-            "yyyy-MM-dd",
+            dateFormat,
             CultureInfo.InvariantCulture,
             DateTimeStyles.None,
             out var date))
