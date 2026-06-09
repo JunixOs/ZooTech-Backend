@@ -341,7 +341,7 @@ El T4 utiliza el **enfoque fusionado** documentado en `parameterization_architec
 | **Nombres** | `ToPascalCase()` con prefijo `_` si inicia con dígito |
 | **Fallback** | Si la connection string está vacía o la BD no está disponible, genera stub vacío |
 
-Ver especificación completa del template, queries SQL y funciones helper en `parameterization_architecture.md` sección 5.
+Ver especificación completa del template (código listo para copiar/pegar), queries SQL y funciones helper en `parameterization_architecture.md` → sección **"Archivo completo: `ZooParameters.tt`"**.
 
 **Verificación:**
 ```powershell
@@ -446,67 +446,21 @@ La solución completa debe compilar sin errores.
 
 **Archivo:** `src/ZooTech.Infrastructure/Configuration/ZooParameters.tt`
 
-El template implementa el **enfoque fusionado** descrito en `parameterization_architecture.md` sección 5. La estructura del archivo debe ser:
+Copiar íntegramente el contenido del template documentado en `parameterization_architecture.md` sección **"Archivo completo: `ZooParameters.tt`"**. El archivo resultante debe contener exactamente:
 
-```
-<#@ template language="C#" debug="false" hostspecific="true" #>
-<#@ output extension=".cs" #>
-<#@ assembly name="System.Core" #>
-<#@ assembly name="System.Data" #>
-<#@ assembly name="Microsoft.Data.SqlClient" #>
-<#@ import namespace="System" #>
-<#@ import namespace="System.Linq" #>
-<#@ import namespace="System.Text" #>
-<#@ import namespace="System.Collections.Generic" #>
-<#@ import namespace="Microsoft.Data.SqlClient" #>
-<#@ import namespace="System.Text.RegularExpressions" #>
-<#@ import namespace="System.IO" #>
+1. **Directivas T4**: `template`, `output`, `assembly` (System.Core, System.Data, Microsoft.Data.SqlClient), `import` (System, Linq, Text, Collections.Generic, SqlClient, Regex, IO).
+2. **Bloque de lectura de connection string**: Extrae `TenantCatalogConnection` de `appsettings.Development.json` usando `Host.ResolvePath` y Regex.
+3. **Guard de stub vacío**: Si la connection string está vacía, genera `ZooSettings { }`, `ZooFeatures { }`, `ZooRules { }` y retorna.
+4. **3 queries SQL** ejecutadas secuencialmente contra `TenantCatalogDb`:
+   - Settings: `COALESCE(sv.value, sd.default_value)` con LEFT JOIN a `setting_values` (actor_type='TENANT').
+   - Features: `features` donde `deleted_at IS NULL`.
+   - Rules: `rule_definitions` donde `deleted_at IS NULL`.
+5. **Generación de `ZooSettings.{GroupCode}`**: Cada campo como `SettingDefinition<T>` con XML doc comment, código, grupo, `DefaultValue` formateado y descripción.
+6. **Generación de `ZooFeatures.{Category}`**: Cada campo como `FeatureFlag` con `is_active` como default.
+7. **Generación de `ZooRules.{Module}`**: Cada campo como `RuleSchema` con `condition_schema` y `action_schema`.
+8. **Clase feature `<#+ ... #>`**: `ParameterItem`, `FeatureItem`, `RuleItem`, `ExtractJsonValue()`, `MapToCSharpType()`, `FormatValue()`, `ToPascalCase()`.
 
-[Bloque 1] Leer connection string de appsettings.Development.json
-           usando Host.ResolvePath + Regex para extraer TenantCatalogConnection
-
-[Bloque 2] Si connectionString está vacía → generar stub vacío y salir
-
-[Bloque 3] Query de Settings (con COALESCE):
-           SELECT sd.code, sd.name, sd.description, sd.data_type,
-                  COALESCE(sv.value, sd.default_value) AS FinalValue,
-                  sg.code AS GroupCode
-           FROM setting_definitions sd
-           INNER JOIN setting_groups sg ON sd.setting_group_id = sg.id
-           LEFT JOIN setting_values sv ON sd.id = sv.setting_definition_id
-             AND sv.actor_type = 'TENANT' AND sv.actor_id IS NULL
-             AND sv.is_active = 1 AND sv.deleted_at IS NULL
-           WHERE sd.is_active = 1 AND sd.deleted_at IS NULL
-             AND sg.is_active = 1 AND sg.deleted_at IS NULL
-           ORDER BY sg.code, sd.code
-
-[Bloque 4] Query de Features:
-           SELECT code, name, category, description, is_active
-           FROM features WHERE deleted_at IS NULL ORDER BY category, code
-
-[Bloque 5] Query de Rules:
-           SELECT code, name, module, description, condition_schema, action_schema
-           FROM rule_definitions WHERE deleted_at IS NULL ORDER BY module, code
-
-[Bloque 6] Generar ZooSettings.{GroupCode} con:
-           - ExtractJsonValue(FinalValue) para limpiar JSON envuelto
-           - MapToCSharpType(DataType) para tipo genérico T
-           - FormatValue(limpio, csharpType) para DefaultValue
-           - XML doc comment con código, tipo y descripción
-
-[Bloque 7] Generar ZooFeatures.{Category} con FeatureFlag(...)
-
-[Bloque 8] Generar ZooRules.{Module} con RuleSchema(...)
-
-[Bloque 9] Funciones helper en <#+ ... #>:
-           - ParameterItem class
-           - ExtractJsonValue(string)
-           - MapToCSharpType(string)
-           - FormatValue(string, string)
-           - ToPascalCase(string)
-```
-
-> **Referencia:** Ver código completo de las funciones helper, queries SQL y bloques de generación en `parameterization_architecture.md` sección 5.
+> **Referencia completa:** El código del `.tt` listo para copiar/pegar está en `parameterization_architecture.md` → sección **"Archivo completo: `ZooParameters.tt`"**.
 
 ### Paso 6.2: Ejecutar T4 manualmente para generar código
 
