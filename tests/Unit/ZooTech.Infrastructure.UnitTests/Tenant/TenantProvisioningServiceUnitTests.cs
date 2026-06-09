@@ -1,154 +1,72 @@
+using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Moq;
+using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant;
+using ZooTech.Domain.Enums;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Tenant;
+using ZooTech.Tests.Shared.Factories;
 
 namespace ZooTech.Infrastructure.UnitTests.Tenant
 {
     public class TenantProvisioningServiceUnitTests
     {
-        private CreateTenantCommand CreateFakeCommand()
+        private static (TenantCatalogDb Db, IConfiguration Config, Mock<ITenantDatabaseMigrator> Migrator) CreateDependencies()
         {
-            return new CreateTenantCommand
+            var options = new DbContextOptionsBuilder<TenantCatalogDb>()
+                .UseInMemoryDatabase(Guid.NewGuid().ToString())
+                .Options;
+
+            var db = new TenantCatalogDb(options);
+
+            var configData = new Dictionary<string, string>
             {
-                Code = "ganaderia-central",
-                SubDomain = "ganaderia-central",
-                DisplayName = "Ganadería Central",
-                LegalName = "Ganadería Central SAC",
-
-                Email = "admin@ganaderia.com",
-                Phone = "+51999999999",
-
-                TimeZone = "America/Lima",
-
-                Status = "TRIAL",
-
-                Metadata = "{}",
-
-                CreatedAt = DateTime.Now,
-
-                TenantAddress = new TenantAddress
-                {
-                    Country = "Perú",
-                    State = "Lima",
-                    Province = "Lima",
-                    City = "Lima",
-
-                    AddressLine_1 = "Av. Principal 123",
-                    AddressLine_2 = "Oficina 501",
-
-                    Metadata = "{}",
-
-                    CreatedAt = DateTime.Now
-                },
-
-                TenantBranding = new TenantBranding
-                {
-                    PrimaryColor = "#2563EB",
-                    SecondaryColor = "#1E293B",
-
-                    LogoUrl = "https://cdn.zoo-tech.com/logo.png",
-
-                    Metadata = "{}",
-
-                    CreatedAt = DateTime.Now
-                },
-
-                TenantDatabaseConnection = new TenantDatabaseConnection
-                {
-                    IsActive = true
-                }
+                { "ConnectionStrings:TenantTemplate", "Server=.;Database={DATABASE};Trusted_Connection=True;" }
             };
+
+            IConfiguration configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(configData!)
+                .Build();
+
+            var migratorMock = new Mock<ITenantDatabaseMigrator>();
+
+            return (db, configuration, migratorMock);
         }
 
         [Fact]
         public async Task ProvisionAsync_Should_Return_True_When_Migration_Succeeds()
         {
             // Arrange
-            var options = new DbContextOptionsBuilder<TenantCatalogDb>()
-                .UseInMemoryDatabase(Guid.NewGuid().ToString())
-                .Options;
+            var (db, config, migratorMock) = CreateDependencies();
+            migratorMock.Setup(x => x.MigrateAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
 
-            var tenantCatalogDb = new TenantCatalogDb(options);
-
-            var configData = new Dictionary<string, string>
-            {
-                {
-                    "ConnectionStrings:TenantTemplate",
-                    "Server=.;Database={DATABASE};Trusted_Connection=True;"
-                }
-            };
-
-            IConfiguration configuration = new ConfigurationBuilder()
-                .AddInMemoryCollection(configData!)
-                .Build();
-
-            var tenantDbMigratorMock = new Mock<ITenantDatabaseMigrator>();
-
-            tenantDbMigratorMock
-                .Setup(x => x.MigrateAsync(It.IsAny<string>()))
-                .Returns(Task.CompletedTask);
-
-            var factoryMock = new Mock<IGanaderiaDbContextFactory>();
-
-            var service = new TenantProvisioningService(
-                tenantCatalogDb,
-                configuration,
-                tenantDbMigratorMock.Object
-            );
-
-            var cmd = CreateFakeCommand();
+            var service = new TenantProvisioningService(db, config, migratorMock.Object);
+            var cmd = TenantTestDataFactory.CreateValidCommand();
 
             // Act
             var result = await service.ProvisionAsync(cmd);
 
             // Assert
-            Assert.True(result);
+            result.Should().BeTrue();
         }
 
         [Fact]
-        public async Task ProvisionAsync_Should_Return_False_When_Migration_Fails()
+        public async Task ProvisionAsync_Should_Throw_TenantProvisioningException_When_Migration_Fails()
         {
             // Arrange
-            var options = new DbContextOptionsBuilder<TenantCatalogDb>()
-                .UseInMemoryDatabase(Guid.NewGuid().ToString())
-                .Options;
+            var (db, config, migratorMock) = CreateDependencies();
+            migratorMock.Setup(x => x.MigrateAsync(It.IsAny<string>())).ThrowsAsync(new Exception("Migration failed"));
 
-            var tenantCatalogDb = new TenantCatalogDb(options);
-
-            var configData = new Dictionary<string, string>
-            {
-                {
-                    "ConnectionStrings:TenantTemplate",
-                    "Server=.;Database={DATABASE};Trusted_Connection=True;"
-                }
-            };
-
-            IConfiguration configuration = new ConfigurationBuilder()
-                .AddInMemoryCollection(configData!)
-                .Build();
-
-            var tenantDbMigratorMock = new Mock<ITenantDatabaseMigrator>();
-
-            tenantDbMigratorMock
-                .Setup(x => x.MigrateAsync(It.IsAny<string>()))
-                .ThrowsAsync(new Exception("Migration failed"));
-
-            var service = new TenantProvisioningService(
-                tenantCatalogDb,
-                configuration,
-                tenantDbMigratorMock.Object
-            );
-
-            var cmd = CreateFakeCommand();
+            var service = new TenantProvisioningService(db, config, migratorMock.Object);
+            var cmd = TenantTestDataFactory.CreateValidCommand();
 
             // Act
-            var result = await service.ProvisionAsync(cmd);
+            var act = async () => await service.ProvisionAsync(cmd);
 
             // Assert
-            Assert.False(result);
+            await act.Should().ThrowAsync<TenantProvisioningException>();
         }
     }
 }

@@ -27,6 +27,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\ZooTech.Infrastructure\ZooTech.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\ZooTech.Tests.Shared\ZooTech.Tests.Shared.csproj" />
   </ItemGroup>
 
 </Project>
