@@ -1,46 +1,44 @@
 using Microsoft.AspNetCore.Mvc;
-using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.CreateOrdenio;
+using ZooTech.InterfaceAdapters.DTOs;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.DeleteOrdenio;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GetOrdenioById;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.ListOrdenios;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.UpdateOrdenio;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Mappers;
-using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Ports;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
 
 [ApiController]
-[Route("v1/produccion-leche")]
+[Route("api/v1/produccion-leche")]
 public sealed class ProduccionLecheController : ControllerBase
 {
-
-
     [HttpGet("health")]
     public IActionResult Health()
     {
-        return Ok(new { 
+        return Ok(new
+        {
             status = "Api funcionando de manera correcta",
             model = "modulo produccion leche"
-
         });
     }
 
     [HttpGet("vacunos")]
     public async Task<IActionResult> GetVacunos(
-        [FromServices] IOrdenioRepository repository,
+        [FromServices] IListarVacunosInputPort listarVacunosInputPort,
         CancellationToken cancellationToken)
     {
-        var list = await repository.ListVacunosAsync(cancellationToken);
-        var mappedList = list.Select(x => new {
+        var output = await listarVacunosInputPort.HandleAsync(cancellationToken);
+        var mappedList = output.Items.Select(x => new
+        {
             id = x.Id,
-            
+            codigo = x.Codigo,
             nombre = x.Nombre,
-            raza = x.RazaCode,
-            ultimoRegistro = "2023-10-01",
-            promedio = "15L"
+            raza = x.RazaCode
         }).ToList();
+
         return Ok(new { data = mappedList });
     }
 
@@ -50,18 +48,11 @@ public sealed class ProduccionLecheController : ControllerBase
         [FromServices] ICreateOrdenioInputPort inputPort,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            var output = await inputPort.HandleAsync(ProduccionLecheMapper.ToCommand(request), cancellationToken);
-            var response = ProduccionLecheMapper.ToResponse(output);
-            return Created($"/v1/produccion-leche/{response.Data.Id}", response);
-        }
-        catch (ConflictException ex)
-        {
-            return Conflict(ToError("CONFLICT_ERROR", ex.Message));
-        }
+        var data = ProduccionLecheMapper.ToResponse(
+            await inputPort.HandleAsync(ProduccionLecheMapper.ToCommand(request), cancellationToken));
+        return Created($"/api/v1/produccion-leche/{data.Id}",
+            GeneralResponseDTO<object>.Ok(data));
     }
-
 
     [HttpGet("{id:long}")]
     public async Task<IActionResult> GetById(
@@ -69,15 +60,8 @@ public sealed class ProduccionLecheController : ControllerBase
         [FromServices] IGetOrdenioByIdInputPort inputPort,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            var output = await inputPort.HandleAsync(id, cancellationToken);
-            return Ok(ProduccionLecheMapper.ToResponse(output));
-        }
-        catch (NotFoundException ex)
-        {
-            return NotFound(ToError("ORDENIO_NOT_FOUND", ex.Message));
-        }
+        var data = ProduccionLecheMapper.ToResponse(await inputPort.HandleAsync(id, cancellationToken));
+        return Ok(GeneralResponseDTO<object>.Ok(data));
     }
 
     [HttpGet]
@@ -93,12 +77,12 @@ public sealed class ProduccionLecheController : ControllerBase
     {
         var currentPage = page ?? 1;
         var currentPageSize = pageSize ?? 20;
-
-        var output = await inputPort.HandleAsync(
-            new ListOrdeniosQuery(vacunoId, estadoOrdenioCode, fechaDesde, fechaHasta, currentPage, currentPageSize),
-            cancellationToken);
-
-        return Ok(ProduccionLecheMapper.ToResponse(output, currentPage, currentPageSize));
+        var data = ProduccionLecheMapper.ToResponse(
+            await inputPort.HandleAsync(
+                new ListOrdeniosQuery(vacunoId, estadoOrdenioCode, fechaDesde, fechaHasta, currentPage, currentPageSize),
+                cancellationToken),
+            currentPage, currentPageSize);
+        return Ok(GeneralResponseDTO<object>.Ok(data));
     }
 
     [HttpPatch("{id:long}")]
@@ -108,19 +92,9 @@ public sealed class ProduccionLecheController : ControllerBase
         [FromServices] IUpdateOrdenioInputPort inputPort,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            var output = await inputPort.HandleAsync(id, ProduccionLecheMapper.ToCommand(request), cancellationToken);
-            return Ok(ProduccionLecheMapper.ToResponse(output));
-        }
-        catch (NotFoundException ex)
-        {
-            return NotFound(ToError("ORDENIO_NOT_FOUND", ex.Message));
-        }
-        catch (ConflictException ex)
-        {
-            return Conflict(ToError("CONFLICT_ERROR", ex.Message));
-        }
+        var data = ProduccionLecheMapper.ToResponse(
+            await inputPort.HandleAsync(id, ProduccionLecheMapper.ToCommand(request), cancellationToken));
+        return Ok(GeneralResponseDTO<object>.Ok(data));
     }
 
     [HttpDelete("{id:long}")]
@@ -130,29 +104,7 @@ public sealed class ProduccionLecheController : ControllerBase
         [FromServices] IDeleteOrdenioInputPort inputPort,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            await inputPort.HandleAsync(id, ProduccionLecheMapper.ToCommand(request), cancellationToken);
-            return NoContent();
-        }
-        catch (NotFoundException ex)
-        {
-            return NotFound(ToError("ORDENIO_NOT_FOUND", ex.Message));
-        }
-        catch (ConflictException ex)
-        {
-            return Conflict(ToError("CONFLICT_ERROR", ex.Message));
-        }
+        await inputPort.HandleAsync(id, ProduccionLecheMapper.ToCommand(request), cancellationToken);
+        return NoContent();
     }
-
-    private static object ToError(string code, string message)
-        => new
-        {
-            error = new
-            {
-                code,
-                message,
-                details = Array.Empty<object>()
-            }
-        };
 }

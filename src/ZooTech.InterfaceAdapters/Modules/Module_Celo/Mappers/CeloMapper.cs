@@ -1,0 +1,50 @@
+using ZooTech.Application.Modules.Module_Celo.UseCases.EditarCelo;
+using ZooTech.Application.Modules.Module_Celo.UseCases.EliminarCelo;
+using ZooTech.Application.Modules.Module_Celo.UseCases.RegistrarCelo;
+using ZooTech.InterfaceAdapters.Modules.Module_Celo.DTOs.Requests;
+using ZooTech.InterfaceAdapters.Modules.Module_Celo.DTOs.Responses;
+
+namespace ZooTech.InterfaceAdapters.Modules.Module_Celo.Mappers;
+
+internal static class CeloMapper
+{
+    public static RegistrarCeloCommand ToCommand(RegistrarCeloRequest request)
+    {
+        return new RegistrarCeloCommand(
+            VacunoId: request.VacunoId,
+            EncargadoUsuarioId: request.EncargadoUsuarioId,
+            FechaHora: request.FechaHora,
+            Observaciones: request.Observaciones,
+            CaracteristicaCodes: request.CaracteristicaCodes);
+    }
+
+    public static EditarCeloCommand ToCommand(EditarCeloRequest request)
+    {
+        return new EditarCeloCommand(
+            Id: request.Id,
+            Observaciones: request.Observaciones,
+            CaracteristicaCodes: request.CaracteristicaCodes);
+    }
+
+    public static EliminarCeloCommand ToCommand(EliminarCeloRequest request)
+    {
+        return new EliminarCeloCommand(
+            Id: request.Id,
+            MotivoEliminacion: request.MotivoEliminacion);
+    }
+
+    public static RegistrarCeloResponse ToResponse(RegistrarCeloOutput output)
+    {
+        return new RegistrarCeloResponse(
+            Id: output.Id,
+            Codigo: output.Codigo,
+            FechaHora: output.FechaHora);
+    }
+
+    public static EditarCeloResponse ToResponse(EditarCeloOutput output)
+    {
+        return new EditarCeloResponse(
+            Id: output.Id,
+            Observaciones: output.Observaciones);
+    }
+}
