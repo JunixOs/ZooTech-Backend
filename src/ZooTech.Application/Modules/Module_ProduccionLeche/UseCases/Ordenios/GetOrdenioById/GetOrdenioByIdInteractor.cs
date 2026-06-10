@@ -1,6 +1,6 @@
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Common;
-using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Ports;
+using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GetOrdenioById;
 
