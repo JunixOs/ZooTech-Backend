@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using FluentValidation;
+using Microsoft.AspNetCore.Http;
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.InterfaceAdapters.DTOs;
 
