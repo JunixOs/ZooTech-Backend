@@ -4,7 +4,7 @@ namespace ZooTech.Domain.Module_Sanidad.Interfaces;
 
 public interface ITriajeRepository
 {
-    Task<Triaje?> GetByIdAsync(long id);
+    Task<Triaje?> GetByIdAsync(long id, CancellationToken cancellationToken = default);
     Task<(IEnumerable<Triaje> Items, int Total)> GetAllAsync(
      int pagina,
      int tamano,
@@ -12,16 +12,17 @@ public interface ITriajeRepository
      string? codigo = null,
      string? nombre = null,
      string? tipoPeso = null,
-     decimal? pesoKg = null);
-    Task AddAsync(Triaje triaje);
-    Task UpdateAsync(Triaje triaje);
-    Task DeleteAsync(long id);
-    Task<string> GenerateCodigoAsync();
+     decimal? pesoKg = null,
+     CancellationToken cancellationToken = default);
+    Task<Triaje> AddAsync(Triaje triaje, CancellationToken cancellationToken = default);
+    Task UpdateAsync(Triaje triaje, CancellationToken cancellationToken = default);
+    Task DeleteAsync(long id, CancellationToken cancellationToken = default);
+    Task<string> GenerateCodigoAsync(CancellationToken cancellationToken = default);
 
     // Tipo peso
-    Task<IEnumerable<TipoPeso>> GetAllTipoPesosAsync();
+    Task<IEnumerable<TipoPeso>> GetAllTipoPesosAsync(CancellationToken cancellationToken = default);
     // Vacuno id codigo nombre
-    Task<IEnumerable<VacunoOption>> GetAllVacunosAsync();
+    Task<IEnumerable<VacunoOption>> GetAllVacunosAsync(CancellationToken cancellationToken = default);
 
-    Task<IEnumerable<TriajeHistorialItem>> GetHistorialByVacunoIdAsync(long vacunoId);
+    Task<IEnumerable<TriajeHistorialItem>> GetHistorialByVacunoIdAsync(long vacunoId, CancellationToken cancellationToken = default);
 }

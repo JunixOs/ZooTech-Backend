@@ -1,19 +1,19 @@
-using ZooTech.Domain.Module_ProduccionLeche.Rules;
+using ZooTech.Domain.Module_Celo.Rules;
 
-namespace ZooTech.Domain.Module_ProduccionLeche.Entities;
+namespace ZooTech.Domain.Module_Celo.Entities;
 
-public sealed class Ordenio
+public sealed class Celo
 {
-    private Ordenio(
+    private Celo(
         long id,
         string codigo,
         DateTime fechaHora,
         long vacunoId,
+        string vacunoCodigo,
         string nombreVacuno,
         long encargadoUsuarioId,
-        decimal litros,
-        string estadoOrdenioCode,
         string? observaciones,
+        string estadoRegistroCode,
         DateTime createdAt,
         DateTime updatedAt,
         DateTime? deletedAt,
@@ -26,11 +26,12 @@ public sealed class Ordenio
         Codigo = codigo;
         FechaHora = fechaHora;
         VacunoId = vacunoId;
+        VacunoCodigo = vacunoCodigo;
         NombreVacuno = nombreVacuno;
         EncargadoUsuarioId = encargadoUsuarioId;
-        Litros = litros;
-        EstadoOrdenioCode = estadoOrdenioCode;
         Observaciones = observaciones;
+        EstadoRegistroCode = estadoRegistroCode;
+        CaracteristicaCodes = new List<string>();
         CreatedAt = createdAt;
         UpdatedAt = updatedAt;
         DeletedAt = deletedAt;
@@ -44,11 +45,12 @@ public sealed class Ordenio
     public string Codigo { get; private set; }
     public DateTime FechaHora { get; private set; }
     public long VacunoId { get; private set; }
+    public string VacunoCodigo { get; private set; }
     public string NombreVacuno { get; private set; }
     public long EncargadoUsuarioId { get; private set; }
-    public decimal Litros { get; private set; }
-    public string EstadoOrdenioCode { get; private set; }
     public string? Observaciones { get; private set; }
+    public string EstadoRegistroCode { get; private set; }
+    public IList<string> CaracteristicaCodes { get; private set; }
     public DateTime CreatedAt { get; }
     public DateTime UpdatedAt { get; private set; }
     public DateTime? DeletedAt { get; private set; }
@@ -59,29 +61,29 @@ public sealed class Ordenio
 
     public bool IsDeleted => DeletedAt.HasValue;
 
-    public static Ordenio CreateNew(
+    public static Celo CreateNew(
         string codigo,
         DateTime fechaHora,
         long vacunoId,
         long encargadoUsuarioId,
-        decimal litros,
-        string estadoOrdenioCode,
         string? observaciones,
+        string estadoRegistroCode,
+        List<string>? caracteristicaCodes,
         long? actorUsuarioId,
         DateTime utcNow)
     {
-        Validate(codigo, fechaHora, vacunoId, encargadoUsuarioId, litros, estadoOrdenioCode);
+        Validate(codigo, fechaHora, vacunoId, encargadoUsuarioId, estadoRegistroCode, observaciones);
 
-        return new Ordenio(
+        var celo = new Celo(
             id: 0,
             codigo: codigo.Trim(),
             fechaHora: fechaHora,
             vacunoId: vacunoId,
+            vacunoCodigo: string.Empty,
             nombreVacuno: string.Empty,
             encargadoUsuarioId: encargadoUsuarioId,
-            litros: litros,
-            estadoOrdenioCode: estadoOrdenioCode.Trim(),
             observaciones: SanitizeObservaciones(observaciones),
+            estadoRegistroCode: estadoRegistroCode.Trim(),
             createdAt: utcNow,
             updatedAt: utcNow,
             deletedAt: null,
@@ -89,18 +91,29 @@ public sealed class Ordenio
             createdBy: actorUsuarioId,
             updatedBy: actorUsuarioId,
             deletedBy: null);
+
+        if (caracteristicaCodes is { Count: > 0 })
+        {
+            foreach (var code in caracteristicaCodes)
+            {
+                celo.CaracteristicaCodes.Add(code);
+            }
+        }
+
+        return celo;
     }
 
-    public static Ordenio Rehydrate(
+    public static Celo Rehydrate(
         long id,
         string codigo,
         DateTime fechaHora,
         long vacunoId,
+        string vacunoCodigo,
         string nombreVacuno,
         long encargadoUsuarioId,
-        decimal litros,
-        string estadoOrdenioCode,
         string? observaciones,
+        string estadoRegistroCode,
+        List<string> caracteristicaCodes,
         DateTime createdAt,
         DateTime updatedAt,
         DateTime? deletedAt,
@@ -109,18 +122,18 @@ public sealed class Ordenio
         long? updatedBy,
         long? deletedBy)
     {
-        Validate(codigo, fechaHora, vacunoId, encargadoUsuarioId, litros, estadoOrdenioCode);
+        Validate(codigo, fechaHora, vacunoId, encargadoUsuarioId, estadoRegistroCode, observaciones);
 
-        return new Ordenio(
+        var celo = new Celo(
             id,
             codigo.Trim(),
             fechaHora,
             vacunoId,
+            vacunoCodigo,
             nombreVacuno,
             encargadoUsuarioId,
-            litros,
-            estadoOrdenioCode.Trim(),
             SanitizeObservaciones(observaciones),
+            estadoRegistroCode.Trim(),
             createdAt,
             updatedAt,
             deletedAt,
@@ -128,29 +141,39 @@ public sealed class Ordenio
             createdBy,
             updatedBy,
             deletedBy);
+
+        foreach (var code in caracteristicaCodes)
+        {
+            celo.CaracteristicaCodes.Add(code);
+        }
+
+        return celo;
     }
 
     public void Update(
-        DateTime fechaHora,
-        long encargadoUsuarioId,
-        decimal litros,
-        string estadoOrdenioCode,
         string? observaciones,
+        List<string>? caracteristicaCodes,
         long? actorUsuarioId,
         DateTime utcNow)
     {
         if (IsDeleted)
         {
-            throw new InvalidOperationException("No se puede actualizar un ordeño eliminado.");
+            throw new InvalidOperationException("No se puede actualizar un registro de celo eliminado.");
         }
 
-        Validate(Codigo, fechaHora, VacunoId, encargadoUsuarioId, litros, estadoOrdenioCode);
+        Validate(Codigo, FechaHora, VacunoId, EncargadoUsuarioId, EstadoRegistroCode, observaciones);
 
-        FechaHora = fechaHora;
-        EncargadoUsuarioId = encargadoUsuarioId;
-        Litros = litros;
-        EstadoOrdenioCode = estadoOrdenioCode.Trim();
         Observaciones = SanitizeObservaciones(observaciones);
+
+        CaracteristicaCodes.Clear();
+        if (caracteristicaCodes is { Count: > 0 })
+        {
+            foreach (var code in caracteristicaCodes)
+            {
+                CaracteristicaCodes.Add(code);
+            }
+        }
+
         UpdatedBy = actorUsuarioId;
         UpdatedAt = utcNow;
     }
@@ -159,13 +182,10 @@ public sealed class Ordenio
     {
         if (IsDeleted)
         {
-            throw new InvalidOperationException("El ordeño ya se encuentra eliminado.");
+            throw new InvalidOperationException("El registro de celo ya se encuentra eliminado.");
         }
 
-        if (string.IsNullOrWhiteSpace(motivoEliminacion))
-        {
-            throw new ArgumentException("El motivo de eliminación es obligatorio.");
-        }
+        CeloRule.ValidarMotivoEliminacion(motivoEliminacion);
 
         DeletedAt = utcNow;
         DeletedBy = actorUsuarioId;
@@ -179,19 +199,15 @@ public sealed class Ordenio
         DateTime fechaHora,
         long vacunoId,
         long encargadoUsuarioId,
-        decimal litros,
-        string estadoOrdenioCode,
-        string? observaciones = null
-        )
+        string estadoRegistroCode,
+        string? observaciones = null)
     {
-        OrdenioRule.ValidarCodigo(codigo);
-        OrdenioRule.ValidarFechaHora(fechaHora);
-        OrdenioRule.ValidarLitros(litros);
-        OrdenioRule.ValidarEstadoOrdenioCode(estadoOrdenioCode);
-        OrdenioRule.ValidarVacunoId(vacunoId);
-        OrdenioRule.ValidarEncargadoUsuarioId(encargadoUsuarioId);
-        OrdenioRule.ValidarObservaciones(observaciones); // Solo valida longitud si no es null, el método de validación se encarga de eso
-
+        CeloRule.ValidarCodigo(codigo);
+        CeloRule.ValidarFechaHora(fechaHora);
+        CeloRule.ValidarVacunoId(vacunoId);
+        CeloRule.ValidarEncargadoUsuarioId(encargadoUsuarioId);
+        CeloRule.ValidarEstadoRegistroCode(estadoRegistroCode);
+        CeloRule.ValidarObservaciones(observaciones);
     }
 
     private static string? SanitizeObservaciones(string? observaciones)
