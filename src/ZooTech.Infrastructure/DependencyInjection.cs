@@ -4,10 +4,18 @@ using Microsoft.Extensions.DependencyInjection;
 using ZooTech.Application.Common.Gateway.Context;
 using ZooTech.Application.Common.Gateway.Features;
 using ZooTech.Application.Common.Gateway.Time;
+using ZooTech.Domain.Module_Celo.Interfaces;
+using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
+using ZooTech.Domain.Module_Sanidad.Interfaces;
+using ZooTech.Domain.Module_Vacuno.Interfaces;
+using ZooTech.Infrastructure.Common.Time;
 using ZooTech.Infrastructure.Features;
 using ZooTech.Infrastructure.Persistence.Context;
+using ZooTech.Infrastructure.Persistence.Modules.Module_Celo.Repositories;
+using ZooTech.Infrastructure.Persistence.Modules.Module_ProduccionLeche.Repositories;
+using ZooTech.Infrastructure.Persistence.Modules.Module_Sanidad.Repositories;
+using ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Repositories;
 using ZooTech.Infrastructure.Tenant;
-using ZooTech.Infrastructure.Time;
 
 namespace ZooTech.Infrastructure;
 
@@ -21,17 +29,15 @@ public static class DependencyInjection
         // Connection String
         // ============================================
 
-        var connectionString =
-            configuration.GetConnectionString("DefaultConnection");
+        var connectionString = configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("No se encontró ConnectionStrings:DefaultConnection.");
 
         // ============================================
         // DbContext
         // ============================================
 
         services.AddDbContext<GanaderiaDbContext>(options =>
-        {
-            options.UseSqlServer(connectionString);
-        });
+            options.UseSqlServer(connectionString));
 
         // ============================================
         // Multi-Tenant
@@ -47,23 +53,21 @@ public static class DependencyInjection
         services.AddScoped<IFeatureService, DevFeatureService>();
 
         // ============================================
+        // Transversal
+        // ============================================
+
+        services.AddScoped<IDateTimeProvider, DateTimeProvider>();
+
+        // ============================================
         // Repositories
         // ============================================
 
-        services.AddScoped<ZooTech.Application.Common.Gateway.Repositories.IVacunoRepository, ZooTech.Infrastructure.Persistence.Repositories.VacunoRepository>();
-
-        // ============================================
-        // External Services
-        // ============================================
-
-        services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
-
-        // ============================================
-        // Caching
-        // ============================================
-
-        // services.AddMemoryCache();
+        services.AddScoped<ICeloRepository, CeloRepository>();
+        services.AddScoped<IOrdenioRepository, OrdenioRepository>();
+        services.AddScoped<IVacunoRepository, VacunoRepository>();
+        services.AddScoped<ITriajeRepository, TriajeRepository>();
+        services.AddScoped<ITipoPesoRepository, TipoPesoRepository>();
 
         return services;
     }
-}
+}

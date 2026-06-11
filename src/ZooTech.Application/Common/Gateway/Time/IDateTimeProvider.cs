@@ -2,5 +2,5 @@ namespace ZooTech.Application.Common.Gateway.Time;
 
 public interface IDateTimeProvider
 {
-    DateTime UtcNow { get; }
+    DateTime ServerNow { get; }
 }

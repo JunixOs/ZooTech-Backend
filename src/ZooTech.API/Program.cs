@@ -1,18 +1,22 @@
 using ZooTech.Application;
 using ZooTech.Infrastructure;
 using ZooTech.InterfaceAdapters;
-
+using ZooTech.InterfaceAdapters.Controllers;
+using ZooTech.InterfaceAdapters.Middleware;
+using ZooTech.InterfaceAdapters.Modules.Module_Celo.Controllers;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
-using ZooTech.InterfaceAdapters.Modules.Module_Vacunos.Controllers;
+using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Controllers;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// ======= Controllers & Swagger =======
 builder.Services
     .AddControllers()
     .AddApplicationPart(typeof(HomeController).Assembly)
-    .AddApplicationPart(typeof(VacunosController).Assembly);
+    .AddApplicationPart(typeof(CeloController).Assembly)
+    .AddApplicationPart(typeof(VacunoController).Assembly)
+    .AddApplicationPart(typeof(ProduccionLecheController).Assembly);
+
 builder.Services.AddEndpointsApiExplorer();
+
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("auth", new()
@@ -34,30 +38,27 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// ======= Capas de la Arquitectura =======
-builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration);
-builder.Services.AddInterfaceAdapters();
-
-// ======= CORS =======
-var frontendPort = builder.Configuration["Frontend:FrontendPort"];
-var frontendIP = builder.Configuration["Frontend:FrontendIP"];
-var frontendProtocol = builder.Configuration["Frontend:FrontendProtocol"];
+builder.Services
+    .AddApplication()
+    .AddInfrastructure(builder.Configuration)
+    .AddInterfaceAdapters();
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowFrontend",
-        policy =>
-        {
-            policy.WithOrigins($"{frontendProtocol}://{frontendIP}:{frontendPort}")
-                .AllowAnyHeader()
-                .AllowAnyMethod();
-        });
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        var frontendPort = builder.Configuration["Frontend:FrontendPort"];
+        var frontendIP = builder.Configuration["Frontend:FrontendIP"];
+        var frontendProtocol = builder.Configuration["Frontend:FrontendProtocol"];
+
+        policy.WithOrigins($"{frontendProtocol}://{frontendIP}:{frontendPort}")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
 });
 
 var app = builder.Build();
 
-// ======= HTTP Pipeline =======
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -78,6 +79,8 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 
