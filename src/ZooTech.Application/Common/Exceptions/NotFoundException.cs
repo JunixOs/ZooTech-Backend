@@ -1,16 +1,9 @@
-using System.Net;
+namespace ZooTech.Application.Common.Exceptions;
 
-namespace ZooTech.Application.Common.Exceptions
+public sealed class NotFoundException : Exception
 {
-    public class NotFoundException : AppException
+    public NotFoundException(string message)
+        : base(message)
     {
-        public override int StatusCode => (int)HttpStatusCode.NotFound;
-
-        public NotFoundException(
-            string code,
-            string message
-        ) : base(code , message)
-        {
-        }
     }
 }

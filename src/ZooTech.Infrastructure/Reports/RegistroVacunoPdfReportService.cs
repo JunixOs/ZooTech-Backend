@@ -1,11 +1,10 @@
 using System.Globalization;
 using System.Net;
-using System.Text;
-using System.Text.Json;
 using Microsoft.Extensions.Options;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
 using ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ObtenerRegistroVacunoReporte;
-using ZooTech.Application.Common.Gateway.Context;
-using ZooTech.Application.Common.Gateway.Configuration;
 using ZooTech.Infrastructure.Storage;
 
 namespace ZooTech.Infrastructure.Reports;
@@ -13,252 +12,196 @@ namespace ZooTech.Infrastructure.Reports;
 public sealed class RegistroVacunoPdfReportService : IRegistroVacunoPdfReportService
 {
     private readonly ReportStorageOptions _storageOptions;
-    private readonly ISettingProvider _settingProvider;
-    private readonly ITenantContext _tenantContext;
 
-    public RegistroVacunoPdfReportService(
-        IOptions<ReportStorageOptions> storageOptions,
-        ISettingProvider settingProvider,
-        ITenantContext tenantContext)
+    public RegistroVacunoPdfReportService(IOptions<ReportStorageOptions> storageOptions)
     {
         _storageOptions = storageOptions.Value;
-        _settingProvider = settingProvider;
-        _tenantContext = tenantContext;
     }
-    public async Task<RegistroVacunoPdfReportResult> GenerateAsync(
+
+    public Task<RegistroVacunoPdfReportResult> GenerateAsync(
         RegistroVacunoDetalle vacuno,
         CancellationToken cancellationToken = default)
     {
-        var cultureStr = await _settingProvider.GetSettingAsync<string>("REPORTS_CULTURE_INFO", _tenantContext.TenantId);
-        var culture = string.IsNullOrWhiteSpace(cultureStr) ? CultureInfo.InvariantCulture : new CultureInfo(cultureStr);
-
-        var namePattern = await _settingProvider.GetSettingAsync<string>("REPORTS_NAME_PATTERN", _tenantContext.TenantId);
-        if (string.IsNullOrWhiteSpace(namePattern)) namePattern = "reporte_{0}_{1}.pdf";
-
-        var headersJson = await _settingProvider.GetSettingAsync<string>("REPORTS_EXCEL_HEADERS", _tenantContext.TenantId);
-        var headers = string.IsNullOrWhiteSpace(headersJson)
-            ? new Dictionary<string, string>()
-            : JsonSerializer.Deserialize<Dictionary<string, string>>(headersJson) ?? new Dictionary<string, string>();
-
+        var culture = CultureInfo.InvariantCulture;
+        var namePattern = "reporte_{0}_{1}.pdf";
         var codigo = SanitizeFileNamePart(vacuno.Codigo);
         var fecha = DateTime.UtcNow.ToString("yyyyMMdd", culture);
         var fileName = string.Format(culture, namePattern, codigo, fecha);
 
-        var basePath = await _settingProvider.GetSettingAsync<string>("REPORTS_BASE_PATH", _tenantContext.TenantId);
-        if (string.IsNullOrWhiteSpace(basePath)) basePath = _storageOptions.ReportesBasePath;
-
-        var vacunosPath = await _settingProvider.GetSettingAsync<string>("REPORTS_VACUNOS_PATH", _tenantContext.TenantId);
-        if (string.IsNullOrWhiteSpace(vacunosPath)) vacunosPath = _storageOptions.ReportesVacunosPath;
-
-        var urlBase = await _settingProvider.GetSettingAsync<string>("REPORTS_URL_BASE", _tenantContext.TenantId);
-        if (string.IsNullOrWhiteSpace(urlBase)) urlBase = _storageOptions.ReportesUrlBase;
-
         var outputDirectory = Path.Combine(
             AppContext.BaseDirectory,
-            basePath,
-            vacunosPath);
+            _storageOptions.ReportesBasePath,
+            _storageOptions.ReportesVacunosPath);
 
         Directory.CreateDirectory(outputDirectory);
-
         var filePath = Path.Combine(outputDirectory, fileName);
-        var image = TryLoadJpegImage(vacuno);
-        var pdfBytes = BuildPdf(vacuno, image, culture, headers);
 
-        await File.WriteAllBytesAsync(filePath, pdfBytes, cancellationToken);
+        var document = CreateDocument(vacuno, culture);
+        document.GeneratePdf(filePath);
 
-        var downloadUrl = $"{urlBase}{Uri.EscapeDataString(fileName)}";
-        return new RegistroVacunoPdfReportResult(fileName, downloadUrl);
+        var downloadUrl = $"{_storageOptions.ReportesUrlBase}{Uri.EscapeDataString(fileName)}";
+        return Task.FromResult(new RegistroVacunoPdfReportResult(fileName, downloadUrl));
     }
 
-    private static byte[] BuildPdf(RegistroVacunoDetalle v, JpegImageInfo? image, CultureInfo culture, Dictionary<string, string> headers)
+    private Document CreateDocument(RegistroVacunoDetalle vacuno, CultureInfo culture)
     {
-        var lines = BuildLines(v, image is not null, culture, headers);
-        var content = BuildPageContent(lines, image);
-        var objects = new List<byte[]>();
+        var photoPath = GetBestPhotoPath(vacuno);
 
-        objects.Add(Ascii("<< /Type /Catalog /Pages 2 0 R >>"));
-        objects.Add(Ascii("<< /Type /Pages /Kids [3 0 R] /Count 1 >>"));
-
-        var pageResources = image is null
-            ? "<< /Font << /F1 4 0 R >> >>"
-            : "<< /Font << /F1 4 0 R >> /XObject << /Im1 6 0 R >> >>";
-
-        objects.Add(Ascii($"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources {pageResources} /Contents 5 0 R >>"));
-        objects.Add(Ascii("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"));
-        objects.Add(StreamObject(Ascii(content)));
-
-        if (image is not null)
+        return Document.Create(container =>
         {
-            var imageHeader = Ascii($"<< /Type /XObject /Subtype /Image /Width {image.Width} /Height {image.Height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length {image.Bytes.Length} >>\nstream\n");
-            var imageFooter = Ascii("\nendstream");
-            objects.Add(Concat(imageHeader, image.Bytes, imageFooter));
-        }
-
-        return BuildPdfFile(objects);
-    }
-
-    private static IReadOnlyList<PdfLine> BuildLines(RegistroVacunoDetalle v, bool hasImage, CultureInfo culture, Dictionary<string, string> headers)
-    {
-        string Header(string key, string defaultVal) => headers.TryGetValue(key, out var val) ? val : defaultVal;
-
-        var lines = new List<PdfLine>
-        {
-            new("ZooTech | Modulo Vacuno", 18, true),
-            new(Header("title", "Reporte de registro por vacuno"), 14, true),
-            new($"{Header("gen_date", "Generado")}: {DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", culture)}", 9, false),
-            new("", 8, false),
-            new(Header("id_data", "Datos de Identificacion"), 12, true),
-            Row(Header("id", "ID"), v.Id.ToString(culture)),
-            Row(Header("code", "Codigo"), v.Codigo),
-            Row(Header("name", "Nombre"), v.Nombre),
-            Row(Header("birth_date", "Fecha de nacimiento"), FormatDate(v.FechaNacimiento, culture)),
-            Row(Header("sex", "Sexo"), v.Sexo),
-            Row(Header("breed", "Raza"), v.Raza),
-            Row(Header("color", "Color"), v.Color),
-            Row(Header("status", "Estado"), v.Estado),
-            Row(Header("reg_date", "Fecha de registro"), FormatDate(v.FechaRegistro, culture)),
-            new("", 8, false),
-            new(Header("traceability", "Trazabilidad"), 12, true),
-            Row(Header("sire_code", "Codigo padre"), v.CodigoPadre),
-            Row(Header("dam_code", "Codigo madre"), v.CodigoMadre),
-            Row(Header("gsire_code", "Codigo abuelo"), v.CodigoAbuelo),
-            Row(Header("gdam_code", "Codigo abuela"), v.CodigoAbuela),
-            Row(Header("farm", "Granja"), v.Granja),
-            Row(Header("district", "Distrito"), v.Distrito),
-            Row(Header("province", "Provincia"), v.Provincia),
-            Row(Header("department", "Departamento"), v.Departamento),
-            Row(Header("origin", "Procedencia"), v.Procedencia),
-            Row(Header("acquired_by", "Adquisicion por"), v.AdquisicionPor),
-            Row(Header("purchase_price", "Precio compra"), FormatDecimal(v.PrecioCompra, culture)),
-            Row(Header("purchase_date", "Fecha adquisicion"), FormatDate(v.FechaAdquisicion, culture)),
-            new("", 8, false),
-            new(Header("specialization", "Especializacion"), 12, true),
-            Row(Header("apt_for", "Apto para"), v.AptoPara),
-            Row(Header("spec_date", "Fecha especificacion"), FormatDate(v.FechaEspecificacion, culture)),
-            new("", 8, false),
-            new(Header("observations_title", "Observaciones"), 12, true),
-            Row(Header("observations", "Observaciones"), v.Observaciones),
-            Row(Header("status_reason", "Motivo estado"), v.MotivoEstado),
-            Row("Foto", hasImage ? "Incluida en el reporte" : "Sin foto disponible o formato no compatible"),
-            new("", 8, false),
-            new(Header("audit", "Auditoria"), 12, true),
-            Row(Header("created_by", "Creado por"), v.CreadoPor),
-            Row(Header("created_at", "Creado en"), FormatDateTime(v.CreadoEn, culture)),
-            Row(Header("updated_by", "Actualizado por"), v.ActualizadoPor),
-            Row(Header("updated_at", "Actualizado en"), FormatDateTime(v.ActualizadoEn, culture))
-        };
-
-        return lines;
-    }
-
-    private static PdfLine Row(string label, string? value) => new($"{label}: {value ?? string.Empty}", 9, false);
-
-    private static string BuildPageContent(IReadOnlyList<PdfLine> lines, JpegImageInfo? image)
-    {
-        var sb = new StringBuilder();
-
-        if (image is not null)
-        {
-            var box = FitImage(image.Width, image.Height, 130, 110);
-            sb.Append(CultureInfo.InvariantCulture, $"q {box.Width:0.##} 0 0 {box.Height:0.##} 420 690 cm /Im1 Do Q\n");
-        }
-
-        var y = 800;
-        foreach (var line in lines)
-        {
-            if (y < 42)
+            container.Page(page =>
             {
-                break;
-            }
+                page.Size(PageSizes.A4);
+                page.Margin(1.5f, Unit.Centimetre);
+                page.PageColor(Colors.White);
+                page.DefaultTextStyle(x => x.FontSize(10).FontFamily(Fonts.Lato));
 
-            if (string.IsNullOrEmpty(line.Text))
-            {
-                y -= line.FontSize + 4;
-                continue;
-            }
-
-            var x = line.IsSection ? 50 : 60;
-            var safeText = EscapePdfText(TrimToLength(line.Text, line.IsSection ? 80 : 105));
-            sb.Append(CultureInfo.InvariantCulture, $"BT /F1 {line.FontSize} Tf {x} {y} Td ({safeText}) Tj ET\n");
-            y -= line.IsSection ? 18 : 14;
-        }
-
-        sb.Append("BT /F1 8 Tf 50 28 Td (Documento generado automaticamente por ZooTech) Tj ET\n");
-        return sb.ToString();
+                page.Header().Element(c => ComposeHeader(c, vacuno, culture));
+                page.Content().Element(c => ComposeContent(c, vacuno, photoPath, culture));
+                page.Footer().Element(ComposeFooter);
+            });
+        });
     }
 
-    private static byte[] BuildPdfFile(IReadOnlyList<byte[]> objectBodies)
+    private void ComposeHeader(IContainer container, RegistroVacunoDetalle vacuno, CultureInfo culture)
     {
-        using var ms = new MemoryStream();
-        WriteAscii(ms, "%PDF-1.4\n%\u00E2\u00E3\u00CF\u00D3\n");
-
-        var offsets = new List<long> { 0 };
-
-        for (var i = 0; i < objectBodies.Count; i++)
+        container.Row(row =>
         {
-            offsets.Add(ms.Position);
-            WriteAscii(ms, $"{i + 1} 0 obj\n");
-            ms.Write(objectBodies[i]);
-            WriteAscii(ms, "\nendobj\n");
-        }
+            row.RelativeItem().Column(column =>
+            {
+                column.Item().Text("ZooTech").FontSize(28).SemiBold().FontColor(Colors.Blue.Darken2);
+                column.Item().Text("Reporte Individual de Vacuno").FontSize(16).FontColor(Colors.Grey.Darken2);
+                column.Item().PaddingTop(5).Text($"Generado el: {DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", culture)}")
+                      .FontSize(9).FontColor(Colors.Grey.Medium);
+            });
 
-        var xrefPosition = ms.Position;
-        WriteAscii(ms, $"xref\n0 {objectBodies.Count + 1}\n");
-        WriteAscii(ms, "0000000000 65535 f \n");
-        foreach (var offset in offsets.Skip(1))
-        {
-            WriteAscii(ms, $"{offset:0000000000} 00000 n \n");
-        }
-
-        WriteAscii(ms, $"trailer\n<< /Size {objectBodies.Count + 1} /Root 1 0 R >>\nstartxref\n{xrefPosition}\n%%EOF");
-        return ms.ToArray();
+            row.ConstantItem(120).AlignRight().Column(c => 
+            {
+                c.Item().Text("ID del Sistema").FontSize(9).FontColor(Colors.Grey.Medium).AlignRight();
+                c.Item().Text($"#{vacuno.Id}").FontSize(18).Bold().FontColor(Colors.Blue.Darken3).AlignRight();
+            });
+        });
     }
 
-    private static byte[] StreamObject(byte[] streamBytes)
+    private void ComposeContent(IContainer container, RegistroVacunoDetalle vacuno, string? photoPath, CultureInfo culture)
     {
-        var header = Ascii($"<< /Length {streamBytes.Length} >>\nstream\n");
-        var footer = Ascii("\nendstream");
-        return Concat(header, streamBytes, footer);
-    }
-
-    private static JpegImageInfo? TryLoadJpegImage(RegistroVacunoDetalle vacuno)
-    {
-        foreach (var candidate in GetImagePathCandidates(vacuno))
+        container.PaddingVertical(1, Unit.Centimetre).Column(column =>
         {
-            if (!File.Exists(candidate))
-            {
-                continue;
-            }
+            column.Spacing(20);
 
-            var extension = Path.GetExtension(candidate).ToLowerInvariant();
-            if (extension is not ".jpg" and not ".jpeg")
+            column.Item().Row(row =>
             {
-                continue;
-            }
+                row.RelativeItem().Column(c => ComposeIdentificationSection(c, vacuno, culture));
 
-            try
-            {
-                var bytes = File.ReadAllBytes(candidate);
-                var dimensions = TryGetJpegDimensions(bytes);
-                if (dimensions is null)
+                if (!string.IsNullOrEmpty(photoPath))
                 {
-                    continue;
+                    row.ConstantItem(160).PaddingLeft(20).AlignRight()
+                        .Width(140).Height(140).Border(1).BorderColor(Colors.Grey.Lighten2)
+                        .Image(photoPath).FitArea();
                 }
+            });
 
-                return new JpegImageInfo(bytes, dimensions.Value.Width, dimensions.Value.Height);
-            }
-            catch
+            column.Item().Element(c => ComposeSection(c, "Trazabilidad", table =>
             {
-                // La foto nunca debe interrumpir la generacion del reporte.
-            }
-        }
+                AddTableItem(table, "Código Padre", vacuno.CodigoPadre);
+                AddTableItem(table, "Código Madre", vacuno.CodigoMadre);
+                AddTableItem(table, "Código Abuelo", vacuno.CodigoAbuelo);
+                AddTableItem(table, "Código Abuela", vacuno.CodigoAbuela);
+                AddTableItem(table, "Granja", vacuno.Granja);
+                AddTableItem(table, "Distrito", vacuno.Distrito);
+                AddTableItem(table, "Provincia", vacuno.Provincia);
+                AddTableItem(table, "Departamento", vacuno.Departamento);
+                AddTableItem(table, "Procedencia", vacuno.Procedencia);
+                AddTableItem(table, "Adquisición por", vacuno.AdquisicionPor);
+                AddTableItem(table, "Precio compra", vacuno.PrecioCompra.HasValue ? vacuno.PrecioCompra.Value.ToString("0.##", culture) : "-");
+                AddTableItem(table, "Fecha adquisición", vacuno.FechaAdquisicion.HasValue ? vacuno.FechaAdquisicion.Value.ToString("yyyy-MM-dd", culture) : "-");
+            }));
 
-        return null;
+            column.Item().Element(c => ComposeSection(c, "Especialización", table =>
+            {
+                AddTableItem(table, "Apto para", vacuno.AptoPara);
+                AddTableItem(table, "Fecha especificación", vacuno.FechaEspecificacion.HasValue ? vacuno.FechaEspecificacion.Value.ToString("yyyy-MM-dd", culture) : "-");
+            }));
+
+            column.Item().Element(c => ComposeSection(c, "Observaciones y Estado", table =>
+            {
+                AddTableItem(table, "Observaciones", vacuno.Observaciones, 4);
+                AddTableItem(table, "Motivo estado", vacuno.MotivoEstado, 4);
+            }));
+
+            column.Item().Element(c => ComposeSection(c, "Auditoría", table =>
+            {
+                AddTableItem(table, "Creado por", vacuno.CreadoPor);
+                AddTableItem(table, "Creado en", vacuno.CreadoEn.ToString("yyyy-MM-dd HH:mm:ss", culture));
+                AddTableItem(table, "Actualizado por", vacuno.ActualizadoPor);
+                AddTableItem(table, "Actualizado en", vacuno.ActualizadoEn.ToString("yyyy-MM-dd HH:mm:ss", culture));
+            }));
+        });
     }
 
-    private static IEnumerable<string> GetImagePathCandidates(RegistroVacunoDetalle vacuno)
+    private void ComposeIdentificationSection(ColumnDescriptor column, RegistroVacunoDetalle vacuno, CultureInfo culture)
     {
-        var values = new[]
+        ComposeSection(column.Item(), "Datos de Identificación", table =>
+        {
+            AddTableItem(table, "Código", vacuno.Codigo);
+            AddTableItem(table, "Nombre", vacuno.Nombre);
+            AddTableItem(table, "Fecha nacimiento", vacuno.FechaNacimiento.ToString("yyyy-MM-dd", culture));
+            AddTableItem(table, "Sexo", vacuno.Sexo);
+            AddTableItem(table, "Raza", vacuno.Raza);
+            AddTableItem(table, "Color", vacuno.Color);
+            AddTableItem(table, "Estado Actual", vacuno.Estado);
+            AddTableItem(table, "Fecha registro", vacuno.FechaRegistro.ToString("yyyy-MM-dd", culture));
+        });
+    }
+
+    private void ComposeSection(IContainer container, string title, Action<TableDescriptor> buildTable)
+    {
+        container.Column(column =>
+        {
+            column.Item()
+                .Background(Colors.Blue.Lighten4)
+                .Padding(6)
+                .Text(title)
+                .SemiBold()
+                .FontSize(12)
+                .FontColor(Colors.Blue.Darken3);
+
+            column.Item().Padding(10).Table(table =>
+            {
+                table.ColumnsDefinition(columns =>
+                {
+                    columns.ConstantColumn(120);
+                    columns.RelativeColumn();
+                    columns.ConstantColumn(120);
+                    columns.RelativeColumn();
+                });
+
+                buildTable(table);
+            });
+        });
+    }
+
+    private void AddTableItem(TableDescriptor table, string label, string? value, uint columnsSpan = 1)
+    {
+        table.Cell().ColumnSpan(1).PaddingBottom(5).Text($"{label}:").SemiBold().FontColor(Colors.Grey.Darken3);
+        table.Cell().ColumnSpan(columnsSpan).PaddingBottom(5).Text(string.IsNullOrWhiteSpace(value) ? "-" : value);
+    }
+
+    private void ComposeFooter(IContainer container)
+    {
+        container.AlignCenter().Text(x =>
+        {
+            x.Span("Página ");
+            x.CurrentPageNumber();
+            x.Span(" de ");
+            x.TotalPages();
+            x.Span(" - Documento generado automáticamente por ZooTech").FontSize(8).FontColor(Colors.Grey.Medium);
+        });
+    }
+
+    private static string? GetBestPhotoPath(RegistroVacunoDetalle vacuno)
+    {
+        var candidates = new[]
         {
             vacuno.FotoUrl,
             vacuno.FotoRuta,
@@ -269,142 +212,35 @@ public sealed class RegistroVacunoPdfReportService : IRegistroVacunoPdfReportSer
         var baseDirectory = AppContext.BaseDirectory;
         var wwwroot = Path.Combine(baseDirectory, "wwwroot");
 
-        foreach (var value in values)
+        foreach (var candidate in candidates)
         {
-            if (string.IsNullOrWhiteSpace(value))
-            {
+            if (string.IsNullOrWhiteSpace(candidate)) continue;
+
+            if (Uri.TryCreate(candidate, UriKind.Absolute, out var uri) && uri.IsFile && File.Exists(uri.LocalPath))
+                return uri.LocalPath;
+
+            if (Uri.TryCreate(candidate, UriKind.Absolute, out uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
                 continue;
-            }
 
-            if (Uri.TryCreate(value, UriKind.Absolute, out var uri) && uri.IsFile)
-            {
-                yield return uri.LocalPath;
-                continue;
-            }
+            if (Path.IsPathRooted(candidate) && File.Exists(candidate))
+                return candidate;
 
-            if (Uri.TryCreate(value, UriKind.Absolute, out uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
-            {
-                continue;
-            }
+            var relative = candidate.TrimStart('/', '\\');
+            var inWwwroot = Path.Combine(wwwroot, relative);
+            if (File.Exists(inWwwroot)) return inWwwroot;
 
-            if (Path.IsPathRooted(value))
-            {
-                yield return value;
-                continue;
-            }
-
-            var relative = value.TrimStart('/', '\\');
-            yield return Path.Combine(wwwroot, relative);
-            yield return Path.Combine(baseDirectory, relative);
-        }
-    }
-
-    private static (int Width, int Height)? TryGetJpegDimensions(byte[] bytes)
-    {
-        if (bytes.Length < 4 || bytes[0] != 0xFF || bytes[1] != 0xD8)
-        {
-            return null;
-        }
-
-        var index = 2;
-        while (index + 9 < bytes.Length)
-        {
-            if (bytes[index] != 0xFF)
-            {
-                index++;
-                continue;
-            }
-
-            var marker = bytes[index + 1];
-            index += 2;
-
-            if (marker == 0xD9 || marker == 0xDA)
-            {
-                break;
-            }
-
-            if (index + 2 > bytes.Length)
-            {
-                break;
-            }
-
-            var length = ReadBigEndianUInt16(bytes, index);
-            if (length < 2 || index + length > bytes.Length)
-            {
-                break;
-            }
-
-            if (marker is 0xC0 or 0xC1 or 0xC2 or 0xC3 or 0xC5 or 0xC6 or 0xC7 or 0xC9 or 0xCA or 0xCB or 0xCD or 0xCE or 0xCF)
-            {
-                var height = ReadBigEndianUInt16(bytes, index + 3);
-                var width = ReadBigEndianUInt16(bytes, index + 5);
-                return (width, height);
-            }
-
-            index += length;
+            var inBase = Path.Combine(baseDirectory, relative);
+            if (File.Exists(inBase)) return inBase;
         }
 
         return null;
     }
 
-    private static int ReadBigEndianUInt16(byte[] bytes, int index) => (bytes[index] << 8) + bytes[index + 1];
-
-    private static (double Width, double Height) FitImage(int width, int height, double maxWidth, double maxHeight)
-    {
-        var ratio = Math.Min(maxWidth / width, maxHeight / height);
-        return (width * ratio, height * ratio);
-    }
-
     private static string SanitizeFileNamePart(string value)
     {
+        if (string.IsNullOrWhiteSpace(value)) return "vacuno";
         var invalidChars = Path.GetInvalidFileNameChars();
-        var safe = new string(value
-            .Where(ch => !invalidChars.Contains(ch) && !char.IsWhiteSpace(ch))
-            .ToArray());
-
+        var safe = new string(value.Where(ch => !invalidChars.Contains(ch) && !char.IsWhiteSpace(ch)).ToArray());
         return string.IsNullOrWhiteSpace(safe) ? "vacuno" : safe;
     }
-
-    private static string TrimToLength(string value, int maxLength) =>
-        value.Length <= maxLength ? value : value[..Math.Max(0, maxLength - 3)] + "...";
-
-    private static string EscapePdfText(string value) =>
-        value.Replace("\\", "\\\\", StringComparison.Ordinal)
-             .Replace("(", "\\(", StringComparison.Ordinal)
-             .Replace(")", "\\)", StringComparison.Ordinal)
-             .Replace("\r", " ", StringComparison.Ordinal)
-             .Replace("\n", " ", StringComparison.Ordinal);
-
-    private static string FormatDate(DateOnly? date, CultureInfo culture) => date?.ToString("yyyy-MM-dd", culture) ?? string.Empty;
-
-    private static string FormatDecimal(decimal? value, CultureInfo culture) => value?.ToString("0.##", culture) ?? string.Empty;
-
-    private static string FormatDateTime(DateTime? value, CultureInfo culture) => value?.ToString("yyyy-MM-dd HH:mm:ss", culture) ?? string.Empty;
-
-    private static byte[] Ascii(string value) => Encoding.ASCII.GetBytes(WebUtility.HtmlDecode(value));
-
-    private static byte[] Concat(params byte[][] arrays)
-    {
-        var length = arrays.Sum(a => a.Length);
-        var result = new byte[length];
-        var offset = 0;
-
-        foreach (var array in arrays)
-        {
-            Buffer.BlockCopy(array, 0, result, offset, array.Length);
-            offset += array.Length;
-        }
-
-        return result;
-    }
-
-    private static void WriteAscii(Stream stream, string value)
-    {
-        var bytes = Encoding.ASCII.GetBytes(value);
-        stream.Write(bytes, 0, bytes.Length);
-    }
-
-    private sealed record PdfLine(string Text, int FontSize, bool IsSection);
-
-    private sealed record JpegImageInfo(byte[] Bytes, int Width, int Height);
 }

@@ -19,10 +19,7 @@ public static class ReporteVacunoDateRangeResolver
 
         if (desde > hasta)
         {
-            throw new ApplicationRuleException(
-                "VALIDATION_ERROR",
-                "Los datos enviados no son validos.",
-                [new ApplicationErrorDetail("fechaDesde", "fechaDesde no puede ser mayor que fechaHasta.")]);
+            throw new ArgumentException("fechaDesde no puede ser mayor que fechaHasta.");
         }
 
         return new ReporteVacunoDateRange(desde, hasta);
@@ -45,9 +42,6 @@ public static class ReporteVacunoDateRangeResolver
             return date;
         }
 
-        throw new ApplicationRuleException(
-            "VALIDATION_ERROR",
-            "Los datos enviados no son validos.",
-            [new ApplicationErrorDetail(field, "La fecha debe usar formato YYYY-MM-DD.")]);
+        throw new ArgumentException($"El parametro {field} tiene un formato invalido. Use {dateFormat}.");
     }
 }

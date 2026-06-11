@@ -1,19 +1,17 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using ZooTech.Infrastructure.Persistence.Context;
-
 using ZooTech.Application.Common.Gateway.Time;
-using ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ListarReporteVacunos;
-using ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ObtenerRegistroVacunoReporte;
-using ZooTech.Infrastructure.Persistence.Repositories;
-using ZooTech.Infrastructure.Reports;
-using ZooTech.Infrastructure.Storage;
-using ZooTech.Infrastructure.Time;
-using ZooTech.Infrastructure.Tenant;
-using ZooTech.Application.Common.Gateway.Configuration;
-using ZooTech.Application.Common.Gateway.Context;
-using ZooTech.Infrastructure.Configuration.Dev;
+using ZooTech.Domain.Module_Celo.Interfaces;
+using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
+using ZooTech.Domain.Module_Sanidad.Interfaces;
+using ZooTech.Domain.Module_Vacuno.Interfaces;
+using ZooTech.Infrastructure.Common.Time;
+using ZooTech.Infrastructure.Persistence.Context;
+using ZooTech.Infrastructure.Persistence.Modules.Module_Celo.Repositories;
+using ZooTech.Infrastructure.Persistence.Modules.Module_ProduccionLeche.Repositories;
+using ZooTech.Infrastructure.Persistence.Modules.Module_Sanidad.Repositories;
+using ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Repositories;
 
 namespace ZooTech.Infrastructure;
 
@@ -21,83 +19,49 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services,
-        Microsoft.Extensions.Configuration.IConfiguration configuration)
+        IConfiguration configuration)
     {
+        QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
+        
+
         // ============================================
         // Configuration Options
         // ============================================
-        services.Configure<ReportStorageOptions>(options => 
+        services.Configure<ZooTech.Infrastructure.Storage.ReportStorageOptions>(options => 
         {
             options.ReportesBasePath = configuration["StorageConfig:ReportesBasePath"] ?? options.ReportesBasePath;
             options.ReportesVacunosPath = configuration["StorageConfig:ReportesVacunosPath"] ?? options.ReportesVacunosPath;
             options.ReportesUrlBase = configuration["StorageConfig:ReportesUrlBase"] ?? options.ReportesUrlBase;
         });
-
-        // ============================================
-        // Connection String
-        // ============================================
-
-        var connectionString =
-            configuration.GetConnectionString("DefaultConnection");
-
-        // ============================================
-        // DbContext
-        // ============================================
-
-        int commandTimeout = 180;
-        if (int.TryParse(configuration["ConnectionStrings:CommandTimeout"], out var parsedTimeout))
-        {
-            commandTimeout = parsedTimeout;
-        }
+        var connectionString = configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("No se encontró ConnectionStrings:DefaultConnection.");
 
         services.AddDbContext<GanaderiaDbContext>(options =>
-        {
-            // Aumentar tiempo de espera y habilitar reintentos frente a errores transitorios
-            options.UseSqlServer(connectionString, sqlOptions =>
-            {
-                sqlOptions.CommandTimeout(commandTimeout); // segundos
-                sqlOptions.EnableRetryOnFailure();
-            });
-        });
+            options.UseSqlServer(connectionString));
+
+        // ============================================
+        // Transversal
+        // ============================================
+
+        services.AddScoped<IDateTimeProvider, DateTimeProvider>();
 
         // ============================================
         // Repositories
         // ============================================
 
-        services.AddScoped<IReporteVacunoReadRepository, ReporteVacunoReadRepository>();
-        services.AddScoped<IRegistroVacunoReadRepository, RegistroVacunoReadRepository>();
-        services.AddScoped<IRegistroVacunoExcelReportService, RegistroVacunoExcelReportService>();
-        services.AddScoped<IRegistroVacunoPdfReportService, RegistroVacunoPdfReportService>();
-        services.AddScoped<IListadoVacunosReportFileService, ListadoVacunosReportFileService>();
+        services.AddScoped<ICeloRepository, CeloRepository>();
+        services.AddScoped<IOrdenioRepository, OrdenioRepository>();
+        services.AddScoped<IVacunoRepository, VacunoRepository>();
+        services.AddScoped<ITriajeRepository, TriajeRepository>();
+        services.AddScoped<ITipoPesoRepository, TipoPesoRepository>();
 
-        // ============================================
-        // External Services
-        // ============================================
-
-        // services.AddScoped<IJwtService, JwtService>();
-        services.AddScoped<IDateTimeProvider, DateTimeProvider>();
-
-        var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-        if (env == "Development" || string.IsNullOrWhiteSpace(env))
-        {
-            services.AddSingleton<ISettingProvider, LocalFallbackSettingProvider>();
-        }
-        else
-        {
-            // TODO: Compañero implementará el Setting Provider real.
-            // services.AddScoped<ISettingProvider, RealSettingProvider>();
-        }
-
-        // ============================================
-        // Tenant
-        // ============================================
-        services.AddScoped<ITenantContext, TenantContext>();
-
-        // ============================================
-        // Caching
-        // ============================================
-
-        // services.AddMemoryCache();
+        // Reportes Repositories & Services
+        services.AddScoped<ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ListarReporteVacunos.IReporteVacunoReadRepository, ZooTech.Infrastructure.Persistence.Repositories.ReporteVacunoReadRepository>();
+        services.AddScoped<ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ObtenerRegistroVacunoReporte.IRegistroVacunoReadRepository, ZooTech.Infrastructure.Persistence.Repositories.RegistroVacunoReadRepository>();
+        services.AddScoped<ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ObtenerRegistroVacunoReporte.IRegistroVacunoExcelReportService, ZooTech.Infrastructure.Reports.RegistroVacunoExcelReportService>();
+        services.AddScoped<ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ObtenerRegistroVacunoReporte.IRegistroVacunoPdfReportService, ZooTech.Infrastructure.Reports.RegistroVacunoPdfReportService>();
+        services.AddScoped<ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ListarReporteVacunos.IListadoVacunosReportFileService, ZooTech.Infrastructure.Reports.ListadoVacunosReportFileService>();
 
         return services;
     }

@@ -8,7 +8,7 @@ using ZooTech.InterfaceAdapters.Modules.Module_ReporteVacuno.Mappers;
 namespace ZooTech.InterfaceAdapters.Modules.Module_ReporteVacuno.Controllers;
 
 [ApiController]
-[Route("vacunos")]
+[Route("api/v1/vacunos")]
 [Tags("Vacunos")]
 public sealed class VacunosController : ControllerBase
 {

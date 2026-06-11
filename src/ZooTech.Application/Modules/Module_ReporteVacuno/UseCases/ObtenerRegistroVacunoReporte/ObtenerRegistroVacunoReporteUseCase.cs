@@ -1,7 +1,6 @@
 using ZooTech.Application.Common.Exceptions;
 
-using ZooTech.Application.Common.Gateway.Context;
-using ZooTech.Application.Common.Gateway.Configuration;
+
 
 namespace ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ObtenerRegistroVacunoReporte;
 
@@ -10,21 +9,14 @@ public sealed class ObtenerRegistroVacunoReporteUseCase : IObtenerRegistroVacuno
     private readonly IRegistroVacunoReadRepository _repository;
     private readonly IRegistroVacunoExcelReportService _excelReportService;
     private readonly IRegistroVacunoPdfReportService _pdfReportService;
-    private readonly ISettingProvider _settingProvider;
-    private readonly ITenantContext _tenantContext;
-
     public ObtenerRegistroVacunoReporteUseCase(
         IRegistroVacunoReadRepository repository,
         IRegistroVacunoExcelReportService excelReportService,
-        IRegistroVacunoPdfReportService pdfReportService,
-        ISettingProvider settingProvider,
-        ITenantContext tenantContext)
+        IRegistroVacunoPdfReportService pdfReportService)
     {
         _repository = repository;
         _excelReportService = excelReportService;
         _pdfReportService = pdfReportService;
-        _settingProvider = settingProvider;
-        _tenantContext = tenantContext;
     }
 
     public async Task<RegistroVacunoReporteResponse> HandleAsync(
@@ -33,14 +25,10 @@ public sealed class ObtenerRegistroVacunoReporteUseCase : IObtenerRegistroVacuno
     {
         if (query.VacunoId <= 0)
         {
-            throw new ApplicationRuleException(
-                "VALIDATION_ERROR",
-                "Los datos enviados no son validos.",
-                [new ApplicationErrorDetail("vacunoId", "El ID del vacuno debe ser mayor que cero.")]);
+            throw new ArgumentException("El ID del vacuno debe ser mayor que cero.");
         }
 
-        var allowedFormatsRaw = await _settingProvider.GetSettingAsync<string[]>("REPORTS_ALLOWED_FORMATS", _tenantContext.TenantId);
-        var allowedFormats = allowedFormatsRaw is { Length: > 0 } ? allowedFormatsRaw : ["json", "pdf", "excel"];
+        string[] allowedFormats = ["json", "pdf", "excel"];
 
         var formato = Normalize(query.Formato) ?? "json";
         EnsureFormatoValido(formato, allowedFormats);
@@ -49,11 +37,7 @@ public sealed class ObtenerRegistroVacunoReporteUseCase : IObtenerRegistroVacuno
 
         if (detalle is null)
         {
-            throw new ApplicationRuleException(
-                "VACUNO_NOT_FOUND",
-                "No existe un vacuno con el ID enviado.",
-                [],
-                404);
+            throw new ZooTech.Application.Common.Exceptions.NotFoundException("No existe un vacuno con el ID enviado.");
         }
 
         if (formato is "excel")
@@ -92,10 +76,7 @@ public sealed class ObtenerRegistroVacunoReporteUseCase : IObtenerRegistroVacuno
     {
         if (!allowedFormats.Contains(formato, StringComparer.OrdinalIgnoreCase))
         {
-            throw new ApplicationRuleException(
-                "INVALID_REPORT_FORMAT",
-                $"El formato debe ser uno de los permitidos: {string.Join(", ", allowedFormats)}.",
-                [new ApplicationErrorDetail("formato", "Formato no permitido.")]);
+            throw new ArgumentException($"El formato debe ser uno de los permitidos: {string.Join(", ", allowedFormats)}.");
         }
     }
 }

@@ -5,8 +5,6 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 using ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ObtenerRegistroVacunoReporte;
-using ZooTech.Application.Common.Gateway.Context;
-using ZooTech.Application.Common.Gateway.Configuration;
 using ZooTech.Infrastructure.Storage;
 
 namespace ZooTech.Infrastructure.Reports;
@@ -14,46 +12,32 @@ namespace ZooTech.Infrastructure.Reports;
 public sealed class RegistroVacunoExcelReportService : IRegistroVacunoExcelReportService
 {
     private readonly ReportStorageOptions _storageOptions;
-    private readonly ISettingProvider _settingProvider;
-    private readonly ITenantContext _tenantContext;
 
     public RegistroVacunoExcelReportService(
-        IOptions<ReportStorageOptions> storageOptions,
-        ISettingProvider settingProvider,
-        ITenantContext tenantContext)
+        IOptions<ReportStorageOptions> storageOptions)
     {
         _storageOptions = storageOptions.Value;
-        _settingProvider = settingProvider;
-        _tenantContext = tenantContext;
     }
 
     public async Task<RegistroVacunoExcelReportResult> GenerateAsync(
         RegistroVacunoDetalle vacuno,
         CancellationToken cancellationToken = default)
     {
-        var cultureStr = await _settingProvider.GetSettingAsync<string>("REPORTS_CULTURE_INFO", _tenantContext.TenantId);
-        var culture = string.IsNullOrWhiteSpace(cultureStr) ? CultureInfo.InvariantCulture : new CultureInfo(cultureStr);
+        var culture = CultureInfo.InvariantCulture;
 
-        var namePattern = await _settingProvider.GetSettingAsync<string>("REPORTS_NAME_PATTERN", _tenantContext.TenantId);
-        if (string.IsNullOrWhiteSpace(namePattern)) namePattern = "reporte_{0}_{1}.xlsx";
+        var namePattern = "reporte_{0}_{1}.xlsx";
 
-        var headersJson = await _settingProvider.GetSettingAsync<string>("REPORTS_EXCEL_HEADERS", _tenantContext.TenantId);
-        var headers = string.IsNullOrWhiteSpace(headersJson)
-            ? new Dictionary<string, string>()
-            : JsonSerializer.Deserialize<Dictionary<string, string>>(headersJson) ?? new Dictionary<string, string>();
+        var headers = new Dictionary<string, string>();
 
         var codigo = SanitizeFileNamePart(vacuno.Codigo);
         var fecha = DateTime.UtcNow.ToString("yyyyMMdd", culture);
         var fileName = string.Format(culture, namePattern, codigo, fecha);
 
-        var basePath = await _settingProvider.GetSettingAsync<string>("REPORTS_BASE_PATH", _tenantContext.TenantId);
-        if (string.IsNullOrWhiteSpace(basePath)) basePath = _storageOptions.ReportesBasePath;
+        var basePath = _storageOptions.ReportesBasePath;
 
-        var vacunosPath = await _settingProvider.GetSettingAsync<string>("REPORTS_VACUNOS_PATH", _tenantContext.TenantId);
-        if (string.IsNullOrWhiteSpace(vacunosPath)) vacunosPath = _storageOptions.ReportesVacunosPath;
+        var vacunosPath = _storageOptions.ReportesVacunosPath;
 
-        var urlBase = await _settingProvider.GetSettingAsync<string>("REPORTS_URL_BASE", _tenantContext.TenantId);
-        if (string.IsNullOrWhiteSpace(urlBase)) urlBase = _storageOptions.ReportesUrlBase;
+        var urlBase = _storageOptions.ReportesUrlBase;
 
         var outputDirectory = Path.Combine(
             AppContext.BaseDirectory,

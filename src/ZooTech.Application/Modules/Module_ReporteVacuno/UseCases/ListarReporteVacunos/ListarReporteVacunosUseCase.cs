@@ -1,9 +1,6 @@
 using System.Globalization;
-using Microsoft.Extensions.Logging;
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Common.Gateway.Time;
-using ZooTech.Application.Common.Gateway.Context;
-using ZooTech.Application.Common.Gateway.Configuration;
 using ZooTech.Application.Modules.Module_ReporteVacuno.Common;
 
 namespace ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ListarReporteVacunos;
@@ -14,34 +11,24 @@ public sealed class ListarReporteVacunosUseCase : IListarReporteVacunosUseCase
     private readonly IReporteVacunoReadRepository _repository;
     private readonly IListadoVacunosReportFileService _reportFileService;
     private readonly IDateTimeProvider _dateTimeProvider;
-    private readonly ISettingProvider _settingProvider;
-    private readonly ITenantContext _tenantContext;
-    private readonly ILogger<ListarReporteVacunosUseCase> _logger;
 
     public ListarReporteVacunosUseCase(
         IReporteVacunoReadRepository repository,
         IListadoVacunosReportFileService reportFileService,
-        IDateTimeProvider dateTimeProvider,
-        ISettingProvider settingProvider,
-        ITenantContext tenantContext,
-        ILogger<ListarReporteVacunosUseCase> logger)
+        IDateTimeProvider dateTimeProvider)
     {
         _repository = repository;
         _reportFileService = reportFileService;
         _dateTimeProvider = dateTimeProvider;
-        _settingProvider = settingProvider;
-        _tenantContext = tenantContext;
-        _logger = logger;
     }
 
     public async Task<ListadoVacunosReporteResponse> HandleAsync(
         ListarReporteVacunosQuery query,
         CancellationToken cancellationToken = default)
     {
-        var defaultDays = await _settingProvider.GetSettingAsync<int>("REPORTS_DEFAULT_DAYS", _tenantContext.TenantId);
-        var dateFormat = await _settingProvider.GetSettingAsync<string>("REPORTS_DATE_FORMAT", _tenantContext.TenantId);
-        var allowedFormatsRaw = await _settingProvider.GetSettingAsync<string[]>("REPORTS_ALLOWED_FORMATS", _tenantContext.TenantId);
-        var allowedFormats = allowedFormatsRaw is { Length: > 0 } ? allowedFormatsRaw : ["json", "pdf", "excel"];
+        var defaultDays = 30;
+        var dateFormat = "yyyy-MM-dd";
+        string[] allowedFormats = ["json", "pdf", "excel"];
 
         var formato = Normalize(query.Formato) ?? "json";
         EnsureAllowed("formato", formato, allowedFormats, "INVALID_REPORT_FORMAT", "El formato debe ser json, pdf o excel.", "Formato no permitido.");
@@ -49,7 +36,7 @@ public sealed class ListarReporteVacunosUseCase : IListarReporteVacunosUseCase
         var rango = ReporteVacunoDateRangeResolver.Resolve(
             query.FechaDesde,
             query.FechaHasta,
-            _dateTimeProvider.Today,
+            DateOnly.FromDateTime(_dateTimeProvider.ServerNow),
             defaultDays,
             dateFormat);
 
@@ -71,10 +58,7 @@ public sealed class ListarReporteVacunosUseCase : IListarReporteVacunosUseCase
             EnsureAllowed("aptoPara", aptoPara, allowedAptos, "VALIDATION_ERROR", "Los datos enviados no son validos.", "Valor de aptoPara no permitido.");
         }
 
-        _logger.LogInformation(
-            "[ReporteVacuno] rango aplicado: [{FechaDesde} - {FechaHasta}]",
-            rango.FechaDesde,
-            rango.FechaHasta);
+
 
         var criteria = new ReporteVacunoListadoCriteria(
             rango.FechaDesde,
@@ -129,10 +113,7 @@ public sealed class ListarReporteVacunosUseCase : IListarReporteVacunosUseCase
 
         if (!int.TryParse(value.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var parsed))
         {
-            throw new ApplicationRuleException(
-                "VALIDATION_ERROR",
-                "Los datos enviados no son validos.",
-                [new ApplicationErrorDetail(field, $"El parametro {field} debe ser numerico.")]);
+            throw new ArgumentException($"El parametro {field} debe ser numerico.");
         }
 
         return parsed < 1 ? defaultValue : parsed;
@@ -151,9 +132,6 @@ public sealed class ListarReporteVacunosUseCase : IListarReporteVacunosUseCase
             return;
         }
 
-        throw new ApplicationRuleException(
-            code,
-            message,
-            [new ApplicationErrorDetail(field, detail)]);
+        throw new ArgumentException(detail);
     }
 }
