@@ -4,3 +4,6 @@ GET {{ZooTech.API_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
+
+GET {{ZooTech.API_HostAddress}}/v1/produccion-leche/
+Accept: application/json
