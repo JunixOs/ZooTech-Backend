@@ -1,6 +1,6 @@
 namespace ZooTech.Application.Modules.Module_Celo.UseCases.ListarCelos;
 
-public interface IListarCelosUseCase
+public interface IListarCelosInputPort
 {
-    Task<List<CeloListItemDto>> ExecuteAsync(CancellationToken cancellationToken = default);
+    Task<ListarCelosOutput> HandleAsync(CancellationToken cancellationToken = default);
 }

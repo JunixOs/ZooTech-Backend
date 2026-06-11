@@ -16,18 +16,18 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Celo.Controllers;
 [ApiExplorerSettings(GroupName = "public")]
 public sealed class CeloController : ControllerBase
 {
-    private readonly IListarCelosUseCase _listarCelosUseCase;
+    private readonly IListarCelosInputPort _listarCelosInputPort;
     private readonly IRegistrarCeloInputPort _registrarCeloInputPort;
     private readonly IEditarCeloInputPort _editarCeloInputPort;
     private readonly IEliminarCeloInputPort _eliminarCeloInputPort;
 
     public CeloController(
-        IListarCelosUseCase listarCelosUseCase,
+        IListarCelosInputPort listarCelosInputPort,
         IRegistrarCeloInputPort registrarCeloInputPort,
         IEditarCeloInputPort editarCeloInputPort,
         IEliminarCeloInputPort eliminarCeloInputPort)
     {
-        _listarCelosUseCase = listarCelosUseCase;
+        _listarCelosInputPort = listarCelosInputPort;
         _registrarCeloInputPort = registrarCeloInputPort;
         _editarCeloInputPort = editarCeloInputPort;
         _eliminarCeloInputPort = eliminarCeloInputPort;
@@ -37,9 +37,9 @@ public sealed class CeloController : ControllerBase
     [ProducesResponseType(typeof(GeneralResponseDTO<List<CeloItemResponse>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ListarCelos(CancellationToken cancellationToken)
     {
-        var items = await _listarCelosUseCase.ExecuteAsync(cancellationToken);
+        var output = await _listarCelosInputPort.HandleAsync(cancellationToken);
 
-        var response = items.Select(item => new CeloItemResponse
+        var response = output.Items.Select(item => new CeloItemResponse
         {
             CodigoRegistro = item.CodigoRegistro,
             Fecha = item.Fecha,
@@ -56,9 +56,9 @@ public sealed class CeloController : ControllerBase
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ListarVacasEnCelo(CancellationToken cancellationToken)
     {
-        var items = await _listarCelosUseCase.ExecuteAsync(cancellationToken);
+        var output = await _listarCelosInputPort.HandleAsync(cancellationToken);
 
-        var response = items.Select((item, index) => new
+        var response = output.Items.Select((item, index) => new
         {
             id = index + 1,
             codigo = item.CodigoVacuno,

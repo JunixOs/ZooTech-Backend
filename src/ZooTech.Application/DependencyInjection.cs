@@ -87,7 +87,7 @@ public static class DependencyInjection
         // Use Cases - Module_Celo
         // ============================================
 
-        services.AddScoped<IListarCelosUseCase, ListarCelosUseCase>();
+        services.AddScoped<IListarCelosInputPort, ListarCelosInteractor>();
         services.AddScoped<IRegistrarCeloInputPort, RegistrarCeloInteractor>();
         services.AddScoped<IEditarCeloInputPort, EditarCeloInteractor>();
         services.AddScoped<IEliminarCeloInputPort, EliminarCeloInteractor>();
