@@ -1,5 +1,5 @@
 using Moq;
-using ZooTech.Application.Modules.Module_Sanidad.UseCases;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllTriajes;
 using ZooTech.Domain.Module_Sanidad.Entities;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
 
@@ -20,34 +20,76 @@ public class GetAllTriajesUseCaseTests
         // Arrange
         var triajes = new List<Triaje>
         {
-            new() { Id = 1, Codigo = "TRI001", VacunoId = 1, VacunoNombre = "Estrella", TipoPesoCode = "CONTROL", PesoKg = 100, FechaHora = DateTime.Now, EstadoRegistroCode = "ACTIVO", CreatedAt = DateTime.Now },
-            new() { Id = 2, Codigo = "TRI002", VacunoId = 2, VacunoNombre = "Luna", TipoPesoCode = "FINAL", PesoKg = 200, FechaHora = DateTime.Now, EstadoRegistroCode = "ACTIVO", CreatedAt = DateTime.Now }
+            CreateTriaje(1, "TRI001", 1, "Estrella", "CONTROL", 100),
+            CreateTriaje(2, "TRI002", 2, "Luna", "FINAL", 200)
         };
-        _repositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(triajes);
-        var useCase = new GetAllTriajesUseCase(_repositoryMock.Object);
+        _repositoryMock.Setup(r => r.GetAllAsync(
+                It.IsAny<int>(),
+                It.IsAny<int>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<decimal?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync((triajes, triajes.Count));
+        var useCase = new GetAllTriajesInteractor(_repositoryMock.Object);
 
         // Act
-        var result = await useCase.ExecuteAsync();
+        var result = await useCase.HandleAsync(new GetAllTriajesQuery(1, 10));
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(2, result.Count());
-        Assert.Equal("TRI001", result.First().Codigo);
-        Assert.Equal("Estrella", result.First().VacunoNombre);
+        Assert.Equal(2, result.Items.Count);
+        Assert.Equal("TRI001", result.Items.First().Codigo);
+        Assert.Equal("Estrella", result.Items.First().VacunoNombre);
     }
 
     [Fact]
     public async Task ExecuteAsync_CuandoNoHayTriajes_DebeRetornarListaVacia()
     {
         // Arrange
-        _repositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Triaje>());
-        var useCase = new GetAllTriajesUseCase(_repositoryMock.Object);
+        _repositoryMock.Setup(r => r.GetAllAsync(
+                It.IsAny<int>(),
+                It.IsAny<int>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<decimal?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync((new List<Triaje>(), 0));
+        var useCase = new GetAllTriajesInteractor(_repositoryMock.Object);
 
         // Act
-        var result = await useCase.ExecuteAsync();
+        var result = await useCase.HandleAsync(new GetAllTriajesQuery(1, 10));
 
         // Assert
         Assert.NotNull(result);
-        Assert.Empty(result);
+        Assert.Empty(result.Items);
+    }
+
+    private static Triaje CreateTriaje(long id, string codigo, long vacunoId, string vacunoNombre, string tipoPesoCode, decimal pesoKg)
+    {
+        var now = DateTime.UtcNow;
+
+        return Triaje.Rehydrate(
+            id: id,
+            codigo: codigo,
+            fechaHora: now,
+            vacunoId: vacunoId,
+            vacunoNombre: vacunoNombre,
+            tipoPesoCode: tipoPesoCode,
+            pesoKg: pesoKg,
+            observaciones: null,
+            estadoRegistroCode: "ACTIVO",
+            encargadoUsuarioId: null,
+            createdBy: null,
+            updatedBy: null,
+            deletedBy: null,
+            createdAt: now,
+            updatedAt: now,
+            deletedAt: null,
+            motivoEliminacion: null);
     }
 }

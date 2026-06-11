@@ -28,8 +28,7 @@ public class CreateOrdenioInteractorTests
             EncargadoUsuarioId: 2,
             Litros: 10,
             EstadoOrdenioCode: "ACTIVO",
-            Observaciones: null,
-            ActorUsuarioId: 2);
+            Observaciones: null);
 
         var action = () => interactor.HandleAsync(command, CancellationToken.None);
 
