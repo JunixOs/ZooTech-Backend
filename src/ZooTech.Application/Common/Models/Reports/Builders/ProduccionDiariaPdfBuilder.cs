@@ -2,6 +2,7 @@ using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using ZooTech.Application.Common.Models.Reports;
+using ZooTech.Domain.Entities.Configuration;
 
 namespace ZooTech.Application.Common.Models.Reports.Builders;
 
@@ -179,5 +180,5 @@ public class ProduccionDiariaPdfBuilder : IDocument
             .AlignMiddle();
 
     private static string FormatearFecha(DateTime? fecha)
-        => fecha.HasValue ? fecha.Value.ToString("dd/MM/yyyy") : "N/A";
+        => fecha.HasValue ? fecha.Value.ToString(ConfigSettings.Reporteleche.ReportFileDateFormat) : "N/A";
 }

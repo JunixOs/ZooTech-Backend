@@ -5,6 +5,7 @@ using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Ports
 using ZooTech.Domain.Module_ProduccionLeche.Entities;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Persistence.Entities;
+using ZooTech.Infrastructure.Persistence.Mappers;
 
 namespace ZooTech.Infrastructure.Persistence.Modules.Module_ProduccionLeche.Repositories;
 
@@ -44,7 +45,7 @@ public sealed class OrdenioRepository : IOrdenioRepository
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.id == id && x.deleted_at == null, cancellationToken);
 
-        return entity is null ? null : ToDomain(entity);
+        return entity is null ? null : OrdenioMapper.ToDomain(entity);
     }
 
     public async Task<(IReadOnlyList<OrdenioOutput> Items, int TotalCount)> ListAsync(ListOrdeniosQuery query, CancellationToken cancellationToken)
@@ -132,12 +133,104 @@ public sealed class OrdenioRepository : IOrdenioRepository
         return items;
     }
 
+    public async Task<IReadOnlyList<ProduccionComparativaDiariaItem>> GetProduccionComparativaDiariaAsync(DateTime? fechaDesde, DateTime? fechaHasta, long? vacunoId, CancellationToken cancellationToken)
+    {
+        var queryable = _dbContext.ordenios
+            .AsNoTracking()
+            .Where(x => x.deleted_at == null)
+            .AsQueryable();
+
+        if (vacunoId.HasValue)
+        {
+            queryable = queryable.Where(x => x.vacuno_id == vacunoId.Value);
+        }
+
+        if (fechaDesde.HasValue)
+        {
+            queryable = queryable.Where(x => x.fecha_hora >= fechaDesde.Value);
+        }
+
+        if (fechaHasta.HasValue)
+        {
+            queryable = queryable.Where(x => x.fecha_hora <= fechaHasta.Value);
+        }
+
+        var produccionRealPorDiaVacuno = await queryable
+            .GroupBy(x => new { Fecha = x.fecha_hora.Date, x.vacuno_id })
+            .Select(g => new
+            {
+                g.Key.Fecha,
+                g.Key.vacuno_id,
+                LitrosReales = g.Sum(x => x.litros),
+                CantidadOrdenios = g.Count()
+            })
+            .ToListAsync(cancellationToken);
+
+        if (produccionRealPorDiaVacuno.Count == 0)
+        {
+            return [];
+        }
+
+        var fechaMinima = DateOnly.FromDateTime(produccionRealPorDiaVacuno.Min(x => x.Fecha));
+        var fechaMaxima = DateOnly.FromDateTime(produccionRealPorDiaVacuno.Max(x => x.Fecha));
+        var vacunoIds = produccionRealPorDiaVacuno
+            .Select(x => x.vacuno_id)
+            .Distinct()
+            .ToList();
+
+        var produccionEstandar = await _dbContext.produccion_leche_estandars
+            .AsNoTracking()
+            .Where(x => x.vacuno_id.HasValue
+                        && vacunoIds.Contains(x.vacuno_id.Value)
+                        && x.fecha_inicio <= fechaMaxima
+                        && (!x.fecha_fin.HasValue || x.fecha_fin.Value >= fechaMinima))
+            .Select(x => new
+            {
+                VacunoId = x.vacuno_id!.Value,
+                x.fecha_inicio,
+                x.fecha_fin,
+                x.litros_esperados_dia
+            })
+            .ToListAsync(cancellationToken);
+
+        var items = produccionRealPorDiaVacuno
+            .Select(x =>
+            {
+                var fecha = DateOnly.FromDateTime(x.Fecha);
+                var litrosEstandar = produccionEstandar
+                    .Where(e => e.VacunoId == x.vacuno_id
+                                && e.fecha_inicio <= fecha
+                                && (!e.fecha_fin.HasValue || e.fecha_fin.Value >= fecha))
+                    .OrderByDescending(e => e.fecha_inicio)
+                    .Select(e => e.litros_esperados_dia)
+                    .FirstOrDefault();
+
+                return new
+                {
+                    x.Fecha,
+                    x.LitrosReales,
+                    LitrosEstandar = litrosEstandar,
+                    x.CantidadOrdenios
+                };
+            })
+            .GroupBy(x => x.Fecha)
+            .Select(g => new ProduccionComparativaDiariaItem(
+                g.Key,
+                g.Sum(x => x.LitrosReales),
+                g.Sum(x => x.LitrosEstandar),
+                g.Sum(x => x.CantidadOrdenios)))
+            .OrderByDescending(x => x.Fecha)
+            .ToList();
+
+        return items;
+    }
+
     public async Task<Ordenio> AddAsync(Ordenio ordenio, CancellationToken cancellationToken)
     {
-        var entity = ToEntity(ordenio);
+        var entity = OrdenioMapper.ToEntity(ordenio);
         _dbContext.ordenios.Add(entity);
         await _dbContext.SaveChangesAsync(cancellationToken);
-        return ToDomain(entity);
+        return OrdenioMapper.ToDomain(entity);
     }
 
     public async Task<Ordenio> UpdateAsync(Ordenio ordenio, CancellationToken cancellationToken)
@@ -158,7 +251,7 @@ public sealed class OrdenioRepository : IOrdenioRepository
         entity.motivo_eliminacion = ordenio.MotivoEliminacion;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
-        return ToDomain(entity);
+        return OrdenioMapper.ToDomain(entity);
     }
 
     public async Task<IReadOnlyList<VacunoSimpleOutput>> ListVacunosAsync(CancellationToken cancellationToken)
@@ -169,41 +262,5 @@ public sealed class OrdenioRepository : IOrdenioRepository
             .ToListAsync(cancellationToken);
     }
 
-    private static Ordenio ToDomain(ordenio entity)
-        => Ordenio.Rehydrate(
-            entity.id,
-            entity.codigo,
-            entity.fecha_hora,
-            entity.vacuno_id,
-            entity.vacuno?.nombre ?? string.Empty,
-            entity.encargado_usuario_id,
-            entity.litros,
-            entity.estado_ordenio_code,
-            entity.observaciones,
-            entity.created_at,
-            entity.updated_at,
-            entity.deleted_at,
-            entity.motivo_eliminacion,
-            entity.created_by,
-            entity.updated_by,
-            entity.deleted_by);
-
-    private static ordenio ToEntity(Ordenio domain)
-        => new()
-        {
-            codigo = domain.Codigo,
-            fecha_hora = domain.FechaHora,
-            vacuno_id = domain.VacunoId,
-            encargado_usuario_id = domain.EncargadoUsuarioId,
-            litros = domain.Litros,
-            estado_ordenio_code = domain.EstadoOrdenioCode,
-            observaciones = domain.Observaciones,
-            created_by = domain.CreatedBy,
-            updated_by = domain.UpdatedBy,
-            deleted_by = domain.DeletedBy,
-            created_at = domain.CreatedAt,
-            updated_at = domain.UpdatedAt,
-            deleted_at = domain.DeletedAt,
-            motivo_eliminacion = domain.MotivoEliminacion
-        };
+   
 }

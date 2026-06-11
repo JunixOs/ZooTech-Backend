@@ -18,7 +18,7 @@ public class GenerateReporteExcelInteractor : IGenerateReporteExcelInputPort
 
     public async Task<GenerateReporteExcelOutput> HandleAsync(GenerateReporteExcelQuery query, CancellationToken cancellationToken)
     {
-        var items = await _repository.GetProduccionDiariaAsync(
+        var items = await _repository.GetProduccionComparativaDiariaAsync(
             query.FechaDesde,
             query.FechaHasta,
             query.VacunoId,
@@ -40,7 +40,8 @@ public class GenerateReporteExcelInteractor : IGenerateReporteExcelInputPort
                 .Select(x => new ProduccionDiariaItemReport
                 {
                     Fecha = x.Fecha,
-                    TotalLitros = x.TotalLitros,
+                    TotalLitros = x.LitrosReales,
+                    LitrosEstandar = x.LitrosEstandar,
                     CantidadOrdenios = x.CantidadOrdenios
                 })
                 .ToList()

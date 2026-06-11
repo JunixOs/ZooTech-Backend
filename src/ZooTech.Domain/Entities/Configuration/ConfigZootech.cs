@@ -289,6 +289,14 @@ namespace ZooTech.Domain.Entities.Configuration
 
 
             /// <summary>
+            /// Color del encabezado del Excel
+            /// Código: REPORT_EXCEL_HEADER_COLOR
+            /// Tipo: STRING
+            /// </summary>
+            public static string ReportExcelHeaderColor => "LightPink";
+
+
+            /// <summary>
             /// Nombre base del archivo de reporte
             /// Código: REPORT_FILE_BASE_NAME
             /// Tipo: STRING

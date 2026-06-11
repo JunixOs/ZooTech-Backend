@@ -7,7 +7,10 @@ public record ProduccionDiariaItemReport
 {
     public DateTime Fecha { get; init; }
     public decimal TotalLitros { get; init; }
+    public decimal LitrosEstandar { get; init; }
     public int CantidadOrdenios { get; init; }
+    public decimal LitrosReales => TotalLitros;
+    public decimal Diferencia => TotalLitros - LitrosEstandar;
 }
 
 /// <summary>
@@ -25,6 +28,21 @@ public class ReporteProduccionDiaria : ReportBase
     /// Total de litros en el período
     /// </summary>
     public decimal TotalLitrosPeriodo => Items.Sum(x => x.TotalLitros);
+
+    /// <summary>
+    /// Total de litros reales en el período
+    /// </summary>
+    public decimal TotalLitrosRealesPeriodo => TotalLitrosPeriodo;
+
+    /// <summary>
+    /// Total de litros estándar en el período
+    /// </summary>
+    public decimal TotalLitrosEstandarPeriodo => Items.Sum(x => x.LitrosEstandar);
+
+    /// <summary>
+    /// Diferencia acumulada entre producción real y estándar
+    /// </summary>
+    public decimal DiferenciaTotalPeriodo => TotalLitrosRealesPeriodo - TotalLitrosEstandarPeriodo;
 
     /// <summary>
     /// Total de ordenios registrados

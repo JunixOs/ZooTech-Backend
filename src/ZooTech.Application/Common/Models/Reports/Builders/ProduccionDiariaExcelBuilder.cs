@@ -1,4 +1,5 @@
 using ClosedXML.Excel;
+using ZooTech.Domain.Entities.Configuration;
 
 namespace ZooTech.Application.Common.Models.Reports.Builders;
 
@@ -14,7 +15,7 @@ public class ProduccionDiariaExcelBuilder
     public byte[] Build()
     {
         using var workbook = new XLWorkbook();
-        var worksheet = workbook.Worksheets.Add("Reporte Diario");
+        var worksheet = workbook.Worksheets.Add(ConfigSettings.Reporteleche.ReportDepartmentName);
 
         worksheet.Cell(1, 1).Value = _reporte.Metadata.Title;
         worksheet.Cell(2, 1).Value = $"Empresa: {_reporte.Metadata.Company}";
@@ -29,11 +30,12 @@ public class ProduccionDiariaExcelBuilder
 
         const int headerRow = 8;
         worksheet.Cell(headerRow, 1).Value = "Fecha";
-        worksheet.Cell(headerRow, 2).Value = "Litros";
-        worksheet.Cell(headerRow, 3).Value = "Ordenios";
-        worksheet.Cell(headerRow, 4).Value = "Prom/Ord";
+        worksheet.Cell(headerRow, 2).Value = "Produccion Real";
+        worksheet.Cell(headerRow, 3).Value = "Produccion Estandar";
+        worksheet.Cell(headerRow, 4).Value = "Diferencia";
+        worksheet.Cell(headerRow, 5).Value = "Ordenios";
 
-        var headerRange = worksheet.Range(headerRow, 1, headerRow, 4);
+        var headerRange = worksheet.Range(headerRow, 1, headerRow, 5);
         headerRange.Style.Font.Bold = true;
         headerRange.Style.Fill.BackgroundColor = XLColor.LightPink;
 
@@ -41,19 +43,21 @@ public class ProduccionDiariaExcelBuilder
         foreach (var item in _reporte.Items)
         {
             worksheet.Cell(row, 1).Value = item.Fecha;
-            worksheet.Cell(row, 1).Style.DateFormat.Format = "dd/MM/yyyy";
-            worksheet.Cell(row, 2).Value = item.TotalLitros;
-            worksheet.Cell(row, 3).Value = item.CantidadOrdenios;
-            worksheet.Cell(row, 4).Value = item.CantidadOrdenios > 0 ? item.TotalLitros / item.CantidadOrdenios : 0;
+            worksheet.Cell(row, 1).Style.DateFormat.Format = ConfigSettings.Reporteleche.ReportFileDateFormat;
+            worksheet.Cell(row, 2).Value = item.LitrosReales;
+            worksheet.Cell(row, 3).Value = item.LitrosEstandar;
+            worksheet.Cell(row, 4).Value = item.Diferencia;
+            worksheet.Cell(row, 5).Value = item.CantidadOrdenios;
             row++;
         }
 
         worksheet.Cell(row, 1).Value = "TOTAL";
-        worksheet.Cell(row, 2).Value = _reporte.TotalLitrosPeriodo;
-        worksheet.Cell(row, 3).Value = _reporte.TotalOrdenios;
-        worksheet.Cell(row, 4).Value = _reporte.PromedioPorOrdenio;
+        worksheet.Cell(row, 2).Value = _reporte.TotalLitrosRealesPeriodo;
+        worksheet.Cell(row, 3).Value = _reporte.TotalLitrosEstandarPeriodo;
+        worksheet.Cell(row, 4).Value = _reporte.DiferenciaTotalPeriodo;
+        worksheet.Cell(row, 5).Value = _reporte.TotalOrdenios;
 
-        var totalRange = worksheet.Range(row, 1, row, 4);
+        var totalRange = worksheet.Range(row, 1, row, 5);
         totalRange.Style.Font.Bold = true;
 
         worksheet.Columns().AdjustToContents();
@@ -64,5 +68,5 @@ public class ProduccionDiariaExcelBuilder
     }
 
     private static string FormatearFecha(DateTime? fecha)
-        => fecha.HasValue ? fecha.Value.ToString("dd/MM/yyyy") : "N/A";
+        => fecha.HasValue ? fecha.Value.ToString(ConfigSettings.Reporteleche.ReportFileDateFormat) : "N/A";
 }
