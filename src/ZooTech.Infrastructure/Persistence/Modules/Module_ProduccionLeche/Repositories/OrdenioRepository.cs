@@ -3,6 +3,7 @@ using ZooTech.Domain.Module_ProduccionLeche.Entities;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Persistence.Entities;
+using ZooTech.Infrastructure.Persistence.Mappers;
 
 namespace ZooTech.Infrastructure.Persistence.Modules.Module_ProduccionLeche.Repositories;
 
@@ -42,7 +43,7 @@ public sealed class OrdenioRepository : IOrdenioRepository
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.id == id && x.deleted_at == null, cancellationToken);
 
-        return entity is null ? null : ToDomain(entity);
+        return entity is null ? null : OrdenioMapper.ToDomain(entity);
     }
 
     public async Task<(IReadOnlyList<Ordenio> Items, int TotalCount)> ListAsync(
@@ -83,12 +84,138 @@ public sealed class OrdenioRepository : IOrdenioRepository
         return (entities.Select(ToDomain).ToList(), totalCount);
     }
 
+    public async Task<IReadOnlyList<ProduccionDiariaItem>> GetProduccionDiariaAsync(DateTime? fechaDesde, DateTime? fechaHasta, long? vacunoId, CancellationToken cancellationToken)
+    {
+        var queryable = _dbContext.ordenios
+            .AsNoTracking()
+            .Where(x => x.deleted_at == null)
+            .AsQueryable();
+
+        if (vacunoId.HasValue)
+        {
+            queryable = queryable.Where(x => x.vacuno_id == vacunoId.Value);
+        }
+
+        if (fechaDesde.HasValue)
+        {
+            queryable = queryable.Where(x => x.fecha_hora >= fechaDesde.Value);
+        }
+
+        if (fechaHasta.HasValue)
+        {
+            queryable = queryable.Where(x => x.fecha_hora <= fechaHasta.Value);
+        }
+
+        var grouped = await queryable
+            .GroupBy(x => x.fecha_hora.Date)
+            .ToListAsync(cancellationToken);
+
+        var items = grouped
+            .Select(g => new ProduccionDiariaItem(g.Key, g.Sum(x => x.litros), g.Count()))
+            .OrderByDescending(x => x.Fecha)
+            .ToList();
+
+        return items;
+    }
+
+    public async Task<IReadOnlyList<ProduccionComparativaDiariaItem>> GetProduccionComparativaDiariaAsync(DateTime? fechaDesde, DateTime? fechaHasta, long? vacunoId, CancellationToken cancellationToken)
+    {
+        var queryable = _dbContext.ordenios
+            .AsNoTracking()
+            .Where(x => x.deleted_at == null)
+            .AsQueryable();
+
+        if (vacunoId.HasValue)
+        {
+            queryable = queryable.Where(x => x.vacuno_id == vacunoId.Value);
+        }
+
+        if (fechaDesde.HasValue)
+        {
+            queryable = queryable.Where(x => x.fecha_hora >= fechaDesde.Value);
+        }
+
+        if (fechaHasta.HasValue)
+        {
+            queryable = queryable.Where(x => x.fecha_hora <= fechaHasta.Value);
+        }
+
+        var produccionRealPorDiaVacuno = await queryable
+            .GroupBy(x => new { Fecha = x.fecha_hora.Date, x.vacuno_id })
+            .Select(g => new
+            {
+                g.Key.Fecha,
+                g.Key.vacuno_id,
+                LitrosReales = g.Sum(x => x.litros),
+                CantidadOrdenios = g.Count()
+            })
+            .ToListAsync(cancellationToken);
+
+        if (produccionRealPorDiaVacuno.Count == 0)
+        {
+            return [];
+        }
+
+        var fechaMinima = DateOnly.FromDateTime(produccionRealPorDiaVacuno.Min(x => x.Fecha));
+        var fechaMaxima = DateOnly.FromDateTime(produccionRealPorDiaVacuno.Max(x => x.Fecha));
+        var vacunoIds = produccionRealPorDiaVacuno
+            .Select(x => x.vacuno_id)
+            .Distinct()
+            .ToList();
+
+        var produccionEstandar = await _dbContext.produccion_leche_estandars
+            .AsNoTracking()
+            .Where(x => x.vacuno_id.HasValue
+                        && vacunoIds.Contains(x.vacuno_id.Value)
+                        && x.fecha_inicio <= fechaMaxima
+                        && (!x.fecha_fin.HasValue || x.fecha_fin.Value >= fechaMinima))
+            .Select(x => new
+            {
+                VacunoId = x.vacuno_id!.Value,
+                x.fecha_inicio,
+                x.fecha_fin,
+                x.litros_esperados_dia
+            })
+            .ToListAsync(cancellationToken);
+
+        var items = produccionRealPorDiaVacuno
+            .Select(x =>
+            {
+                var fecha = DateOnly.FromDateTime(x.Fecha);
+                var litrosEstandar = produccionEstandar
+                    .Where(e => e.VacunoId == x.vacuno_id
+                                && e.fecha_inicio <= fecha
+                                && (!e.fecha_fin.HasValue || e.fecha_fin.Value >= fecha))
+                    .OrderByDescending(e => e.fecha_inicio)
+                    .Select(e => e.litros_esperados_dia)
+                    .FirstOrDefault();
+
+                return new
+                {
+                    x.Fecha,
+                    x.LitrosReales,
+                    LitrosEstandar = litrosEstandar,
+                    x.CantidadOrdenios
+                };
+            })
+            .GroupBy(x => x.Fecha)
+            .Select(g => new ProduccionComparativaDiariaItem(
+                g.Key,
+                g.Sum(x => x.LitrosReales),
+                g.Sum(x => x.LitrosEstandar),
+                g.Sum(x => x.CantidadOrdenios)))
+            .OrderByDescending(x => x.Fecha)
+            .ToList();
+
+        return items;
+    }
+
     public async Task<Ordenio> AddAsync(Ordenio ordenio, CancellationToken cancellationToken)
     {
-        var entity = ToEntity(ordenio);
+        var entity = OrdenioMapper.ToEntity(ordenio);
         _dbContext.ordenios.Add(entity);
         await _dbContext.SaveChangesAsync(cancellationToken);
-        return ToDomain(entity);
+        return OrdenioMapper.ToDomain(entity);
     }
 
     public async Task<Ordenio> UpdateAsync(Ordenio ordenio, CancellationToken cancellationToken)
@@ -109,7 +236,7 @@ public sealed class OrdenioRepository : IOrdenioRepository
         entity.motivo_eliminacion = ordenio.MotivoEliminacion;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
-        return ToDomain(entity);
+        return OrdenioMapper.ToDomain(entity);
     }
 
     private static Ordenio ToDomain(ordenio entity)

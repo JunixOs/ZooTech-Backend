@@ -5,10 +5,10 @@ using Microsoft.AspNetCore.Http;
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.InterfaceAdapters.DTOs;
 
-namespace ZooTech.InterfaceAdapters.Middleware;
-
-public sealed class ExceptionHandlingMiddleware
+namespace ZooTech.InterfaceAdapters.Middleware
 {
+    public class ExceptionHandlingMiddleware
+    {
     private readonly RequestDelegate _next;
 
     public ExceptionHandlingMiddleware(RequestDelegate next)
@@ -22,38 +22,47 @@ public sealed class ExceptionHandlingMiddleware
         {
             await _next(context);
         }
-        catch (ValidationException ex)
+            catch(AppException ex)
         {
-            await WriteErrorAsync(context, HttpStatusCode.BadRequest,
-                string.Join(" | ", ex.Errors.Select(e => e.ErrorMessage)));
-        }
-        catch (NotFoundException ex)
-        {
-            await WriteErrorAsync(context, HttpStatusCode.NotFound, ex.Message);
-        }
-        catch (ConflictException ex)
-        {
-            await WriteErrorAsync(context, HttpStatusCode.Conflict, ex.Message);
-        }
-        catch (ArgumentException ex)
-        {
-            await WriteErrorAsync(context, HttpStatusCode.BadRequest, ex.Message);
-        }
-        catch (OperationCanceledException)
-        {
-            context.Response.StatusCode = 499;
-        }
-    }
+                context.Response.ContentType = "application/json";
 
-    private static async Task WriteErrorAsync(HttpContext context, HttpStatusCode status, string message)
+                context.Response.StatusCode = ex.StatusCode;
+
+                var response = new ErrorResponse
+        {
+                    Error = new ErrorContent
+        {
+                        Code = ex.Code,
+                        Message = ex.Message,
+                        Details = ex.Details
+        }
+                };
+
+                await context.Response.WriteAsync(
+                    JsonSerializer.Serialize(response)
+                );
+    }
+            catch (Exception ex)
     {
         context.Response.StatusCode = (int)status;
         context.Response.ContentType = "application/json";
 
-        var body = JsonSerializer.Serialize(
-            GeneralResponseDTO<object>.Fail(message),
-            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+                context.Response.StatusCode = 500;
 
-        await context.Response.WriteAsync(body);
+                var response = new ErrorResponse
+                {
+                    Error = new ErrorContent
+                    {
+                        Code = "INTERNAL_SERVER_ERROR",
+                        Message = "Ocurrio un error interno",
+                        Details = []
+                    }
+                };
+
+                await context.Response.WriteAsync(
+                    JsonSerializer.Serialize(response)
+                );
+            }
+        }
     }
 }

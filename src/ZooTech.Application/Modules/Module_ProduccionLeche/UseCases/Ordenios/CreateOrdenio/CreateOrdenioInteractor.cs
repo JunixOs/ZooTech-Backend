@@ -29,12 +29,12 @@ public sealed class CreateOrdenioInteractor : ICreateOrdenioInputPort
 
         if (await _repository.ExistsCodigoAsync(command.Codigo, cancellationToken))
         {
-            throw new ConflictException("Ya existe un ordeño con el mismo código.");
+            throw new ConflictException("CONFLICT_CODE_EXISTS");
         }
 
         if (await _repository.ExistsVacunoFechaAsync(command.VacunoId, command.FechaHora, null, cancellationToken))
         {
-            throw new ConflictException("Ya existe un ordeño para el mismo vacuno en la misma fecha y hora.");
+            throw new ConflictException("CONFLICT_VACUNO_FECHA");
         }
 
         Ordenio ordenio;

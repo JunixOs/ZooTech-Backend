@@ -10,11 +10,14 @@ using ZooTech.InterfaceAdapters.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.DTOs.Responses;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Mappers;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Ports;
+using Asp.Versioning;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
 
 [ApiController]
-[Route("api/v1/produccion-leche")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/produccion-leche")]
 public sealed class ProduccionLecheController : ControllerBase
 {
     private readonly IListarVacunosInputPort _listarVacunosInputPort;
@@ -51,9 +54,14 @@ public sealed class ProduccionLecheController : ControllerBase
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetVacunos(CancellationToken cancellationToken)
     {
-        var output = await _listarVacunosInputPort.HandleAsync(cancellationToken);
-        var data = output.Items.Select(x => new { id = x.Id, codigo = x.Codigo, nombre = x.Nombre, raza = x.RazaCode });
-        return Ok(GeneralResponseDTO<object>.Ok(data));
+        var list = await repository.ListVacunosAsync(cancellationToken);
+        var mappedList = list.Select(x => new {
+            id = x.Id,
+            
+            nombre = x.Nombre,
+            raza = x.RazaCode,
+        }).ToList();
+        return Ok(new { data = mappedList });
     }
 
     [HttpPost]
@@ -61,12 +69,27 @@ public sealed class ProduccionLecheController : ControllerBase
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Create(
-        [FromBody] CreateOrdenioRequest request,
-        CancellationToken cancellationToken)
+     [FromBody] CreateOrdenioRequest request,
+     [FromServices] ICreateOrdenioInputPort inputPort,
+     CancellationToken cancellationToken)
     {
-        var data = ProduccionLecheMapper.ToResponse(
-            await _createInputPort.HandleAsync(ProduccionLecheMapper.ToCommand(request), cancellationToken));
-        return Created($"/api/v1/produccion-leche/{data.Id}", GeneralResponseDTO<OrdenioResponse>.Ok(data));
+        try
+        {
+            var output = await inputPort.HandleAsync(
+                ProduccionLecheMapper.ToCommand(request),
+                cancellationToken);
+
+            var response = ProduccionLecheMapper.ToResponse(output);
+
+            return CreatedAtAction(
+                nameof(GetById),
+                new { id = response.Data.Id },
+                response);
+        }
+        catch (ConflictException ex)
+        {
+            return Conflict(ToError("CONFLICT_ERROR", ex.Message));
+        }
     }
 
     [HttpGet("{id:long}")]
