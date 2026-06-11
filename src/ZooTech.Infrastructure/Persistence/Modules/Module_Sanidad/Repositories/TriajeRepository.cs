@@ -56,6 +56,9 @@ public class TriajeRepository : ITriajeRepository
         if (pesoKg.HasValue)
             query = query.Where(t => t.peso_kg == pesoKg);
 
+        if (!string.IsNullOrEmpty(fecha) && DateTime.TryParse(fecha, out var fechaParsed))
+            query = query.Where(t => t.fecha_hora.Date == fechaParsed.Date);
+
         query = query.OrderByDescending(t => t.fecha_hora);
 
         var total = await query.CountAsync(cancellationToken);
