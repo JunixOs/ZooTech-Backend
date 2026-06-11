@@ -40,6 +40,67 @@ public sealed class VacunoRepository : IVacunoRepository
             .AnyAsync(v => v.id == id && v.deleted_at == null, cancellationToken);
     }
 
+    public Task<bool> ExistsCodigoAsync(string codigo, CancellationToken cancellationToken = default)
+        => _context.vacunos.AnyAsync(v => v.deleted_at == null && v.codigo == codigo.Trim(), cancellationToken);
+
+    public async Task<Vacuno> AddAsync(Vacuno vacuno, CancellationToken cancellationToken = default)
+    {
+        var entity = ToEntity(vacuno);
+        _context.vacunos.Add(entity);
+        await _context.SaveChangesAsync(cancellationToken);
+        return ToDomain(entity);
+    }
+
+    public async Task<Vacuno> UpdateAsync(Vacuno vacuno, CancellationToken cancellationToken = default)
+    {
+        var entity = await _context.vacunos
+            .FirstOrDefaultAsync(v => v.id == vacuno.Id, cancellationToken)
+            ?? throw new InvalidOperationException("No se encontró el vacuno para actualizar.");
+
+        entity.nombre = vacuno.Nombre;
+        entity.fecha_nacimiento = vacuno.FechaNacimiento;
+        entity.tipo_adquisicion_code = vacuno.TipoAdquisicionCode;
+        entity.raza_code = vacuno.RazaCode;
+        entity.color_code = vacuno.ColorCode;
+        entity.sexo_code = vacuno.SexoCode;
+        entity.padre_id = vacuno.PadreId;
+        entity.madre_id = vacuno.MadreId;
+        entity.granja_id = vacuno.GranjaId;
+        entity.observaciones = vacuno.Observaciones;
+        entity.updated_by = vacuno.UpdatedBy;
+        entity.updated_at = vacuno.UpdatedAt;
+        entity.deleted_at = vacuno.DeletedAt;
+        entity.deleted_by = vacuno.DeletedBy;
+        entity.motivo_eliminacion = vacuno.MotivoEliminacion;
+
+        await _context.SaveChangesAsync(cancellationToken);
+        return ToDomain(entity);
+    }
+
+    private static Entities.vacuno ToEntity(Vacuno domain)
+        => new()
+        {
+            codigo = domain.Codigo,
+            nombre = domain.Nombre,
+            fecha_nacimiento = domain.FechaNacimiento,
+            tipo_adquisicion_code = domain.TipoAdquisicionCode,
+            raza_code = domain.RazaCode,
+            color_code = domain.ColorCode,
+            sexo_code = domain.SexoCode,
+            padre_id = domain.PadreId,
+            madre_id = domain.MadreId,
+            granja_id = domain.GranjaId,
+            observaciones = domain.Observaciones,
+            fecha_registro = domain.FechaRegistro,
+            created_by = domain.CreatedBy,
+            updated_by = domain.UpdatedBy,
+            deleted_by = domain.DeletedBy,
+            created_at = domain.CreatedAt,
+            updated_at = domain.UpdatedAt,
+            deleted_at = domain.DeletedAt,
+            motivo_eliminacion = domain.MotivoEliminacion
+        };
+
     private static Vacuno ToDomain(Entities.vacuno entity)
     {
         return Vacuno.Rehydrate(

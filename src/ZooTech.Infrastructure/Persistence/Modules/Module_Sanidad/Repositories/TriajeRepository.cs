@@ -120,31 +120,6 @@ public class TriajeRepository : ITriajeRepository
         return $"TRI{maxNumber + 1:D3}";
     }
 
-    // Metodo get para traer tipo peso 
-    public async Task<IEnumerable<TipoPeso>> GetAllTipoPesosAsync(CancellationToken cancellationToken = default)
-    {
-        return await _context.CatTipoPesos
-            .Where(t => t.activo)
-            .Select(t => new TipoPeso
-            {
-                Code = t.code,
-                Nombre = t.nombre
-            })
-            .ToListAsync(cancellationToken);
-    }
-
-    public async Task<IEnumerable<VacunoOption>> GetAllVacunosAsync(CancellationToken cancellationToken = default)
-    {
-        return await _context.Vacunos
-            .Where(v => v.deleted_at == null)
-            .Select(v => new VacunoOption
-            {
-                Id = v.id,
-                Codigo = v.codigo,
-                Nombre = v.nombre
-            })
-            .ToListAsync(cancellationToken);
-    }
     public async Task<IEnumerable<TriajeHistorialItem>> GetHistorialByVacunoIdAsync(long vacunoId, CancellationToken cancellationToken = default)
     {
         return await _context.Triajes

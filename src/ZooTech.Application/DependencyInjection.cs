@@ -12,7 +12,11 @@ using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllVacunosSanidad;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetHistorialByVacunoId;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetTriajeById;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.UpdateTriaje;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.CreateVacuno;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetVacunoById;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.UpdateVacuno;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.CreateOrdenio;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.DeleteOrdenio;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GetOrdenioById;
@@ -93,6 +97,10 @@ public static class DependencyInjection
         // ============================================
 
         services.AddScoped<IListarVacunosInputPort, ListarVacunosInteractor>();
+        services.AddScoped<ICreateVacunoInputPort, CreateVacunoInteractor>();
+        services.AddScoped<IGetVacunoByIdInputPort, GetVacunoByIdInteractor>();
+        services.AddScoped<IUpdateVacunoInputPort, UpdateVacunoInteractor>();
+        services.AddScoped<IDeleteVacunoInputPort, DeleteVacunoInteractor>();
 
         return services;
     }

@@ -9,4 +9,10 @@ public interface IVacunoRepository
     Task<Vacuno?> GetByIdAsync(long id, CancellationToken cancellationToken = default);
 
     Task<bool> ExistsAsync(long id, CancellationToken cancellationToken = default);
+
+    Task<bool> ExistsCodigoAsync(string codigo, CancellationToken cancellationToken = default);
+
+    Task<Vacuno> AddAsync(Vacuno vacuno, CancellationToken cancellationToken = default);
+
+    Task<Vacuno> UpdateAsync(Vacuno vacuno, CancellationToken cancellationToken = default);
 }

@@ -6,6 +6,7 @@ using ZooTech.Domain.Module_Celo.Interfaces;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
+using ZooTech.Infrastructure.Persistence.Modules.Module_Sanidad.Repositories;
 using ZooTech.Infrastructure.Common.Time;
 using ZooTech.Infrastructure.Context;
 using ZooTech.Infrastructure.Persistence.Context;
@@ -45,6 +46,8 @@ public static class DependencyInjection
         services.AddScoped<IOrdenioRepository, OrdenioRepository>();
         services.AddScoped<IVacunoRepository, VacunoRepository>();
         services.AddScoped<ITriajeRepository, TriajeRepository>();
+        services.AddScoped<ITipoPesoRepository, TipoPesoRepository>();
+        services.AddScoped<ISanidadVacunoRepository, SanidadVacunoRepository>();
 
         return services;
     }

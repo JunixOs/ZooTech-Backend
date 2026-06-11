@@ -4,16 +4,16 @@ namespace ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllVacunosSanid
 
 public sealed class GetAllVacunosSanidadInteractor : IGetAllVacunosSanidadInputPort
 {
-    private readonly ITriajeRepository _repository;
+    private readonly ISanidadVacunoRepository _repository;
 
-    public GetAllVacunosSanidadInteractor(ITriajeRepository repository)
+    public GetAllVacunosSanidadInteractor(ISanidadVacunoRepository repository)
     {
         _repository = repository;
     }
 
     public async Task<GetAllVacunosSanidadOutput> HandleAsync(CancellationToken cancellationToken = default)
     {
-        var vacunos = await _repository.GetAllVacunosAsync(cancellationToken);
+        var vacunos = await _repository.GetAllAsync(cancellationToken);
         var items = vacunos.Select(v => new VacunoSanidadItemOutput(v.Id, v.Codigo, v.Nombre)).ToList();
         return new GetAllVacunosSanidadOutput(items);
     }

@@ -19,10 +19,5 @@ public interface ITriajeRepository
     Task DeleteAsync(long id, CancellationToken cancellationToken = default);
     Task<string> GenerateCodigoAsync(CancellationToken cancellationToken = default);
 
-    // Tipo peso
-    Task<IEnumerable<TipoPeso>> GetAllTipoPesosAsync(CancellationToken cancellationToken = default);
-    // Vacuno id codigo nombre
-    Task<IEnumerable<VacunoOption>> GetAllVacunosAsync(CancellationToken cancellationToken = default);
-
     Task<IEnumerable<TriajeHistorialItem>> GetHistorialByVacunoIdAsync(long vacunoId, CancellationToken cancellationToken = default);
 }
