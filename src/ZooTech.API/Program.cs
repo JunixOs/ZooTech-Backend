@@ -19,15 +19,11 @@ using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
 using ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Presenters;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-// builder.Services.AddOpenApi();
-
-// ======= Configuracion Swagger =======
 builder.Services
     .AddControllers()
     .AddApplicationPart(typeof(HomeController).Assembly)
+    .AddApplicationPart(typeof(CeloController).Assembly)
+    .AddApplicationPart(typeof(VacunoController).Assembly)
     .AddApplicationPart(typeof(ProduccionLecheController).Assembly);
 
 // Configuracion del versionado de la API
@@ -44,6 +40,7 @@ builder.Services.AddApiVersioning(options =>
 });
 
 builder.Services.AddEndpointsApiExplorer();
+
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("auth", new()
@@ -134,10 +131,6 @@ var frontendPort = builder.Configuration["Frontend:FrontendPort"];
 var frontendIP = builder.Configuration["Frontend:FrontendIP"];
 var frontendProtocol = builder.Configuration["Frontend:FrontendProtocol"];
 
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowFrontend", policy =>
-    {
         policy.WithOrigins($"{frontendProtocol}://{frontendIP}:{frontendPort}")
             .AllowAnyHeader()
             .AllowAnyMethod();
@@ -176,14 +169,14 @@ if (app.Environment.IsDevelopment())
             "ZooTech API"
         );
     });
-
-    // app.MapOpenApi();
 }
 
 
 
+
 app.UseHttpsRedirection();
-app.UseAuthorization();
 app.UseCors("AllowFrontend");
+app.UseAuthorization();
 app.MapControllers();
+
 app.Run();

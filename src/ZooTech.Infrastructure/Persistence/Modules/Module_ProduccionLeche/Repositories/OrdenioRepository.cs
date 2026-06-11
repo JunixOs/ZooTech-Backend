@@ -1,8 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Common;
-using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.ListOrdenios;
-using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Ports;
 using ZooTech.Domain.Module_ProduccionLeche.Entities;
+using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Persistence.Entities;
 using ZooTech.Infrastructure.Persistence.Mappers;
@@ -48,55 +46,42 @@ public sealed class OrdenioRepository : IOrdenioRepository
         return entity is null ? null : OrdenioMapper.ToDomain(entity);
     }
 
-    public async Task<(IReadOnlyList<OrdenioOutput> Items, int TotalCount)> ListAsync(ListOrdeniosQuery query, CancellationToken cancellationToken)
+    public async Task<(IReadOnlyList<Ordenio> Items, int TotalCount)> ListAsync(
+        long? vacunoId,
+        string? estadoOrdenioCode,
+        DateTime? fechaDesde,
+        DateTime? fechaHasta,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
     {
         var queryable = _dbContext.ordenios
             .AsNoTracking()
             .Where(x => x.deleted_at == null)
             .AsQueryable();
 
-        if (query.VacunoId.HasValue)
-        {
-            queryable = queryable.Where(x => x.vacuno_id == query.VacunoId.Value);
-        }
+        if (vacunoId.HasValue)
+            queryable = queryable.Where(x => x.vacuno_id == vacunoId.Value);
 
-        if (!string.IsNullOrWhiteSpace(query.EstadoOrdenioCode))
-        {
-            var estado = query.EstadoOrdenioCode.Trim();
-            queryable = queryable.Where(x => x.estado_ordenio_code == estado);
-        }
+        if (!string.IsNullOrWhiteSpace(estadoOrdenioCode))
+            queryable = queryable.Where(x => x.estado_ordenio_code == estadoOrdenioCode.Trim());
 
-        if (query.FechaDesde.HasValue)
-        {
-            queryable = queryable.Where(x => x.fecha_hora >= query.FechaDesde.Value);
-        }
+        if (fechaDesde.HasValue)
+            queryable = queryable.Where(x => x.fecha_hora >= fechaDesde.Value);
 
-        if (query.FechaHasta.HasValue)
-        {
-            queryable = queryable.Where(x => x.fecha_hora <= query.FechaHasta.Value);
-        }
+        if (fechaHasta.HasValue)
+            queryable = queryable.Where(x => x.fecha_hora <= fechaHasta.Value);
 
         var totalCount = await queryable.CountAsync(cancellationToken);
 
-        var items = await queryable
+        var entities = await queryable
+            .Include(x => x.vacuno)
             .OrderByDescending(x => x.fecha_hora)
-            .Skip((query.Page - 1) * query.PageSize)
-            .Take(query.PageSize)
-            .Select(x => new OrdenioOutput(
-                x.id,
-                x.codigo,
-                x.fecha_hora,
-                x.vacuno_id,
-                x.vacuno.nombre,
-                x.encargado_usuario_id,
-                x.litros,
-                x.estado_ordenio_code,
-                x.observaciones,
-                x.created_at,
-                x.updated_at))
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(cancellationToken);
 
-        return (items, totalCount);
+        return (entities.Select(ToDomain).ToList(), totalCount);
     }
 
     public async Task<IReadOnlyList<ProduccionDiariaItem>> GetProduccionDiariaAsync(DateTime? fechaDesde, DateTime? fechaHasta, long? vacunoId, CancellationToken cancellationToken)
@@ -254,13 +239,41 @@ public sealed class OrdenioRepository : IOrdenioRepository
         return OrdenioMapper.ToDomain(entity);
     }
 
-    public async Task<IReadOnlyList<VacunoSimpleOutput>> ListVacunosAsync(CancellationToken cancellationToken)
-    {
-        return await _dbContext.vacunos
-            .AsNoTracking()
-            .Select(x => new VacunoSimpleOutput(x.id, x.codigo, x.nombre, x.raza_code))
-            .ToListAsync(cancellationToken);
-    }
+    private static Ordenio ToDomain(ordenio entity)
+        => Ordenio.Rehydrate(
+            entity.id,
+            entity.codigo,
+            entity.fecha_hora,
+            entity.vacuno_id,
+            entity.vacuno?.nombre ?? string.Empty,
+            entity.encargado_usuario_id,
+            entity.litros,
+            entity.estado_ordenio_code,
+            entity.observaciones,
+            entity.created_at,
+            entity.updated_at,
+            entity.deleted_at,
+            entity.motivo_eliminacion,
+            entity.created_by,
+            entity.updated_by,
+            entity.deleted_by);
 
-   
+    private static ordenio ToEntity(Ordenio domain)
+        => new()
+        {
+            codigo = domain.Codigo,
+            fecha_hora = domain.FechaHora,
+            vacuno_id = domain.VacunoId,
+            encargado_usuario_id = domain.EncargadoUsuarioId,
+            litros = domain.Litros,
+            estado_ordenio_code = domain.EstadoOrdenioCode,
+            observaciones = domain.Observaciones,
+            created_by = domain.CreatedBy,
+            updated_by = domain.UpdatedBy,
+            deleted_by = domain.DeletedBy,
+            created_at = domain.CreatedAt,
+            updated_at = domain.UpdatedAt,
+            deleted_at = domain.DeletedAt,
+            motivo_eliminacion = domain.MotivoEliminacion
+        };
 }

@@ -1,21 +1,25 @@
+using FluentValidation;
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Common;
-using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Ports;
 using ZooTech.Domain.Module_ProduccionLeche.Entities;
+using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.CreateOrdenio;
 
 public sealed class CreateOrdenioInteractor : ICreateOrdenioInputPort
 {
     private readonly IOrdenioRepository _repository;
+    private readonly IValidator<CreateOrdenioCommand> _validator;
 
-    public CreateOrdenioInteractor(IOrdenioRepository repository)
+    public CreateOrdenioInteractor(IOrdenioRepository repository, IValidator<CreateOrdenioCommand> validator)
     {
         _repository = repository;
+        _validator = validator;
     }
 
     public async Task<CreateOrdenioOutput> HandleAsync(CreateOrdenioCommand command, CancellationToken cancellationToken)
     {
+        await _validator.ValidateAndThrowAsync(command, cancellationToken);
         await OrdenioReferenceValidator.EnsureReferencesExistAsync(
             _repository,
             command.VacunoId,
