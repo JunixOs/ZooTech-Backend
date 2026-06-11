@@ -152,11 +152,12 @@ public sealed class Triaje
         UpdatedAt = utcNow;
     }
 
-    public void SoftDelete(long? actorId, DateTime utcNow)
+    public void SoftDelete(string motivoEliminacion, long? actorId, DateTime utcNow)
     {
         if (IsDeleted)
             throw new InvalidOperationException("El triaje ya se encuentra eliminado.");
 
+        MotivoEliminacion = motivoEliminacion;
         DeletedAt = utcNow;
         DeletedBy = actorId;
         UpdatedAt = utcNow;

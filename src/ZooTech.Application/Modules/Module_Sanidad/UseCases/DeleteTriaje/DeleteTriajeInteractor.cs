@@ -28,7 +28,7 @@ public sealed class DeleteTriajeInteractor : IDeleteTriajeInputPort
         var triaje = await _repository.GetByIdAsync(id, cancellationToken)
             ?? throw new NotFoundException("No se encontró el triaje solicitado.");
 
-        triaje.SoftDelete(command.MotivoEliminacion, _dateTimeProvider.ServerNow);
+        triaje.SoftDelete(command.MotivoEliminacion, null, _dateTimeProvider.ServerNow);
         await _repository.UpdateAsync(triaje, cancellationToken);
     }
 }
