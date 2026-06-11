@@ -112,7 +112,7 @@ public sealed class CeloController : ControllerBase
         [FromBody] EliminarCeloRequest request,
         CancellationToken cancellationToken)
     {
-        var command = CeloMapper.ToCommand(request) with { Id = id };
+        var command = CeloMapper.ToCommand(request, id);
         await _eliminarCeloInputPort.HandleAsync(command, cancellationToken);
 
         return Ok(GeneralResponseDTO<object>.Ok(new { mensaje = "Celo eliminado con éxito" }));

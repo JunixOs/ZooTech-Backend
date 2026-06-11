@@ -26,10 +26,10 @@ internal static class CeloMapper
             CaracteristicaCodes: request.CaracteristicaCodes);
     }
 
-    public static EliminarCeloCommand ToCommand(EliminarCeloRequest request)
+    public static EliminarCeloCommand ToCommand(EliminarCeloRequest request, long id)
     {
         return new EliminarCeloCommand(
-            Id: request.Id,
+            Id: id,
             MotivoEliminacion: request.MotivoEliminacion);
     }
 
