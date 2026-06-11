@@ -6,9 +6,7 @@ using ZooTech.Domain.Module_Celo.Interfaces;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
-using ZooTech.Infrastructure.Persistence.Modules.Module_Sanidad.Repositories;
 using ZooTech.Infrastructure.Common.Time;
-using ZooTech.Infrastructure.Context;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Persistence.Modules.Module_Celo.Repositories;
 using ZooTech.Infrastructure.Persistence.Modules.Module_ProduccionLeche.Repositories;
@@ -27,9 +25,6 @@ public static class DependencyInjection
             ?? throw new InvalidOperationException("No se encontró ConnectionStrings:DefaultConnection.");
 
         services.AddDbContext<GanaderiaDbContext>(options =>
-            options.UseSqlServer(connectionString));
-
-        services.AddDbContext<ZootechContext>(options =>
             options.UseSqlServer(connectionString));
 
         // ============================================

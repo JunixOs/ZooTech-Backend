@@ -1,22 +1,22 @@
 using Microsoft.EntityFrameworkCore;
 using ZooTech.Domain.Module_Sanidad.Entities;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
-using ZooTech.Infrastructure.Context;
+using ZooTech.Infrastructure.Persistence.Context;
 
 namespace ZooTech.Infrastructure.Persistence.Modules.Module_Sanidad.Repositories;
 
 public sealed class TipoPesoRepository : ITipoPesoRepository
 {
-    private readonly ZootechContext _context;
+    private readonly GanaderiaDbContext _context;
 
-    public TipoPesoRepository(ZootechContext context)
+    public TipoPesoRepository(GanaderiaDbContext context)
     {
         _context = context;
     }
 
     public async Task<IEnumerable<TipoPeso>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        return await _context.CatTipoPesos
+        return await _context.cat_tipo_pesos
             .AsNoTracking()
             .Where(t => t.activo)
             .Select(t => new TipoPeso { Code = t.code, Nombre = t.nombre })
