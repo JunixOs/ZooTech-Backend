@@ -1,129 +1,102 @@
-using System.Reflection;
-using Microsoft.Extensions.FileProviders;
 using ZooTech.Application;
 using ZooTech.Infrastructure;
 using ZooTech.InterfaceAdapters;
+using ZooTech.InterfaceAdapters.Controllers;
 using ZooTech.InterfaceAdapters.Middleware;
-
-// ─────────────────────────────────────────────────────────────────────────────
-// GET /vacunos/reportes/listado
-// ─────────────────────────────────────────────────────────────────────────────
+using ZooTech.InterfaceAdapters.Modules.Module_Celo.Controllers;
+using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
+using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Controllers;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services
+    .AddControllers()
+    .AddApplicationPart(typeof(HomeController).Assembly)
+    .AddApplicationPart(typeof(CeloController).Assembly)
+    .AddApplicationPart(typeof(VacunoController).Assembly)
+    .AddApplicationPart(typeof(ProduccionLecheController).Assembly);
 
-// ── Capas de la arquitectura ─────────────────────────────────────────────────
+builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("auth", new()
+    {
+        Title = "Authentication API",
+        Version = "v1"
+    });
+
+    options.SwaggerDoc("users", new()
+    {
+        Title = "Users API",
+        Version = "v1"
+    });
+
+    options.SwaggerDoc("public", new()
+    {
+        Title = "Public API",
+        Version = "v1"
+    });
+});
+
 builder.Services
     .AddApplication()
     .AddInfrastructure(builder.Configuration)
     .AddInterfaceAdapters();
 
-// ── Controladores ─────────────────────────────────────────────────────────────
-builder.Services.AddControllers()
-    .AddApplicationPart(
-        typeof(ZooTech.InterfaceAdapters.Modules.Module_ReporteVacuno
-               .Controllers.ReportesVacunosController).Assembly);
-
-// ── Swagger / OpenAPI ─────────────────────────────────────────────────────────
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options =>
-{
-    options.SwaggerDoc("v2", new()
-    {
-        Title = "Módulo Vacuno",
-        Version = "v2",
-        Description = "Endpoint GET /vacunos/reportes/listado – " +
-                      "Reporte listado de vacunos con filtros, búsqueda y paginación."
-    });
-
-    // Incluir comentarios XML del proyecto API
-    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-    if (File.Exists(xmlPath))
-        options.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
-
-    // Incluir comentarios XML de InterfaceAdapters
-    var adaptersXml = Path.Combine(
-        AppContext.BaseDirectory,
-        "ZooTech.InterfaceAdapters.xml");
-    if (File.Exists(adaptersXml))
-        options.IncludeXmlComments(adaptersXml);
-});
-
-// ── Logging ───────────────────────────────────────────────────────────────────
-builder.Logging.ClearProviders();
-builder.Logging.AddConsole();
-
-// ── CORS ──────────────────────────────────────────────────────────────────────
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("FrontendCors", policy =>
+    options.AddPolicy("AllowFrontend", policy =>
     {
-        var allowedOrigins = builder.Configuration
-            .GetSection("Cors:AllowedOrigins")
-            .Get<string[]>()
-            ?? Array.Empty<string>();
+        var frontendPort = builder.Configuration["Frontend:FrontendPort"];
+        var frontendIP = builder.Configuration["Frontend:FrontendIP"];
+        var frontendProtocol = builder.Configuration["Frontend:FrontendProtocol"];
 
-        if (allowedOrigins.Length > 0)
-        {
-            policy.WithOrigins(allowedOrigins)
-                  .AllowAnyHeader()
-                  .AllowAnyMethod();
-        }
-        else if (builder.Environment.IsDevelopment())
-        {
-            policy.AllowAnyOrigin()
-                  .AllowAnyHeader()
-                  .AllowAnyMethod();
-        }
-        else
-        {
-            var frontendUrl = builder.Configuration.GetValue<string>("Frontend:FrontendUrl");
-            if (!string.IsNullOrEmpty(frontendUrl))
-            {
-                policy.WithOrigins(frontendUrl)
-                      .AllowAnyHeader()
-                      .AllowAnyMethod();
-            }
-        }
+        policy.WithOrigins($"{frontendProtocol}://{frontendIP}:{frontendPort}")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
     });
 });
 
 var app = builder.Build();
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Pipeline HTTP
-// ─────────────────────────────────────────────────────────────────────────────
-
-app.UseMiddleware<ExceptionHandlingMiddleware>();
-
-var swaggerEnabled = app.Environment.IsDevelopment()
-    || app.Configuration.GetValue<bool>("Swagger:Enabled");
-
-if (swaggerEnabled)
+if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI(c =>
+
+    app.UseSwaggerUI(options =>
     {
-        c.SwaggerEndpoint("/swagger/v2/swagger.json", "ZooTech TK02 v2");
-        c.RoutePrefix = string.Empty; // Swagger en raíz: http://localhost:5085
+        options.SwaggerEndpoint(
+            "/swagger/public/swagger.json",
+            "Public API");
+
+        options.SwaggerEndpoint(
+            "/swagger/auth/swagger.json",
+            "Authentication API");
+
+        options.SwaggerEndpoint(
+            "/swagger/users/swagger.json",
+            "Users API");
     });
 }
 
-if (!app.Environment.IsDevelopment())
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+var storagePath = Path.Combine(builder.Environment.ContentRootPath, "storage");
+if (!Directory.Exists(storagePath))
 {
-    app.UseHsts();
-    app.UseHttpsRedirection();
+    Directory.CreateDirectory(storagePath);
 }
 
-var generatedFilesRoot = Path.Combine(AppContext.BaseDirectory, "wwwroot");
-Directory.CreateDirectory(generatedFilesRoot);
 app.UseStaticFiles(new StaticFileOptions
 {
-    FileProvider = new PhysicalFileProvider(generatedFilesRoot),
-    RequestPath = string.Empty
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(storagePath),
+    RequestPath = "/api/v1/storage"
 });
 
-app.UseCors("FrontendCors");
+app.UseHttpsRedirection();
+app.UseCors("AllowFrontend");
+app.UseAuthorization();
 app.MapControllers();
 
 app.Run();

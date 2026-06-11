@@ -7,6 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="appsettings.Development.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="appsettings.Development.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.7" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.7">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -20,4 +28,5 @@
     <ProjectReference Include="..\ZooTech.Infrastructure\ZooTech.Infrastructure.csproj" />
     <ProjectReference Include="..\ZooTech.InterfaceAdapters\ZooTech.InterfaceAdapters.csproj" />
   </ItemGroup>
+
 </Project>

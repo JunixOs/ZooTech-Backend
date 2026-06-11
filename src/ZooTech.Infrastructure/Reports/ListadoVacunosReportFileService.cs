@@ -3,7 +3,7 @@ using System.IO.Compression;
 using System.Net;
 using System.Text;
 using Microsoft.Extensions.Options;
-using ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ListarReporteVacunos;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
 using ZooTech.Infrastructure.Storage;
 
 namespace ZooTech.Infrastructure.Reports;
@@ -18,8 +18,8 @@ public sealed class ListadoVacunosReportFileService : IListadoVacunosReportFileS
     }
     public async Task<ListadoVacunosReportFileResult> GenerateExcelAsync(
         IReadOnlyCollection<VacunoListadoItem> data,
-        ReporteVacunoResumen resumen,
-        ReporteVacunoFiltros filtros,
+        ListarVacunosResumen resumen,
+        ListarVacunosFiltros filtros,
         CancellationToken cancellationToken = default)
     {
         var fecha = DateTime.UtcNow.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
@@ -49,8 +49,8 @@ public sealed class ListadoVacunosReportFileService : IListadoVacunosReportFileS
 
     public async Task<ListadoVacunosReportFileResult> GeneratePdfAsync(
         IReadOnlyCollection<VacunoListadoItem> data,
-        ReporteVacunoResumen resumen,
-        ReporteVacunoFiltros filtros,
+        ListarVacunosResumen resumen,
+        ListarVacunosFiltros filtros,
         CancellationToken cancellationToken = default)
     {
         var fecha = DateTime.UtcNow.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
@@ -84,8 +84,8 @@ public sealed class ListadoVacunosReportFileService : IListadoVacunosReportFileS
 
     private static string BuildWorksheetXml(
         IReadOnlyCollection<VacunoListadoItem> data,
-        ReporteVacunoResumen resumen,
-        ReporteVacunoFiltros filtros)
+        ListarVacunosResumen resumen,
+        ListarVacunosFiltros filtros)
     {
         var rows = new List<IReadOnlyList<string?>>
         {
@@ -150,8 +150,8 @@ public sealed class ListadoVacunosReportFileService : IListadoVacunosReportFileS
 
     private static IReadOnlyList<string> BuildPdfLines(
         IReadOnlyCollection<VacunoListadoItem> data,
-        ReporteVacunoResumen resumen,
-        ReporteVacunoFiltros filtros)
+        ListarVacunosResumen resumen,
+        ListarVacunosFiltros filtros)
     {
         var lines = new List<string>
         {
@@ -302,3 +302,4 @@ public sealed class ListadoVacunosReportFileService : IListadoVacunosReportFileS
 </Relationships>
 """;
 }
+
