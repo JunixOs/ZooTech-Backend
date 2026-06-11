@@ -6,8 +6,8 @@ public static class OrdenioRule
 {
     public static void ValidarLitros(decimal litros)
     {
-        if (litros < 0)
-            throw new ArgumentException("La cantidad de litros no puede ser negativa.");
+        if (litros <= 0)
+            throw new ArgumentException("La cantidad de litros debe ser mayor que cero.");
     }
 
     public static void ValidarFechaHora(DateTime fechaHora)
