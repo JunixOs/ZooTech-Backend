@@ -39,15 +39,7 @@ public sealed class CeloController : ControllerBase
     {
         var output = await _listarCelosInputPort.HandleAsync(cancellationToken);
 
-        var response = output.Items.Select(item => new CeloItemResponse
-        {
-            CodigoRegistro = item.CodigoRegistro,
-            Fecha = item.Fecha,
-            Hora = item.Hora,
-            CodigoVacuno = item.CodigoVacuno,
-            NombreVacuno = item.NombreVacuno,
-            VecesEnCelo = item.VecesEnCelo
-        }).ToList();
+        var response = output.Items.Select(CeloMapper.ToResponse).ToList();
 
         return Ok(GeneralResponseDTO<List<CeloItemResponse>>.Ok(response));
     }
