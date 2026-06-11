@@ -1,9 +1,8 @@
+using FluentValidation;
 using ZooTech.Application.Common.Exceptions;
-using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Common;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.CreateOrdenio;
-using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.ListOrdenios;
-using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Ports;
 using ZooTech.Domain.Module_ProduccionLeche.Entities;
+using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
 
 namespace ZooTech.Application.UnitTests.Modules.Module_ProduccionLeche.UseCases.CreateOrdenio;
 
@@ -19,7 +18,8 @@ public class CreateOrdenioInteractorTests
             ExistsUsuarioResult = true,
             ExistsEstadoResult = true
         };
-        var interactor = new CreateOrdenioInteractor(repository);
+        var validator = new InlineValidator<CreateOrdenioCommand>();
+        var interactor = new CreateOrdenioInteractor(repository, validator);
 
         var command = new CreateOrdenioCommand(
             Codigo: "ORD-001",
@@ -62,8 +62,15 @@ public class CreateOrdenioInteractorTests
         public Task<Ordenio?> GetByIdAsync(long id, CancellationToken cancellationToken)
             => Task.FromResult<Ordenio?>(null);
 
-        public Task<IReadOnlyList<OrdenioOutput>> ListAsync(ListOrdeniosQuery query, CancellationToken cancellationToken)
-            => Task.FromResult<IReadOnlyList<OrdenioOutput>>(Array.Empty<OrdenioOutput>());
+        public Task<(IReadOnlyList<Ordenio> Items, int TotalCount)> ListAsync(
+            long? vacunoId,
+            string? estadoOrdenioCode,
+            DateTime? fechaDesde,
+            DateTime? fechaHasta,
+            int page,
+            int pageSize,
+            CancellationToken cancellationToken)
+            => Task.FromResult<(IReadOnlyList<Ordenio> Items, int TotalCount)>((Array.Empty<Ordenio>(), 0));
 
         public Task<Ordenio> AddAsync(Ordenio ordenio, CancellationToken cancellationToken)
             => Task.FromResult(ordenio);
