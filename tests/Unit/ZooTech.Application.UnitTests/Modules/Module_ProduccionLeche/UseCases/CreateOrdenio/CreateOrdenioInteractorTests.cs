@@ -1,11 +1,11 @@
-﻿using ZooTech.Application.Common.Exceptions;
+using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Common;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.CreateOrdenio;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.ListOrdenios;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Ports;
 using ZooTech.Domain.Module_ProduccionLeche.Entities;
 
-namespace ZooTech.Application.UnitTests;
+namespace ZooTech.Application.UnitTests.Modules.Module_ProduccionLeche.UseCases.CreateOrdenio;
 
 public class CreateOrdenioInteractorTests
 {

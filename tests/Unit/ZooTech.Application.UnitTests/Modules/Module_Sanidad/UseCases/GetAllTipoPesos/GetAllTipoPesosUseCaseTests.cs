@@ -1,9 +1,9 @@
-﻿using Moq;
+using Moq;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases;
 using ZooTech.Domain.Module_Sanidad.Entities;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
 
-namespace ZooTech.Application.UnitTests;
+namespace ZooTech.Application.UnitTests.Modules.Module_Sanidad.UseCases.GetAllTipoPesos;
 
 public class GetAllTipoPesosUseCaseTests
 {

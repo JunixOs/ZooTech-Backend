@@ -1,6 +1,6 @@
-﻿using ZooTech.Domain.Module_ProduccionLeche.Entities;
+using ZooTech.Domain.Module_ProduccionLeche.Entities;
 
-namespace ZooTech.Domain.UnitTests;
+namespace ZooTech.Domain.UnitTests.Module_ProduccionLeche;
 
 public class OrdenioTests
 {

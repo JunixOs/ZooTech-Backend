@@ -1,15 +1,15 @@
-﻿using Moq;
+using Moq;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases;
 using ZooTech.Domain.Module_Sanidad.Entities;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
 
-namespace ZooTech.Application.UnitTests;
+namespace ZooTech.Application.UnitTests.Modules.Module_Sanidad.UseCases.GetAllVacunosSanidad;
 
-public class GetAllVacunosUseCaseTests
+public class GetAllVacunosSanidadUseCaseTests
 {
     private readonly Mock<ITriajeRepository> _repositoryMock;
 
-    public GetAllVacunosUseCaseTests()
+    public GetAllVacunosSanidadUseCaseTests()
     {
         _repositoryMock = new Mock<ITriajeRepository>();
     }
