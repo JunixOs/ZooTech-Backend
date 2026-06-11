@@ -10,7 +10,6 @@ using ZooTech.InterfaceAdapters.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.DTOs.Responses;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Mappers;
-using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Ports;
 using Asp.Versioning;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
@@ -50,19 +49,7 @@ public sealed class ProduccionLecheController : ControllerBase
         return Ok(new { status = "Api funcionando de manera correcta", model = "modulo produccion leche" });
     }
 
-    [HttpGet("vacunos")]
-    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetVacunos(CancellationToken cancellationToken)
-    {
-        var list = await repository.ListVacunosAsync(cancellationToken);
-        var mappedList = list.Select(x => new {
-            id = x.Id,
-            
-            nombre = x.Nombre,
-            raza = x.RazaCode,
-        }).ToList();
-        return Ok(new { data = mappedList });
-    }
+  
 
     [HttpPost]
     [ProducesResponseType(typeof(GeneralResponseDTO<OrdenioResponse>), StatusCodes.Status201Created)]
@@ -83,13 +70,28 @@ public sealed class ProduccionLecheController : ControllerBase
 
             return CreatedAtAction(
                 nameof(GetById),
-                new { id = response.Data.Id },
+                new { id = response.Id },
                 response);
         }
         catch (ConflictException ex)
         {
             return Conflict(ToError("CONFLICT_ERROR", ex.Message));
         }
+    }
+    [HttpGet("vacunos")]
+    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetVacunos(CancellationToken cancellationToken)
+    {
+        var list = await _listarVacunosInputPort.HandleAsync(cancellationToken);
+
+        var mappedList = list.Select(x => new
+        {
+            id = x.Id,
+            nombre = x.Nombre,
+            raza = x.RazaCode,
+        }).ToList();
+
+        return Ok(new { data = mappedList });
     }
 
     [HttpGet("{id:long}")]
