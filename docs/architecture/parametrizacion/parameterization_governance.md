@@ -150,6 +150,94 @@ Si el setting es obligatorio (`is_required = 1`), ejecutar un INSERT para poblar
 
 ---
 
+## 🔄 3.1 Sincronización BD ↔ T4: Cuándo y Cómo Regenerar
+
+### Problema
+
+El T4 genera `ZooParameters.cs` en **tiempo de build** consultando `setting_definitions`, `setting_values`, `features` y `rule_definitions` directamente de la BD. Si un DBA o administrador:
+
+1. **Agrega** una nueva `setting_definition` o `feature`.
+2. **Modifica** un `default_value` o `data_type`.
+3. **Elimina** (soft-delete) una definición.
+
+El código compilado (`ZooParameters.cs`) **queda desactualizado** hasta que el T4 se ejecute nuevamente. Los nuevos settings no aparecerán en `ZooSettings.*`, las features desactivadas seguirán apareciendo como `FeatureFlag`, y los defaults modificados no se reflejarán en `SettingDefinition<T>.DefaultValue`.
+
+### Solución: Regeneración Automática en Build + Manual Bajo Demanda
+
+| Escenario | Acción | Frecuencia |
+|-----------|--------|-----------|
+| **Build local** | El MSBuild Target ejecuta T4 automáticamente (`dotnet t4 ...`) con `IgnoreExitCode="true"` | Cada `dotnet build` |
+| **CI/CD pipeline** | El pipeline ejecuta `dotnet t4` como paso previo a `dotnet build` | Cada push/PR |
+| **Post-migración de BD** | El script de migración SQL debe incluir un paso que ejecute `dotnet t4` y commitee el `.cs` generado | Cada migración |
+| **Admin agrega definición vía UI** | El endpoint `POST api/v1/admin/tenants/settings` (futuro) debe disparar regeneración T4 como job en background | Por demanda |
+
+### Comandos de Regeneración
+
+```powershell
+# Manual (desarrollo) — ejecutar T4 y regenerar ZooParameters.cs
+dotnet t4 src/ZooTech.Infrastructure/Configuration/ZooParameters.tt -o src/ZooTech.Domain/Generated/ZooParameters.cs
+
+# Via MSBuild (pasar flag RegenerateT4=true)
+dotnet build src/ZooTech.Infrastructure/ZooTech.Infrastructure.csproj -p:RegenerateT4=true
+
+# Verificar que compila
+dotnet build src/ZooTech.Domain/ZooTech.Domain.csproj
+```
+
+> **Nota:** El MSBuild Target `GenerateZooParameters` está configurado con `Condition="'$(RegenerateT4)' == 'true'"` para que solo se ejecute bajo demanda (evitando errores de T4 durante builds regulares). En CI/CD, el pipeline debe pasar `-p:RegenerateT4=true` explícitamente.
+
+### Verificación Post-Regeneración
+
+1. Abrir `src/ZooTech.Domain/Generated/ZooParameters.cs`.
+2. Verificar que el header auto-generado muestre timestamp reciente.
+3. Verificar que las nuevas definiciones aparezcan como `SettingDefinition<T>`, `FeatureFlag` o `RuleSchema`.
+4. Verificar que los tipos C# (`int`, `decimal`, `bool`, `string`) mapean correctamente desde `data_type`.
+5. Verificar que `dotnet build` compila sin errores.
+
+### Riesgo de Desincronización
+
+| Riesgo | Impacto | Mitigación |
+|--------|---------|------------|
+| T4 no se ejecuta tras migración SQL | Las nuevas definiciones no tienen `SettingDefinition<T>` generado → no se pueden usar con `ITenantConfiguration.Get<T>()` | MSBuild Target en csproj + paso obligatorio en CI/CD |
+| BD no disponible durante build | T4 falla y genera stub vacío | `IgnoreExitCode="true"` permite continuar; stub vacío compila sin las nuevas constantes |
+| `dotnet-t4` no instalado | MSBuild Target falla silenciosamente | `dotnet tool restore` en `.config/dotnet-tools.json`; documentado como paso inicial |
+| Feature desactivada (is_active=0) sigue en T4 generado | La feature aparece como `FeatureFlag` activa | **Corregido**: El query del T4 ahora filtra `is_active = 1` para features |
+
+### Flujo Completo Actualizado
+
+```
+┌──────────────────┐
+│ 1. DBA ejecuta   │
+│    INSERT SQL    │
+└────────┬─────────┘
+         ▼
+┌──────────────────┐
+│ 2. dotnet t4     │  ← Regenera ZooParameters.cs
+│    (manual o CI) │
+└────────┬─────────┘
+         ▼
+┌──────────────────┐
+│ 3. dotnet build  │  ← Verifica compilación
+│    (MSBuild ejecuta│     MSBuild Target también
+│     T4 de nuevo)  │     ejecuta T4 (idempotente)
+└────────┬─────────┘
+         ▼
+┌──────────────────┐
+│ 4. Código usa    │
+│    ZooSettings.  │  ← Consume SettingDefinition<T>
+│    Group.Field   │     con autocompletado tipado
+└────────┬─────────┘
+         ▼
+┌──────────────────┐
+│ 5. Commit + PR   │  ← ZooParameters.cs SE COMMITEA
+│    (generado)    │     como parte del código fuente
+└──────────────────┘
+```
+
+> **Regla de oro:** `ZooParameters.cs` es código generado **versionado**. Cada cambio de definiciones en BD debe venir acompañado del `.cs` regenerado en el mismo commit.
+
+---
+
 ## 📝 4. Plantillas y Contratos de Inserción SQL
 
 ### A. Contrato para un nuevo **Setting**

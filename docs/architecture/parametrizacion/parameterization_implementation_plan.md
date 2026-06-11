@@ -349,6 +349,36 @@ dotnet build src/ZooTech.Infrastructure/ZooTech.Infrastructure.csproj
 ```
 Debe compilar sin errores. Si la BD no está disponible, el archivo generado será el stub vacío (verifica que exista `ZooParameters.cs`).
 
+### Paso 3.7: Configurar regeneración T4 en CI/CD
+
+Agregar al pipeline de CI/CD (antes del build):
+
+```yaml
+- task: DotNetCoreCLI@2
+  displayName: 'Regenerar ZooParameters desde BD'
+  inputs:
+    command: custom
+    custom: t4
+    arguments: 'src/ZooTech.Infrastructure/Configuration/ZooParameters.tt -o src/ZooTech.Domain/Generated/ZooParameters.cs'
+```
+
+Alternativa via MSBuild:
+
+```yaml
+- task: DotNetCoreCLI@2
+  displayName: 'Build con regeneración T4'
+  inputs:
+    command: build
+    projects: 'src/ZooTech.Infrastructure/ZooTech.Infrastructure.csproj'
+    arguments: '-p:RegenerateT4=true'
+```
+
+> **Nota:** El MSBuild Target `GenerateZooParameters` solo se ejecuta cuando se pasa `-p:RegenerateT4=true`. Esto previene errores del motor T4 (como missing assemblies) durante builds regulares de desarrollo.
+
+**Principio clave:** `ZooParameters.cs` es código generado **versionado**. Toda migración de BD que modifique `setting_definitions`, `features` o `rule_definitions` debe incluir el `.cs` regenerado en el mismo commit.
+
+Ver documentación completa de sincronización BD ↔ T4 en `parameterization_governance.md` → sección **3.1**.
+
 ---
 
 ## 📂 Fase 4: InterfaceAdapters — Controller y DTOs
