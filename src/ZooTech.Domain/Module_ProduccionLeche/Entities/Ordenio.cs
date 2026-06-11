@@ -17,6 +17,7 @@ public sealed class Ordenio
         DateTime createdAt,
         DateTime updatedAt,
         DateTime? deletedAt,
+        string? motivoEliminacion,
         long? createdBy,
         long? updatedBy,
         long? deletedBy)
@@ -33,6 +34,7 @@ public sealed class Ordenio
         CreatedAt = createdAt;
         UpdatedAt = updatedAt;
         DeletedAt = deletedAt;
+        MotivoEliminacion = motivoEliminacion;
         CreatedBy = createdBy;
         UpdatedBy = updatedBy;
         DeletedBy = deletedBy;
@@ -83,6 +85,7 @@ public sealed class Ordenio
             createdAt: utcNow,
             updatedAt: utcNow,
             deletedAt: null,
+            motivoEliminacion: null,
             createdBy: actorUsuarioId,
             updatedBy: actorUsuarioId,
             deletedBy: null);
@@ -121,6 +124,7 @@ public sealed class Ordenio
             createdAt,
             updatedAt,
             deletedAt,
+            motivoEliminacion,
             createdBy,
             updatedBy,
             deletedBy);

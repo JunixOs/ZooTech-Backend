@@ -1,16 +1,18 @@
 using ZooTech.Application;
 using ZooTech.Infrastructure;
-using ZooTech.Infrastructure.Configuration;
 using ZooTech.InterfaceAdapters;
-using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
+using ZooTech.InterfaceAdapters.Controllers;
+using ZooTech.InterfaceAdapters.Middleware;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.Controllers;
-using ZooTech.Infrastructure.Persistence.Repositories;
+using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
+using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Controllers;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services
     .AddControllers()
     .AddApplicationPart(typeof(HomeController).Assembly)
     .AddApplicationPart(typeof(CeloController).Assembly)
+    .AddApplicationPart(typeof(VacunoController).Assembly)
     .AddApplicationPart(typeof(ProduccionLecheController).Assembly);
 
 builder.Services.AddEndpointsApiExplorer();
@@ -40,9 +42,6 @@ builder.Services
     .AddApplication()
     .AddInfrastructure(builder.Configuration)
     .AddInterfaceAdapters();
-
-builder.Services.AddScoped<CeloRepository>();
-builder.Services.AddSanidadServices(builder.Configuration);
 
 builder.Services.AddCors(options =>
 {
@@ -81,6 +80,7 @@ if (app.Environment.IsDevelopment())
 }
 
 
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 app.UseAuthorization();

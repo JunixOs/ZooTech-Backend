@@ -2,28 +2,28 @@ using Microsoft.EntityFrameworkCore;
 using ZooTech.Application.Common.Gateway.Time;
 using ZooTech.Domain.Module_Sanidad.Entities;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
-using ZooTech.Infrastructure.Context;
+using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Persistence.Entities;
 
 namespace ZooTech.Infrastructure.Persistence.Modules.Module_Sanidad.Repositories;
 
 public class TriajeRepository : ITriajeRepository
 {
-    private readonly ZootechContext _context;
+    private readonly GanaderiaDbContext _context;
     private readonly IDateTimeProvider _dateTimeProvider;
 
-    public TriajeRepository(ZootechContext context, IDateTimeProvider dateTimeProvider)
+    public TriajeRepository(GanaderiaDbContext context, IDateTimeProvider dateTimeProvider)
     {
         _context = context;
         _dateTimeProvider = dateTimeProvider;
     }
 
-    public async Task<Triaje?> GetByIdAsync(long id)
+    public async Task<Triaje?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
     {
-        var entity = await _context.Triajes
+        var entity = await _context.triajes
             .Include(t => t.vacuno)
             .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.id == id && t.deleted_at == null);
+            .FirstOrDefaultAsync(t => t.id == id && t.deleted_at == null, cancellationToken);
 
         return entity is null ? null : ToTriaje(entity);
     }
@@ -35,9 +35,10 @@ public class TriajeRepository : ITriajeRepository
         string? codigo = null,
         string? nombre = null,
         string? tipoPeso = null,
-        decimal? pesoKg = null)
+        decimal? pesoKg = null,
+        CancellationToken cancellationToken = default)
     {
-        var query = _context.Triajes
+        var query = _context.triajes
             .AsNoTracking()
             .Include(t => t.vacuno)
             .Where(t => t.deleted_at == null)
@@ -55,26 +56,29 @@ public class TriajeRepository : ITriajeRepository
         if (pesoKg.HasValue)
             query = query.Where(t => t.peso_kg == pesoKg);
 
+        if (!string.IsNullOrEmpty(fecha) && DateTime.TryParse(fecha, out var fechaParsed))
+            query = query.Where(t => t.fecha_hora.Date == fechaParsed.Date);
+
         query = query.OrderByDescending(t => t.fecha_hora);
 
-        var total = await query.CountAsync();
+        var total = await query.CountAsync(cancellationToken);
 
         var entities = await query
             .Skip((pagina - 1) * tamano)
             .Take(tamano)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return (entities.Select(ToTriaje), total);
     }
 
-    public async Task AddAsync(Triaje triaje)
+    public async Task<Triaje> AddAsync(Triaje triaje, CancellationToken cancellationToken = default)
     {
         try
         {
             var entity = ToEntity(triaje);
-            _context.Triajes.Add(entity);
-            await _context.SaveChangesAsync();
-            triaje.Id = entity.id;
+            _context.triajes.Add(entity);
+            await _context.SaveChangesAsync(cancellationToken);
+            return ToTriaje(entity);
         }
         catch (DbUpdateException)
         {
@@ -82,17 +86,17 @@ public class TriajeRepository : ITriajeRepository
         }
     }
 
-    public async Task UpdateAsync(Triaje triaje)
+    public async Task UpdateAsync(Triaje triaje, CancellationToken cancellationToken = default)
     {
         var entity = ToEntity(triaje);
-        _context.Triajes.Update(entity);
-        await _context.SaveChangesAsync();
+        _context.triajes.Update(entity);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task DeleteAsync(long id)
+    public async Task DeleteAsync(long id, CancellationToken cancellationToken = default)
     {
-        var entity = await _context.Triajes
-            .FirstOrDefaultAsync(t => t.id == id && t.deleted_at == null);
+        var entity = await _context.triajes
+            .FirstOrDefaultAsync(t => t.id == id && t.deleted_at == null, cancellationToken);
 
         if (entity is null) return;
 
@@ -100,15 +104,15 @@ public class TriajeRepository : ITriajeRepository
         entity.deleted_at = now;
         entity.updated_at = now;
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<string> GenerateCodigoAsync()
+    public async Task<string> GenerateCodigoAsync(CancellationToken cancellationToken = default)
     {
-        var codigos = await _context.Triajes
+        var codigos = await _context.triajes
             .Where(t => t.codigo.StartsWith("TRI"))
             .Select(t => t.codigo)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         var maxNumber = codigos
             .Select(codigo =>
@@ -119,34 +123,9 @@ public class TriajeRepository : ITriajeRepository
         return $"TRI{maxNumber + 1:D3}";
     }
 
-    // Metodo get para traer tipo peso 
-    public async Task<IEnumerable<TipoPeso>> GetAllTipoPesosAsync()
+    public async Task<IEnumerable<TriajeHistorialItem>> GetHistorialByVacunoIdAsync(long vacunoId, CancellationToken cancellationToken = default)
     {
-        return await _context.CatTipoPesos
-            .Where(t => t.activo)
-            .Select(t => new TipoPeso
-            {
-                Code = t.code,
-                Nombre = t.nombre
-            })
-            .ToListAsync();
-    }
-
-    public async Task<IEnumerable<VacunoOption>> GetAllVacunosAsync()
-    {
-        return await _context.Vacunos
-            .Where(v => v.deleted_at == null)
-            .Select(v => new VacunoOption
-            {
-                Id = v.id,
-                Codigo = v.codigo,
-                Nombre = v.nombre
-            })
-            .ToListAsync();
-    }
-    public async Task<IEnumerable<TriajeHistorialItem>> GetHistorialByVacunoIdAsync(long vacunoId)
-    {
-        return await _context.Triajes
+        return await _context.triajes
             .AsNoTracking()
             .Where(t => t.vacuno_id == vacunoId && t.deleted_at == null)
             .OrderByDescending(t => t.fecha_hora)
@@ -157,31 +136,29 @@ public class TriajeRepository : ITriajeRepository
                 TipoPesoCode = t.tipo_peso_code,
                 PesoKg = t.peso_kg
             })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
 
     // Mappers
-    private static Triaje ToTriaje(triaje e) => new()
-    {
-        Id = e.id,
-        Codigo = e.codigo,
-        FechaHora = e.fecha_hora,
-        VacunoId = e.vacuno_id,
-        VacunoNombre = e.vacuno.nombre,
-        TipoPesoCode = e.tipo_peso_code,
-        PesoKg = e.peso_kg,
-        Observaciones = e.observaciones,
-        EstadoRegistroCode = e.estado_registro_code,
-        EncargadoUsuarioId = e.encargado_usuario_id,
-        CreatedBy = e.created_by,
-        UpdatedBy = e.updated_by,
-        DeletedBy = e.deleted_by,
-        CreatedAt = e.created_at,
-        UpdatedAt = e.updated_at,
-        DeletedAt = e.deleted_at,
-        MotivoEliminacion = e.motivo_eliminacion
-    };
+    private static Triaje ToTriaje(triaje e) => Triaje.Rehydrate(
+        id: e.id,
+        codigo: e.codigo,
+        fechaHora: e.fecha_hora,
+        vacunoId: e.vacuno_id,
+        vacunoNombre: e.vacuno?.nombre ?? string.Empty,
+        tipoPesoCode: e.tipo_peso_code,
+        pesoKg: e.peso_kg,
+        observaciones: e.observaciones,
+        estadoRegistroCode: e.estado_registro_code,
+        encargadoUsuarioId: e.encargado_usuario_id,
+        createdBy: e.created_by,
+        updatedBy: e.updated_by,
+        deletedBy: e.deleted_by,
+        createdAt: e.created_at,
+        updatedAt: e.updated_at,
+        deletedAt: e.deleted_at,
+        motivoEliminacion: e.motivo_eliminacion);
 
     private static triaje ToEntity(Triaje t) => new()
     {
