@@ -4,7 +4,7 @@ using Microsoft.Extensions.Options;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
-using ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ObtenerRegistroVacunoReporte;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte;
 using ZooTech.Infrastructure.Storage;
 
 namespace ZooTech.Infrastructure.Reports;
@@ -65,20 +65,20 @@ public sealed class RegistroVacunoPdfReportService : IRegistroVacunoPdfReportSer
 
     private void ComposeHeader(IContainer container, RegistroVacunoDetalle vacuno, CultureInfo culture)
     {
-        container.Row(row =>
+        container.Background(Colors.Blue.Darken3).Padding(20).Row(row =>
         {
             row.RelativeItem().Column(column =>
             {
-                column.Item().Text("ZooTech").FontSize(28).SemiBold().FontColor(Colors.Blue.Darken2);
-                column.Item().Text("Reporte Individual de Vacuno").FontSize(16).FontColor(Colors.Grey.Darken2);
-                column.Item().PaddingTop(5).Text($"Generado el: {DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", culture)}")
-                      .FontSize(9).FontColor(Colors.Grey.Medium);
+                column.Item().Text("ZooTech").FontSize(32).Black().FontColor(Colors.White);
+                column.Item().Text("Reporte Individual de Vacuno").FontSize(16).FontColor(Colors.Blue.Lighten4);
+                column.Item().PaddingTop(10).Text($"Generado el: {DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", culture)}")
+                      .FontSize(10).FontColor(Colors.Blue.Lighten4);
             });
 
-            row.ConstantItem(120).AlignRight().Column(c => 
+            row.ConstantItem(150).AlignRight().Column(c => 
             {
-                c.Item().Text("ID del Sistema").FontSize(9).FontColor(Colors.Grey.Medium).AlignRight();
-                c.Item().Text($"#{vacuno.Id}").FontSize(18).Bold().FontColor(Colors.Blue.Darken3).AlignRight();
+                c.Item().Text("ID del Sistema").FontSize(10).FontColor(Colors.Blue.Lighten4).AlignRight();
+                c.Item().Text($"#{vacuno.Id}").FontSize(24).Bold().FontColor(Colors.White).AlignRight();
             });
         });
     }
@@ -87,7 +87,7 @@ public sealed class RegistroVacunoPdfReportService : IRegistroVacunoPdfReportSer
     {
         container.PaddingVertical(1, Unit.Centimetre).Column(column =>
         {
-            column.Spacing(20);
+            column.Spacing(25);
 
             column.Item().Row(row =>
             {
@@ -95,8 +95,10 @@ public sealed class RegistroVacunoPdfReportService : IRegistroVacunoPdfReportSer
 
                 if (!string.IsNullOrEmpty(photoPath))
                 {
-                    row.ConstantItem(160).PaddingLeft(20).AlignRight()
-                        .Width(140).Height(140).Border(1).BorderColor(Colors.Grey.Lighten2)
+                    row.ConstantItem(180).PaddingLeft(25).AlignRight()
+                        .Width(155).Height(155)
+                        .DefaultTextStyle(x => x.SemiBold())
+                        .Border(2).BorderColor(Colors.Blue.Lighten2)
                         .Image(photoPath).FitArea();
                 }
             });
@@ -158,15 +160,15 @@ public sealed class RegistroVacunoPdfReportService : IRegistroVacunoPdfReportSer
     {
         container.Column(column =>
         {
-            column.Item()
-                .Background(Colors.Blue.Lighten4)
-                .Padding(6)
-                .Text(title)
-                .SemiBold()
-                .FontSize(12)
-                .FontColor(Colors.Blue.Darken3);
+            column.Item().PaddingBottom(10).Row(row =>
+            {
+                row.AutoItem().Background(Colors.Blue.Darken2).PaddingVertical(4).PaddingHorizontal(10)
+                   .Text(title).Bold().FontSize(14).FontColor(Colors.White);
+                
+                row.RelativeItem().PaddingTop(12).LineHorizontal(1).LineColor(Colors.Blue.Lighten2);
+            });
 
-            column.Item().Padding(10).Table(table =>
+            column.Item().Background(Colors.Grey.Lighten4).Padding(15).Table(table =>
             {
                 table.ColumnsDefinition(columns =>
                 {
@@ -183,19 +185,26 @@ public sealed class RegistroVacunoPdfReportService : IRegistroVacunoPdfReportSer
 
     private void AddTableItem(TableDescriptor table, string label, string? value, uint columnsSpan = 1)
     {
-        table.Cell().ColumnSpan(1).PaddingBottom(5).Text($"{label}:").SemiBold().FontColor(Colors.Grey.Darken3);
-        table.Cell().ColumnSpan(columnsSpan).PaddingBottom(5).Text(string.IsNullOrWhiteSpace(value) ? "-" : value);
+        table.Cell().ColumnSpan(1).PaddingBottom(8).Text($"{label}:").SemiBold().FontColor(Colors.Grey.Darken3);
+        table.Cell().ColumnSpan(columnsSpan).PaddingBottom(8).Text(string.IsNullOrWhiteSpace(value) ? "-" : value).FontColor(Colors.Black);
     }
 
     private void ComposeFooter(IContainer container)
     {
-        container.AlignCenter().Text(x =>
+        container.Column(column =>
         {
-            x.Span("Página ");
-            x.CurrentPageNumber();
-            x.Span(" de ");
-            x.TotalPages();
-            x.Span(" - Documento generado automáticamente por ZooTech").FontSize(8).FontColor(Colors.Grey.Medium);
+            column.Item().LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
+            column.Item().PaddingTop(10).Row(row =>
+            {
+                row.RelativeItem().Text("ZooTech - Sistema Integral de Ganadería").FontSize(10).FontColor(Colors.Grey.Medium);
+                row.RelativeItem().AlignRight().Text(x =>
+                {
+                    x.Span("Página ").FontSize(10).FontColor(Colors.Grey.Medium);
+                    x.CurrentPageNumber().FontSize(10).FontColor(Colors.Grey.Medium);
+                    x.Span(" de ").FontSize(10).FontColor(Colors.Grey.Medium);
+                    x.TotalPages().FontSize(10).FontColor(Colors.Grey.Medium);
+                });
+            });
         });
     }
 
@@ -244,3 +253,4 @@ public sealed class RegistroVacunoPdfReportService : IRegistroVacunoPdfReportSer
         return string.IsNullOrWhiteSpace(safe) ? "vacuno" : safe;
     }
 }
+

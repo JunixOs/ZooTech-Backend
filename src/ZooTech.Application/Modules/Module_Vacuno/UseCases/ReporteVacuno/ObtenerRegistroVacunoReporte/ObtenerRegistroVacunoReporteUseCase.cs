@@ -2,7 +2,7 @@ using ZooTech.Application.Common.Exceptions;
 
 
 
-namespace ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ObtenerRegistroVacunoReporte;
+namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte;
 
 public sealed class ObtenerRegistroVacunoReporteUseCase : IObtenerRegistroVacunoReporteUseCase
 {
@@ -80,3 +80,4 @@ public sealed class ObtenerRegistroVacunoReporteUseCase : IObtenerRegistroVacuno
         }
     }
 }
+

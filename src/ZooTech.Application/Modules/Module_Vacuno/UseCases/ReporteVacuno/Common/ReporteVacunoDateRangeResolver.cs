@@ -1,7 +1,6 @@
 using System.Globalization;
-using ZooTech.Application.Common.Exceptions;
 
-namespace ZooTech.Application.Modules.Module_ReporteVacuno.Common;
+namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.Common;
 
 public sealed record ReporteVacunoDateRange(DateOnly FechaDesde, DateOnly FechaHasta);
 
@@ -19,7 +18,7 @@ public static class ReporteVacunoDateRangeResolver
 
         if (desde > hasta)
         {
-            throw new ArgumentException("fechaDesde no puede ser mayor que fechaHasta.");
+            throw new ArgumentException("fechaDesde no puede ser mayor que fechaHasta.", "fechaDesde");
         }
 
         return new ReporteVacunoDateRange(desde, hasta);
@@ -42,6 +41,7 @@ public static class ReporteVacunoDateRangeResolver
             return date;
         }
 
-        throw new ArgumentException($"El parametro {field} tiene un formato invalido. Use {dateFormat}.");
+        throw new ArgumentException($"La fecha debe usar formato {dateFormat}.", field);
     }
 }
+

@@ -51,8 +51,9 @@ public sealed class ProduccionLecheController : ControllerBase
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetVacunos(CancellationToken cancellationToken)
     {
-        var output = await _listarVacunosInputPort.HandleAsync(cancellationToken);
-        var data = output.Items.Select(x => new { id = x.Id, codigo = x.Codigo, nombre = x.Nombre, raza = x.RazaCode });
+        var command = new ListarVacunosCommand(null, null, null, null, null, null, null, null, "1", "10000");
+        var output = await _listarVacunosInputPort.HandleAsync(command, cancellationToken);
+        var data = output.Data.Select(x => new { id = x.Id, codigo = x.Codigo, nombre = x.Nombre, raza = x.RazaCode });
         return Ok(GeneralResponseDTO<object>.Ok(data));
     }
 

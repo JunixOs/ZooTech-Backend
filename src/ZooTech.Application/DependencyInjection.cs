@@ -76,14 +76,8 @@ public static class DependencyInjection
         // ============================================
         // Use Cases - Module_ReporteVacuno
         // ============================================
-<<<<<<< HEAD
         services.AddScoped<ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ListarReportesDisponibles.IListarReportesDisponiblesUseCase, ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ListarReportesDisponibles.ListarReportesDisponiblesUseCase>();
         services.AddScoped<ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte.IObtenerRegistroVacunoReporteUseCase, ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte.ObtenerRegistroVacunoReporteUseCase>();
-=======
-        services.AddScoped<ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ListarReportesDisponibles.IListarReportesDisponiblesUseCase, ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ListarReportesDisponibles.ListarReportesDisponiblesUseCase>();
-        services.AddScoped<ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ListarReporteVacunos.IListarReporteVacunosUseCase, ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ListarReporteVacunos.ListarReporteVacunosUseCase>();
-        services.AddScoped<ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ObtenerRegistroVacunoReporte.IObtenerRegistroVacunoReporteUseCase, ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ObtenerRegistroVacunoReporte.ObtenerRegistroVacunoReporteUseCase>();
->>>>>>> origin/LEONARDO_PARDO/feature
 
         return services;
     }
