@@ -27,6 +27,12 @@ namespace ZooTech.InterfaceAdapters.Middleware
             ITenantContext tenantContext
         )
         {
+            if (string.IsNullOrEmpty(_baseDomain))
+            {
+                await _next(context);
+                return;
+            }
+
             var host = context.Request.Host.Host;
 
             var subDomain = ExtractSubDomain(host);

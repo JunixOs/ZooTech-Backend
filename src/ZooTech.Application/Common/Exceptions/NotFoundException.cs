@@ -12,5 +12,10 @@ namespace ZooTech.Application.Common.Exceptions
         ) : base(code , message)
         {
         }
+
+        public NotFoundException(string code)
+            : base(code, $"No se encontró el recurso '{code}'.")
+        {
+        }
     }
 }

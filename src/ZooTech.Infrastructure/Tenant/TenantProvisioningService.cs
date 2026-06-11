@@ -36,8 +36,8 @@ namespace ZooTech.Infrastructure.Tenant
                 state = cmd.TenantAddress.State,
                 province = cmd.TenantAddress.Province,
                 city = cmd.TenantAddress.City,
-                address_line1 = cmd.TenantAddress.AddressLine_1,
-                address_line2 = cmd.TenantAddress.AddressLine_2,
+                address_line_1 = cmd.TenantAddress.AddressLine_1,
+                address_line_2 = cmd.TenantAddress.AddressLine_2,
                 metadata = cmd.TenantAddress.Metadata,
                 created_at = DateTime.Now
             };
@@ -51,12 +51,12 @@ namespace ZooTech.Infrastructure.Tenant
             var tenant = new tenant
             {
                 code = cmd.Code,
-                sub_domain = cmd.SubDomain,
+                subdomain = cmd.SubDomain,
                 display_name = cmd.DisplayName,
                 legal_name = cmd.LegalName,
                 email = cmd.Email,
                 phone = cmd.Phone,
-                address = addressEntity,
+                addresses = new List<address> { addressEntity },
                 tenant_database_connection = tenantDatabaseConnectionEntity,
                 status = cmd.Status,
                 metadata = cmd.Metadata,

@@ -20,4 +20,6 @@ public interface IOrdenioRepository
         CancellationToken cancellationToken);
     Task<Ordenio> AddAsync(Ordenio ordenio, CancellationToken cancellationToken);
     Task<Ordenio> UpdateAsync(Ordenio ordenio, CancellationToken cancellationToken);
+    Task<IReadOnlyList<ProduccionDiariaItem>> GetProduccionDiariaAsync(DateTime? fechaDesde, DateTime? fechaHasta, long? vacunoId, CancellationToken cancellationToken);
+    Task<IReadOnlyList<ProduccionComparativaDiariaItem>> GetProduccionComparativaDiariaAsync(DateTime? fechaDesde, DateTime? fechaHasta, long? vacunoId, CancellationToken cancellationToken);
 }

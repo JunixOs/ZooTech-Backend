@@ -26,9 +26,9 @@ namespace ZooTech.Infrastructure.Tenant
 
             var tenantInDb = await _tenantCatalogDb.tenants
                 .AsNoTracking() // Esto usalo para mejorar rendimiento cuando solo vas a consultar datos
-                .Include(t => t.address)
+                .Include(t => t.addresses)
                 .Include(t => t.tenant_database_connection)
-                .FirstOrDefaultAsync(t => t.sub_domain == subDomain);
+                .FirstOrDefaultAsync(t => t.subdomain == subDomain);
 
             if(tenantInDb == null || tenantInDb.status.Equals("INACTIVE") || !tenantInDb.tenant_database_connection.is_active)
             {
@@ -38,7 +38,7 @@ namespace ZooTech.Infrastructure.Tenant
             var tenantInfo = new TenantInfo
             {
                 Id = tenantInDb.id,
-                SubDomain = tenantInDb.sub_domain,
+                SubDomain = tenantInDb.subdomain,
                 Code = tenantInDb.code,
                 DatabaseName = tenantInDb.tenant_database_connection.database_name,
                 Status = tenantInDb.status,

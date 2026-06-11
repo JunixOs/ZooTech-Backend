@@ -3,7 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Ports;
+using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Reportes.GetReporteDiario;
 

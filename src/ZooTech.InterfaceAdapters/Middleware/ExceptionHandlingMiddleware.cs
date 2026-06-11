@@ -44,7 +44,6 @@ namespace ZooTech.InterfaceAdapters.Middleware
     }
             catch (Exception ex)
     {
-        context.Response.StatusCode = (int)status;
         context.Response.ContentType = "application/json";
 
                 context.Response.StatusCode = 500;

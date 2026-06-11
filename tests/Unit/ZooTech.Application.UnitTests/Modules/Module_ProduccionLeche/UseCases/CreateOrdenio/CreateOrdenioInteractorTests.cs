@@ -1,6 +1,7 @@
 using FluentValidation;
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.CreateOrdenio;
+using ZooTech.Domain.Module_ProduccionLeche;
 using ZooTech.Domain.Module_ProduccionLeche.Entities;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
 
@@ -76,5 +77,11 @@ public class CreateOrdenioInteractorTests
 
         public Task<Ordenio> UpdateAsync(Ordenio ordenio, CancellationToken cancellationToken)
             => Task.FromResult(ordenio);
+
+        public Task<IReadOnlyList<ProduccionDiariaItem>> GetProduccionDiariaAsync(DateTime? fechaDesde, DateTime? fechaHasta, long? vacunoId, CancellationToken cancellationToken)
+            => Task.FromResult<IReadOnlyList<ProduccionDiariaItem>>(Array.Empty<ProduccionDiariaItem>());
+
+        public Task<IReadOnlyList<ProduccionComparativaDiariaItem>> GetProduccionComparativaDiariaAsync(DateTime? fechaDesde, DateTime? fechaHasta, long? vacunoId, CancellationToken cancellationToken)
+            => Task.FromResult<IReadOnlyList<ProduccionComparativaDiariaItem>>(Array.Empty<ProduccionComparativaDiariaItem>());
     }
 }

@@ -1,7 +1,7 @@
 using ZooTech.Application.Common.Models.Reports;
 using ZooTech.Application.Common.Models.Reports.Builders;
 using ZooTech.Application.Common.Gateway.Services;
-using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Ports;
+using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
 using ZooTech.Domain.Entities.Configuration;
 namespace ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Reportes.GenerateReportePdf;
 

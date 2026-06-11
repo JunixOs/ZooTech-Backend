@@ -10,6 +10,7 @@ using ZooTech.InterfaceAdapters.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.DTOs.Responses;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Mappers;
+using ZooTech.Application.Common.Exceptions;
 using Asp.Versioning;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
@@ -75,16 +76,16 @@ public sealed class ProduccionLecheController : ControllerBase
         }
         catch (ConflictException ex)
         {
-            return Conflict(ToError("CONFLICT_ERROR", ex.Message));
+            return Conflict(GeneralResponseDTO<object>.Fail(ex.Message));
         }
     }
     [HttpGet("vacunos")]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetVacunos(CancellationToken cancellationToken)
     {
-        var list = await _listarVacunosInputPort.HandleAsync(cancellationToken);
+        var output = await _listarVacunosInputPort.HandleAsync(cancellationToken);
 
-        var mappedList = list.Select(x => new
+        var mappedList = output.Items.Select(x => new
         {
             id = x.Id,
             nombre = x.Nombre,
