@@ -82,7 +82,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-var storagePath = Path.Combine(builder.Environment.ContentRootPath, "storage");
+var storagePath = Path.Combine(AppContext.BaseDirectory, "storage");
 if (!Directory.Exists(storagePath))
 {
     Directory.CreateDirectory(storagePath);
