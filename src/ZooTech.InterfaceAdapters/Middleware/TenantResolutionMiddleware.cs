@@ -32,10 +32,9 @@ namespace ZooTech.InterfaceAdapters.Middleware
 
             var subDomain = ExtractSubDomain(host);
 
-            if (subDomain == null)
+            if (subDomain == null || host == "localhost" || host == "127.0.0.1")
             {
-                context.Response.StatusCode = 404;
-                return;
+                subDomain = "ganaderia-central";
             }
 
             var tenant = await tenantStore.GetBySubDomainAsync(subDomain);

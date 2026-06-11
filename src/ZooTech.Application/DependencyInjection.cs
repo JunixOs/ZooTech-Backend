@@ -18,6 +18,7 @@ public static class DependencyInjection
         // Use Cases - Module_Sanidad
         // ============================================
         services.AddScoped<GetAllTriajesUseCase>();
+        services.AddScoped<GetGeneralTriajesReportUseCase>();
         services.AddScoped<GetTriajeByIdUseCase>();
         services.AddScoped<CreateTriajeUseCase>();
         services.AddScoped<UpdateTriajeUseCase>();

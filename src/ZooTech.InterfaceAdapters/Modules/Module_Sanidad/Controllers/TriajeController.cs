@@ -17,6 +17,7 @@ public class TriajeController : ControllerBase
     private readonly GetAllTipoPesosUseCase _getTipoPesosUseCase;
     private readonly GetAllVacunosUseCase _getVacunosUseCase;
     private readonly GetHistorialByVacunoIdUseCase _getHistorialUseCase;
+    private readonly GetGeneralTriajesReportUseCase _getGeneralReportUseCase;
 
     public TriajeController(
         GetAllTriajesUseCase getAllUseCase,
@@ -24,9 +25,10 @@ public class TriajeController : ControllerBase
         CreateTriajeUseCase createUseCase,
         UpdateTriajeUseCase updateUseCase,
         DeleteTriajeUseCase deleteUseCase,
-            GetAllTipoPesosUseCase getTipoPesosUseCase,
-            GetAllVacunosUseCase getVacunosUseCase,
-            GetHistorialByVacunoIdUseCase getHistorialUseCase)
+        GetAllTipoPesosUseCase getTipoPesosUseCase,
+        GetAllVacunosUseCase getVacunosUseCase,
+        GetHistorialByVacunoIdUseCase getHistorialUseCase,
+        GetGeneralTriajesReportUseCase getGeneralReportUseCase)
     {
         _getAllUseCase = getAllUseCase;
         _getByIdUseCase = getByIdUseCase;
@@ -36,6 +38,7 @@ public class TriajeController : ControllerBase
         _getTipoPesosUseCase = getTipoPesosUseCase;
         _getVacunosUseCase = getVacunosUseCase;
         _getHistorialUseCase = getHistorialUseCase;
+        _getGeneralReportUseCase = getGeneralReportUseCase;
     }
 
     [HttpGet]
@@ -117,6 +120,15 @@ public class TriajeController : ControllerBase
     public async Task<ActionResult<IEnumerable<TriajeHistorialResponse>>> GetHistorial(long vacunoId)
     {
         var result = await _getHistorialUseCase.ExecuteAsync(vacunoId);
+        return Ok(result);
+    }
+
+    [HttpGet("reporte/general")]
+    public async Task<ActionResult<IEnumerable<TriajeResponse>>> GetGeneralReport(
+        [FromQuery] DateTime? fechaInicio = null,
+        [FromQuery] DateTime? fechaFin = null)
+    {
+        var result = await _getGeneralReportUseCase.ExecuteAsync(fechaInicio, fechaFin);
         return Ok(result);
     }
 }

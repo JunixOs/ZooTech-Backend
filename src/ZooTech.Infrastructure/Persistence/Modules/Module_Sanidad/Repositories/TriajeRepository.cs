@@ -179,6 +179,30 @@ public class TriajeRepository : ITriajeRepository
             .ToListAsync();
     }
 
+    public async Task<IEnumerable<Triaje>> GetGeneralReportAsync(DateTime? startDate, DateTime? endDate)
+    {
+        var query = _context.Triajes
+            .AsNoTracking()
+            .Include(t => t.vacuno)
+            .Where(t => t.deleted_at == null)
+            .AsQueryable();
+
+        if (startDate.HasValue)
+        {
+            query = query.Where(t => t.fecha_hora >= startDate.Value);
+        }
+
+        if (endDate.HasValue)
+        {
+            query = query.Where(t => t.fecha_hora <= endDate.Value);
+        }
+
+        query = query.OrderBy(t => t.fecha_hora);
+
+        var entities = await query.ToListAsync();
+        return entities.Select(ToTriaje);
+    }
+
 
     // Mappers
     private static Triaje ToTriaje(triaje e) => new()

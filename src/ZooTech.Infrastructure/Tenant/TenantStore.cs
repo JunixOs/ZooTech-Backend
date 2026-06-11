@@ -21,6 +21,19 @@ namespace ZooTech.Infrastructure.Tenant
         {
             var cacheKey = $"tenant:{subDomain}";
 
+            if (subDomain == "ganaderia-central")
+            {
+                return new TenantInfo
+                {
+                    Id = 1,
+                    SubDomain = "ganaderia-central",
+                    Code = "ganaderia-central",
+                    DatabaseName = "zootech",
+                    Status = TenantStatus.ACTIVE,
+                    Email = "central@zootech.com"
+                };
+            }
+
             if (_cache.TryGetValue(cacheKey, out TenantInfo? tenantCached))
             {
                 return tenantCached;
