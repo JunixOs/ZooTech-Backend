@@ -16,8 +16,10 @@ internal static class VacunoMapper
             Id: item.Id,
             Codigo: item.Codigo,
             Nombre: item.Nombre,
+            FechaNacimiento: item.FechaNacimiento,
             RazaCode: item.RazaCode,
-            SexoCode: item.SexoCode);
+            SexoCode: item.SexoCode,
+            Procedencia: item.Procedencia);
 
     internal static CreateVacunoCommand ToCommand(CreateVacunoRequest request)
         => new(

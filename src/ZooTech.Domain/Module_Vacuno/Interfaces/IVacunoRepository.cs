@@ -6,6 +6,8 @@ public interface IVacunoRepository
 {
     Task<List<Vacuno>> ListAllAsync(CancellationToken cancellationToken = default);
 
+    Task<List<(Vacuno Vacuno, string? Procedencia)>> ListAllForDisplayAsync(CancellationToken cancellationToken = default);
+
     Task<Vacuno?> GetByIdAsync(long id, CancellationToken cancellationToken = default);
 
     Task<bool> ExistsAsync(long id, CancellationToken cancellationToken = default);

@@ -25,6 +25,35 @@ public sealed class VacunoRepository : IVacunoRepository
         return entities.Select(ToDomain).ToList();
     }
 
+    public async Task<List<(Vacuno Vacuno, string? Procedencia)>> ListAllForDisplayAsync(CancellationToken cancellationToken = default)
+    {
+        var entities = await _context.vacunos
+            .AsNoTracking()
+            .Include(v => v.granja)
+                .ThenInclude(g => g.distrito_codigoNavigation)
+                    .ThenInclude(d => d.provincia_codigoNavigation)
+                        .ThenInclude(p => p.departamento_codigoNavigation)
+            .Where(v => v.deleted_at == null)
+            .OrderBy(v => v.codigo)
+            .ToListAsync(cancellationToken);
+
+        return entities.Select(v =>
+        {
+            string? procedencia = null;
+            var g = v.granja;
+            if (g is not null)
+            {
+                var d = g.distrito_codigoNavigation;
+                var p = d?.provincia_codigoNavigation;
+                var dep = p?.departamento_codigoNavigation;
+                procedencia = string.Join(", ",
+                    new[] { g.nombre, d?.nombre, p?.nombre, dep?.nombre }
+                    .Where(s => !string.IsNullOrWhiteSpace(s)));
+            }
+            return (ToDomain(v), procedencia);
+        }).ToList();
+    }
+
     public async Task<Vacuno?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
     {
         var entity = await _context.vacunos
