@@ -3,36 +3,31 @@ using ZooTech.Application.Common.Exceptions;
 using ZooTech.Domain.Module_Celo.Entities;
 using ZooTech.Domain.Module_Celo.Interfaces;
 
-namespace ZooTech.Application.Modules.Module_Celo.UseCases.RegistrarCelo;
+namespace ZooTech.Application.Modules.Module_Celo.UseCases.CreateCelo;
 
-public sealed class RegistrarCeloInteractor : IRegistrarCeloInputPort
+public sealed class CreateCeloInteractor : ICreateCeloInputPort
 {
     private readonly ICeloRepository _celoRepository;
-    private readonly IValidator<RegistrarCeloCommand> _validator;
+    private readonly IValidator<CreateCeloCommand> _validator;
 
-    public RegistrarCeloInteractor(ICeloRepository celoRepository, IValidator<RegistrarCeloCommand> validator)
+    public CreateCeloInteractor(ICeloRepository celoRepository, IValidator<CreateCeloCommand> validator)
     {
         _celoRepository = celoRepository;
         _validator = validator;
     }
 
-    public async Task<RegistrarCeloOutput> HandleAsync(
-        RegistrarCeloCommand command,
+    public async Task<CreateCeloOutput> HandleAsync(
+        CreateCeloCommand command,
         CancellationToken cancellationToken = default)
     {
         await _validator.ValidateAndThrowAsync(command, cancellationToken);
-        // Validar que el vacuno existe
-        if (!await _celoRepository.ExistsVacunoAsync(command.VacunoId, cancellationToken))
-        {
-            throw new ConflictException($"El vacuno con ID {command.VacunoId} no existe.");
-        }
 
-        // Generar código único
+        if (!await _celoRepository.ExistsVacunoAsync(command.VacunoId, cancellationToken))
+            throw new ConflictException($"El vacuno con ID {command.VacunoId} no existe.");
+
         var codigo = $"CELO-{DateTime.UtcNow:yyyyMMddHHmmss}";
         if (await _celoRepository.ExistsCodigoAsync(codigo, cancellationToken))
-        {
             codigo = $"CELO-{DateTime.UtcNow:yyyyMMddHHmmssfff}";
-        }
 
         var utcNow = DateTime.UtcNow;
 
@@ -49,7 +44,7 @@ public sealed class RegistrarCeloInteractor : IRegistrarCeloInputPort
 
         var saved = await _celoRepository.AddAsync(celo, cancellationToken);
 
-        return new RegistrarCeloOutput(
+        return new CreateCeloOutput(
             Id: saved.Id,
             Codigo: saved.Codigo,
             FechaHora: saved.FechaHora);

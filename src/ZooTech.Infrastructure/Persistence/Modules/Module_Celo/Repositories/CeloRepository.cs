@@ -14,7 +14,7 @@ public sealed class CeloRepository : ICeloRepository
         _context = context;
     }
 
-    public async Task<List<Celo>> ListarCelosAsync(CancellationToken cancellationToken = default)
+    public async Task<List<Celo>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         var entities = await _context.celo_registros
             .AsNoTracking()
@@ -25,6 +25,16 @@ public sealed class CeloRepository : ICeloRepository
             .ToListAsync(cancellationToken);
 
         return entities.Select(ToDomain).ToList();
+    }
+
+    public async Task<Dictionary<long, int>> GetVecesEnCeloCountsAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.celo_registros
+            .AsNoTracking()
+            .Where(c => c.deleted_at == null)
+            .GroupBy(c => c.vacuno_id)
+            .Select(g => new { VacunoId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.VacunoId, x => x.Count, cancellationToken);
     }
 
     public async Task<Celo?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
@@ -44,7 +54,6 @@ public sealed class CeloRepository : ICeloRepository
         await _context.celo_registros.AddAsync(entity, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
 
-        // Reload with vacuno to populate NombreVacuno
         await _context.Entry(entity)
             .Reference(e => e.vacuno)
             .LoadAsync(cancellationToken);
@@ -59,16 +68,12 @@ public sealed class CeloRepository : ICeloRepository
             .FirstOrDefaultAsync(c => c.id == celo.Id && c.deleted_at == null, cancellationToken);
 
         if (entity is null)
-        {
             throw new InvalidOperationException($"No se encontró el registro de celo con ID {celo.Id}.");
-        }
 
-        // Mapear solo los campos actualizables
         entity.observaciones = celo.Observaciones;
         entity.updated_at = celo.UpdatedAt;
         entity.updated_by = celo.UpdatedBy;
 
-        // Sincronizar características
         entity.caracteristica_codes.Clear();
         if (celo.CaracteristicaCodes.Count > 0)
         {
@@ -77,12 +82,9 @@ public sealed class CeloRepository : ICeloRepository
                 .ToListAsync(cancellationToken);
 
             foreach (var caracteristica in caracteristicas)
-            {
                 entity.caracteristica_codes.Add(caracteristica);
-            }
         }
 
-        // Soft delete
         entity.deleted_at = celo.DeletedAt;
         entity.deleted_by = celo.DeletedBy;
         entity.motivo_eliminacion = celo.MotivoEliminacion;

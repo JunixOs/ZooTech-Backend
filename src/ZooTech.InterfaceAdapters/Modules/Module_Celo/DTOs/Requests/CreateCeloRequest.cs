@@ -1,6 +1,6 @@
 namespace ZooTech.InterfaceAdapters.Modules.Module_Celo.DTOs.Requests;
 
-public sealed record RegistrarCeloRequest(
+public sealed record CreateCeloRequest(
     long VacunoId,
     long EncargadoUsuarioId,
     DateTime FechaHora,

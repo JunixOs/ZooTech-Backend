@@ -1,11 +1,11 @@
 using FluentValidation;
-using ZooTech.Application.Modules.Module_Celo.UseCases.EliminarCelo;
+using ZooTech.Application.Modules.Module_Celo.UseCases.DeleteCelo;
 
 namespace ZooTech.Application.Modules.Module_Celo.Validators;
 
-internal sealed class EliminarCeloValidator : AbstractValidator<EliminarCeloCommand>
+internal sealed class DeleteCeloValidator : AbstractValidator<DeleteCeloCommand>
 {
-    public EliminarCeloValidator()
+    public DeleteCeloValidator()
     {
         RuleFor(x => x.Id)
             .GreaterThan(0).WithMessage("El ID del celo debe ser mayor que cero.");

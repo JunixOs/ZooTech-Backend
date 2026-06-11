@@ -2,30 +2,28 @@ using FluentValidation;
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Domain.Module_Celo.Interfaces;
 
-namespace ZooTech.Application.Modules.Module_Celo.UseCases.EliminarCelo;
+namespace ZooTech.Application.Modules.Module_Celo.UseCases.DeleteCelo;
 
-public sealed class EliminarCeloInteractor : IEliminarCeloInputPort
+public sealed class DeleteCeloInteractor : IDeleteCeloInputPort
 {
     private readonly ICeloRepository _celoRepository;
-    private readonly IValidator<EliminarCeloCommand> _validator;
+    private readonly IValidator<DeleteCeloCommand> _validator;
 
-    public EliminarCeloInteractor(ICeloRepository celoRepository, IValidator<EliminarCeloCommand> validator)
+    public DeleteCeloInteractor(ICeloRepository celoRepository, IValidator<DeleteCeloCommand> validator)
     {
         _celoRepository = celoRepository;
         _validator = validator;
     }
 
     public async Task HandleAsync(
-        EliminarCeloCommand command,
+        DeleteCeloCommand command,
         CancellationToken cancellationToken = default)
     {
         await _validator.ValidateAndThrowAsync(command, cancellationToken);
-        var celo = await _celoRepository.GetByIdAsync(command.Id, cancellationToken);
 
+        var celo = await _celoRepository.GetByIdAsync(command.Id, cancellationToken);
         if (celo is null)
-        {
             throw new NotFoundException($"No se encontró el registro de celo con ID {command.Id}.");
-        }
 
         celo.SoftDelete(
             motivoEliminacion: command.MotivoEliminacion,

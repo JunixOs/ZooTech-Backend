@@ -1,9 +1,9 @@
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
-using ZooTech.Application.Modules.Module_Celo.UseCases.EditarCelo;
-using ZooTech.Application.Modules.Module_Celo.UseCases.EliminarCelo;
-using ZooTech.Application.Modules.Module_Celo.UseCases.ListarCelos;
-using ZooTech.Application.Modules.Module_Celo.UseCases.RegistrarCelo;
+using ZooTech.Application.Modules.Module_Celo.UseCases.CreateCelo;
+using ZooTech.Application.Modules.Module_Celo.UseCases.DeleteCelo;
+using ZooTech.Application.Modules.Module_Celo.UseCases.GetCelos;
+using ZooTech.Application.Modules.Module_Celo.UseCases.UpdateCelo;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.CreateTriaje;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.DeleteTriaje;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllTipoPesos;
@@ -30,7 +30,6 @@ public static class DependencyInjection
     public static IServiceCollection AddApplication(
         this IServiceCollection services)
     {
-
         // ============================================
         // Use Cases - Module_Sanidad
         // ============================================
@@ -43,34 +42,9 @@ public static class DependencyInjection
         services.AddScoped<IGetAllVacunosSanidadInputPort, GetAllVacunosSanidadInteractor>();
         services.AddScoped<IGetHistorialByVacunoIdInputPort, GetHistorialByVacunoIdInteractor>();
 
-
-        // ============================================
-        // MediatR
-        // ============================================
-
-        // services.AddMediatR(cfg =>
-        // {
-        //     cfg.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly);
-        // });
-
-        // ============================================
-        // FluentValidation
-        // ============================================
-
-        // services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
-
-        // ============================================
-        // Pipeline Behaviors
-        // ============================================
-
-        // services.AddTransient(
-        //     typeof(IPipelineBehavior<,>),
-        //     typeof(ValidationBehavior<,>));
-
         // ============================================
         // Use Cases - Module_ProduccionLeche
         // ============================================
-
         services.AddScoped<ICreateOrdenioInputPort, CreateOrdenioInteractor>();
         services.AddScoped<IGetOrdenioByIdInputPort, GetOrdenioByIdInteractor>();
         services.AddScoped<IListOrdeniosInputPort, ListOrdeniosInteractor>();
@@ -78,24 +52,21 @@ public static class DependencyInjection
         services.AddScoped<IDeleteOrdenioInputPort, DeleteOrdenioInteractor>();
 
         // ============================================
-        // Validators - Module_Celo
+        // FluentValidation — all assemblies
         // ============================================
-
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly, includeInternalTypes: true);
 
         // ============================================
         // Use Cases - Module_Celo
         // ============================================
-
-        services.AddScoped<IListarCelosInputPort, ListarCelosInteractor>();
-        services.AddScoped<IRegistrarCeloInputPort, RegistrarCeloInteractor>();
-        services.AddScoped<IEditarCeloInputPort, EditarCeloInteractor>();
-        services.AddScoped<IEliminarCeloInputPort, EliminarCeloInteractor>();
+        services.AddScoped<IGetCelosInputPort, GetCelosInteractor>();
+        services.AddScoped<ICreateCeloInputPort, CreateCeloInteractor>();
+        services.AddScoped<IUpdateCeloInputPort, UpdateCeloInteractor>();
+        services.AddScoped<IDeleteCeloInputPort, DeleteCeloInteractor>();
 
         // ============================================
         // Use Cases - Module_Vacuno
         // ============================================
-
         services.AddScoped<IListarVacunosInputPort, ListarVacunosInteractor>();
         services.AddScoped<ICreateVacunoInputPort, CreateVacunoInteractor>();
         services.AddScoped<IGetVacunoByIdInputPort, GetVacunoByIdInteractor>();

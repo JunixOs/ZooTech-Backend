@@ -1,6 +1,6 @@
-namespace ZooTech.Application.Modules.Module_Celo.UseCases.RegistrarCelo;
+namespace ZooTech.Application.Modules.Module_Celo.UseCases.CreateCelo;
 
-public sealed record RegistrarCeloCommand(
+public sealed record CreateCeloCommand(
     long VacunoId,
     long EncargadoUsuarioId,
     DateTime FechaHora,

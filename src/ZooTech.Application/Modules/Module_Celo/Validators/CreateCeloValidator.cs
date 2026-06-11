@@ -1,11 +1,11 @@
 using FluentValidation;
-using ZooTech.Application.Modules.Module_Celo.UseCases.RegistrarCelo;
+using ZooTech.Application.Modules.Module_Celo.UseCases.CreateCelo;
 
 namespace ZooTech.Application.Modules.Module_Celo.Validators;
 
-internal sealed class RegistrarCeloValidator : AbstractValidator<RegistrarCeloCommand>
+internal sealed class CreateCeloValidator : AbstractValidator<CreateCeloCommand>
 {
-    public RegistrarCeloValidator()
+    public CreateCeloValidator()
     {
         RuleFor(x => x.VacunoId)
             .GreaterThan(0).WithMessage("El ID del vacuno debe ser mayor que cero.");

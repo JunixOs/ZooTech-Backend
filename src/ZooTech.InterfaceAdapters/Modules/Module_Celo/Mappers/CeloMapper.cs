@@ -1,7 +1,7 @@
-using ZooTech.Application.Modules.Module_Celo.UseCases.EditarCelo;
-using ZooTech.Application.Modules.Module_Celo.UseCases.EliminarCelo;
-using ZooTech.Application.Modules.Module_Celo.UseCases.ListarCelos;
-using ZooTech.Application.Modules.Module_Celo.UseCases.RegistrarCelo;
+using ZooTech.Application.Modules.Module_Celo.UseCases.CreateCelo;
+using ZooTech.Application.Modules.Module_Celo.UseCases.DeleteCelo;
+using ZooTech.Application.Modules.Module_Celo.UseCases.GetCelos;
+using ZooTech.Application.Modules.Module_Celo.UseCases.UpdateCelo;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.DTOs.Responses;
 
@@ -9,9 +9,9 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Celo.Mappers;
 
 internal static class CeloMapper
 {
-    public static RegistrarCeloCommand ToCommand(RegistrarCeloRequest request)
+    public static CreateCeloCommand ToCommand(CreateCeloRequest request)
     {
-        return new RegistrarCeloCommand(
+        return new CreateCeloCommand(
             VacunoId: request.VacunoId,
             EncargadoUsuarioId: request.EncargadoUsuarioId,
             FechaHora: request.FechaHora,
@@ -19,37 +19,37 @@ internal static class CeloMapper
             CaracteristicaCodes: request.CaracteristicaCodes);
     }
 
-    public static EditarCeloCommand ToCommand(EditarCeloRequest request)
+    public static UpdateCeloCommand ToCommand(UpdateCeloRequest request)
     {
-        return new EditarCeloCommand(
+        return new UpdateCeloCommand(
             Id: request.Id,
             Observaciones: request.Observaciones,
             CaracteristicaCodes: request.CaracteristicaCodes);
     }
 
-    public static EliminarCeloCommand ToCommand(EliminarCeloRequest request, long id)
+    public static DeleteCeloCommand ToCommand(DeleteCeloRequest request, long id)
     {
-        return new EliminarCeloCommand(
+        return new DeleteCeloCommand(
             Id: id,
             MotivoEliminacion: request.MotivoEliminacion);
     }
 
-    public static RegistrarCeloResponse ToResponse(RegistrarCeloOutput output)
+    public static CreateCeloResponse ToResponse(CreateCeloOutput output)
     {
-        return new RegistrarCeloResponse(
+        return new CreateCeloResponse(
             Id: output.Id,
             Codigo: output.Codigo,
             FechaHora: output.FechaHora);
     }
 
-    public static EditarCeloResponse ToResponse(EditarCeloOutput output)
+    public static UpdateCeloResponse ToResponse(UpdateCeloOutput output)
     {
-        return new EditarCeloResponse(
+        return new UpdateCeloResponse(
             Id: output.Id,
             Observaciones: output.Observaciones);
     }
 
-    public static CeloItemResponse ToResponse(CeloListItemDto item)
+    public static CeloItemResponse ToResponse(CeloItemDto item)
     {
         return new CeloItemResponse
         {
