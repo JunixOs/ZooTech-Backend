@@ -17,8 +17,4 @@ public interface IVacunoRepository
     Task<Vacuno> AddAsync(Vacuno vacuno, CancellationToken cancellationToken = default);
 
     Task<Vacuno> UpdateAsync(Vacuno vacuno, CancellationToken cancellationToken = default);
-
-    Task<(IReadOnlyCollection<VacunoListadoItemDomain> Items, int TotalRegistros)> ListarAvanzadoAsync(
-        ListarVacunosCriteriaDomain criteria,
-        CancellationToken cancellationToken = default);
 }

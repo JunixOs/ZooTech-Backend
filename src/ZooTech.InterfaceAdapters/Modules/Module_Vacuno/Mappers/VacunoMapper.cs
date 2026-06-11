@@ -11,6 +11,16 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Mappers;
 
 internal static class VacunoMapper
 {
+    internal static VacunoItemResponse ToResponse(VacunoItemDto item)
+        => new(
+            Id: item.Id,
+            Codigo: item.Codigo,
+            Nombre: item.Nombre,
+            FechaNacimiento: item.FechaNacimiento,
+            RazaCode: item.RazaCode,
+            SexoCode: item.SexoCode,
+            Procedencia: item.Procedencia);
+
     internal static CreateVacunoCommand ToCommand(CreateVacunoRequest request)
         => new(
             request.Codigo,

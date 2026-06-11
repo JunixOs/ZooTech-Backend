@@ -57,12 +57,12 @@ public static class DependencyInjection
         services.AddScoped<ITipoPesoRepository, TipoPesoRepository>();
 
         // Reportes Repositories & Services
-        services.AddScoped<ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte.IRegistroVacunoReadRepository, ZooTech.Infrastructure.Persistence.Repositories.RegistroVacunoReadRepository>();
-        services.AddScoped<ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte.IRegistroVacunoExcelReportService, ZooTech.Infrastructure.Reports.RegistroVacunoExcelReportService>();
-        services.AddScoped<ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte.IRegistroVacunoPdfReportService, ZooTech.Infrastructure.Reports.RegistroVacunoPdfReportService>();
-        services.AddScoped<ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos.IListadoVacunosReportFileService, ZooTech.Infrastructure.Reports.ListadoVacunosReportFileService>();
+        services.AddScoped<ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ListarReporteVacunos.IReporteVacunoReadRepository, ZooTech.Infrastructure.Persistence.Repositories.ReporteVacunoReadRepository>();
+        services.AddScoped<ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ObtenerRegistroVacunoReporte.IRegistroVacunoReadRepository, ZooTech.Infrastructure.Persistence.Repositories.RegistroVacunoReadRepository>();
+        services.AddScoped<ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ObtenerRegistroVacunoReporte.IRegistroVacunoExcelReportService, ZooTech.Infrastructure.Reports.RegistroVacunoExcelReportService>();
+        services.AddScoped<ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ObtenerRegistroVacunoReporte.IRegistroVacunoPdfReportService, ZooTech.Infrastructure.Reports.RegistroVacunoPdfReportService>();
+        services.AddScoped<ZooTech.Application.Modules.Module_ReporteVacuno.UseCases.ListarReporteVacunos.IListadoVacunosReportFileService, ZooTech.Infrastructure.Reports.ListadoVacunosReportFileService>();
 
         return services;
     }
 }
-
