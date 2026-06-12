@@ -19,57 +19,81 @@ public sealed class RegistroVacunoReadRepository : IRegistroVacunoReadRepository
         long vacunoId,
         CancellationToken cancellationToken = default)
     {
-        var rows = await _context.Set<RegistroVacunoReporteRow>()
-            .FromSqlRaw(Sql, new SqlParameter("@vacuno_id", vacunoId))
+        var v = await _context.vacunos
             .AsNoTracking()
-            .ToListAsync(cancellationToken);
+            .Include(x => x.sexo_codeNavigation)
+            .Include(x => x.raza_codeNavigation)
+            .Include(x => x.color_codeNavigation)
+            .Include(x => x.tipo_adquisicion_codeNavigation)
+            .Include(x => x.vacuno_adquisicion)
+            .Include(x => x.padre)
+                .ThenInclude(p => p.padre)
+            .Include(x => x.madre)
+                .ThenInclude(m => m.madre)
+            .Include(x => x.granja)
+                .ThenInclude(g => g.distrito_codigoNavigation)
+                    .ThenInclude(d => d.provincia_codigoNavigation)
+                        .ThenInclude(p => p.departamento_codigoNavigation)
+            .Include(x => x.vacuno_foto)
+                .ThenInclude(vf => vf.archivo)
+            .Include(x => x.vacuno_estado_historials)
+                .ThenInclude(veh => veh.estado_codeNavigation)
+            .Include(x => x.vacuno_utilizacion_historials)
+                .ThenInclude(vuh => vuh.tipo_utilizacion_codeNavigation)
+            .Include(x => x.created_byNavigation)
+            .Include(x => x.updated_byNavigation)
+            .FirstOrDefaultAsync(x => x.id == vacunoId && x.deleted_at == null, cancellationToken);
 
-        var row = rows.FirstOrDefault();
-        if (row is null)
+        if (v is null)
         {
             return null;
         }
 
+        var veh = v.vacuno_estado_historials.OrderByDescending(h => h.id).FirstOrDefault();
+        var vuh = v.vacuno_utilizacion_historials.OrderByDescending(h => h.created_at).ThenByDescending(h => h.id).FirstOrDefault();
+        var vf = v.vacuno_foto;
+        var a = vf?.archivo;
+
         return new RegistroVacunoDetalle(
-            row.Id,
-            row.Codigo,
-            row.Nombre,
-            row.FechaNacimiento,
-            NormalizeCatalogValue(row.AdquisicionPor),
-            row.PrecioCompra,
-            row.Raza,
-            row.Color,
-            NormalizeCatalogValue(row.Sexo),
-            row.CodigoPadre,
-            row.CodigoMadre,
-            row.CodigoAbuelo,
-            row.CodigoAbuela,
-            row.Granja,
-            row.Distrito,
-            row.Departamento,
-            row.Provincia,
-            row.Procedencia,
-            NormalizeCatalogValue(row.AptoPara),
-            row.FechaAdquisicion,
-            row.Observaciones,
-            row.FotoId,
-            row.FotoNombreOriginal,
-            row.FotoNombreAlmacenado,
-            row.FotoRuta,
-            row.FotoUrl,
-            row.FotoExtension,
-            row.FotoTamanoBytes,
-            row.EstadoActualCode,
-            row.EstadoActualNombre,
-            DeterminarEstado(row.EstadoActualCode, row.EstadoActualNombre),
-            row.FechaEstado,
-            row.MotivoEstado,
-            row.FechaRegistro,
-            row.FechaAdquisicion,
-            row.CreadoPor,
-            row.CreadoEn,
-            row.ActualizadoPor,
-            row.ActualizadoEn);
+            v.id,
+            v.codigo,
+            v.nombre,
+            v.fecha_nacimiento,
+            NormalizeCatalogValue(v.tipo_adquisicion_codeNavigation?.nombre),
+            v.vacuno_adquisicion?.precio_compra,
+            v.raza_codeNavigation?.nombre,
+            v.color_codeNavigation?.nombre,
+            NormalizeCatalogValue(v.sexo_codeNavigation?.nombre),
+            v.padre?.codigo,
+            v.madre?.codigo,
+            v.padre?.padre?.codigo,
+            v.madre?.madre?.codigo,
+            v.granja?.nombre,
+            v.granja?.distrito_codigoNavigation?.nombre,
+            v.granja?.distrito_codigoNavigation?.provincia_codigoNavigation?.nombre,
+            v.granja?.distrito_codigoNavigation?.provincia_codigoNavigation?.departamento_codigoNavigation?.nombre,
+            v.vacuno_adquisicion?.proveedor,
+            NormalizeCatalogValue(vuh?.tipo_utilizacion_codeNavigation?.nombre),
+            v.vacuno_adquisicion?.fecha_adquisicion,
+            v.observaciones,
+            a?.id,
+            a?.nombre_original,
+            a?.nombre_almacenado,
+            a?.ruta_archivo,
+            a?.ruta_archivo,
+            a?.extension,
+            a?.tamano_bytes,
+            veh?.estado_code,
+            veh?.estado_codeNavigation?.nombre,
+            DeterminarEstado(veh?.estado_code, veh?.estado_codeNavigation?.nombre),
+            veh?.fecha_estado,
+            veh?.motivo,
+            v.fecha_registro,
+            v.vacuno_adquisicion?.fecha_adquisicion,
+            v.created_byNavigation?.nombre_completo,
+            v.created_at,
+            v.updated_byNavigation?.nombre_completo,
+            v.updated_at);
     }
 
     private static string? NormalizeCatalogValue(string? value)
@@ -94,102 +118,5 @@ public sealed class RegistroVacunoReadRepository : IRegistroVacunoReadRepository
             _ => NormalizeCatalogValue(estadoNombre)
         };
     }
-
-    private const string Sql = """
-SELECT
-    v.id AS Id,
-    v.codigo AS Codigo,
-    v.nombre AS Nombre,
-    v.fecha_nacimiento AS FechaNacimiento,
-    sx.nombre AS Sexo,
-    r.nombre AS Raza,
-    c.nombre AS Color,
-    ta.nombre AS AdquisicionPor,
-    va.precio_compra AS PrecioCompra,
-    padre.codigo AS CodigoPadre,
-    madre.codigo AS CodigoMadre,
-    abuelo_paterno.codigo AS CodigoAbuelo,
-    abuela_materna.codigo AS CodigoAbuela,
-    g.nombre AS Granja,
-    gd.nombre AS Distrito,
-    gdep.nombre AS Departamento,
-    gp.nombre AS Provincia,
-    va.proveedor AS Procedencia,
-    a.id AS FotoId,
-    a.nombre_original AS FotoNombreOriginal,
-    a.nombre_almacenado AS FotoNombreAlmacenado,
-    a.ruta_archivo AS FotoRuta,
-    a.ruta_archivo AS FotoUrl,
-    a.extension AS FotoExtension,
-    a.tamano_bytes AS FotoTamanoBytes,
-    v.observaciones AS Observaciones,
-    veh.estado_code AS EstadoActualCode,
-    cest.nombre AS EstadoActualNombre,
-    cest.nombre AS Estado,
-    veh.fecha_estado AS FechaEstado,
-    veh.motivo AS MotivoEstado,
-    (
-        SELECT TOP(1) ctu.nombre
-        FROM dbo.vacuno_utilizacion_historial vuh
-        INNER JOIN dbo.cat_tipo_utilizacion ctu
-            ON ctu.code = vuh.tipo_utilizacion_code
-        WHERE vuh.vacuno_id = v.id
-        ORDER BY vuh.created_at DESC, vuh.id DESC
-    ) AS AptoPara,
-    v.fecha_registro AS FechaRegistro,
-    va.fecha_adquisicion AS FechaAdquisicion,
-    u_created.nombre_completo AS CreadoPor,
-    v.created_at AS CreadoEn,
-    u_updated.nombre_completo AS ActualizadoPor,
-    v.updated_at AS ActualizadoEn
-FROM dbo.vacuno v
-LEFT JOIN dbo.vacuno_adquisicion va
-    ON va.vacuno_id = v.id
-LEFT JOIN dbo.cat_tipo_adquisicion ta
-    ON ta.code = v.tipo_adquisicion_code
-LEFT JOIN dbo.cat_raza r
-    ON r.code = v.raza_code
-LEFT JOIN dbo.cat_color c
-    ON c.code = v.color_code
-LEFT JOIN dbo.cat_sexo sx
-    ON sx.code = v.sexo_code
-LEFT JOIN dbo.vacuno padre
-    ON padre.id = v.padre_id
-LEFT JOIN dbo.vacuno madre
-    ON madre.id = v.madre_id
-LEFT JOIN dbo.vacuno abuelo_paterno
-    ON abuelo_paterno.id = padre.padre_id
-LEFT JOIN dbo.vacuno abuela_materna
-    ON abuela_materna.id = madre.madre_id
-LEFT JOIN dbo.granja g
-    ON g.id = v.granja_id
-LEFT JOIN dbo.geo_distrito gd
-    ON gd.codigo = g.distrito_codigo
-LEFT JOIN dbo.geo_provincia gp
-    ON gp.codigo = gd.provincia_codigo
-LEFT JOIN dbo.geo_departamento gdep
-    ON gdep.codigo = gp.departamento_codigo
-LEFT JOIN dbo.vacuno_foto vf
-    ON vf.vacuno_id = v.id
-    AND vf.es_principal = 1
-LEFT JOIN dbo.archivo a
-    ON a.id = vf.archivo_id
-LEFT JOIN dbo.vacuno_estado_historial veh
-    ON veh.vacuno_id = v.id
-    AND veh.id = (
-        SELECT MAX(veh2.id)
-        FROM dbo.vacuno_estado_historial veh2
-        WHERE veh2.vacuno_id = v.id
-    )
-LEFT JOIN dbo.cat_estado_vacuno cest
-    ON cest.code = veh.estado_code
-LEFT JOIN dbo.usuario u_created
-    ON u_created.id = v.created_by
-LEFT JOIN dbo.usuario u_updated
-    ON u_updated.id = v.updated_by
-WHERE
-    v.id = @vacuno_id
-    AND v.deleted_at IS NULL;
-""";
 }
 

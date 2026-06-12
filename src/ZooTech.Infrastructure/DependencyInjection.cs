@@ -55,6 +55,8 @@ public static class DependencyInjection
         services.AddScoped<IVacunoRepository, VacunoRepository>();
         services.AddScoped<ITriajeRepository, TriajeRepository>();
         services.AddScoped<ITipoPesoRepository, TipoPesoRepository>();
+        services.AddScoped<ZooTech.Domain.Module_Reproduccion.Interfaces.IFecundacionRepository, ZooTech.Infrastructure.Persistence.Repositories.Reproduccion.FecundacionRepository>();
+        services.AddScoped<ZooTech.Domain.Module_Reproduccion.Interfaces.IVacunoReproduccionRepository, ZooTech.Infrastructure.Persistence.Repositories.Reproduccion.VacunoReproduccionRepository>();
 
         // Reportes Repositories & Services
         services.AddScoped<ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte.IRegistroVacunoReadRepository, ZooTech.Infrastructure.Persistence.Repositories.RegistroVacunoReadRepository>();
