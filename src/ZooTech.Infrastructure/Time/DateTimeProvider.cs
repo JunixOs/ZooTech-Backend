@@ -4,5 +4,5 @@ namespace ZooTech.Infrastructure.Time;
 
 public class DateTimeProvider : IDateTimeProvider
 {
-    public DateTime UtcNow => DateTime.UtcNow;
+    public DateTime ServerNow => DateTime.UtcNow;
 }

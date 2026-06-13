@@ -17,4 +17,9 @@ public interface IVacunoRepository
     Task<Vacuno> AddAsync(Vacuno vacuno, CancellationToken cancellationToken = default);
 
     Task<Vacuno> UpdateAsync(Vacuno vacuno, CancellationToken cancellationToken = default);
+
+    Task<(List<(Vacuno Vacuno, string? Procedencia)> Items, int TotalCount)> GetPagedAsync(
+        string? query, DateTime? fechaDesde, DateTime? fechaHasta, int page, int limit, CancellationToken cancellationToken = default);
+
+    Task<List<Vacuno>> GetArbolGenealogicoAsync(long id, int maxNiveles, CancellationToken cancellationToken = default);
 }

@@ -9,4 +9,4 @@ public sealed record VacunoItemDto(
     string SexoCode,
     string? Procedencia);
 
-public sealed record ListarVacunosOutput(IReadOnlyList<VacunoItemDto> Items);
+public sealed record ListarVacunosOutput(IReadOnlyList<VacunoItemDto> Items, int TotalCount);

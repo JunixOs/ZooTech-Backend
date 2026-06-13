@@ -106,6 +106,89 @@ public sealed class VacunoRepository : IVacunoRepository
         return ToDomain(entity);
     }
 
+    public async Task<(List<(Vacuno Vacuno, string? Procedencia)> Items, int TotalCount)> GetPagedAsync(
+        string? query, DateTime? fechaDesde, DateTime? fechaHasta, int page, int limit, CancellationToken cancellationToken = default)
+    {
+        var q = _context.vacunos
+            .AsNoTracking()
+            .Where(v => v.deleted_at == null);
+
+        if (!string.IsNullOrWhiteSpace(query))
+        {
+            var lowerQuery = query.ToLower();
+            q = q.Where(v => v.codigo.ToLower().Contains(lowerQuery) || v.nombre.ToLower().Contains(lowerQuery));
+        }
+
+        if (fechaDesde.HasValue)
+        {
+            var fd = DateOnly.FromDateTime(fechaDesde.Value);
+            q = q.Where(v => v.fecha_registro >= fd);
+        }
+
+        if (fechaHasta.HasValue)
+        {
+            var fh = DateOnly.FromDateTime(fechaHasta.Value);
+            q = q.Where(v => v.fecha_registro <= fh);
+        }
+
+        var totalCount = await q.CountAsync(cancellationToken);
+
+        var entities = await q
+            .OrderByDescending(v => v.fecha_registro)
+            .ThenByDescending(v => v.id)
+            .Skip((page - 1) * limit)
+            .Take(limit)
+            .Include(v => v.granja)
+                .ThenInclude(g => g.distrito_codigoNavigation)
+                    .ThenInclude(d => d.provincia_codigoNavigation)
+                        .ThenInclude(p => p.departamento_codigoNavigation)
+            .ToListAsync(cancellationToken);
+
+        var items = entities.Select(v =>
+        {
+            string? procedencia = null;
+            var g = v.granja;
+            if (g is not null)
+            {
+                var d = g.distrito_codigoNavigation;
+                var p = d?.provincia_codigoNavigation;
+                var dep = p?.departamento_codigoNavigation;
+                procedencia = string.Join(", ",
+                    new[] { g.nombre, d?.nombre, p?.nombre, dep?.nombre }
+                    .Where(s => !string.IsNullOrWhiteSpace(s)));
+            }
+            return (ToDomain(v), procedencia);
+        }).ToList();
+
+        return (items, totalCount);
+    }
+
+    public async Task<List<Vacuno>> GetArbolGenealogicoAsync(long id, int maxNiveles, CancellationToken cancellationToken = default)
+    {
+        var query = $@"
+            WITH CTE AS (
+                SELECT *, 1 AS Nivel
+                FROM vacuno
+                WHERE id = {{0}} AND deleted_at IS NULL
+                
+                UNION ALL
+                
+                SELECT v.*, CTE.Nivel + 1
+                FROM vacuno v
+                INNER JOIN CTE ON (v.id = CTE.padre_id OR v.id = CTE.madre_id)
+                WHERE CTE.Nivel < {{1}} AND v.deleted_at IS NULL
+            )
+            SELECT DISTINCT * FROM CTE ORDER BY Nivel, id;
+        ";
+
+        var entities = await _context.vacunos
+            .FromSqlRaw(query, id, maxNiveles)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        return entities.Select(ToDomain).ToList();
+    }
+
     private static Entities.vacuno ToEntity(Vacuno domain)
         => new()
         {
