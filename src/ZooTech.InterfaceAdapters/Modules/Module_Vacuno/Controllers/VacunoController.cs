@@ -8,6 +8,7 @@ using ZooTech.Application.Modules.Module_Vacuno.UseCases.CreateVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetVacunoById;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.GenerarArbolGenealogico;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.UpdateVacuno;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
 using ZooTech.Infrastructure.Persistence.Context;
@@ -30,7 +31,7 @@ public sealed class VacunoController : ControllerBase
     private readonly IGetVacunoByIdInputPort _getByIdInputPort;
     private readonly IUpdateVacunoInputPort _updateInputPort;
     private readonly IDeleteVacunoInputPort _deleteInputPort;
-    private readonly IVacunoRepository _vacunoRepository;
+    private readonly IGenerarArbolGenealogicoInputPort _generarArbolInputPort;
 
     public VacunoController(
         IListarVacunosInputPort listarInputPort,
@@ -38,54 +39,35 @@ public sealed class VacunoController : ControllerBase
         IGetVacunoByIdInputPort getByIdInputPort,
         IUpdateVacunoInputPort updateInputPort,
         IDeleteVacunoInputPort deleteInputPort,
-        IVacunoRepository vacunoRepository)
+        IGenerarArbolGenealogicoInputPort generarArbolInputPort)
     {
         _listarInputPort = listarInputPort;
         _createInputPort = createInputPort;
         _getByIdInputPort = getByIdInputPort;
         _updateInputPort = updateInputPort;
         _deleteInputPort = deleteInputPort;
-        _vacunoRepository = vacunoRepository;
+        _generarArbolInputPort = generarArbolInputPort;
     }
 
     [HttpGet]
-    [ProducesResponseType(typeof(GeneralResponseDTO<List<VacunoItemResponse>>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> ListarVacunos(
-        [FromQuery] string? q,
-        [FromQuery] string? estado,
-        [FromQuery] System.DateOnly? fechaDesde,
-        [FromQuery] System.DateOnly? fechaHasta,
-        CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(PagedResponse<List<VacunoItemResponse>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ListarVacunos([FromQuery] string? query, [FromQuery] DateTime? fechaDesde, [FromQuery] DateTime? fechaHasta, [FromQuery] int page = 1, [FromQuery] int limit = 20, CancellationToken cancellationToken = default)
     {
-        var output = await _listarInputPort.HandleAsync(cancellationToken);
+        var command = new ListarVacunosCommand(query, fechaDesde, fechaHasta, page, limit);
+        var output = await _listarInputPort.HandleAsync(command, cancellationToken);
         var response = output.Items.Select(VacunoMapper.ToResponse).ToList();
+        return Ok(PagedResponse<List<VacunoItemResponse>>.OkPaged(response, page, limit, output.TotalCount));
+    }
 
-        if (!string.IsNullOrWhiteSpace(q))
-        {
-            var query = q.Trim().ToLower();
-            response = response.Where(x => 
-                x.Codigo.ToLower().Contains(query) || 
-                x.Nombre.ToLower().Contains(query)
-            ).ToList();
-        }
-
-        if (!string.IsNullOrWhiteSpace(estado))
-        {
-            var filterEstado = estado.Trim().ToLower();
-            response = response.Where(x => x.Estado == filterEstado).ToList();
-        }
-
-        if (fechaDesde.HasValue)
-        {
-            response = response.Where(x => x.FechaNacimiento >= fechaDesde.Value).ToList();
-        }
-
-        if (fechaHasta.HasValue)
-        {
-            response = response.Where(x => x.FechaNacimiento <= fechaHasta.Value).ToList();
-        }
-
-        return Ok(GeneralResponseDTO<List<VacunoItemResponse>>.Ok(response));
+    [HttpGet("{id:long}/genealogia")]
+    [ProducesResponseType(typeof(GeneralResponseDTO<IReadOnlyList<ArbolVacunoDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetArbolGenealogico([FromRoute] long id, [FromQuery] int niveles = 4, CancellationToken cancellationToken = default)
+    {
+        var command = new GenerarArbolGenealogicoCommand(niveles);
+        var output = await _generarArbolInputPort.HandleAsync(id, command, cancellationToken);
+        return Ok(GeneralResponseDTO<IReadOnlyList<ArbolVacunoDto>>.Ok(output.Arbol));
     }
 
     [HttpPost]

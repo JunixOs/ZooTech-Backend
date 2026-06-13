@@ -10,4 +10,4 @@ public sealed record VacunoItemDto(
     string? Procedencia,
     bool IsDeleted);
 
-public sealed record ListarVacunosOutput(IReadOnlyList<VacunoItemDto> Items);
+public sealed record ListarVacunosOutput(IReadOnlyList<VacunoItemDto> Items, int TotalCount);

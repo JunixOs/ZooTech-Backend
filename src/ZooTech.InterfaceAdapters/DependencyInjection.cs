@@ -1,6 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
-using ZooTech.Application.Modules.Module_Vacuno.UseCases.GenerarArbolGenealogico;
-using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Presenters;
+
 
 namespace ZooTech.InterfaceAdapters;
 
@@ -26,9 +25,11 @@ public static class DependencyInjection
         // ============================================
 
         // services.AddScoped<ValidationFilter>();
+        // services.AddScoped<ListarVacunosPresenter>();
+        // services.AddScoped<IListarVacunosOutputPort>(sp => sp.GetRequiredService<ListarVacunosPresenter>());
 
-        services.AddScoped<GenerarArbolGenealogicoPresenter>();
-        services.AddScoped<IGenerarArbolGenealogicoOutputPort>(sp => sp.GetRequiredService<GenerarArbolGenealogicoPresenter>());
+        // services.AddScoped<GenerarArbolGenealogicoPresenter>();
+        // services.AddScoped<IGenerarArbolGenealogicoOutputPort>(sp => sp.GetRequiredService<GenerarArbolGenealogicoPresenter>());
 
         return services;
     }

@@ -57,7 +57,14 @@ public static class DependencyInjection
         services.AddScoped<IFeatureService, DevFeatureService>();
 
         // ============================================
-        // Caching
+        // Transversal
+        // ============================================
+
+        services.AddScoped<IDateTimeProvider, DateTimeProvider>();
+        services.AddSingleton<ZooTech.Application.Common.Configuration.IVacunosConfiguration, ZooTech.Infrastructure.Configuration.VacunosConfiguration>();
+
+        // ============================================
+        // Repositories
         // ============================================
 
         services.AddScoped<ICeloRepository, CeloRepository>();
