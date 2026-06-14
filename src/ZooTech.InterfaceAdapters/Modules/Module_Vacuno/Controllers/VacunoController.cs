@@ -32,6 +32,8 @@ public sealed class VacunoController : ControllerBase
     private readonly IUpdateVacunoInputPort _updateInputPort;
     private readonly IDeleteVacunoInputPort _deleteInputPort;
     private readonly IGenerarArbolGenealogicoInputPort _generarArbolInputPort;
+    private readonly ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarArbolGenealogico.IExportarArbolGenealogicoInputPort _exportarArbolInputPort;
+    private readonly IVacunoRepository _vacunoRepository;
 
     public VacunoController(
         IListarVacunosInputPort listarInputPort,
@@ -39,7 +41,9 @@ public sealed class VacunoController : ControllerBase
         IGetVacunoByIdInputPort getByIdInputPort,
         IUpdateVacunoInputPort updateInputPort,
         IDeleteVacunoInputPort deleteInputPort,
-        IGenerarArbolGenealogicoInputPort generarArbolInputPort)
+        IGenerarArbolGenealogicoInputPort generarArbolInputPort,
+        ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarArbolGenealogico.IExportarArbolGenealogicoInputPort exportarArbolInputPort,
+        IVacunoRepository vacunoRepository)
     {
         _listarInputPort = listarInputPort;
         _createInputPort = createInputPort;
@@ -47,6 +51,8 @@ public sealed class VacunoController : ControllerBase
         _updateInputPort = updateInputPort;
         _deleteInputPort = deleteInputPort;
         _generarArbolInputPort = generarArbolInputPort;
+        _exportarArbolInputPort = exportarArbolInputPort;
+        _vacunoRepository = vacunoRepository;
     }
 
     [HttpGet]
@@ -68,6 +74,17 @@ public sealed class VacunoController : ControllerBase
         var command = new GenerarArbolGenealogicoCommand(niveles);
         var output = await _generarArbolInputPort.HandleAsync(id, command, cancellationToken);
         return Ok(GeneralResponseDTO<IReadOnlyList<ArbolVacunoDto>>.Ok(output.Arbol));
+    }
+
+    [HttpGet("{id:long}/genealogia/exportar")]
+    [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ExportarArbolGenealogico([FromRoute] long id, [FromQuery] int niveles = 4, CancellationToken cancellationToken = default)
+    {
+        var command = new ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarArbolGenealogico.ExportarArbolGenealogicoCommand(niveles);
+        var bytes = await _exportarArbolInputPort.HandleAsync(id, command, cancellationToken);
+        return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Genealogia_{id}.xlsx");
     }
 
     [HttpPost]
