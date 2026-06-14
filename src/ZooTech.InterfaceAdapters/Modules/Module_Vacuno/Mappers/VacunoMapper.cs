@@ -19,7 +19,8 @@ internal static class VacunoMapper
             FechaNacimiento: item.FechaNacimiento,
             RazaCode: item.RazaCode,
             SexoCode: item.SexoCode,
-            Procedencia: item.Procedencia);
+            Procedencia: item.Procedencia,
+            Estado: item.IsDeleted ? "eliminado" : "activo");
 
     internal static CreateVacunoCommand ToCommand(CreateVacunoRequest request)
         => new(

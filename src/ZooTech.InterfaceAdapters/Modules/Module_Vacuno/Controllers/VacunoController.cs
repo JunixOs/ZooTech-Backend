@@ -6,6 +6,7 @@ using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetVacunoById;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GenerarArbolGenealogico;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.UpdateVacuno;
+using ZooTech.Domain.Module_Vacuno.Interfaces;
 using ZooTech.InterfaceAdapters.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses;
@@ -24,6 +25,7 @@ public sealed class VacunoController : ControllerBase
     private readonly IUpdateVacunoInputPort _updateInputPort;
     private readonly IDeleteVacunoInputPort _deleteInputPort;
     private readonly IGenerarArbolGenealogicoInputPort _generarArbolInputPort;
+    private readonly IVacunoRepository _vacunoRepository;
 
     public VacunoController(
         IListarVacunosInputPort listarInputPort,
@@ -31,7 +33,8 @@ public sealed class VacunoController : ControllerBase
         IGetVacunoByIdInputPort getByIdInputPort,
         IUpdateVacunoInputPort updateInputPort,
         IDeleteVacunoInputPort deleteInputPort,
-        IGenerarArbolGenealogicoInputPort generarArbolInputPort)
+        IGenerarArbolGenealogicoInputPort generarArbolInputPort,
+        IVacunoRepository vacunoRepository)
     {
         _listarInputPort = listarInputPort;
         _createInputPort = createInputPort;
@@ -39,6 +42,7 @@ public sealed class VacunoController : ControllerBase
         _updateInputPort = updateInputPort;
         _deleteInputPort = deleteInputPort;
         _generarArbolInputPort = generarArbolInputPort;
+        _vacunoRepository = vacunoRepository;
     }
 
     [HttpGet]
@@ -73,33 +77,101 @@ public sealed class VacunoController : ControllerBase
         return Created($"/api/v1/vacuno/{data.Id}", GeneralResponseDTO<VacunoResponse>.Ok(data));
     }
 
-    [HttpGet("{id:long}")]
+    [HttpGet("{identifier}")]
     [ProducesResponseType(typeof(GeneralResponseDTO<VacunoResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetById([FromRoute] long id, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetById([FromRoute] string identifier, CancellationToken cancellationToken)
     {
+        long id = await ResolveIdAsync(identifier, cancellationToken);
         var data = VacunoMapper.ToResponse(await _getByIdInputPort.HandleAsync(id, cancellationToken));
         return Ok(GeneralResponseDTO<VacunoResponse>.Ok(data));
     }
 
-    [HttpPatch("{id:long}")]
+    [HttpPatch("{identifier}")]
     [ProducesResponseType(typeof(GeneralResponseDTO<VacunoResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Update([FromRoute] long id, [FromBody] UpdateVacunoRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Update([FromRoute] string identifier, [FromBody] UpdateVacunoRequest request, CancellationToken cancellationToken)
     {
+        long id = await ResolveIdAsync(identifier, cancellationToken);
         var data = VacunoMapper.ToResponse(
             await _updateInputPort.HandleAsync(id, VacunoMapper.ToCommand(request), cancellationToken));
         return Ok(GeneralResponseDTO<VacunoResponse>.Ok(data));
     }
 
-    [HttpDelete("{id:long}")]
+    [HttpDelete("{identifier}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Delete([FromRoute] long id, [FromBody] DeleteVacunoRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Delete([FromRoute] string identifier, [FromBody] DeleteVacunoRequest request, CancellationToken cancellationToken)
     {
+        long id = await ResolveIdAsync(identifier, cancellationToken);
         await _deleteInputPort.HandleAsync(id, VacunoMapper.ToCommand(request), cancellationToken);
         return NoContent();
+    }
+
+    [HttpGet("estadisticas/actividad")]
+    [ProducesResponseType(typeof(VacunoActivityStatsResponse), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetActivityStats(
+        [FromQuery] System.DateOnly? fechaInicio,
+        [FromQuery] System.DateOnly? fechaFin,
+        CancellationToken cancellationToken)
+    {
+        var end = fechaFin ?? System.DateOnly.FromDateTime(System.DateTime.UtcNow);
+        var start = fechaInicio ?? end.AddDays(-30);
+
+        if (start > end)
+        {
+            return BadRequest("La fecha de inicio no puede ser posterior a la fecha de fin.");
+        }
+
+        var vacunos = await _vacunoRepository.ListAllWithDeletedAsync(cancellationToken);
+        var points = new List<VacunoActivityPointResponse>();
+
+        for (var date = start; date <= end; date = date.AddDays(1))
+        {
+            var count = vacunos.Count(v =>
+            {
+                var isRegistered = v.FechaRegistro <= date;
+                if (!isRegistered) return false;
+
+                if (v.DeletedAt.HasValue)
+                {
+                    var deletionDate = System.DateOnly.FromDateTime(v.DeletedAt.Value);
+                    return deletionDate > date;
+                }
+
+                return true;
+            });
+
+            points.Add(new VacunoActivityPointResponse(date.ToString("yyyy-MM-dd"), count));
+        }
+
+        var mayor = points.Any() ? points.Max(p => p.Cantidad) : 0;
+        var menor = points.Any() ? points.Min(p => p.Cantidad) : 0;
+
+        return Ok(new VacunoActivityStatsResponse(
+            start.ToString("yyyy-MM-dd"),
+            end.ToString("yyyy-MM-dd"),
+            points,
+            mayor,
+            menor
+        ));
+    }
+
+    private async Task<long> ResolveIdAsync(string identifier, CancellationToken cancellationToken)
+    {
+        if (long.TryParse(identifier, out long id))
+        {
+            return id;
+        }
+
+        var vacuno = await _vacunoRepository.GetByCodigoAsync(identifier, cancellationToken);
+        if (vacuno != null)
+        {
+            return vacuno.Id;
+        }
+
+        return -1;
     }
 }

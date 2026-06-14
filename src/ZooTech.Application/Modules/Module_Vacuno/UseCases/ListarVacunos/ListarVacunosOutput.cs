@@ -7,6 +7,7 @@ public sealed record VacunoItemDto(
     DateOnly FechaNacimiento,
     string RazaCode,
     string SexoCode,
-    string? Procedencia);
+    string? Procedencia,
+    bool IsDeleted);
 
 public sealed record ListarVacunosOutput(IReadOnlyList<VacunoItemDto> Items, int TotalCount);
