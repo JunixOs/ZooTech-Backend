@@ -8,4 +8,5 @@ public sealed record VacunoItemResponse(
     string RazaCode,
     string SexoCode,
     string? Procedencia,
-    string Estado);
+    string Estado,
+    DateOnly FechaRegistro);
