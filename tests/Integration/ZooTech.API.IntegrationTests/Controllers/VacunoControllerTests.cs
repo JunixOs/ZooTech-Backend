@@ -40,4 +40,23 @@ public class VacunoControllerTests : IClassFixture<WebApplicationFactory<Program
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
+
+    [Fact]
+    public async Task ExportarArbolGenealogico_WhenVacunoExists_ReturnsExcelFile()
+    {
+        var response = await _client.GetAsync("/api/v1/vacuno/1/genealogia/exportar");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Content.Headers.ContentType!.MediaType.Should().Be("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+        bytes.Length.Should().BeGreaterThan(0);
+    }
+
+    [Fact]
+    public async Task ExportarArbolGenealogico_WhenVacunoDoesNotExist_ReturnsBadRequest()
+    {
+        var response = await _client.GetAsync("/api/v1/vacuno/999999/genealogia/exportar");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
 }

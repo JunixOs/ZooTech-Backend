@@ -69,6 +69,12 @@ public static class DependencyInjection
         services.AddScoped<ITriajeRepository, TriajeRepository>();
         services.AddScoped<ITipoPesoRepository, TipoPesoRepository>();
 
+        // ============================================
+        // Reports
+        // ============================================
+
+        services.AddScoped<ZooTech.Application.Common.Gateway.Services.IArbolGenealogicoExportService, ZooTech.Infrastructure.Reports.Vacunos.ArbolGenealogicoExcelExportService>();
+
         return services;
     }
 }

@@ -74,6 +74,7 @@ public static class DependencyInjection
         services.AddScoped<IUpdateVacunoInputPort, UpdateVacunoInteractor>();
         services.AddScoped<IDeleteVacunoInputPort, DeleteVacunoInteractor>();
         services.AddScoped<IGenerarArbolGenealogicoInputPort, GenerarArbolGenealogicoInteractor>();
+        services.AddScoped<ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarArbolGenealogico.IExportarArbolGenealogicoInputPort, ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarArbolGenealogico.ExportarArbolGenealogicoInteractor>();
 
         return services;
     }
