@@ -35,15 +35,18 @@ public sealed class AnimalRepository : IAnimalRepository
         AnimalDeleteCandidate animal,
         CancellationToken cancellationToken = default)
     {
-        return await context.vacunos
+        var query = context.vacunos
             .AsNoTracking()
             .Where(candidate =>
                 candidate.id != animal.Id &&
                 candidate.deleted_at == null &&
-                (candidate.codigo == animal.Codigo ||
-                    (candidate.nombre == animal.Nombre &&
-                     candidate.fecha_nacimiento == animal.FechaNacimiento &&
-                     candidate.granja_id == animal.GranjaId)))
+                (
+                candidate.codigo == animal.Codigo ||
+                (candidate.nombre == animal.Nombre &&
+                 candidate.fecha_nacimiento == animal.FechaNacimiento &&
+                 candidate.granja_id == animal.GranjaId)));
+
+        return await query
             .Select(candidate => new AnimalDeleteCandidate(
                 candidate.id,
                 candidate.codigo,

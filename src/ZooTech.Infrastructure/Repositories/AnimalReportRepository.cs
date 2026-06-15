@@ -20,6 +20,15 @@ public sealed class AnimalReportRepository : IAnimalReportRepository
     {
         var query =
             from animal in context.vacunos.AsNoTracking()
+            join raza in context.cat_razas.AsNoTracking()
+                on animal.raza_code equals raza.code into razaJoin
+            from raza in razaJoin.DefaultIfEmpty()
+            join sexo in context.cat_sexos.AsNoTracking()
+                on animal.sexo_code equals sexo.code into sexoJoin
+            from sexo in sexoJoin.DefaultIfEmpty()
+            join tipoAdquisicion in context.cat_tipo_adquisicions.AsNoTracking()
+                on animal.tipo_adquisicion_code equals tipoAdquisicion.code into tipoAdquisicionJoin
+            from tipoAdquisicion in tipoAdquisicionJoin.DefaultIfEmpty()
             join estadoVigente in context.v_vacuno_estado_vigentes.AsNoTracking()
                 on animal.id equals estadoVigente.vacuno_id into estadoVigenteJoin
             from estadoVigente in estadoVigenteJoin.DefaultIfEmpty()
@@ -31,11 +40,11 @@ public sealed class AnimalReportRepository : IAnimalReportRepository
                   animal.fecha_registro <= filter.FechaFin
             select new
             {
-                animal.codigo,
-                animal.nombre,
-                Raza = animal.raza_codeNavigation.nombre,
-                Sexo = animal.sexo_codeNavigation.nombre,
-                Procedencia = animal.tipo_adquisicion_codeNavigation.nombre,
+                Codigo = animal.codigo ?? DefaultText,
+                Nombre = animal.nombre ?? DefaultText,
+                Raza = raza != null ? raza.nombre : DefaultText,
+                Sexo = sexo != null ? sexo.nombre : DefaultText,
+                Procedencia = tipoAdquisicion != null ? tipoAdquisicion.nombre : DefaultText,
                 Estado = estado != null ? estado.nombre : DefaultText,
                 animal.fecha_registro
             };
@@ -44,16 +53,16 @@ public sealed class AnimalReportRepository : IAnimalReportRepository
         {
             var keyword = filter.Keyword.Trim();
             query = query.Where(animal =>
-                animal.codigo.Contains(keyword) ||
-                animal.nombre.Contains(keyword));
+                animal.Codigo.Contains(keyword) ||
+                animal.Nombre.Contains(keyword));
         }
 
         return await query
             .OrderByDescending(animal => animal.fecha_registro)
-            .ThenBy(animal => animal.codigo)
+            .ThenBy(animal => animal.Codigo)
             .Select(animal => new ReportAnimalListItem(
-                animal.codigo,
-                animal.nombre,
+                animal.Codigo,
+                animal.Nombre,
                 animal.Raza,
                 animal.Sexo,
                 animal.Procedencia,

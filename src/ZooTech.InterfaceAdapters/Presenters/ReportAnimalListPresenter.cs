@@ -24,6 +24,14 @@ public sealed class ReportAnimalListPresenter : IReportAnimalListOutputPort
         };
     }
 
+    public void PresentPdf(ReportAnimalListPdfOutput output)
+    {
+        Result = new FileContentResult(output.Content, output.ContentType)
+        {
+            FileDownloadName = output.FileName
+        };
+    }
+
     public void PresentValidationError(ReportAnimalListValidationException exception)
     {
         var details = exception.Errors.Select(error => new ErrorDetail
@@ -47,9 +55,29 @@ public sealed class ReportAnimalListPresenter : IReportAnimalListOutputPort
 
     public void PresentUnexpectedError(AnimalReportGenerationException exception)
     {
+        var details = new[]
+        {
+            new ErrorDetail
+            {
+                Field = "exception.Message",
+                Message = exception.OriginalExceptionMessage
+            },
+            new ErrorDetail
+            {
+                Field = "exception.InnerException.Message",
+                Message = exception.OriginalInnerExceptionMessage ?? string.Empty
+            },
+            new ErrorDetail
+            {
+                Field = "exception.GetType().Name",
+                Message = exception.OriginalExceptionTypeName
+            }
+        };
+
         Result = new ObjectResult(ErrorResponse.Create(
             "ANIMAL_REPORT_GENERATION_ERROR",
-            exception.Message))
+            exception.Message,
+            details))
         {
             StatusCode = StatusCodes.Status500InternalServerError
         };

@@ -39,12 +39,12 @@ public sealed class AnimalsController : ControllerBase
 
     private long? GetDeletedByFromHeader()
     {
-        if (!Request.Headers.TryGetValue(DeletedByHeaderName, out var value))
+        if (!Request.Headers.TryGetValue(DeletedByHeaderName, out var values))
         {
             return null;
         }
 
-        return long.TryParse(value.ToString(), out var deletedBy)
+        return long.TryParse(values.FirstOrDefault(), out var deletedBy)
             ? deletedBy
             : -1;
     }

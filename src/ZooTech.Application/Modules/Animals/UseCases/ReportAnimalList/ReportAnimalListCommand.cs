@@ -4,4 +4,5 @@ public sealed record ReportAnimalListCommand(
     DateOnly? FechaInicio,
     DateOnly? FechaFin,
     string? Keyword,
-    bool ExportExcel);
+    bool ExportExcel,
+    bool ExportPdf);

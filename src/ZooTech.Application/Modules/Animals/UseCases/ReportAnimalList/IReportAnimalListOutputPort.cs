@@ -6,6 +6,8 @@ public interface IReportAnimalListOutputPort
 
     void PresentExcel(ReportAnimalListExcelOutput output);
 
+    void PresentPdf(ReportAnimalListPdfOutput output);
+
     void PresentValidationError(ReportAnimalListValidationException exception);
 
     void PresentNotFound(AnimalReportNotFoundException exception);

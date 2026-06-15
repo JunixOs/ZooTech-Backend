@@ -35,10 +35,10 @@ public static class DependencyInjection
         // Repositories
         // ============================================
 
-        // services.AddScoped<IAnimalRepository, AnimalRepository>();
         services.AddScoped<IAnimalRepository, AnimalRepository>();
         services.AddScoped<IAnimalReportRepository, AnimalReportRepository>();
         services.AddScoped<IAnimalReportExcelService, AnimalReportExcelService>();
+        services.AddScoped<IAnimalReportPdfService, AnimalReportPdfService>();
 
         // ============================================
         // External Services

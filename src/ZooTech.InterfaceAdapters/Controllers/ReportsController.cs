@@ -24,7 +24,7 @@ public sealed class ReportsController : ControllerBase
         [FromQuery] ReportAnimalListRequest request,
         CancellationToken cancellationToken)
     {
-        return await HandleReportAsync(request, exportExcel: false, cancellationToken);
+        return await HandleReportAsync(request, exportExcel: false, exportPdf: false, cancellationToken);
     }
 
     [HttpGet("excel")]
@@ -33,12 +33,22 @@ public sealed class ReportsController : ControllerBase
         [FromQuery] ReportAnimalListRequest request,
         CancellationToken cancellationToken)
     {
-        return await HandleReportAsync(request, exportExcel: true, cancellationToken);
+        return await HandleReportAsync(request, exportExcel: true, exportPdf: false, cancellationToken);
+    }
+
+    [HttpGet("pdf")]
+    [Tags("Reports")]
+    public async Task<IActionResult> DownloadAnimalsPdf(
+        [FromQuery] ReportAnimalListRequest request,
+        CancellationToken cancellationToken)
+    {
+        return await HandleReportAsync(request, exportExcel: false, exportPdf: true, cancellationToken);
     }
 
     private async Task<IActionResult> HandleReportAsync(
         ReportAnimalListRequest request,
         bool exportExcel,
+        bool exportPdf,
         CancellationToken cancellationToken)
     {
         var presenter = new ReportAnimalListPresenter();
@@ -46,7 +56,8 @@ public sealed class ReportsController : ControllerBase
             request.FechaInicio,
             request.FechaFin,
             request.Keyword,
-            exportExcel);
+            exportExcel,
+            exportPdf);
 
         await reportAnimalListInputPort.Handle(command, presenter, cancellationToken);
 
