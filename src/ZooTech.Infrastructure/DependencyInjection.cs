@@ -1,9 +1,19 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using ZooTech.Application.Common.Gateway.Time;
 using ZooTech.Application.Modules.Animals.UseCases.DeleteAnimal;
 using ZooTech.Application.Modules.Animals.UseCases.ReportAnimalList;
+using ZooTech.Domain.Module_Celo.Interfaces;
+using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
+using ZooTech.Domain.Module_Sanidad.Interfaces;
+using ZooTech.Domain.Module_Vacuno.Interfaces;
+using ZooTech.Infrastructure.Common.Time;
 using ZooTech.Infrastructure.Persistence.Context;
+using ZooTech.Infrastructure.Persistence.Modules.Module_Celo.Repositories;
+using ZooTech.Infrastructure.Persistence.Modules.Module_ProduccionLeche.Repositories;
+using ZooTech.Infrastructure.Persistence.Modules.Module_Sanidad.Repositories;
+using ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Repositories;
 using ZooTech.Infrastructure.Reports;
 using ZooTech.Infrastructure.Repositories;
 
@@ -15,21 +25,17 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // ============================================
-        // Connection String
-        // ============================================
-
-        var connectionString =
-            configuration.GetConnectionString("DefaultConnection");
-
-        // ============================================
-        // DbContext
-        // ============================================
+        var connectionString = configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("No se encontró ConnectionStrings:DefaultConnection.");
 
         services.AddDbContext<GanaderiaDbContext>(options =>
-        {
-            options.UseSqlServer(connectionString);
-        });
+            options.UseSqlServer(connectionString));
+
+        // ============================================
+        // Transversal
+        // ============================================
+
+        services.AddScoped<IDateTimeProvider, DateTimeProvider>();
 
         // ============================================
         // Repositories
@@ -39,19 +45,11 @@ public static class DependencyInjection
         services.AddScoped<IAnimalReportRepository, AnimalReportRepository>();
         services.AddScoped<IAnimalReportExcelService, AnimalReportExcelService>();
         services.AddScoped<IAnimalReportPdfService, AnimalReportPdfService>();
-
-        // ============================================
-        // External Services
-        // ============================================
-
-        // services.AddScoped<IJwtService, JwtService>();
-        // services.AddScoped<IDateTimeProvider, DateTimeProvider>();
-
-        // ============================================
-        // Caching
-        // ============================================
-
-        // services.AddMemoryCache();
+        services.AddScoped<ICeloRepository, CeloRepository>();
+        services.AddScoped<IOrdenioRepository, OrdenioRepository>();
+        services.AddScoped<IVacunoRepository, VacunoRepository>();
+        services.AddScoped<ITriajeRepository, TriajeRepository>();
+        services.AddScoped<ITipoPesoRepository, TipoPesoRepository>();
 
         return services;
     }
