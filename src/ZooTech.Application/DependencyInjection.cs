@@ -1,4 +1,5 @@
 using FluentValidation;
+using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using ZooTech.Application.Modules.Module_Celo.UseCases.CreateCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.DeleteCelo;
@@ -61,6 +62,11 @@ public static class DependencyInjection
         // FluentValidation — all assemblies
         // ============================================
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly, includeInternalTypes: true);
+
+        // ============================================
+        // MediatR — pipelines, handlers
+        // ============================================
+        services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly));
 
         // ============================================
         // Use Cases - Module_Celo

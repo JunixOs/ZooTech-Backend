@@ -1,8 +1,6 @@
 using System.Text.Json;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
-using Moq;
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.InterfaceAdapters.Middleware;
 
@@ -12,8 +10,7 @@ public class ExceptionHandlingMiddlewareTests
 {
     private static ExceptionHandlingMiddleware CreateMiddleware(RequestDelegate next)
     {
-        var loggerMock = new Mock<ILogger<ExceptionHandlingMiddleware>>();
-        return new ExceptionHandlingMiddleware(next, loggerMock.Object);
+        return new ExceptionHandlingMiddleware(next);
     }
 
     private static DefaultHttpContext CreateHttpContext()
