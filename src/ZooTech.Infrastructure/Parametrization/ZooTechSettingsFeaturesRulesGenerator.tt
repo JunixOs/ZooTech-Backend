@@ -1,0 +1,325 @@
+<#@ template language="C#" debug="false" hostspecific="true" #>
+<#@ output extension=".cs" #>
+
+<#@ assembly name="System.Core" #>
+<#@ assembly name="System.Data" #>
+<#@ assembly name="C:\Users\yonel\.nuget\packages\microsoft.data.sqlclient\7.0.1\lib\net8.0\Microsoft.Data.SqlClient.dll" #>
+
+<#@ import namespace="System" #>
+<#@ import namespace="Microsoft.Data.SqlClient" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.Text" #>
+
+// TODO: Generar esto con valoes preliminares
+namespace ZooTech.Domain.Settings
+{
+    // =====================================================
+    // GENERATED FILE
+    // DO NOT EDIT
+    // =====================================================
+
+    public sealed record SettingDefinition<T>(
+        string Code);
+
+    public readonly record struct FeatureCode(
+        string Value);
+
+    public readonly record struct RuleCode(
+        string Value);
+
+    public static class Settings
+    {
+<#
+
+string connectionString =
+    @"Server=.;
+      Database=ZooTech;
+      Trusted_Connection=True;
+      TrustServerCertificate=True;";
+
+var settingGroups =
+    new Dictionary<string,List<SettingItem>>();
+
+var features =
+    new List<string>();
+
+var rules =
+    new List<string>();
+
+using(var connection =
+    new SqlConnection(connectionString))
+{
+    connection.Open();
+
+    //------------------------------------------------------
+    // SETTINGS
+    //------------------------------------------------------
+
+    string settingsSql = @"
+        SELECT
+            sg.code       AS GroupCode,
+            sd.code       AS SettingCode,
+            sd.data_type  AS DataType
+        FROM setting_groups sg
+        INNER JOIN setting_definitions sd
+            ON sd.setting_group_id = sg.id
+        WHERE
+            sg.is_active = 1
+            AND sd.is_active = 1
+            AND sg.deleted_at IS NULL
+            AND sd.deleted_at IS NULL
+        ORDER BY
+            sg.code,
+            sd.code";
+
+    using(var cmd =
+        new SqlCommand(settingsSql,connection))
+    using(var reader =
+        cmd.ExecuteReader())
+    {
+        while(reader.Read())
+        {
+            string groupCode =
+                reader["GroupCode"].ToString();
+
+            if(!settingGroups.ContainsKey(groupCode))
+            {
+                settingGroups[groupCode] =
+                    new List<SettingItem>();
+            }
+
+            settingGroups[groupCode]
+                .Add(new SettingItem
+                {
+                    Code =
+                        reader["SettingCode"]
+                            .ToString(),
+
+                    DataType =
+                        reader["DataType"]
+                            .ToString()
+                });
+        }
+    }
+
+    //------------------------------------------------------
+    // FEATURES
+    //------------------------------------------------------
+
+    string featureSql = @"
+        SELECT code
+        FROM features
+        WHERE
+            is_active = 1
+            AND deleted_at IS NULL
+        ORDER BY code";
+
+    using(var cmd =
+        new SqlCommand(featureSql,connection))
+    using(var reader =
+        cmd.ExecuteReader())
+    {
+        while(reader.Read())
+        {
+            features.Add(
+                reader["code"].ToString());
+        }
+    }
+
+    //------------------------------------------------------
+    // RULES
+    //------------------------------------------------------
+
+    string ruleSql = @"
+        SELECT code
+        FROM rule_definitions
+        WHERE
+            is_active = 1
+            AND deleted_at IS NULL
+        ORDER BY code";
+
+    using(var cmd =
+        new SqlCommand(ruleSql,connection))
+    using(var reader =
+        cmd.ExecuteReader())
+    {
+        while(reader.Read())
+        {
+            rules.Add(
+                reader["code"].ToString());
+        }
+    }
+}
+
+foreach(var group in settingGroups)
+{
+    string className =
+        ToPascalCase(group.Key);
+
+#>
+
+        public static class <#= className #>
+        {
+<#
+
+    foreach(var setting in group.Value)
+    {
+        string propertyName =
+            ToPascalCase(setting.Code);
+
+        string csharpType =
+            MapType(setting.DataType);
+
+#>
+
+            public static readonly
+                SettingDefinition<<#= csharpType #>>
+                    <#= propertyName #> =
+                        new("<#= setting.Code #>");
+
+<#
+    }
+#>
+
+        }
+
+<#
+}
+#>
+
+    }
+
+    public static class Features
+    {
+<#
+
+foreach(var feature in features)
+{
+#>
+
+        public static readonly
+            FeatureCode
+                <#= ToPascalCase(feature) #> =
+                    new("<#= feature #>");
+
+<#
+}
+#>
+
+    }
+
+    public static class Rules
+    {
+<#
+
+foreach(var rule in rules)
+{
+#>
+
+        public static readonly
+            RuleCode
+                <#= ToPascalCase(rule) #> =
+                    new("<#= rule #>");
+
+<#
+}
+#>
+
+    }
+}
+
+<#+
+
+public sealed class SettingItem
+{
+    public string Code { get; set; }
+
+    public string DataType { get; set; }
+}
+
+public string MapType(
+    string dataType)
+{
+    if(string.IsNullOrWhiteSpace(dataType))
+        return "string";
+
+    switch(dataType.ToUpper())
+    {
+        case "INT":
+        case "INTEGER":
+            return "int";
+
+        case "DECIMAL":
+        case "NUMERIC":
+        case "MONEY":
+            return "decimal";
+
+        case "BOOL":
+        case "BOOLEAN":
+        case "BIT":
+            return "bool";
+
+        case "DATE":
+            return "DateOnly";
+
+        case "DATETIME":
+            return "DateTime";
+
+        case "JSON":
+            return "string";
+
+        case "ARRAY":
+            return "string";
+
+        default:
+            return "string";
+    }
+}
+
+public string ToPascalCase(
+    string value)
+{
+    if(string.IsNullOrWhiteSpace(value))
+        return value;
+
+    var parts =
+        value
+            .ToLower()
+            .Split(
+                new[]
+                {
+                    '_',
+                    '-',
+                    ' '
+                },
+                StringSplitOptions
+                    .RemoveEmptyEntries);
+
+    var sb =
+        new StringBuilder();
+
+    foreach(var part in parts)
+    {
+        sb.Append(
+            char.ToUpper(part[0]));
+
+        if(part.Length > 1)
+        {
+            sb.Append(
+                part.Substring(1));
+        }
+    }
+
+    var result =
+        sb.ToString();
+
+    if(result.Length > 0 &&
+       char.IsDigit(result[0]))
+    {
+        result = "_" + result;
+    }
+
+    return result;
+}
+
+#>

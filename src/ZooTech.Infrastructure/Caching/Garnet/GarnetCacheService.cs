@@ -32,28 +32,41 @@ namespace ZooTech.Infrastructure.Caching
             }
         }
 
+        public async Task<(bool Found, T? Value)> TryGetAsync<T>(string key)
+        {
+            var garnetDatabase = _garnetCacheConnection.GetDatabase();
+
+            var json = await garnetDatabase.StringGetAsync(key);
+
+            if (!json.HasValue)
+                return (false, default);
+
+            try
+            {
+                return (
+                    true,
+                    JsonSerializer.Deserialize<T>((string)json!)
+                );
+            }
+            catch (JsonException)
+            {
+                return (false, default);
+            }
+        }
+
         public async Task<T> GetOrCreateAsync<T>(
             string key, 
             Func<Task<T>> factory
         )
         {
-            var garnetDatabase = _garnetCacheConnection.GetDatabase();
+            var (found , value) = await TryGetAsync<T>(key);
 
-            var cachedValue = await garnetDatabase.StringGetAsync(key);
-
-            if (cachedValue.HasValue)
+            if(found)
             {
-                byte[] bytes = cachedValue!;
-
-                var cachedResult = JsonSerializer.Deserialize<T>(
-                    bytes
-                )!;
-
-                if (cachedResult is not null)
-                {
-                    return cachedResult;
-                }
+                return value!;
             }
+
+            var garnetDatabase = _garnetCacheConnection.GetDatabase();
 
             var result = await factory();
 
@@ -66,6 +79,13 @@ namespace ZooTech.Infrastructure.Caching
             );
 
             return result;
+        }
+
+        public async Task RemoveByKeyAsync(string key)
+        {
+            var garnetDatabase = _garnetCacheConnection.GetDatabase();
+
+            await garnetDatabase.KeyDeleteAsync(key);
         }
     }
 }

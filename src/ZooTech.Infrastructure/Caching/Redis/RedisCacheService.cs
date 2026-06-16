@@ -45,7 +45,7 @@ namespace ZooTech.Infrastructure.Caching
 
             if (cachedValue.HasValue)
             {
-                byte[] bytes = cachedValue!;
+                var bytes = (byte[])cachedValue!;
 
                 var cachedResult =  JsonSerializer.Deserialize<T>(
                     bytes
@@ -68,6 +68,34 @@ namespace ZooTech.Infrastructure.Caching
             );
 
             return result;
+        }
+
+        public async Task<(bool Found, T? Value)> TryGetAsync<T>(string key)
+        {
+            var redisDatabase = _redisCacheConnection.GetDatabase();
+
+            var cachedValue = await redisDatabase.StringGetAsync(key);
+
+            if (!cachedValue.IsNullOrEmpty)
+            {
+                try
+                {
+                    var value = JsonSerializer.Deserialize<T>((string)cachedValue!);
+                    return (true, value);
+                }
+                catch (JsonException)
+                {
+                    return (false, default);
+                }
+            }
+
+            return (false, default);
+        }
+
+        public async Task RemoveByKeyAsync(string key)
+        {
+            var redisDatabase = _redisCacheConnection.GetDatabase();
+            await redisDatabase.KeyDeleteAsync(key);
         }
     }
 }
