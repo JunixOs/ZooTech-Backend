@@ -8,7 +8,7 @@ namespace ZooTech.Infrastructure.Caching
     public class GarnetCacheService : IAppCacheService
     {
         private readonly GarnetCacheConnection _garnetCacheConnection;
-        private readonly TimeSpan _expirationTimeSpan;
+        private readonly TimeSpan _defaultExpiration;
 
         public GarnetCacheService(
             GarnetCacheConnection garnetCacheConnection, 
@@ -24,11 +24,11 @@ namespace ZooTech.Infrastructure.Caching
                 CultureInfo.InvariantCulture,
                 out var timeSpan))
             {
-                _expirationTimeSpan = new TimeSpan(0, timeSpan.Minutes, timeSpan.Seconds);
+                _defaultExpiration = new TimeSpan(0, timeSpan.Minutes, timeSpan.Seconds);
             }
             else
             {
-                _expirationTimeSpan = new TimeSpan(0, 3, 0);
+                _defaultExpiration = new TimeSpan(0, 3, 0);
             }
         }
 
@@ -59,6 +59,15 @@ namespace ZooTech.Infrastructure.Caching
             Func<Task<T>> factory
         )
         {
+            return await GetOrCreateAsync(key, factory, _defaultExpiration);
+        }
+
+        public async Task<T> GetOrCreateAsync<T>(
+            string key,
+            Func<Task<T>> factory,
+            TimeSpan ttl
+        )
+        {
             var (found , value) = await TryGetAsync<T>(key);
 
             if(found)
@@ -75,7 +84,7 @@ namespace ZooTech.Infrastructure.Caching
             await garnetDatabase.StringSetAsync(
                 key,
                 serialized, 
-                _expirationTimeSpan
+                ttl
             );
 
             return result;

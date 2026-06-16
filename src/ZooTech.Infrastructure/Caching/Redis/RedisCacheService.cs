@@ -39,6 +39,15 @@ namespace ZooTech.Infrastructure.Caching
             Func<Task<T>> factory
         )
         {
+            return await GetOrCreateAsync(key, factory, _expirationTimeSpan);
+        }
+
+        public async Task<T> GetOrCreateAsync<T>(
+            string key,
+            Func<Task<T>> factory,
+            TimeSpan ttl
+        )
+        {
             var redisDatabase = _redisCacheConnection.GetDatabase();
 
             var cachedValue = await redisDatabase.StringGetAsync(key);
@@ -64,7 +73,7 @@ namespace ZooTech.Infrastructure.Caching
             await redisDatabase.StringSetAsync(
                 key ,
                 serialized , 
-                _expirationTimeSpan
+                ttl
             );
 
             return result;

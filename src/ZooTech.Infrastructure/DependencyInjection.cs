@@ -1,9 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using StackExchange.Redis;
 using ZooTech.Application.Common.Gateway.Auditing;
 using ZooTech.Application.Common.Gateway.Caching;
 using ZooTech.Application.Common.Gateway.Context;
+using ZooTech.Application.Common.Gateway.Parametrization;
 using ZooTech.Application.Common.Gateway.Parametrization.Features;
 using ZooTech.Application.Common.Gateway.Parametrization.Rules;
 using ZooTech.Application.Common.Gateway.Parametrization.Settings;
@@ -12,6 +14,7 @@ using ZooTech.Application.Common.Gateway.Repositories.Parametrization;
 using ZooTech.Application.Common.Gateway.Tenant;
 using ZooTech.Infrastructure.Auditing.MongoDb;
 using ZooTech.Infrastructure.Caching;
+using ZooTech.Infrastructure.Parametrization;
 using ZooTech.Infrastructure.Parametrization.Features;
 using ZooTech.Infrastructure.Parametrization.Rules;
 using ZooTech.Infrastructure.Parametrization.Settings;
@@ -27,6 +30,11 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        var garnetConnectionString = configuration["Garnet:ConnectionString"]
+            ?? throw new InvalidOperationException("Garnet:ConnectionString no configurado");
+        var multiplexer = ConnectionMultiplexer.Connect(garnetConnectionString);
+        services.AddSingleton<IConnectionMultiplexer>(multiplexer);
+
         services.AddSingleton<GarnetCacheConnection>();
         services.AddSingleton<IAppCacheService, GarnetCacheService>();
 
@@ -48,7 +56,11 @@ public static class DependencyInjection
             return factory.CreateDbContext();
         });
 
-        // Parametrization / Settings / Features / Rules
+        // Unified Tenant Configuration (Phase 1-2)
+        services.AddScoped<ITenantConfigurationRepository, TenantConfigurationRepository>();
+        services.AddScoped<ITenantConfigurationProvider, TenantConfigurationProvider>();
+
+        // Parametrization / Settings / Features / Rules (deprecated — use ITenantConfigurationProvider)
         services.AddScoped<ISettingsProvider, SettingsProvider>();
         services.AddScoped<IFeatureProvider, FeatureProvider>();
         services.AddScoped<IRuleProvider, RuleProvider>();
@@ -56,6 +68,9 @@ public static class DependencyInjection
         services.AddScoped<ISettingsRepository, SettingsRepository>();
         services.AddScoped<IFeatureRepository, FeatureRepository>();
         services.AddScoped<IRuleRepository, RuleRepository>();
+
+        // Multi-Instance Sync (Phase 4)
+        services.AddHostedService<ConfigInvalidationSubscriber>();
 
         return services;
     }

@@ -1,23 +1,24 @@
-using Microsoft.Extensions.Configuration;
 using StackExchange.Redis;
 
 namespace ZooTech.Infrastructure.Caching
 {
     public class GarnetCacheConnection
     {
-        private readonly ConnectionMultiplexer _connection;
+        private readonly IConnectionMultiplexer _connection;
 
-        public GarnetCacheConnection(IConfiguration configuration)
+        public GarnetCacheConnection(IConnectionMultiplexer connection)
         {
-            var garnetConnectionString = configuration["Garnet:ConnectionString"] ?? throw new InvalidOperationException(
-                    "Garnet:ConnectionString no configurado");
-
-            _connection = ConnectionMultiplexer.Connect(garnetConnectionString);
+            _connection = connection;
         }
 
         public IDatabase GetDatabase()
         {
             return _connection.GetDatabase();
+        }
+
+        public IConnectionMultiplexer GetMultiplexer()
+        {
+            return _connection;
         }
     }
 }
