@@ -54,22 +54,7 @@ public sealed class OrdenioRepository : IOrdenioRepository
         int pageSize,
         CancellationToken cancellationToken)
     {
-        var queryable = _dbContext.ordenios
-            .AsNoTracking()
-            .Where(x => x.deleted_at == null)
-            .AsQueryable();
-
-        if (vacunoId.HasValue)
-            queryable = queryable.Where(x => x.vacuno_id == vacunoId.Value);
-
-        if (!string.IsNullOrWhiteSpace(estadoOrdenioCode))
-            queryable = queryable.Where(x => x.estado_ordenio_code == estadoOrdenioCode.Trim());
-
-        if (fechaDesde.HasValue)
-            queryable = queryable.Where(x => x.fecha_hora >= fechaDesde.Value);
-
-        if (fechaHasta.HasValue)
-            queryable = queryable.Where(x => x.fecha_hora <= fechaHasta.Value);
+        var queryable = BuildListQuery(vacunoId, estadoOrdenioCode, fechaDesde, fechaHasta);
 
         var totalCount = await queryable.CountAsync(cancellationToken);
 
@@ -110,6 +95,47 @@ public sealed class OrdenioRepository : IOrdenioRepository
 
         await _dbContext.SaveChangesAsync(cancellationToken);
         return ToDomain(entity);
+    }
+
+    public async Task<IReadOnlyList<Ordenio>> ListReportAsync(
+        long? vacunoId,
+        string? estadoOrdenioCode,
+        DateTime? fechaDesde,
+        DateTime? fechaHasta,
+        CancellationToken cancellationToken)
+    {
+        var entities = await BuildListQuery(vacunoId, estadoOrdenioCode, fechaDesde, fechaHasta)
+            .Include(x => x.vacuno)
+            .OrderByDescending(x => x.fecha_hora)
+            .ToListAsync(cancellationToken);
+
+        return entities.Select(ToDomain).ToList();
+    }
+
+    private IQueryable<ordenio> BuildListQuery(
+        long? vacunoId,
+        string? estadoOrdenioCode,
+        DateTime? fechaDesde,
+        DateTime? fechaHasta)
+    {
+        var queryable = _dbContext.ordenios
+            .AsNoTracking()
+            .Where(x => x.deleted_at == null)
+            .AsQueryable();
+
+        if (vacunoId.HasValue)
+            queryable = queryable.Where(x => x.vacuno_id == vacunoId.Value);
+
+        if (!string.IsNullOrWhiteSpace(estadoOrdenioCode))
+            queryable = queryable.Where(x => x.estado_ordenio_code == estadoOrdenioCode.Trim());
+
+        if (fechaDesde.HasValue)
+            queryable = queryable.Where(x => x.fecha_hora >= fechaDesde.Value);
+
+        if (fechaHasta.HasValue)
+            queryable = queryable.Where(x => x.fecha_hora <= fechaHasta.Value);
+
+        return queryable;
     }
 
     private static Ordenio ToDomain(ordenio entity)
