@@ -134,23 +134,13 @@ The `IAppCacheService` interface currently does not support per-key TTL. Two opt
 public interface IAppCacheService
 {
     Task<T> GetOrCreateAsync<T>(string key, Func<Task<T>> factory);
-    Task<T> GetOrCreateAsync<T>(string key, Func<Task<T>> factory, TimeSpan ttl);
+    Task<T> GetOrCreateAsync<T>(string key, Func<Task<T>> factory, TimeSpan? ttl);
     Task<(bool Found, T? Value)> TryGetAsync<T>(string key);
     Task RemoveByKeyAsync(string key);
 }
 ```
 
 The Garnet/Redis implementations use `_expirationTimeSpan` when calling `StringSetAsync`. Adding a TTL parameter is straightforward.
-
-**Option B:** Accept the default TTL from `GarnetCacheService` configuration (currently 3 min). Configure it to 5 min via `appsettings.json`:
-
-```json
-{
-  "Garnet": {
-    "ExpirationTime": "05:00"
-  }
-}
-```
 
 **Recommendation:** Option A for flexibility, but Option B is viable short-term.
 
@@ -221,6 +211,47 @@ public async Task<TenantConfiguration> GetConfigAsync(int tenantId)
 }
 ```
 
+### 3.4 Two-Layer Cache (L1/L2)
+
+The unified provider uses a two-layer cache to balance performance and consistency:
+
+| Layer | Technology | Scope | Latency |
+|---|---|---|---|
+| **L1** | `IMemoryCache` (in-process) | Per application instance | ~0.01 ms |
+| **L2** | Garnet/Redis (distributed) | Shared across all instances | ~0.5–2 ms (network) |
+
+**Access pattern:** L1 → L2 → DB
+
+```csharp
+private async Task<TenantConfiguration> GetConfigAsync(int tenantId)
+{
+    var key = BuildKey(tenantId);
+
+    // 1. L1: Check in-memory cache (near-instant, no network)
+    if (_memoryCache.TryGetValue(key, out TenantConfiguration? cached))
+        return cached!;
+
+    // 2. L2: Check distributed cache (Garnet)
+    var (found, distributed) = await _cache.TryGetAsync<TenantConfiguration>(key);
+    if (found)
+    {
+        _memoryCache.Set(key, distributed, CacheTtl);
+        return distributed!;
+    }
+
+    // 3. Cache miss → load from DB
+    var config = await _repository.LoadTenantConfigAsync(tenantId);
+
+    // 4. Store in both layers
+    _memoryCache.Set(key, config, CacheTtl);
+    await _cache.GetOrCreateAsync(key, () => Task.FromResult(config), CacheTtl);
+
+    return config;
+}
+```
+
+**Why two layers?** Garnet is a network call (~0.5–2 ms). L1 in-memory cache is ~0.01 ms. For high-throughput tenant configuration reads (every request needs settings/features/rules), L1 eliminates the network latency on cache hits. L2 provides cross-instance sharing and the Pub/Sub invalidation bus.
+
 ---
 
 ## 4. Cache Invalidation
@@ -232,11 +263,15 @@ When a setting/feature/rule is updated for a tenant:
 ```csharp
 public async Task InvalidateTenantAsync(int tenantId)
 {
-    await _cache.RemoveByKeyAsync(BuildKey(tenantId));
+    var key = BuildKey(tenantId);
+    // Evict L1 (in-memory cache)
+    _memoryCache.Remove(key);
+    // Evict L2 (distributed Garnet cache)
+    await _cache.RemoveByKeyAsync(key);
 }
 ```
 
-Next read triggers a cache miss, loads fresh data from DB, repopulates cache.
+Next read triggers a cascade miss (L1 → L2 → DB), loads fresh data from DB, repopulates both layers.
 
 ### 4.2 Multi-Instance Invalidation (Pub/Sub)
 
@@ -246,9 +281,11 @@ For horizontal scaling, use Redis Pub/Sub:
 // Publisher (called after DB write)
 public async Task InvalidateTenantAsync(int tenantId)
 {
-    await _cache.RemoveByKeyAsync(BuildKey(tenantId));
+    var key = BuildKey(tenantId);
+    _memoryCache.Remove(key);                                          // Evict L1
+    await _cache.RemoveByKeyAsync(key);                                // Evict L2
     var subscriber = _redis.GetSubscriber();
-    await subscriber.PublishAsync("tenant:config:invalidate", tenantId.ToString());
+    await subscriber.PublishAsync("tenant:config:invalidate", tenantId.ToString()); // Notify peers
 }
 
 // Subscriber (BackgroundService on each instance)
@@ -261,7 +298,8 @@ public class ConfigInvalidationSubscriber : BackgroundService
         {
             if (int.TryParse(message, out var tenantId))
             {
-                _cache.RemoveByKeyAsync(BuildKey(tenantId)).GetAwaiter().GetResult();
+                // Evict L1 only — L2 (Garnet) was already evicted by the writer instance
+                _memoryCache.Remove(BuildKey(tenantId));
             }
         });
     }
@@ -274,11 +312,13 @@ public class ConfigInvalidationSubscriber : BackgroundService
 Admin → PUT /api/tenants/{id}/settings/{code}
     │
     ├── 1. Save to DB (setting_values)
-    ├── 2. _cache.RemoveByKeyAsync("tenant:config:{id}")
-    └── 3. Redis.Publish("tenant:config:invalidate", "{id}")
+    ├── 2. Invalidate L1: _memoryCache.Remove("tenant:config:{id}")
+    ├── 3. Invalidate L2: _cache.RemoveByKeyAsync("tenant:config:{id}")
+    └── 4. Redis.Publish("tenant:config:invalidate", "{id}")
               │
-              ├── Instance A: L1 evicted via step 2
-              └── Instance B: RedisSyncSubscriber evicts L2
+              ├── Instance A: L1 + L2 evicted locally via steps 2 & 3
+              └── Instance B: ConfigInvalidationSubscriber evicts L1 only
+                                (L2 already evicted by Instance A — shared Garnet)
 ```
 
 ---
@@ -291,21 +331,22 @@ Admin → PUT /api/tenants/{id}/settings/{code}
 3. Create Dapper-based `TenantConfigurationRepository` implementation querying Control Plane DB
 4. Register in DI alongside existing providers
 
-### Phase 2 — Unified Provider
+### Phase 2 — Unified Provider with L1/L2 Cache
 5. Create `TenantConfigurationProvider` implementing `ITenantConfigurationProvider`
-6. Internal cache with 5-min TTL + fallback to repository
-7. Keep existing `SettingsProvider`/`FeatureProvider`/`RuleProvider` for backward compatibility
-8. Gradually migrate consumers to `ITenantConfigurationProvider`
+6. L1 in-memory cache (`IMemoryCache`) + L2 distributed cache (Garnet, 5-min TTL) + fallback to repository
+7. Register `TenantConfigurationProvider` in DI (requires `IMemoryCache` already registered via `AddMemoryCache()` in `Program.cs`)
+8. Keep existing `SettingsProvider`/`FeatureProvider`/`RuleProvider` for backward compatibility
+9. Gradually migrate consumers to `ITenantConfigurationProvider`
 
 ### Phase 3 — Deprecate Fragmented Providers
-9. Once all consumers use `ITenantConfigurationProvider`, mark old providers as `[Obsolete]`
-10. Remove old providers and their repository stubs
-11. Clean up: remove `ISettingsRepository`, `IFeatureRepository`, `IRuleRepository` (replaced by unified repo)
+10. Once all consumers use `ITenantConfigurationProvider`, mark old providers as `[Obsolete]`
+11. Remove old providers and their repository stubs
+12. Clean up: remove `ISettingsRepository`, `IFeatureRepository`, `IRuleRepository` (replaced by unified repo)
 
 ### Phase 4 — Multi-Instance Sync
-12. Add `IConnectionMultiplexer` dependency to provider
-13. Implement Pub/Sub invalidation
-14. Add `ConfigInvalidationSubscriber` as `IHostedService`
+13. Add `IConnectionMultiplexer` dependency to provider for Pub/Sub
+14. Implement Pub/Sub invalidation (publisher removes L1 + L2, subscriber evicts L1 only)
+15. Add `ConfigInvalidationSubscriber` as `IHostedService`
 
 ---
 
@@ -318,12 +359,12 @@ Admin → PUT /api/tenants/{id}/settings/{code}
 | `src/ZooTech.Domain/Configuration/TenantConfiguration.cs` | **Create** — unified snapshot record |
 | `src/ZooTech.Application/Common/Gateway/Parametrization/ITenantConfigurationProvider.cs` | **Create** — unified interface |
 | `src/ZooTech.Application/Common/Gateway/Repositories/Parametrization/ITenantConfigurationRepository.cs` | **Create** — unified repository interface |
-| `src/ZooTech.Infrastructure/Parametrization/TenantConfigurationProvider.cs` | **Create** — cache-first implementation |
+| `src/ZooTech.Infrastructure/Parametrization/TenantConfigurationProvider.cs` | **Create** — L1 (IMemoryCache) + L2 (Garnet) cache-first implementation |
 | `src/ZooTech.Infrastructure/Parametrization/TenantConfigurationRepository.cs` | **Create** — Dapper-based DB access |
-| `src/ZooTech.Infrastructure/Parametrization/ConfigInvalidationSubscriber.cs` | **Create** — Redis Pub/Sub listener (IHostedService) |
+| `src/ZooTech.Infrastructure/Parametrization/ConfigInvalidationSubscriber.cs` | **Create** — Redis Pub/Sub listener, evicts L1 only (IHostedService) |
 | `src/ZooTech.Application/Common/Gateway/Caching/IAppCacheService.cs` | **Modify** — add `GetOrCreateAsync` with TTL overload |
 | `src/ZooTech.Infrastructure/Caching/Garnet/GarnetCacheService.cs` | **Modify** — implement TTL overload |
-| `src/ZooTech.Infrastructure/DependencyInjection.cs` | **Modify** — register new unified services |
+| `src/ZooTech.Infrastructure/DependencyInjection.cs` | **Modify** — register new unified services (`IMemoryCache` already registered via `AddMemoryCache()` in `Program.cs`) |
 | `src/ZooTech.Application/Common/Gateway/Repositories/Parametrization/ISettingsRepository.cs` | **Keep** (mark `[Obsolete]` in Phase 3) |
 | `src/ZooTech.Application/Common/Gateway/Repositories/Parametrization/IFeatureRepository.cs` | **Keep** (mark `[Obsolete]` in Phase 3) |
 | `src/ZooTech.Application/Common/Gateway/Repositories/Parametrization/IRuleRepository.cs` | **Keep** (mark `[Obsolete]` in Phase 3) |
@@ -360,20 +401,23 @@ public async Task<T> GetOrCreateAsync<T>(string key, Func<Task<T>> factory, Time
 }
 ```
 
-### 6.3 TenantConfigurationProvider — Core Logic
+### 6.3 TenantConfigurationProvider — Core Logic (with L1/L2)
 
 ```csharp
 public sealed class TenantConfigurationProvider : ITenantConfigurationProvider
 {
     private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(5);
 
-    private readonly IAppCacheService _cache;
+    private readonly IMemoryCache _memoryCache;    // L1: in-process
+    private readonly IAppCacheService _cache;       // L2: distributed Garnet
     private readonly ITenantConfigurationRepository _repository;
 
     public TenantConfigurationProvider(
+        IMemoryCache memoryCache,
         IAppCacheService cache,
         ITenantConfigurationRepository repository)
     {
+        _memoryCache = memoryCache;
         _cache = cache;
         _repository = repository;
     }
@@ -405,18 +449,34 @@ public sealed class TenantConfigurationProvider : ITenantConfigurationProvider
 
     public async Task InvalidateTenantAsync(int tenantId)
     {
-        await _cache.RemoveByKeyAsync(BuildKey(tenantId));
+        var key = BuildKey(tenantId);
+        // Evict L1 (in-memory)
+        _memoryCache.Remove(key);
+        // Evict L2 (distributed Garnet — shared across instances)
+        await _cache.RemoveByKeyAsync(key);
     }
 
     private async Task<TenantConfiguration> GetConfigAsync(int tenantId)
     {
         var key = BuildKey(tenantId);
 
-        var (found, cached) = await _cache.TryGetAsync<TenantConfiguration>(key);
-        if (found)
+        // 1. L1: Check in-memory cache (near-instant, no network)
+        if (_memoryCache.TryGetValue(key, out TenantConfiguration? cached))
             return cached!;
 
+        // 2. L2: Check distributed cache (Garnet)
+        var (found, distributed) = await _cache.TryGetAsync<TenantConfiguration>(key);
+        if (found)
+        {
+            _memoryCache.Set(key, distributed, CacheTtl);
+            return distributed!;
+        }
+
+        // 3. Cache miss → load from DB
         var config = await _repository.LoadTenantConfigAsync(tenantId);
+
+        // 4. Store in both layers
+        _memoryCache.Set(key, config, CacheTtl);
         await _cache.GetOrCreateAsync(key, () => Task.FromResult(config), CacheTtl);
 
         return config;
@@ -432,7 +492,8 @@ public sealed class TenantConfigurationProvider : ITenantConfigurationProvider
 
 | Risk | Impact | Mitigation |
 |---|---|---|
-| **Stale cache after DB write** | Tenant reads old config for up to 5 min | Call `InvalidateTenantAsync` after every DB write; Pub/Sub for multi-instance |
+| **Stale L1 after another instance writes** | Instance B serves stale config from its L1 even though L2 was evicted by Instance A | Pub/Sub subscriber evicts L1 on all peer instances; L2 eviction alone is insufficient for L1 consistency |
+| **Stale L2 after DB write** | Tenant reads old config from Garnet for up to 5 min | Call `InvalidateTenantAsync` after every DB write — evicts both L1 and L2 atomically; Pub/Sub for multi-instance |
 | **Cache stampede on cold start** | Multiple requests hit DB simultaneously for same tenant | Use `SemaphoreSlim` per key or rely on Garnet/Redis single-flight |
 | **Large tenant config (>1MB)** | Increased memory/bandwidth | Compress JSON; paginate if >1000 settings per tenant |
 | **`IAppCacheService` interface change** | Breaks existing consumers | Add TTL overload as `default` parameter; existing callers use default 3-min TTL |
@@ -446,14 +507,15 @@ public sealed class TenantConfigurationProvider : ITenantConfigurationProvider
 
 | Test | Description |
 |---|---|
-| `GetConfigAsync_CacheHit_ReturnsCachedConfig` | Cache has valid entry → no DB call |
-| `GetConfigAsync_CacheMiss_LoadsFromRepo` | Cache miss → repository called → result cached |
+| `GetConfigAsync_L1Hit_SkipsL2AndDb` | L1 has valid entry → no L2 or DB call |
+| `GetConfigAsync_L1Miss_L2Hit_PopulatesL1` | L1 miss, L2 hit → loads from Garnet, stores in L1 |
+| `GetConfigAsync_FullMiss_LoadsFromRepo` | L1 + L2 miss → repository called → stored in both layers |
+| `InvalidateTenantAsync_EvictsBothLayers` | `_memoryCache.Remove` + `_cache.RemoveByKeyAsync` called with correct key |
 | `GetSettingAsync_SettingFound_ReturnsTypedValue` | Correct deserialization for `int`, `bool`, `string` |
 | `GetSettingAsync_SettingNotFound_ReturnsDefault` | Missing code returns `default!` |
 | `IsFeatureEnabledAsync_FeatureInSet_ReturnsTrue` | Code present in `EnabledFeatures` |
 | `IsFeatureEnabledAsync_FeatureNotInSet_ReturnsFalse` | Code absent |
 | `IsRuleEnabledAsync_RuleInSet_ReturnsTrue` | Same pattern |
-| `InvalidateTenantAsync_RemovesCacheEntry` | `RemoveByKeyAsync` called with correct key |
 
 ### Integration Tests (new `Infrastructure.IntegrationTests`)
 
@@ -475,3 +537,4 @@ public sealed class TenantConfigurationProvider : ITenantConfigurationProvider
 | **Repository tech** | Dapper (not EF Core) | Read-only; Dapper matches existing CodeGeneration pattern; avoids EF Core overhead |
 | **Serialization** | System.Text.Json | Already used by GarnetCacheService |
 | **Multi-instance sync** | Redis Pub/Sub (Phase 4) | Required only when horizontally scaling; not needed for single-instance deployments |
+| **L1/L2 cache layers** | L1: `IMemoryCache` (in-process), L2: Garnet (distributed) | L1 eliminates network latency on hot reads; L2 provides shared state and Pub/Sub invalidation bus |
