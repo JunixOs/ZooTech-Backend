@@ -18,6 +18,9 @@ public class TriajeController : ControllerBase
     private readonly GetAllVacunosUseCase _getVacunosUseCase;
     private readonly GetHistorialByVacunoIdUseCase _getHistorialUseCase;
     private readonly GetGeneralTriajesReportUseCase _getGeneralReportUseCase;
+    private readonly GetResumenSanidadUseCase _getResumenUseCase;
+    private readonly GetPesoPromedioReportUseCase _getPesoPromedioUseCase;
+    private readonly GetDistribucionTipoPesoUseCase _getDistribucionUseCase;
 
     public TriajeController(
         GetAllTriajesUseCase getAllUseCase,
@@ -28,7 +31,10 @@ public class TriajeController : ControllerBase
         GetAllTipoPesosUseCase getTipoPesosUseCase,
         GetAllVacunosUseCase getVacunosUseCase,
         GetHistorialByVacunoIdUseCase getHistorialUseCase,
-        GetGeneralTriajesReportUseCase getGeneralReportUseCase)
+        GetGeneralTriajesReportUseCase getGeneralReportUseCase,
+        GetResumenSanidadUseCase getResumenUseCase,
+        GetPesoPromedioReportUseCase getPesoPromedioUseCase,
+        GetDistribucionTipoPesoUseCase getDistribucionUseCase)
     {
         _getAllUseCase = getAllUseCase;
         _getByIdUseCase = getByIdUseCase;
@@ -39,6 +45,9 @@ public class TriajeController : ControllerBase
         _getVacunosUseCase = getVacunosUseCase;
         _getHistorialUseCase = getHistorialUseCase;
         _getGeneralReportUseCase = getGeneralReportUseCase;
+        _getResumenUseCase = getResumenUseCase;
+        _getPesoPromedioUseCase = getPesoPromedioUseCase;
+        _getDistribucionUseCase = getDistribucionUseCase;
     }
 
     [HttpGet]
@@ -129,6 +138,33 @@ public class TriajeController : ControllerBase
         [FromQuery] DateTime? fechaFin = null)
     {
         var result = await _getGeneralReportUseCase.ExecuteAsync(fechaInicio, fechaFin);
+        return Ok(result);
+    }
+
+    [HttpGet("reportes/resumen")]
+    public async Task<ActionResult<ResumenSanidadResponse>> GetResumen(
+        [FromQuery] DateTime? fechaInicio = null,
+        [FromQuery] DateTime? fechaFin = null)
+    {
+        var result = await _getResumenUseCase.ExecuteAsync(fechaInicio, fechaFin);
+        return Ok(result);
+    }
+
+    [HttpGet("reportes/peso-promedio")]
+    public async Task<ActionResult<IEnumerable<PesoPromedioItem>>> GetPesoPromedio(
+        [FromQuery] DateTime? fechaInicio = null,
+        [FromQuery] DateTime? fechaFin = null)
+    {
+        var result = await _getPesoPromedioUseCase.ExecuteAsync(fechaInicio, fechaFin);
+        return Ok(result);
+    }
+
+    [HttpGet("reportes/distribucion-tipo-peso")]
+    public async Task<ActionResult<IEnumerable<TipoPesoCountItem>>> GetDistribucionTipoPeso(
+        [FromQuery] DateTime? fechaInicio = null,
+        [FromQuery] DateTime? fechaFin = null)
+    {
+        var result = await _getDistribucionUseCase.ExecuteAsync(fechaInicio, fechaFin);
         return Ok(result);
     }
 }

@@ -179,6 +179,104 @@ public class TriajeRepository : ITriajeRepository
             .ToListAsync();
     }
 
+    public async Task<ResumenSanidad> GetResumenAsync(DateTime? fechaInicio, DateTime? fechaFin)
+    {
+        var query = _context.Triajes
+            .AsNoTracking()
+            .Where(t => t.deleted_at == null)
+            .AsQueryable();
+
+        if (fechaInicio.HasValue)
+            query = query.Where(t => t.fecha_hora >= fechaInicio.Value);
+        if (fechaFin.HasValue)
+            query = query.Where(t => t.fecha_hora <= fechaFin.Value);
+
+        var totalTriajes = await query.CountAsync();
+        var totalVacunos = await query.Select(t => t.vacuno_id).Distinct().CountAsync();
+
+        var stats = await query
+            .GroupBy(_ => 1)
+            .Select(g => new
+            {
+                Promedio = g.Average(t => (double)t.peso_kg),
+                Minimo = g.Min(t => t.peso_kg),
+                Maximo = g.Max(t => t.peso_kg)
+            })
+            .FirstOrDefaultAsync();
+
+        var distribucion = await query
+            .GroupBy(t => new { t.tipo_peso_code, t.tipo_peso_codeNavigation.nombre })
+            .Select(g => new TipoPesoCountItem
+            {
+                Code = g.Key.tipo_peso_code,
+                Nombre = g.Key.nombre,
+                Cantidad = g.Count()
+            })
+            .ToListAsync();
+
+        return new ResumenSanidad
+        {
+            TotalTriajes = totalTriajes,
+            TotalVacunosEvaluados = totalVacunos,
+            PesoPromedioKg = stats is not null ? Math.Round((decimal)stats.Promedio, 2) : 0,
+            PesoMinimoKg = stats is not null ? stats.Minimo : 0,
+            PesoMaximoKg = stats is not null ? stats.Maximo : 0,
+            DistribucionTipoPeso = distribucion
+        };
+    }
+
+    public async Task<IEnumerable<PesoPromedioItem>> GetPesoPromedioPorPeriodoAsync(DateTime? fechaInicio, DateTime? fechaFin)
+    {
+        var query = _context.Triajes
+            .AsNoTracking()
+            .Where(t => t.deleted_at == null)
+            .AsQueryable();
+
+        if (fechaInicio.HasValue)
+            query = query.Where(t => t.fecha_hora >= fechaInicio.Value);
+        if (fechaFin.HasValue)
+            query = query.Where(t => t.fecha_hora <= fechaFin.Value);
+
+        var result = await query
+            .GroupBy(t => new { t.fecha_hora.Year, t.fecha_hora.Month, t.fecha_hora.Day })
+            .Select(g => new PesoPromedioItem
+            {
+                Fecha = new DateTime(g.Key.Year, g.Key.Month, g.Key.Day),
+                PesoPromedio = Math.Round((decimal)g.Average(t => (double)t.peso_kg), 2),
+                CantidadRegistros = g.Count()
+            })
+            .OrderBy(x => x.Fecha)
+            .ToListAsync();
+
+        return result;
+    }
+
+    public async Task<IEnumerable<TipoPesoCountItem>> GetDistribucionTipoPesoAsync(DateTime? fechaInicio, DateTime? fechaFin)
+    {
+        var query = _context.Triajes
+            .AsNoTracking()
+            .Where(t => t.deleted_at == null)
+            .AsQueryable();
+
+        if (fechaInicio.HasValue)
+            query = query.Where(t => t.fecha_hora >= fechaInicio.Value);
+        if (fechaFin.HasValue)
+            query = query.Where(t => t.fecha_hora <= fechaFin.Value);
+
+        var result = await query
+            .GroupBy(t => new { t.tipo_peso_code, t.tipo_peso_codeNavigation.nombre })
+            .Select(g => new TipoPesoCountItem
+            {
+                Code = g.Key.tipo_peso_code,
+                Nombre = g.Key.nombre,
+                Cantidad = g.Count()
+            })
+            .OrderByDescending(x => x.Cantidad)
+            .ToListAsync();
+
+        return result;
+    }
+
     public async Task<IEnumerable<Triaje>> GetGeneralReportAsync(DateTime? startDate, DateTime? endDate)
     {
         var query = _context.Triajes

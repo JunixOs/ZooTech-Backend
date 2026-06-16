@@ -26,6 +26,9 @@ public static class DependencyInjection
         services.AddScoped<GetAllTipoPesosUseCase>();
         services.AddScoped<GetAllVacunosUseCase>();
         services.AddScoped<GetHistorialByVacunoIdUseCase>();
+        services.AddScoped<GetResumenSanidadUseCase>();
+        services.AddScoped<GetPesoPromedioReportUseCase>();
+        services.AddScoped<GetDistribucionTipoPesoUseCase>();
 
         // ============================================
         // Use Cases - Module_ProduccionLeche

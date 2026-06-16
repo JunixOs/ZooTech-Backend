@@ -25,4 +25,33 @@ public interface ITriajeRepository
 
     Task<IEnumerable<TriajeHistorialItem>> GetHistorialByVacunoIdAsync(long vacunoId);
     Task<IEnumerable<Triaje>> GetGeneralReportAsync(DateTime? startDate, DateTime? endDate);
+
+    // Reportes agregados
+    Task<ResumenSanidad> GetResumenAsync(DateTime? fechaInicio, DateTime? fechaFin);
+    Task<IEnumerable<PesoPromedioItem>> GetPesoPromedioPorPeriodoAsync(DateTime? fechaInicio, DateTime? fechaFin);
+    Task<IEnumerable<TipoPesoCountItem>> GetDistribucionTipoPesoAsync(DateTime? fechaInicio, DateTime? fechaFin);
+}
+
+public class ResumenSanidad
+{
+    public int TotalTriajes { get; set; }
+    public decimal PesoPromedioKg { get; set; }
+    public decimal PesoMinimoKg { get; set; }
+    public decimal PesoMaximoKg { get; set; }
+    public int TotalVacunosEvaluados { get; set; }
+    public List<TipoPesoCountItem> DistribucionTipoPeso { get; set; } = new();
+}
+
+public class TipoPesoCountItem
+{
+    public string Code { get; set; } = string.Empty;
+    public string Nombre { get; set; } = string.Empty;
+    public int Cantidad { get; set; }
+}
+
+public class PesoPromedioItem
+{
+    public DateTime Fecha { get; set; }
+    public decimal PesoPromedio { get; set; }
+    public int CantidadRegistros { get; set; }
 }
