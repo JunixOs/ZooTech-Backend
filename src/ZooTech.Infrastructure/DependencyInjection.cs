@@ -7,6 +7,8 @@ using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
 using ZooTech.Infrastructure.Common.Time;
+using ZooTech.Infrastructure.Tenant;
+using ZooTech.Infrastructure.Time;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Persistence.Modules.Module_Celo.Repositories;
 using ZooTech.Infrastructure.Persistence.Modules.Module_ProduccionLeche.Repositories;
@@ -37,6 +39,34 @@ public static class DependencyInjection
         // Repositories
         // ============================================
 
+     // Multi-Tenant
+        // ============================================
+
+        services.AddHttpContextAccessor();
+        services.AddScoped<ITenantContext, TenantContext>();
+
+        // ============================================
+        // Feature Flags
+        // ============================================
+
+        services.AddScoped<IFeatureService, DevFeatureService>();
+
+        // ============================================
+        // Repositories
+        // ============================================
+
+        services.AddScoped<ZooTech.Application.Common.Gateway.Repositories.IVacunoRepository, ZooTech.Infrastructure.Persistence.Repositories.VacunoRepository>();
+
+        // ============================================
+        // External Services
+        // ============================================
+
+        services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
+
+        // ============================================
+        // Caching
+        // ============================================
+
         services.AddScoped<ICeloRepository, CeloRepository>();
         services.AddScoped<IOrdenioRepository, OrdenioRepository>();
         services.AddScoped<IVacunoRepository, VacunoRepository>();
@@ -46,3 +76,4 @@ public static class DependencyInjection
         return services;
     }
 }
+

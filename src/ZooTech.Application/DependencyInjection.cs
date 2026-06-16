@@ -22,6 +22,7 @@ using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Delet
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GetOrdenioById;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.ListOrdenios;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.UpdateOrdenio;
+using ZooTech.Application.Modules.Module_Vacunos.UseCases.GenerarArbolGenealogico;
 
 namespace ZooTech.Application;
 
@@ -73,6 +74,13 @@ public static class DependencyInjection
         services.AddScoped<IUpdateVacunoInputPort, UpdateVacunoInteractor>();
         services.AddScoped<IDeleteVacunoInputPort, DeleteVacunoInteractor>();
 
+        // ============================================
+        // Use Cases - Module_Vacunos
+        // ============================================
+        services.AddScoped<ZooTech.Application.Modules.Module_Vacunos.UseCases.ListarVacunos.IListarVacunosInputPort, ZooTech.Application.Modules.Module_Vacunos.UseCases.ListarVacunos.ListarVacunosInteractor>();
+        services.AddScoped<IGenerarArbolGenealogicoInputPort, GenerarArbolGenealogicoInteractor>();
+
         return services;
     }
+}
 }

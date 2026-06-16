@@ -42,7 +42,9 @@ builder.Services
     .AddApplication()
     .AddInfrastructure(builder.Configuration)
     .AddInterfaceAdapters();
-
+var frontendPort = builder.Configuration["Frontend:FrontendPort"];
+var frontendIP = builder.Configuration["Frontend:FrontendIP"];
+var frontendProtocol = builder.Configuration["Frontend:FrontendProtocol"];
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
@@ -83,6 +85,27 @@ if (app.Environment.IsDevelopment())
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
+
+
+// Middleware: Resolución de Tenant desde header X-Tenant-Id
+// El TenantContext ya lee el header internamente vía IHttpContextAccessor,
+// pero este log ayuda a diagnosticar qué tenant se está usando.
+app.Use(async (context, next) =>
+{
+    var logger = context.RequestServices.GetRequiredService<ILoggerFactory>()
+        .CreateLogger("TenantMiddleware");
+
+    if (context.Request.Headers.TryGetValue("X-Tenant-Id", out var tenantHeader))
+    {
+        logger.LogInformation("Tenant recibido por header: {TenantId}", tenantHeader.ToString());
+    }
+    else
+    {
+        logger.LogInformation("Sin header X-Tenant-Id, usando DefaultTenantId del appsettings");
+    }
+
+    await next();
+});
 app.UseAuthorization();
 app.MapControllers();
 
