@@ -25,6 +25,7 @@ using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Updat
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Reportes.GetReporteDiario;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Reportes.GenerateReporteExcel;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Reportes.GenerateReportePdf;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.VacasSequia;
 
 namespace ZooTech.Application;
 
@@ -56,6 +57,7 @@ public static class DependencyInjection
         services.AddScoped<IGetReporteDiarioInputPort, GetReporteDiarioInteractor>();
         services.AddScoped<IGenerateReporteExcelInputPort, GenerateReporteExcelInteractor>();
         services.AddScoped<IGenerateReportePdfInputPort, GenerateReportePdfInteractor>();
+        services.AddScoped<IGetVacasSequiaInputPort, GetVacasSequiaInteractor>();
 
         // ============================================
         // FluentValidation — all assemblies

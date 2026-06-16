@@ -5,6 +5,7 @@ using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GetOr
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.ListOrdenios;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.UpdateOrdenio;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Reportes.GetReporteDiario;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.VacasSequia;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.DTOs.Responses;
 
@@ -65,5 +66,11 @@ public static class ProduccionLecheMapper
 
     public static GetReporteDiarioResponse ToResponse(GetReporteDiarioOutput output)
         => new(output.Items.Select(x => new ReporteDiarioItemResponse(x.Fecha, x.TotalLitros, x.CantidadOrdenios)).ToList());
+
+    public static VacasSequiaResponse ToResponse(GetVacasSequiaOutput output)
+        => new(
+            output.Actuales.Select(a => new VacaSequiaActualResponse(a.CodigoVacuno, a.NombreVacuno, a.Desde, a.ProbablementeHasta)).ToList(),
+            output.Futuros.Select(f => new VacaSequiaFuturoResponse(f.CodigoVacuno, f.NombreVacuno, f.ProbablementeDesde, f.ProbablementeHasta)).ToList(),
+            output.Historicos.Select(h => new VacaSequiaHistoricoResponse(h.CodigoVacuno, h.NombreVacuno, h.Desde, h.Hasta)).ToList());
 }
 

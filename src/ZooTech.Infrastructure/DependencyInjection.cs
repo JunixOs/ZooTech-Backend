@@ -44,6 +44,7 @@ public static class DependencyInjection
 
         services.AddScoped<ICeloRepository, CeloRepository>();
         services.AddScoped<IOrdenioRepository, OrdenioRepository>();
+        services.AddScoped<IPeriodoSequiaRepository, PeriodoSequiaRepository>();
 
         // ============================================
         // External Services

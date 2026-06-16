@@ -5,6 +5,7 @@ using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Delet
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GetOrdenioById;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.ListOrdenios;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.UpdateOrdenio;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.VacasSequia;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
 using ZooTech.InterfaceAdapters.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.DTOs.Requests;
@@ -93,6 +94,17 @@ public sealed class ProduccionLecheController : ControllerBase
         }).ToList();
 
         return Ok(new { data = mappedList });
+    }
+
+    [HttpGet("vacas-sequia")]
+    [ProducesResponseType(typeof(GeneralResponseDTO<VacasSequiaResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetVacasSequia(
+        [FromServices] IGetVacasSequiaInputPort inputPort,
+        CancellationToken cancellationToken)
+    {
+        var output = await inputPort.HandleAsync(cancellationToken);
+        var response = ProduccionLecheMapper.ToResponse(output);
+        return Ok(GeneralResponseDTO<VacasSequiaResponse>.Ok(response));
     }
 
     [HttpGet("{id:long}")]
