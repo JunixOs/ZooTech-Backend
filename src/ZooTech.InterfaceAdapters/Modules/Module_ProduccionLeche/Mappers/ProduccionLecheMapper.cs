@@ -32,23 +32,23 @@ public static class ProduccionLecheMapper
     public static DeleteOrdenioCommand ToCommand(DeleteOrdenioRequest request)
         => new(request.MotivoEliminacion);
 
-    public static CreateOrdenioResponse ToResponse(CreateOrdenioOutput output)
-        => new(ToResponse(output.Data));
+    public static OrdenioResponse ToResponse(CreateOrdenioOutput output)
+        => ToOrdenioResponse(output.Data);
 
-    public static GetOrdenioByIdResponse ToResponse(GetOrdenioByIdOutput output)
-        => new(ToResponse(output.Data));
+    public static OrdenioResponse ToResponse(GetOrdenioByIdOutput output)
+        => ToOrdenioResponse(output.Data);
 
-    public static UpdateOrdenioResponse ToResponse(UpdateOrdenioOutput output)
-        => new(ToResponse(output.Data));
+    public static OrdenioResponse ToResponse(UpdateOrdenioOutput output)
+        => ToOrdenioResponse(output.Data);
 
     public static ListOrdeniosResponse ToResponse(ListOrdeniosOutput output, int page, int pageSize)
     {
-        var data = output.Data.Select(ToResponse).ToList();
+        var data = output.Data.Select(ToOrdenioResponse).ToList();
         var totalPages = (int)Math.Ceiling((double)output.TotalCount / pageSize);
         return new ListOrdeniosResponse(data, new PaginationResponse(page, pageSize, output.TotalCount, totalPages));
     }
 
-    private static OrdenioResponse ToResponse(OrdenioOutput output)
+    private static OrdenioResponse ToOrdenioResponse(OrdenioOutput output)
         => new(
             output.Id,
             output.Codigo,

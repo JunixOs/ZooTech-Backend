@@ -1,18 +1,17 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Ports;
-using ZooTech.Application.Common.Gateway.Auditing;
-using ZooTech.Application.Common.Gateway.Caching;
-using ZooTech.Application.Common.Gateway.Context;
-using ZooTech.Application.Common.Gateway.Repositories.MainTenantsDb;
-using ZooTech.Application.Common.Gateway.Tenant;
-using ZooTech.Infrastructure.Auditing.MongoDb;
-using ZooTech.Infrastructure.Caching;
+using ZooTech.Application.Common.Gateway.Time;
+using ZooTech.Domain.Module_Celo.Interfaces;
+using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
+using ZooTech.Domain.Module_Sanidad.Interfaces;
+using ZooTech.Domain.Module_Vacuno.Interfaces;
+using ZooTech.Infrastructure.Common.Time;
 using ZooTech.Infrastructure.Persistence.Context;
+using ZooTech.Infrastructure.Persistence.Modules.Module_Celo.Repositories;
 using ZooTech.Infrastructure.Persistence.Modules.Module_ProduccionLeche.Repositories;
-using ZooTech.Infrastructure.Persistence.Repositories.MainTenantsDb;
-using ZooTech.Infrastructure.Tenant;
+using ZooTech.Infrastructure.Persistence.Modules.Module_Sanidad.Repositories;
+using ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Repositories;
 
 namespace ZooTech.Infrastructure;
 
@@ -22,31 +21,27 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        services.AddSingleton<GarnetCacheConnection>();
-        services.AddSingleton<IAppCacheService, GarnetCacheService>();
+        var connectionString = configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("No se encontró ConnectionStrings:DefaultConnection.");
 
-        services.AddScoped<ITenantStore, TenantStore>();
-        services.AddScoped<ITenantContext, TenantContext>();
-        services.AddScoped<ITenantProvisioningService, TenantProvisioningService>();
-        services.AddScoped<ITenantDatabaseMigrator, TenantDatabaseMigrator>();
-        services.AddScoped<IGanaderiaDbContextFactory, GanaderiaDbContextFactory>();
-        services.AddScoped<ITenantDbContextFactory, TenantDbContextFactory>();
+        services.AddDbContext<GanaderiaDbContext>(options =>
+            options.UseSqlServer(connectionString));
 
-        services.AddSingleton<MongoDbContext>();
-        services.AddScoped<IAppAuditService, MongoDbAudit>();
-        
-        services.AddScoped<ITenantRepository, TenantRepository>();
+        // ============================================
+        // Transversal
+        // ============================================
 
-        services.AddScoped<GanaderiaDbContext>(sp =>
-        {
-            var factory = sp.GetRequiredService<ITenantDbContextFactory>();
-            return factory.CreateDbContext();
-        });
+        services.AddScoped<IDateTimeProvider, DateTimeProvider>();
 
         // ============================================
         // Repositories
         // ============================================
+
+        services.AddScoped<ICeloRepository, CeloRepository>();
         services.AddScoped<IOrdenioRepository, OrdenioRepository>();
+        services.AddScoped<IVacunoRepository, VacunoRepository>();
+        services.AddScoped<ITriajeRepository, TriajeRepository>();
+        services.AddScoped<ITipoPesoRepository, TipoPesoRepository>();
 
         return services;
     }

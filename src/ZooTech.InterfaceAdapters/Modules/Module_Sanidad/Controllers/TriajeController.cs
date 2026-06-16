@@ -1,170 +1,174 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using ZooTech.Application.Modules.Module_Sanidad.DTOs.Requests;
-using ZooTech.Application.Modules.Module_Sanidad.DTOs.Responses;
-using ZooTech.Application.Modules.Module_Sanidad.UseCases;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.CreateTriaje;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.DeleteTriaje;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllTipoPesos;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllTriajes;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllVacunosSanidad;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetDistribucionTipoPesoReport;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetHistorialByVacunoId;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetPesoPromedioReport;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetResumenReport;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetTriajeById;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.UpdateTriaje;
+using ZooTech.InterfaceAdapters.DTOs;
+using ZooTech.InterfaceAdapters.Modules.Module_Sanidad.DTOs.Requests;
+using ZooTech.InterfaceAdapters.Modules.Module_Sanidad.DTOs.Responses;
+using ZooTech.InterfaceAdapters.Modules.Module_Sanidad.Mappers;
 
 namespace ZooTech.InterfaceAdapters.Module_Sanidad.Controllers;
 
 [ApiController]
 [Route("api/v1/triaje")]
-public class TriajeController : ControllerBase
+public sealed class TriajeController : ControllerBase
 {
-    private readonly GetAllTriajesUseCase _getAllUseCase;
-    private readonly GetTriajeByIdUseCase _getByIdUseCase;
-    private readonly CreateTriajeUseCase _createUseCase;
-    private readonly UpdateTriajeUseCase _updateUseCase;
-    private readonly DeleteTriajeUseCase _deleteUseCase;
-    private readonly GetAllTipoPesosUseCase _getTipoPesosUseCase;
-    private readonly GetAllVacunosUseCase _getVacunosUseCase;
-    private readonly GetHistorialByVacunoIdUseCase _getHistorialUseCase;
-    private readonly GetGeneralTriajesReportUseCase _getGeneralReportUseCase;
-    private readonly GetResumenSanidadUseCase _getResumenUseCase;
-    private readonly GetPesoPromedioReportUseCase _getPesoPromedioUseCase;
-    private readonly GetDistribucionTipoPesoUseCase _getDistribucionUseCase;
+    private readonly IGetAllTriajesInputPort _getAllInputPort;
+    private readonly IGetTriajeByIdInputPort _getByIdInputPort;
+    private readonly ICreateTriajeInputPort _createInputPort;
+    private readonly IUpdateTriajeInputPort _updateInputPort;
+    private readonly IDeleteTriajeInputPort _deleteInputPort;
+    private readonly IGetAllTipoPesosInputPort _getTipoPesosInputPort;
+    private readonly IGetAllVacunosSanidadInputPort _getVacunosInputPort;
+    private readonly IGetHistorialByVacunoIdInputPort _getHistorialInputPort;
+    private readonly IGetResumenReportInputPort _getResumenInputPort;
+    private readonly IGetPesoPromedioReportInputPort _getPesoPromedioInputPort;
+    private readonly IGetDistribucionTipoPesoReportInputPort _getDistribucionInputPort;
 
     public TriajeController(
-        GetAllTriajesUseCase getAllUseCase,
-        GetTriajeByIdUseCase getByIdUseCase,
-        CreateTriajeUseCase createUseCase,
-        UpdateTriajeUseCase updateUseCase,
-        DeleteTriajeUseCase deleteUseCase,
-        GetAllTipoPesosUseCase getTipoPesosUseCase,
-        GetAllVacunosUseCase getVacunosUseCase,
-        GetHistorialByVacunoIdUseCase getHistorialUseCase,
-        GetGeneralTriajesReportUseCase getGeneralReportUseCase,
-        GetResumenSanidadUseCase getResumenUseCase,
-        GetPesoPromedioReportUseCase getPesoPromedioUseCase,
-        GetDistribucionTipoPesoUseCase getDistribucionUseCase)
+        IGetAllTriajesInputPort getAllInputPort,
+        IGetTriajeByIdInputPort getByIdInputPort,
+        ICreateTriajeInputPort createInputPort,
+        IUpdateTriajeInputPort updateInputPort,
+        IDeleteTriajeInputPort deleteInputPort,
+        IGetAllTipoPesosInputPort getTipoPesosInputPort,
+        IGetAllVacunosSanidadInputPort getVacunosInputPort,
+        IGetHistorialByVacunoIdInputPort getHistorialInputPort,
+        IGetResumenReportInputPort getResumenInputPort,
+        IGetPesoPromedioReportInputPort getPesoPromedioInputPort,
+        IGetDistribucionTipoPesoReportInputPort getDistribucionInputPort)
     {
-        _getAllUseCase = getAllUseCase;
-        _getByIdUseCase = getByIdUseCase;
-        _createUseCase = createUseCase;
-        _updateUseCase = updateUseCase;
-        _deleteUseCase = deleteUseCase;
-        _getTipoPesosUseCase = getTipoPesosUseCase;
-        _getVacunosUseCase = getVacunosUseCase;
-        _getHistorialUseCase = getHistorialUseCase;
-        _getGeneralReportUseCase = getGeneralReportUseCase;
-        _getResumenUseCase = getResumenUseCase;
-        _getPesoPromedioUseCase = getPesoPromedioUseCase;
-        _getDistribucionUseCase = getDistribucionUseCase;
+        _getAllInputPort = getAllInputPort;
+        _getByIdInputPort = getByIdInputPort;
+        _createInputPort = createInputPort;
+        _updateInputPort = updateInputPort;
+        _deleteInputPort = deleteInputPort;
+        _getTipoPesosInputPort = getTipoPesosInputPort;
+        _getVacunosInputPort = getVacunosInputPort;
+        _getHistorialInputPort = getHistorialInputPort;
+        _getResumenInputPort = getResumenInputPort;
+        _getPesoPromedioInputPort = getPesoPromedioInputPort;
+        _getDistribucionInputPort = getDistribucionInputPort;
     }
 
     [HttpGet]
-    public async Task<ActionResult<PagedResponse<TriajeResponse>>> GetAll(
+    [ProducesResponseType(typeof(GeneralResponseDTO<PagedTriajeResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAll(
         [FromQuery] int pagina = 1,
         [FromQuery] int tamano = 10,
         [FromQuery] string? fecha = null,
         [FromQuery] string? codigo = null,
         [FromQuery] string? nombre = null,
         [FromQuery] string? tipoPeso = null,
-        [FromQuery] decimal? pesoKg = null)
+        [FromQuery] decimal? pesoKg = null,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _getAllUseCase.ExecuteAsync(pagina, tamano, fecha, codigo, nombre, tipoPeso, pesoKg);
-        return Ok(result);
+        var query = new GetAllTriajesQuery(pagina, tamano, fecha, codigo, nombre, tipoPeso, pesoKg);
+        var output = await _getAllInputPort.HandleAsync(query, cancellationToken);
+        return Ok(GeneralResponseDTO<PagedTriajeResponse>.Ok(TriajeMapper.ToPagedResponse(output)));
     }
 
     [HttpGet("{id:long}")]
-    public async Task<ActionResult<TriajeResponse>> GetById(long id)
+    [ProducesResponseType(typeof(GeneralResponseDTO<TriajeResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetById(long id, CancellationToken cancellationToken = default)
     {
-        var result = await _getByIdUseCase.ExecuteAsync(id);
-
-        if (result is null)
-            return NotFound();
-
-        return Ok(result);
+        var output = await _getByIdInputPort.HandleAsync(id, cancellationToken);
+        return Ok(GeneralResponseDTO<TriajeResponse>.Ok(TriajeMapper.ToResponse(output)));
     }
 
     [HttpPost]
-    public async Task<ActionResult<TriajeResponse>> Create([FromBody] TriajeRequest request)
+    [ProducesResponseType(typeof(GeneralResponseDTO<TriajeResponse>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Create([FromBody] TriajeRequest request, CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var result = await _createUseCase.ExecuteAsync(request);
-            return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { message = ex.Message });
-        }
+        var command = TriajeMapper.ToCreateCommand(request);
+        var output = await _createInputPort.HandleAsync(command, cancellationToken);
+        return CreatedAtAction(nameof(GetById), new { id = output.Id },
+            GeneralResponseDTO<TriajeResponse>.Ok(TriajeMapper.ToResponse(output)));
     }
 
     [HttpPut("{id:long}")]
-    public async Task<ActionResult<TriajeResponse>> Update(long id, [FromBody] TriajeRequest request)
+    [ProducesResponseType(typeof(GeneralResponseDTO<TriajeResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Update(long id, [FromBody] TriajeRequest request, CancellationToken cancellationToken = default)
     {
-        var result = await _updateUseCase.ExecuteAsync(id, request);
-
-        if (result is null)
-            return NotFound();
-
-        return Ok(result);
+        var command = TriajeMapper.ToUpdateCommand(request);
+        var output = await _updateInputPort.HandleAsync(id, command, cancellationToken);
+        return Ok(GeneralResponseDTO<TriajeResponse>.Ok(TriajeMapper.ToResponse(output)));
     }
 
     [HttpDelete("{id:long}")]
-    public async Task<IActionResult> Delete(long id)
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Delete(long id, [FromBody] DeleteTriajeRequest request, CancellationToken cancellationToken = default)
     {
-        var deleted = await _deleteUseCase.ExecuteAsync(id);
-
-        if (!deleted)
-            return NotFound();
-
+        await _deleteInputPort.HandleAsync(id, new DeleteTriajeCommand(request.MotivoEliminacion), cancellationToken);
         return NoContent();
     }
 
-    
     [HttpGet("tipos-peso")]
-    public async Task<ActionResult<IEnumerable<TipoPesoResponse>>> GetTiposPeso()
+    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetTiposPeso(CancellationToken cancellationToken = default)
     {
-        var result = await _getTipoPesosUseCase.ExecuteAsync();
-        return Ok(result);
+        var output = await _getTipoPesosInputPort.HandleAsync(cancellationToken);
+        return Ok(GeneralResponseDTO<object>.Ok(output.Items.Select(t => new { code = t.Code, nombre = t.Nombre })));
     }
 
     [HttpGet("vacunos")]
-    public async Task<ActionResult<IEnumerable<VacunoOptionResponse>>> GetVacunos()
+    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetVacunos(CancellationToken cancellationToken = default)
     {
-        var result = await _getVacunosUseCase.ExecuteAsync();
-        return Ok(result);
-    }
-    [HttpGet("historial/{vacunoId:long}")]
-    public async Task<ActionResult<IEnumerable<TriajeHistorialResponse>>> GetHistorial(long vacunoId)
-    {
-        var result = await _getHistorialUseCase.ExecuteAsync(vacunoId);
-        return Ok(result);
+        var output = await _getVacunosInputPort.HandleAsync(cancellationToken);
+        return Ok(GeneralResponseDTO<object>.Ok(output.Items.Select(v => new { id = v.Id, codigo = v.Codigo, nombre = v.Nombre })));
     }
 
-    [HttpGet("reporte/general")]
-    public async Task<ActionResult<IEnumerable<TriajeResponse>>> GetGeneralReport(
-        [FromQuery] DateTime? fechaInicio = null,
-        [FromQuery] DateTime? fechaFin = null)
+    [HttpGet("historial/{vacunoId:long}")]
+    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetHistorial(long vacunoId, CancellationToken cancellationToken = default)
     {
-        var result = await _getGeneralReportUseCase.ExecuteAsync(fechaInicio, fechaFin);
-        return Ok(result);
+        var output = await _getHistorialInputPort.HandleAsync(vacunoId, cancellationToken);
+        return Ok(GeneralResponseDTO<object>.Ok(output.Items.Select(t => new { id = t.Id, fechaHora = t.FechaHora, tipoPesoCode = t.TipoPesoCode, pesoKg = t.PesoKg })));
     }
 
     [HttpGet("reportes/resumen")]
-    public async Task<ActionResult<ResumenSanidadResponse>> GetResumen(
-        [FromQuery] DateTime? fechaInicio = null,
-        [FromQuery] DateTime? fechaFin = null)
+    [ProducesResponseType(typeof(GeneralResponseDTO<ResumenSanidadResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetResumenReport(CancellationToken cancellationToken = default)
     {
-        var result = await _getResumenUseCase.ExecuteAsync(fechaInicio, fechaFin);
-        return Ok(result);
+        var output = await _getResumenInputPort.HandleAsync(cancellationToken);
+        return Ok(GeneralResponseDTO<ResumenSanidadResponse>.Ok(new ResumenSanidadResponse(
+            output.TotalTriajes,
+            output.TotalVacunosConTriajes,
+            output.PesoPromedioGeneral,
+            output.DistribucionTipoPeso.Select(d => new TipoPesoDistribucionResponse(d.TipoPesoCode, d.Cantidad, d.PesoPromedio)).ToList().AsReadOnly())));
     }
 
     [HttpGet("reportes/peso-promedio")]
-    public async Task<ActionResult<IEnumerable<PesoPromedioItem>>> GetPesoPromedio(
-        [FromQuery] DateTime? fechaInicio = null,
-        [FromQuery] DateTime? fechaFin = null)
+    [ProducesResponseType(typeof(GeneralResponseDTO<PesoPromedioResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetPesoPromedioReport([FromQuery] int meses = 12, CancellationToken cancellationToken = default)
     {
-        var result = await _getPesoPromedioUseCase.ExecuteAsync(fechaInicio, fechaFin);
-        return Ok(result);
+        var output = await _getPesoPromedioInputPort.HandleAsync(meses, cancellationToken);
+        return Ok(GeneralResponseDTO<PesoPromedioResponse>.Ok(new PesoPromedioResponse(
+            output.Items.Select(i => new PesoPromedioItemResponse(i.Anio, i.Mes, i.PesoPromedio)).ToList().AsReadOnly())));
     }
 
     [HttpGet("reportes/distribucion-tipo-peso")]
-    public async Task<ActionResult<IEnumerable<TipoPesoCountItem>>> GetDistribucionTipoPeso(
-        [FromQuery] DateTime? fechaInicio = null,
-        [FromQuery] DateTime? fechaFin = null)
+    [ProducesResponseType(typeof(GeneralResponseDTO<DistribucionTipoPesoResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetDistribucionTipoPesoReport(CancellationToken cancellationToken = default)
     {
-        var result = await _getDistribucionUseCase.ExecuteAsync(fechaInicio, fechaFin);
-        return Ok(result);
+        var output = await _getDistribucionInputPort.HandleAsync(cancellationToken);
+        return Ok(GeneralResponseDTO<DistribucionTipoPesoResponse>.Ok(new DistribucionTipoPesoResponse(
+            output.Items.Select(i => new DistribucionItemResponse(i.TipoPesoCode, i.Cantidad, i.PesoPromedio)).ToList().AsReadOnly())));
     }
 }

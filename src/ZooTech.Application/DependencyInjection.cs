@@ -1,6 +1,25 @@
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
-using ZooTech.Application.Modules.Module_Sanidad.UseCases;
+using ZooTech.Application.Modules.Module_Celo.UseCases.CreateCelo;
+using ZooTech.Application.Modules.Module_Celo.UseCases.DeleteCelo;
+using ZooTech.Application.Modules.Module_Celo.UseCases.GetCelos;
+using ZooTech.Application.Modules.Module_Celo.UseCases.UpdateCelo;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.CreateTriaje;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.DeleteTriaje;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllTipoPesos;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllTriajes;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllVacunosSanidad;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetDistribucionTipoPesoReport;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetHistorialByVacunoId;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetPesoPromedioReport;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetResumenReport;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetTriajeById;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.UpdateTriaje;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.CreateVacuno;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetVacunoById;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.UpdateVacuno;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.CreateOrdenio;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.DeleteOrdenio;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GetOrdenioById;
@@ -17,18 +36,17 @@ public static class DependencyInjection
         // ============================================
         // Use Cases - Module_Sanidad
         // ============================================
-        services.AddScoped<GetAllTriajesUseCase>();
-        services.AddScoped<GetGeneralTriajesReportUseCase>();
-        services.AddScoped<GetTriajeByIdUseCase>();
-        services.AddScoped<CreateTriajeUseCase>();
-        services.AddScoped<UpdateTriajeUseCase>();
-        services.AddScoped<DeleteTriajeUseCase>();
-        services.AddScoped<GetAllTipoPesosUseCase>();
-        services.AddScoped<GetAllVacunosUseCase>();
-        services.AddScoped<GetHistorialByVacunoIdUseCase>();
-        services.AddScoped<GetResumenSanidadUseCase>();
-        services.AddScoped<GetPesoPromedioReportUseCase>();
-        services.AddScoped<GetDistribucionTipoPesoUseCase>();
+        services.AddScoped<IGetAllTriajesInputPort, GetAllTriajesInteractor>();
+        services.AddScoped<IGetTriajeByIdInputPort, GetTriajeByIdInteractor>();
+        services.AddScoped<ICreateTriajeInputPort, CreateTriajeInteractor>();
+        services.AddScoped<IUpdateTriajeInputPort, UpdateTriajeInteractor>();
+        services.AddScoped<IDeleteTriajeInputPort, DeleteTriajeInteractor>();
+        services.AddScoped<IGetAllTipoPesosInputPort, GetAllTipoPesosInteractor>();
+        services.AddScoped<IGetAllVacunosSanidadInputPort, GetAllVacunosSanidadInteractor>();
+        services.AddScoped<IGetHistorialByVacunoIdInputPort, GetHistorialByVacunoIdInteractor>();
+        services.AddScoped<IGetResumenReportInputPort, GetResumenReportInteractor>();
+        services.AddScoped<IGetPesoPromedioReportInputPort, GetPesoPromedioReportInteractor>();
+        services.AddScoped<IGetDistribucionTipoPesoReportInputPort, GetDistribucionTipoPesoReportInteractor>();
 
         // ============================================
         // Use Cases - Module_ProduccionLeche
@@ -40,15 +58,26 @@ public static class DependencyInjection
         services.AddScoped<IDeleteOrdenioInputPort, DeleteOrdenioInteractor>();
 
         // ============================================
-        // MediatR & FluentValidation
+        // FluentValidation — all assemblies
         // ============================================
-        services.AddMediatR(cfg =>
-            cfg.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly));
+        services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly, includeInternalTypes: true);
 
-        services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
+        // ============================================
+        // Use Cases - Module_Celo
+        // ============================================
+        services.AddScoped<IGetCelosInputPort, GetCelosInteractor>();
+        services.AddScoped<ICreateCeloInputPort, CreateCeloInteractor>();
+        services.AddScoped<IUpdateCeloInputPort, UpdateCeloInteractor>();
+        services.AddScoped<IDeleteCeloInputPort, DeleteCeloInteractor>();
 
-        services.AddTransient(typeof(MediatR.IPipelineBehavior<,>), typeof(Common.Behaviors.ValidationBehavior<,>));
-        services.AddTransient(typeof(MediatR.IPipelineBehavior<,>), typeof(Common.Behaviors.LoggingBehavior<,>));
+        // ============================================
+        // Use Cases - Module_Vacuno
+        // ============================================
+        services.AddScoped<IListarVacunosInputPort, ListarVacunosInteractor>();
+        services.AddScoped<ICreateVacunoInputPort, CreateVacunoInteractor>();
+        services.AddScoped<IGetVacunoByIdInputPort, GetVacunoByIdInteractor>();
+        services.AddScoped<IUpdateVacunoInputPort, UpdateVacunoInteractor>();
+        services.AddScoped<IDeleteVacunoInputPort, DeleteVacunoInteractor>();
 
         return services;
     }
