@@ -4,4 +4,9 @@ public sealed record ReportAnimalListOutput(
     DateOnly FechaInicio,
     DateOnly FechaFin,
     string? Keyword,
+    string? RazaCode,
+    string? SexoCode,
+    string? TipoAdquisicionCode,
+    long? GranjaId,
+    string? EstadoCode,
     IReadOnlyCollection<ReportAnimalListItem> Items);

@@ -29,6 +29,12 @@ public sealed class AnimalReportRepository : IAnimalReportRepository
             join tipoAdquisicion in context.cat_tipo_adquisicions.AsNoTracking()
                 on animal.tipo_adquisicion_code equals tipoAdquisicion.code into tipoAdquisicionJoin
             from tipoAdquisicion in tipoAdquisicionJoin.DefaultIfEmpty()
+            join color in context.cat_colors.AsNoTracking()
+                on animal.color_code equals color.code into colorJoin
+            from color in colorJoin.DefaultIfEmpty()
+            join granja in context.granjas.AsNoTracking()
+                on animal.granja_id equals granja.id into granjaJoin
+            from granja in granjaJoin.DefaultIfEmpty()
             join estadoVigente in context.v_vacuno_estado_vigentes.AsNoTracking()
                 on animal.id equals estadoVigente.vacuno_id into estadoVigenteJoin
             from estadoVigente in estadoVigenteJoin.DefaultIfEmpty()
@@ -42,9 +48,17 @@ public sealed class AnimalReportRepository : IAnimalReportRepository
             {
                 Codigo = animal.codigo ?? DefaultText,
                 Nombre = animal.nombre ?? DefaultText,
+                FechaNacimiento = animal.fecha_nacimiento,
+                TipoAdquisicionCode = animal.tipo_adquisicion_code,
+                TipoAdquisicion = tipoAdquisicion != null ? tipoAdquisicion.nombre : DefaultText,
+                RazaCode = animal.raza_code,
                 Raza = raza != null ? raza.nombre : DefaultText,
+                Color = color != null ? color.nombre : DefaultText,
+                SexoCode = animal.sexo_code,
                 Sexo = sexo != null ? sexo.nombre : DefaultText,
-                Procedencia = tipoAdquisicion != null ? tipoAdquisicion.nombre : DefaultText,
+                GranjaId = animal.granja_id,
+                Granja = granja != null ? granja.nombre : DefaultText,
+                EstadoCode = estadoVigente != null ? estadoVigente.estado_code : null,
                 Estado = estado != null ? estado.nombre : DefaultText,
                 animal.fecha_registro
             };
@@ -57,15 +71,43 @@ public sealed class AnimalReportRepository : IAnimalReportRepository
                 animal.Nombre.Contains(keyword));
         }
 
+        if (!string.IsNullOrWhiteSpace(filter.RazaCode))
+        {
+            query = query.Where(animal => animal.RazaCode == filter.RazaCode);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.SexoCode))
+        {
+            query = query.Where(animal => animal.SexoCode == filter.SexoCode);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.TipoAdquisicionCode))
+        {
+            query = query.Where(animal => animal.TipoAdquisicionCode == filter.TipoAdquisicionCode);
+        }
+
+        if (filter.GranjaId.HasValue)
+        {
+            query = query.Where(animal => animal.GranjaId == filter.GranjaId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.EstadoCode))
+        {
+            query = query.Where(animal => animal.EstadoCode == filter.EstadoCode);
+        }
+
         return await query
             .OrderByDescending(animal => animal.fecha_registro)
             .ThenBy(animal => animal.Codigo)
             .Select(animal => new ReportAnimalListItem(
                 animal.Codigo,
                 animal.Nombre,
+                animal.FechaNacimiento,
+                animal.TipoAdquisicion,
                 animal.Raza,
+                animal.Color,
                 animal.Sexo,
-                animal.Procedencia,
+                animal.Granja,
                 animal.Estado,
                 animal.fecha_registro))
             .ToArrayAsync(cancellationToken);

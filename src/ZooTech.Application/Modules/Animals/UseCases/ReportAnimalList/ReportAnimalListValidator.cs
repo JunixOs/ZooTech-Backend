@@ -16,6 +16,10 @@ public sealed class ReportAnimalListValidator
         var keyword = string.IsNullOrWhiteSpace(command.Keyword)
             ? null
             : command.Keyword.Trim();
+        var razaCode = NormalizeCode(command.RazaCode);
+        var sexoCode = NormalizeCode(command.SexoCode);
+        var tipoAdquisicionCode = NormalizeCode(command.TipoAdquisicionCode);
+        var estadoCode = NormalizeCode(command.EstadoCode);
 
         if (command.FechaInicio.HasValue && !command.FechaFin.HasValue)
         {
@@ -42,11 +46,27 @@ public sealed class ReportAnimalListValidator
             errors["keyword"] = $"El keyword no debe superar {MaximumKeywordLength} caracteres.";
         }
 
+        if (command.GranjaId.HasValue && command.GranjaId.Value <= 0)
+        {
+            errors["granjaId"] = "El identificador de granja debe ser mayor a cero.";
+        }
+
         if (errors.Count > 0)
         {
             throw new ReportAnimalListValidationException(errors);
         }
 
-        return new ReportAnimalListFilter(fechaInicio, fechaFin, keyword);
+        return new ReportAnimalListFilter(
+            fechaInicio,
+            fechaFin,
+            keyword,
+            razaCode,
+            sexoCode,
+            tipoAdquisicionCode,
+            command.GranjaId,
+            estadoCode);
     }
+
+    private static string? NormalizeCode(string? value)
+        => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }

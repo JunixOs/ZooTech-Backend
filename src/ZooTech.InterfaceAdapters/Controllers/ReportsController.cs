@@ -56,6 +56,11 @@ public sealed class ReportsController : ControllerBase
             request.FechaInicio,
             request.FechaFin,
             request.Keyword,
+            request.RazaCode,
+            request.SexoCode,
+            request.TipoAdquisicionCode,
+            request.GranjaId,
+            request.EstadoCode,
             exportExcel,
             exportPdf);
 

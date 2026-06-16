@@ -38,9 +38,12 @@ public static class AnimalMapper
         {
             Codigo = item.Codigo,
             Nombre = item.Nombre,
+            FechaNacimiento = item.FechaNacimiento,
+            TipoAdquisicion = item.TipoAdquisicion,
             Raza = item.Raza,
+            Color = item.Color,
             Sexo = item.Sexo,
-            Procedencia = item.Procedencia,
+            Granja = item.Granja,
             Estado = item.Estado,
             FechaRegistro = item.FechaRegistro
         };

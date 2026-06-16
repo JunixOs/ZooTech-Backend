@@ -21,15 +21,14 @@ public sealed class AnimalReportPdfService : IAnimalReportPdfService
                 page.Size(PageSizes.A4.Landscape());
                 page.Margin(1.5f, Unit.Centimetre);
                 page.PageColor(Colors.White);
-                page.DefaultTextStyle(x => x.FontSize(9).FontFamily("Arial"));
+                page.DefaultTextStyle(x => x.FontSize(8).FontFamily("Arial"));
 
-                // Header
                 page.Header().Column(column =>
                 {
                     column.Item().Row(row =>
                     {
                         row.RelativeItem().Text("Reporte listado de vacunos")
-                            .Bold().FontSize(18).FontColor("#802B4D"); // Matches primary theme color
+                            .Bold().FontSize(18).FontColor("#802B4D");
 
                         row.ConstantItem(150).AlignRight().Text($"Generado: {DateTime.Now:yyyy-MM-dd HH:mm}")
                             .FontSize(8).Italic().FontColor(Colors.Grey.Darken1);
@@ -41,13 +40,13 @@ public sealed class AnimalReportPdfService : IAnimalReportPdfService
                     {
                         row.RelativeItem().Text(t =>
                         {
-                            t.Span("Rango de Fechas: ").Bold();
+                            t.Span("Rango de fechas: ").Bold();
                             t.Span($"{output.FechaInicio:yyyy-MM-dd} al {output.FechaFin:yyyy-MM-dd}");
                         });
 
                         row.RelativeItem().Text(t =>
                         {
-                            t.Span("Palabra Clave: ").Bold();
+                            t.Span("Palabra clave: ").Bold();
                             t.Span(string.IsNullOrWhiteSpace(output.Keyword) ? "Todos" : output.Keyword);
                         });
                     });
@@ -55,62 +54,51 @@ public sealed class AnimalReportPdfService : IAnimalReportPdfService
                     column.Item().PaddingBottom(15);
                 });
 
-                // Content (Table)
                 page.Content().Table(table =>
                 {
-                    // Define columns
                     table.ColumnsDefinition(columns =>
                     {
-                        columns.RelativeColumn(2);    // Código
-                        columns.RelativeColumn(3);    // Nombre
-                        columns.RelativeColumn(2);    // Raza
-                        columns.RelativeColumn(1.5f); // Sexo
-                        columns.RelativeColumn(3);    // Procedencia
-                        columns.RelativeColumn(2);    // Estado
-                        columns.RelativeColumn(2);    // Fecha registro
+                        columns.RelativeColumn(1.4f);
+                        columns.RelativeColumn(2.2f);
+                        columns.RelativeColumn(1.6f);
+                        columns.RelativeColumn(2.1f);
+                        columns.RelativeColumn(1.7f);
+                        columns.RelativeColumn(1.5f);
+                        columns.RelativeColumn(1.3f);
+                        columns.RelativeColumn(2.1f);
+                        columns.RelativeColumn(1.5f);
+                        columns.RelativeColumn(1.6f);
                     });
 
-                    // Table Header
                     table.Header(header =>
                     {
-                        header.Cell().Element(CellStyle).Text("Código").Bold().FontColor(Colors.White);
-                        header.Cell().Element(CellStyle).Text("Nombre").Bold().FontColor(Colors.White);
-                        header.Cell().Element(CellStyle).Text("Raza").Bold().FontColor(Colors.White);
-                        header.Cell().Element(CellStyle).Text("Sexo").Bold().FontColor(Colors.White);
-                        header.Cell().Element(CellStyle).Text("Procedencia").Bold().FontColor(Colors.White);
-                        header.Cell().Element(CellStyle).Text("Estado").Bold().FontColor(Colors.White);
-                        header.Cell().Element(CellStyle).Text("Fecha registro").Bold().FontColor(Colors.White);
-
-                        static IContainer CellStyle(IContainer container)
-                        {
-                            return container.Background("#802B4D")
-                                            .Padding(5)
-                                            .Border(0.5f)
-                                            .BorderColor(Colors.Grey.Lighten1);
-                        }
+                        header.Cell().Element(HeaderCellStyle).Text("Código").Bold().FontColor(Colors.White);
+                        header.Cell().Element(HeaderCellStyle).Text("Nombre").Bold().FontColor(Colors.White);
+                        header.Cell().Element(HeaderCellStyle).Text("Nacimiento").Bold().FontColor(Colors.White);
+                        header.Cell().Element(HeaderCellStyle).Text("Tipo adquisición").Bold().FontColor(Colors.White);
+                        header.Cell().Element(HeaderCellStyle).Text("Raza").Bold().FontColor(Colors.White);
+                        header.Cell().Element(HeaderCellStyle).Text("Color").Bold().FontColor(Colors.White);
+                        header.Cell().Element(HeaderCellStyle).Text("Sexo").Bold().FontColor(Colors.White);
+                        header.Cell().Element(HeaderCellStyle).Text("Granja").Bold().FontColor(Colors.White);
+                        header.Cell().Element(HeaderCellStyle).Text("Estado").Bold().FontColor(Colors.White);
+                        header.Cell().Element(HeaderCellStyle).Text("Registro").Bold().FontColor(Colors.White);
                     });
 
-                    // Table Body Rows
                     foreach (var item in output.Items)
                     {
-                        table.Cell().Element(CellStyle).Text(item.Codigo);
-                        table.Cell().Element(CellStyle).Text(item.Nombre);
-                        table.Cell().Element(CellStyle).Text(item.Raza);
-                        table.Cell().Element(CellStyle).Text(item.Sexo);
-                        table.Cell().Element(CellStyle).Text(item.Procedencia);
-                        table.Cell().Element(CellStyle).Text(item.Estado);
-                        table.Cell().Element(CellStyle).Text(item.FechaRegistro.ToString("yyyy-MM-dd"));
-
-                        static IContainer CellStyle(IContainer container)
-                        {
-                            return container.Border(0.5f)
-                                            .BorderColor(Colors.Grey.Lighten2)
-                                            .Padding(5);
-                        }
+                        table.Cell().Element(BodyCellStyle).Text(item.Codigo);
+                        table.Cell().Element(BodyCellStyle).Text(item.Nombre);
+                        table.Cell().Element(BodyCellStyle).Text(item.FechaNacimiento.ToString("yyyy-MM-dd"));
+                        table.Cell().Element(BodyCellStyle).Text(item.TipoAdquisicion);
+                        table.Cell().Element(BodyCellStyle).Text(item.Raza);
+                        table.Cell().Element(BodyCellStyle).Text(item.Color);
+                        table.Cell().Element(BodyCellStyle).Text(item.Sexo);
+                        table.Cell().Element(BodyCellStyle).Text(item.Granja);
+                        table.Cell().Element(BodyCellStyle).Text(item.Estado);
+                        table.Cell().Element(BodyCellStyle).Text(item.FechaRegistro.ToString("yyyy-MM-dd"));
                     }
                 });
 
-                // Footer
                 page.Footer().AlignRight().Text(x =>
                 {
                     x.Span("Página ");
@@ -120,5 +108,20 @@ public sealed class AnimalReportPdfService : IAnimalReportPdfService
                 });
             });
         }).GeneratePdf();
+    }
+
+    private static IContainer HeaderCellStyle(IContainer container)
+    {
+        return container.Background("#802B4D")
+            .Padding(3)
+            .Border(0.5f)
+            .BorderColor(Colors.Grey.Lighten1);
+    }
+
+    private static IContainer BodyCellStyle(IContainer container)
+    {
+        return container.Border(0.5f)
+            .BorderColor(Colors.Grey.Lighten2)
+            .Padding(3);
     }
 }

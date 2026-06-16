@@ -40,6 +40,11 @@ public sealed class ReportAnimalListInteractor : IReportAnimalListInputPort
                 filter.FechaInicio,
                 filter.FechaFin,
                 filter.Keyword,
+                filter.RazaCode,
+                filter.SexoCode,
+                filter.TipoAdquisicionCode,
+                filter.GranjaId,
+                filter.EstadoCode,
                 items);
 
             if (command.ExportExcel)
