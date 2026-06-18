@@ -28,9 +28,15 @@ namespace ZooTech.InterfaceAdapters.Middleware
             ITenantContext tenantContext
         )
         {
-            var host = context.Request.Host.Host;
+            var domain = context.Request.Headers["X-Tenant"].FirstOrDefault();
 
-            var subDomain = ExtractSubDomain(host);
+            if(domain == null)
+            {
+                context.Response.StatusCode = 404;
+                return;
+            }
+
+            var subDomain = ExtractSubDomain(domain);
 
             if (subDomain == null)
             {
