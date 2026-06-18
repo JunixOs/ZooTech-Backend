@@ -1,12 +1,14 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using ZooTech.Application.Common.Gateway.Context;
+using ZooTech.Application.Common.Gateway.Features;
 using ZooTech.Application.Common.Gateway.Time;
 using ZooTech.Domain.Module_Celo.Interfaces;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
-using ZooTech.Infrastructure.Common.Time;
+using ZooTech.Infrastructure.Features;
 using ZooTech.Infrastructure.Tenant;
 using ZooTech.Infrastructure.Time;
 using ZooTech.Infrastructure.Persistence.Context;
@@ -56,12 +58,6 @@ public static class DependencyInjection
         // ============================================
 
         services.AddScoped<ZooTech.Application.Common.Gateway.Repositories.IVacunoRepository, ZooTech.Infrastructure.Persistence.Repositories.VacunoRepository>();
-
-        // ============================================
-        // External Services
-        // ============================================
-
-        services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
 
         // ============================================
         // Caching

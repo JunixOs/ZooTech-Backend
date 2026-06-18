@@ -1,11 +1,13 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.CreateVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetVacunoById;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.UpdateVacuno;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
+using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.InterfaceAdapters.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses;
@@ -85,33 +87,330 @@ public sealed class VacunoController : ControllerBase
     [ProducesResponseType(typeof(GeneralResponseDTO<VacunoResponse>), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> Create([FromBody] CreateVacunoRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Create(
+        [FromBody] CreateVacunoRequest request,
+        [FromServices] GanaderiaDbContext db,
+        CancellationToken cancellationToken)
     {
-        var data = VacunoMapper.ToResponse(
-            await _createInputPort.HandleAsync(VacunoMapper.ToCommand(request), cancellationToken));
-        return Created($"/api/v1/vacuno/{data.Id}", GeneralResponseDTO<VacunoResponse>.Ok(data));
+        if (!string.IsNullOrWhiteSpace(request.CodigoPadre) && request.CodigoPadre.Trim() == request.Codigo.Trim())
+        {
+            return BadRequest(new
+            {
+                error = new
+                {
+                    code = "VALIDATION_ERROR",
+                    message = "Los datos enviados no son válidos.",
+                    details = new[]
+                    {
+                        new { field = "codigoPadre", message = "Un vacuno no puede ser su propio padre." }
+                    }
+                }
+            });
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.CodigoMadre) && request.CodigoMadre.Trim() == request.Codigo.Trim())
+        {
+            return BadRequest(new
+            {
+                error = new
+                {
+                    code = "VALIDATION_ERROR",
+                    message = "Los datos enviados no son válidos.",
+                    details = new[]
+                    {
+                        new { field = "codigoMadre", message = "Un vacuno no puede ser su propia madre." }
+                    }
+                }
+            });
+        }
+
+        long? padreId = null;
+        if (!string.IsNullOrWhiteSpace(request.CodigoPadre))
+        {
+            var padre = await db.vacunos.FirstOrDefaultAsync(v => v.codigo == request.CodigoPadre.Trim() && v.deleted_at == null, cancellationToken);
+            if (padre == null)
+            {
+                return BadRequest(new
+                {
+                    error = new
+                    {
+                        code = "VALIDATION_ERROR",
+                        message = "Los datos enviados no son válidos.",
+                        details = new[]
+                        {
+                            new { field = "codigoPadre", message = "El vacuno padre especificado no existe." }
+                        }
+                    }
+                });
+            }
+            padreId = padre.id;
+        }
+
+        long? madreId = null;
+        if (!string.IsNullOrWhiteSpace(request.CodigoMadre))
+        {
+            var madre = await db.vacunos.FirstOrDefaultAsync(v => v.codigo == request.CodigoMadre.Trim() && v.deleted_at == null, cancellationToken);
+            if (madre == null)
+            {
+                return BadRequest(new
+                {
+                    error = new
+                    {
+                        code = "VALIDATION_ERROR",
+                        message = "Los datos enviados no son válidos.",
+                        details = new[]
+                        {
+                            new { field = "codigoMadre", message = "El vacuno madre especificado no existe." }
+                        }
+                    }
+                });
+            }
+            madreId = madre.id;
+        }
+
+        long granjaId = 0;
+        if (request.GranjaId.HasValue && request.GranjaId.Value > 0)
+        {
+            var granjaExiste = await db.granjas.AnyAsync(g => g.id == request.GranjaId.Value && g.activo, cancellationToken);
+            if (!granjaExiste)
+            {
+                return BadRequest(new
+                {
+                    error = new
+                    {
+                        code = "VALIDATION_ERROR",
+                        message = "Los datos enviados no son válidos.",
+                        details = new[]
+                        {
+                            new { field = "granjaId", message = "La granja seleccionada no existe o no está activa." }
+                        }
+                    }
+                });
+            }
+            granjaId = request.GranjaId.Value;
+        }
+        else
+        {
+            var granjaNombre = request.Granja?.Trim();
+            var distritoCodigo = request.CodigoDistrito?.Trim();
+            if (!string.IsNullOrWhiteSpace(granjaNombre) && !string.IsNullOrWhiteSpace(distritoCodigo))
+            {
+                var distritoExists = await db.geo_distritos.AnyAsync(d => d.codigo == distritoCodigo, cancellationToken);
+                if (!distritoExists)
+                {
+                    return BadRequest(new
+                    {
+                        error = new
+                        {
+                            code = "VALIDATION_ERROR",
+                            message = "Los datos enviados no son válidos.",
+                            details = new[]
+                            {
+                                new { field = "codigoDistrito", message = "El distrito especificado no es válido o no está registrado." }
+                            }
+                        }
+                    });
+                }
+
+                var granja = await db.granjas.FirstOrDefaultAsync(g => g.nombre == granjaNombre && g.distrito_codigo == distritoCodigo, cancellationToken);
+                if (granja == null)
+                {
+                    granja = new ZooTech.Infrastructure.Persistence.Entities.granja
+                    {
+                        nombre = granjaNombre,
+                        distrito_codigo = distritoCodigo,
+                        activo = true,
+                        created_at = DateTime.UtcNow,
+                        updated_at = DateTime.UtcNow
+                    };
+                    db.granjas.Add(granja);
+                    await db.SaveChangesAsync(cancellationToken);
+                }
+                granjaId = granja.id;
+            }
+        }
+
+        var command = VacunoMapper.ToCommand(request, padreId, madreId, granjaId);
+        var output = await _createInputPort.HandleAsync(command, cancellationToken);
+        var response = await EnrichResponseAsync(output.Data, db, cancellationToken);
+        return Created($"/api/v1/vacuno/{response.Id}", GeneralResponseDTO<VacunoResponse>.Ok(response));
     }
 
     [HttpGet("{identifier}")]
     [ProducesResponseType(typeof(GeneralResponseDTO<VacunoResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetById([FromRoute] string identifier, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetById(
+        [FromRoute] string identifier,
+        [FromServices] GanaderiaDbContext db,
+        CancellationToken cancellationToken)
     {
         long id = await ResolveIdAsync(identifier, cancellationToken);
-        var data = VacunoMapper.ToResponse(await _getByIdInputPort.HandleAsync(id, cancellationToken));
-        return Ok(GeneralResponseDTO<VacunoResponse>.Ok(data));
+        var output = await _getByIdInputPort.HandleAsync(id, cancellationToken);
+        var response = await EnrichResponseAsync(output.Data, db, cancellationToken);
+        return Ok(GeneralResponseDTO<VacunoResponse>.Ok(response));
     }
 
     [HttpPatch("{identifier}")]
     [ProducesResponseType(typeof(GeneralResponseDTO<VacunoResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Update([FromRoute] string identifier, [FromBody] UpdateVacunoRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Update(
+        [FromRoute] string identifier,
+        [FromBody] UpdateVacunoRequest request,
+        [FromServices] GanaderiaDbContext db,
+        CancellationToken cancellationToken)
     {
         long id = await ResolveIdAsync(identifier, cancellationToken);
-        var data = VacunoMapper.ToResponse(
-            await _updateInputPort.HandleAsync(id, VacunoMapper.ToCommand(request), cancellationToken));
-        return Ok(GeneralResponseDTO<VacunoResponse>.Ok(data));
+        var existingVacuno = await db.vacunos.FirstOrDefaultAsync(v => v.id == id && v.deleted_at == null, cancellationToken);
+        if (existingVacuno == null)
+        {
+            return NotFound(GeneralResponseDTO<object>.Fail("El vacuno no existe."));
+        }
+
+        var ownCodigo = existingVacuno.codigo;
+
+        if (!string.IsNullOrWhiteSpace(request.CodigoPadre) && request.CodigoPadre.Trim() == ownCodigo)
+        {
+            return BadRequest(new
+            {
+                error = new
+                {
+                    code = "VALIDATION_ERROR",
+                    message = "Los datos enviados no son válidos.",
+                    details = new[]
+                    {
+                        new { field = "codigoPadre", message = "Un vacuno no puede ser su propio padre." }
+                    }
+                }
+            });
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.CodigoMadre) && request.CodigoMadre.Trim() == ownCodigo)
+        {
+            return BadRequest(new
+            {
+                error = new
+                {
+                    code = "VALIDATION_ERROR",
+                    message = "Los datos enviados no son válidos.",
+                    details = new[]
+                    {
+                        new { field = "codigoMadre", message = "Un vacuno no puede ser su propia madre." }
+                    }
+                }
+            });
+        }
+
+        long? padreId = null;
+        if (!string.IsNullOrWhiteSpace(request.CodigoPadre))
+        {
+            var padre = await db.vacunos.FirstOrDefaultAsync(v => v.codigo == request.CodigoPadre.Trim() && v.deleted_at == null, cancellationToken);
+            if (padre == null)
+            {
+                return BadRequest(new
+                {
+                    error = new
+                    {
+                        code = "VALIDATION_ERROR",
+                        message = "Los datos enviados no son válidos.",
+                        details = new[]
+                        {
+                            new { field = "codigoPadre", message = "El vacuno padre especificado no existe." }
+                        }
+                    }
+                });
+            }
+            padreId = padre.id;
+        }
+
+        long? madreId = null;
+        if (!string.IsNullOrWhiteSpace(request.CodigoMadre))
+        {
+            var madre = await db.vacunos.FirstOrDefaultAsync(v => v.codigo == request.CodigoMadre.Trim() && v.deleted_at == null, cancellationToken);
+            if (madre == null)
+            {
+                return BadRequest(new
+                {
+                    error = new
+                    {
+                        code = "VALIDATION_ERROR",
+                        message = "Los datos enviados no son válidos.",
+                        details = new[]
+                        {
+                            new { field = "codigoMadre", message = "El vacuno madre especificado no existe." }
+                        }
+                    }
+                });
+            }
+            madreId = madre.id;
+        }
+
+        long granjaId = 0;
+        if (request.GranjaId.HasValue && request.GranjaId.Value > 0)
+        {
+            var granjaExiste = await db.granjas.AnyAsync(g => g.id == request.GranjaId.Value && g.activo, cancellationToken);
+            if (!granjaExiste)
+            {
+                return BadRequest(new
+                {
+                    error = new
+                    {
+                        code = "VALIDATION_ERROR",
+                        message = "Los datos enviados no son válidos.",
+                        details = new[]
+                        {
+                            new { field = "granjaId", message = "La granja seleccionada no existe o no está activa." }
+                        }
+                    }
+                });
+            }
+            granjaId = request.GranjaId.Value;
+        }
+        else
+        {
+            var granjaNombre = request.Granja?.Trim();
+            var distritoCodigo = request.CodigoDistrito?.Trim();
+            if (!string.IsNullOrWhiteSpace(granjaNombre) && !string.IsNullOrWhiteSpace(distritoCodigo))
+            {
+                var distritoExists = await db.geo_distritos.AnyAsync(d => d.codigo == distritoCodigo, cancellationToken);
+                if (!distritoExists)
+                {
+                    return BadRequest(new
+                    {
+                        error = new
+                        {
+                            code = "VALIDATION_ERROR",
+                            message = "Los datos enviados no son válidos.",
+                            details = new[]
+                            {
+                                new { field = "codigoDistrito", message = "El distrito especificado no es válido o no está registrado." }
+                            }
+                        }
+                    });
+                }
+
+                var granja = await db.granjas.FirstOrDefaultAsync(g => g.nombre == granjaNombre && g.distrito_codigo == distritoCodigo, cancellationToken);
+                if (granja == null)
+                {
+                    granja = new ZooTech.Infrastructure.Persistence.Entities.granja
+                    {
+                        nombre = granjaNombre,
+                        distrito_codigo = distritoCodigo,
+                        activo = true,
+                        created_at = DateTime.UtcNow,
+                        updated_at = DateTime.UtcNow
+                    };
+                    db.granjas.Add(granja);
+                    await db.SaveChangesAsync(cancellationToken);
+                }
+                granjaId = granja.id;
+            }
+        }
+
+        var command = VacunoMapper.ToCommand(request, padreId, madreId, granjaId);
+        var output = await _updateInputPort.HandleAsync(id, command, cancellationToken);
+        var response = await EnrichResponseAsync(output.Data, db, cancellationToken);
+        return Ok(GeneralResponseDTO<VacunoResponse>.Ok(response));
     }
 
     [HttpDelete("{identifier}")]
@@ -123,6 +422,35 @@ public sealed class VacunoController : ControllerBase
         long id = await ResolveIdAsync(identifier, cancellationToken);
         await _deleteInputPort.HandleAsync(id, VacunoMapper.ToCommand(request), cancellationToken);
         return NoContent();
+    }
+
+    [HttpGet("granjas")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> ListarGranjas(
+        [FromServices] GanaderiaDbContext db,
+        CancellationToken cancellationToken)
+    {
+        var granjas = await db.granjas
+            .Where(g => g.activo)
+            .Include(g => g.distrito_codigoNavigation)
+                .ThenInclude(d => d.provincia_codigoNavigation)
+                    .ThenInclude(p => p.departamento_codigoNavigation)
+            .OrderBy(g => g.nombre)
+            .Select(g => new
+            {
+                id = g.id,
+                nombre = g.nombre,
+                codigoDistrito = g.distrito_codigo,
+                distrito = g.distrito_codigoNavigation != null ? g.distrito_codigoNavigation.nombre : null,
+                provincia = g.distrito_codigoNavigation != null && g.distrito_codigoNavigation.provincia_codigoNavigation != null
+                    ? g.distrito_codigoNavigation.provincia_codigoNavigation.nombre : null,
+                departamento = g.distrito_codigoNavigation != null && g.distrito_codigoNavigation.provincia_codigoNavigation != null
+                    && g.distrito_codigoNavigation.provincia_codigoNavigation.departamento_codigoNavigation != null
+                    ? g.distrito_codigoNavigation.provincia_codigoNavigation.departamento_codigoNavigation.nombre : null
+            })
+            .ToListAsync(cancellationToken);
+
+        return Ok(granjas);
     }
 
     [HttpGet("estadisticas/actividad")]
@@ -172,6 +500,75 @@ public sealed class VacunoController : ControllerBase
             mayor,
             menor
         ));
+    }
+
+    private async Task<VacunoResponse> EnrichResponseAsync(
+        ZooTech.Application.Modules.Module_Vacuno.Common.VacunoOutput dto,
+        GanaderiaDbContext db,
+        CancellationToken cancellationToken)
+    {
+        string? codigoPadre = null;
+        if (dto.PadreId.HasValue)
+        {
+            codigoPadre = await db.vacunos
+                .Where(v => v.id == dto.PadreId.Value && v.deleted_at == null)
+                .Select(v => v.codigo)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
+        string? codigoMadre = null;
+        if (dto.MadreId.HasValue)
+        {
+            codigoMadre = await db.vacunos
+                .Where(v => v.id == dto.MadreId.Value && v.deleted_at == null)
+                .Select(v => v.codigo)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
+        string? granjaNombre = null;
+        string? distritoNombre = null;
+        string? provinciaNombre = null;
+        string? departamentoNombre = null;
+        string? codigoDistrito = null;
+
+        var granja = await db.granjas
+            .Include(g => g.distrito_codigoNavigation)
+                .ThenInclude(d => d.provincia_codigoNavigation)
+                    .ThenInclude(p => p.departamento_codigoNavigation)
+            .FirstOrDefaultAsync(g => g.id == dto.GranjaId, cancellationToken);
+
+        if (granja != null)
+        {
+            granjaNombre = granja.nombre;
+            codigoDistrito = granja.distrito_codigo;
+            distritoNombre = granja.distrito_codigoNavigation?.nombre;
+            provinciaNombre = granja.distrito_codigoNavigation?.provincia_codigoNavigation?.nombre;
+            departamentoNombre = granja.distrito_codigoNavigation?.provincia_codigoNavigation?.departamento_codigoNavigation?.nombre;
+        }
+
+        return new VacunoResponse(
+            dto.Id,
+            dto.Codigo,
+            dto.Nombre,
+            dto.FechaNacimiento,
+            dto.TipoAdquisicionCode,
+            dto.RazaCode,
+            dto.ColorCode,
+            dto.SexoCode,
+            dto.PadreId,
+            dto.MadreId,
+            dto.GranjaId,
+            dto.Observaciones,
+            dto.FechaRegistro,
+            dto.CreatedAt,
+            dto.UpdatedAt,
+            codigoPadre,
+            codigoMadre,
+            granjaNombre,
+            distritoNombre,
+            provinciaNombre,
+            departamentoNombre,
+            codigoDistrito);
     }
 
     private async Task<long> ResolveIdAsync(string identifier, CancellationToken cancellationToken)

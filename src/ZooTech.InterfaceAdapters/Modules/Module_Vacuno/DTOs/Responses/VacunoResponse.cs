@@ -15,4 +15,11 @@ public sealed record VacunoResponse(
     string? Observaciones,
     DateOnly FechaRegistro,
     DateTime CreatedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt,
+    string? CodigoPadre,
+    string? CodigoMadre,
+    string? Granja,
+    string? Distrito,
+    string? Provincia,
+    string? Departamento,
+    string? CodigoDistrito);
