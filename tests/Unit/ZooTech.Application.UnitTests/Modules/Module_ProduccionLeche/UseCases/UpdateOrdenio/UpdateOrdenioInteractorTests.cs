@@ -1,42 +1,68 @@
 using FluentValidation;
-using ZooTech.Application.Common.Exceptions;
-using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.CreateOrdenio;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.UpdateOrdenio;
 using ZooTech.Domain.Module_ProduccionLeche.Entities;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
 
-namespace ZooTech.Application.UnitTests.Modules.Module_ProduccionLeche.UseCases.CreateOrdenio;
+namespace ZooTech.Application.UnitTests.Modules.Module_ProduccionLeche.UseCases.UpdateOrdenio;
 
-public class CreateOrdenioInteractorTests
+public class UpdateOrdenioInteractorTests
 {
     [Fact]
-    public async Task HandleAsync_WhenCodigoAlreadyExists_ThrowsConflictException()
+    public async Task HandleAsync_WhenOnlyLitrosIsSent_UpdatesOnlyThatField()
     {
-        var repository = new FakeOrdenioRepository
+        var fecha = new DateTime(2026, 6, 18, 8, 0, 0, DateTimeKind.Local);
+        var existing = Ordenio.Rehydrate(
+            id: 10,
+            codigo: "ORD-010",
+            fechaHora: fecha,
+            vacunoId: 1,
+            nombreVacuno: "Luna",
+            encargadoUsuarioId: 2,
+            litros: 12,
+            estadoOrdenioCode: "ACTIVO",
+            observaciones: "Inicial",
+            createdAt: fecha,
+            updatedAt: fecha,
+            deletedAt: null,
+            motivoEliminacion: null,
+            createdBy: 2,
+            updatedBy: 2,
+            deletedBy: null);
+
+        var repository = new FakeOrdenioRepository(existing)
         {
-            ExistsCodigoResult = true,
             ExistsVacunoResult = true,
             ExistsUsuarioResult = true,
             ExistsEstadoResult = true
         };
-        var validator = new InlineValidator<CreateOrdenioCommand>();
-        var interactor = new CreateOrdenioInteractor(repository, validator);
+        var validator = new InlineValidator<UpdateOrdenioCommand>();
+        var interactor = new UpdateOrdenioInteractor(repository, validator);
 
-        var command = new CreateOrdenioCommand(
-            Codigo: "ORD-001",
-            FechaHora: DateTime.UtcNow,
-            VacunoId: 1,
-            EncargadoUsuarioId: 2,
-            Litros: 10,
-            EstadoOrdenioCode: "ACTIVO",
+        var command = new UpdateOrdenioCommand(
+            FechaHora: null,
+            EncargadoUsuarioId: null,
+            Litros: 18,
+            EstadoOrdenioCode: null,
             Observaciones: null);
 
-        var action = () => interactor.HandleAsync(command, CancellationToken.None);
+        var result = await interactor.HandleAsync(10, command, CancellationToken.None);
 
-        await Assert.ThrowsAsync<ConflictException>(action);
+        Assert.Equal(18, result.Data.Litros);
+        Assert.Equal(fecha, result.Data.FechaHora);
+        Assert.Equal(2, result.Data.EncargadoUsuarioId);
+        Assert.Equal("ACTIVO", result.Data.EstadoOrdenioCode);
+        Assert.Equal("Inicial", result.Data.Observaciones);
     }
 
     private sealed class FakeOrdenioRepository : IOrdenioRepository
     {
+        private readonly Ordenio _existing;
+
+        public FakeOrdenioRepository(Ordenio existing)
+        {
+            _existing = existing;
+        }
+
         public bool ExistsCodigoResult { get; set; }
         public bool ExistsVacunoFechaResult { get; set; }
         public bool ExistsVacunoResult { get; set; }
@@ -59,7 +85,7 @@ public class CreateOrdenioInteractorTests
             => Task.FromResult(ExistsEstadoResult);
 
         public Task<Ordenio?> GetByIdAsync(long id, CancellationToken cancellationToken)
-            => Task.FromResult<Ordenio?>(null);
+            => Task.FromResult<Ordenio?>(_existing);
 
         public Task<(IReadOnlyList<Ordenio> Items, int TotalCount)> ListAsync(
             long? vacunoId,

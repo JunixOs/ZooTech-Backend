@@ -5,6 +5,26 @@ namespace ZooTech.Domain.UnitTests.Module_ProduccionLeche;
 public class OrdenioTests
 {
     [Fact]
+    public void CreateNew_WhenFechaHoraIsFuture_ThrowsArgumentException()
+    {
+        var now = DateTime.UtcNow;
+
+        var action = () => Ordenio.CreateNew(
+            codigo: "ORD-001",
+            fechaHora: DateTime.Now.AddMinutes(1),
+            vacunoId: 1,
+            encargadoUsuarioId: 2,
+            litros: 10,
+            estadoOrdenioCode: "ACTIVO",
+            observaciones: null,
+            actorUsuarioId: 2,
+            utcNow: now);
+
+        var exception = Assert.Throws<ArgumentException>(action);
+        Assert.Contains("fecha y hora", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void CreateNew_WhenLitrosIsZero_ThrowsArgumentException()
     {
         var now = DateTime.UtcNow;
