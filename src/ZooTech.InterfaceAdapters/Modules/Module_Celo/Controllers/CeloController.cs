@@ -42,6 +42,16 @@ public sealed class CeloController : ControllerBase
         return Ok(GeneralResponseDTO<List<CeloItemResponse>>.Ok(response));
     }
 
+    [HttpGet("reportes/general")]
+    [ProducesResponseType(typeof(GeneralResponseDTO<List<CeloItemResponse>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetReporteCeloGeneral(CancellationToken cancellationToken)
+    {
+        var output = await _getCelosInputPort.HandleAsync(cancellationToken);
+        var response = output.Items.Select(CeloMapper.ToResponse).ToList();
+
+        return Ok(GeneralResponseDTO<List<CeloItemResponse>>.Ok(response));
+    }
+
     [HttpGet("vacas-en-celo")]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetVacasEnCelo(CancellationToken cancellationToken)
