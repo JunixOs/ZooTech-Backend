@@ -113,7 +113,7 @@ public sealed class ProduccionLecheController : ControllerBase
         CancellationToken cancellationToken)
     {
         var report = await _getOrdeniosPdfInputPort.HandleAsync(
-            new GenerateOrdeniosPdfQuery(vacunoId, estadoOrdenioCode, fechaDesde, fechaHasta),
+            new GenerateOrdeniosComparationPdfQuery(vacunoId, estadoOrdenioCode, fechaDesde, fechaHasta),
             cancellationToken);
 
         return File(report.Content, report.ContentType, report.FileName);

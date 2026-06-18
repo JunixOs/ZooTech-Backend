@@ -1,6 +1,7 @@
 using ZooTech.Application.Common.Gateway.Services;
 using ZooTech.Application.Common.Gateway.Time;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Common;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GenerateOrdeniosPdf.GeneratOrdenioComparationPdf;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GenerateOrdeniosPdf;
@@ -22,7 +23,7 @@ public sealed class GenerateOrdeniosPdfInteractor : IGetOrdeniosPdfInputPort
     }
 
     public async Task<GenerateOrdeniosPdfOutput> HandleAsync(
-        GenerateOrdeniosPdfQuery query,
+        GenerateOrdeniosComparationPdfQuery query,
         CancellationToken cancellationToken)
     {
         var entities = await _repository.ListReportAsync(
@@ -44,5 +45,28 @@ public sealed class GenerateOrdeniosPdfInteractor : IGetOrdeniosPdfInputPort
             _pdfGeneratorService.GenerateOrdeniosReport(document),
             "application/pdf",
             $"reporte-ordenios-{document.GeneratedAtUtc:yyyyMMddHHmmss}.pdf");
+    }
+
+    public Task<GenerateOrdenioComparationPdfOutput> HandleComparationAsync(GenerateOrdeniosComparationPdfQuery query, CancellationToken cancellationToken)
+    {
+        var entities = _repository.ListReportAsync(
+            query.VacunoId,
+            query.EstadoOrdenioCode,
+            query.FechaDesde,
+            query.FechaHasta,
+            cancellationToken).Result;
+
+        var document = new GenerateOrdenioComparationPdfDocument(
+            entities.Select(OrdenioMapper.ToOutput).ToList(),
+            query.VacunoId,
+            query.EstadoOrdenioCode,
+            query.FechaDesde,
+            query.FechaHasta,
+            _dateTimeProvider.ServerNow);
+
+        return new GenerateOrdenioComparationPdfOutput(
+            _pdfGeneratorService.GenerateOrdenioComparationReport(document),
+            "application/pdf",
+            $"reporte-ordenios-comparacion-{document.Items.Count()}_{document.ServerNow:yyyyMMddHHmmss}.pdf");
     }
 }

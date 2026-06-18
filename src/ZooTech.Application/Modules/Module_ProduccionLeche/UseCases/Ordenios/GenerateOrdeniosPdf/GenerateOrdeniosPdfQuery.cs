@@ -1,6 +1,6 @@
 namespace ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GenerateOrdeniosPdf;
 
-public sealed record GenerateOrdeniosPdfQuery(
+public sealed record GenerateOrdeniosComparationPdfQuery(
     long? VacunoId,
     string? EstadoOrdenioCode,
     DateTime? FechaDesde,
