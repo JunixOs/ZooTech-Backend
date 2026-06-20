@@ -1,165 +1,92 @@
-using ZooTech.Application.Modules.Module_Vacuno.UseCases.RegistrarVacuno;
+using ZooTech.Application.Modules.Module_Vacuno.Common;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.CreateVacuno;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetVacunoById;
+using ZooTech.Domain.Module_Vacuno.Models;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.UpdateVacuno;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Mappers;
 
-/// <summary>
-/// Mapper manual para el módulo Vacuno.
-/// Convierte: Request → Command y Result → Response.
-/// Se usa mapper manual (no AutoMapper) para mantener control total y claridad.
-/// </summary>
-public static class VacunoMapper
+internal static class VacunoMapper
 {
-    private static readonly Dictionary<string, int> TiposAdquisicion = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["monta"] = 1,
-        ["compra"] = 2
-    };
+    internal static VacunoItemResponse ToResponse(VacunoItemDto item)
+        => new(
+            Id: item.Id,
+            Codigo: item.Codigo,
+            Nombre: item.Nombre,
+            FechaNacimiento: item.FechaNacimiento,
+            RazaCode: item.RazaCode,
+            SexoCode: item.SexoCode,
+            Procedencia: item.Procedencia);
 
-    private static readonly Dictionary<string, int> Razas = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["Jersey"] = 1,
-        ["Holstein"] = 2,
-        ["Angus"] = 3,
-        ["Hereford"] = 4,
-        ["Simmental"] = 5,
-        ["Brown Swiss"] = 6,
-        ["Brahman"] = 7,
-        ["Charolais"] = 8
-    };
+    internal static CreateVacunoCommand ToCommand(CreateVacunoRequest request)
+        => new(
+            request.Codigo,
+            request.Nombre,
+            request.FechaNacimiento,
+            request.TipoAdquisicionCode,
+            request.RazaCode,
+            request.ColorCode,
+            request.SexoCode,
+            request.PadreId,
+            request.MadreId,
+            request.GranjaId,
+            request.Observaciones);
 
-    private static readonly Dictionary<string, int> Sexos = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["macho"] = 1,
-        ["hembra"] = 2
-    };
+    internal static UpdateVacunoCommand ToCommand(UpdateVacunoRequest request)
+        => new(
+            request.Nombre,
+            request.FechaNacimiento,
+            request.TipoAdquisicionCode,
+            request.RazaCode,
+            request.ColorCode,
+            request.SexoCode,
+            request.PadreId,
+            request.MadreId,
+            request.GranjaId,
+            request.Observaciones);
 
-    private static readonly Dictionary<string, int> TiposUtilizacion = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["produccion_leche"] = 1,
-        ["carne"] = 2,
-        ["reproduccion"] = 3
-    };
+    internal static DeleteVacunoCommand ToCommand(DeleteVacunoRequest request)
+        => new(request.MotivoEliminacion);
 
-    /// <summary>
-    /// Convierte el Request HTTP en el Command de Application.
-    /// Aquí se hace el puente entre IFormFile (ASP.NET) y Stream (dominio).
-    /// </summary>
-    public static RegistrarVacunoCommand ToCommand(RegistrarVacunoRequest request)
-    {
-        return new RegistrarVacunoCommand
-        {
-            Codigo = request.Codigo.Trim().ToUpperInvariant(),
-            Nombre = request.Nombre.Trim(),
-            FechaNacimiento = request.FechaNacimiento,
-            IdTipoAdquisicion = Resolver(TiposAdquisicion, request.AdquisicionPor),
-            PrecioCompra = request.PrecioCompra,
-            IdRaza = Resolver(Razas, request.Raza),
-            Raza = request.Raza.Trim(),
-            IdColor = ResolverColor(request.Color),
-            Color = request.Color.Trim(),
-            IdSexo = Resolver(Sexos, request.Sexo),
-            Sexo = request.Sexo.Trim().ToLowerInvariant(),
-            CodigoPadre = request.CodigoPadre.Trim().ToUpperInvariant(),
-            CodigoMadre = request.CodigoMadre.Trim().ToUpperInvariant(),
-            NombreGranja = request.Granja.Trim(),
-            IdDistrito = ResolverUbigeo(request.CodigoDistrito, request.Distrito),
-            Distrito = request.Distrito.Trim(),
-            IdDepartamento = ResolverUbigeo(request.CodigoDepartamento, request.Departamento),
-            Departamento = request.Departamento.Trim(),
-            IdProvincia = ResolverUbigeo(request.CodigoProvincia, request.Provincia),
-            Provincia = request.Provincia.Trim(),
-            IdTipoUtilizacion = Resolver(TiposUtilizacion, request.AptoPara),
-            AptoPara = request.AptoPara.Trim(),
-            FechaEspecificacion = request.FechaEspecificacion,
-            Observaciones = request.Observaciones?.Trim(),
+    internal static VacunoResponse ToResponse(CreateVacunoOutput output)
+        => ToVacunoResponse(output.Data);
 
-            // Desacopla IFormFile → Stream para que Application no dependa de ASP.NET
-            FotoStream = request.Foto?.OpenReadStream(),
-            FotoNombreOriginal = request.Foto?.FileName
-        };
-    }
+    internal static VacunoResponse ToResponse(GetVacunoByIdOutput output)
+        => ToVacunoResponse(output.Data);
 
-    public static string NombreRaza(int id) => Razas.FirstOrDefault(x => x.Value == id).Key ?? $"Raza {id}";
-    public static string NombreSexo(int id) => Sexos.FirstOrDefault(x => x.Value == id).Key ?? "hembra";
-    public static string NombreTipoAdquisicion(int id) => TiposAdquisicion.FirstOrDefault(x => x.Value == id).Key ?? "monta";
-    public static string NombreTipoUtilizacion(int id) => TiposUtilizacion.FirstOrDefault(x => x.Value == id).Key ?? "produccion_leche";
-    public static int IdTipoAdquisicion(string valor) => Resolver(TiposAdquisicion, valor);
-    public static int IdRaza(string valor) => Resolver(Razas, valor);
-    public static int IdSexo(string valor) => Resolver(Sexos, valor);
-    public static int IdTipoUtilizacion(string valor) => Resolver(TiposUtilizacion, valor);
-    public static int IdColor(string valor) => ResolverColor(valor);
-    public static int IdUbigeo(string valor) => ResolverUbigeo(valor);
+    internal static VacunoResponse ToResponse(UpdateVacunoOutput output)
+        => ToVacunoResponse(output.Data);
 
-    private static int Resolver(Dictionary<string, int> catalogo, string valor)
-    {
-        if (catalogo.TryGetValue(valor.Trim(), out var id))
-            return id;
+    internal static VacunoCatalogsResponse ToResponse(VacunoCatalogs catalogs)
+        => new(
+            catalogs.TiposAdquisicion.Select(ToResponse).ToList(),
+            catalogs.Razas.Select(ToResponse).ToList(),
+            catalogs.Colores.Select(ToResponse).ToList(),
+            catalogs.Sexos.Select(ToResponse).ToList(),
+            catalogs.Granjas.Select(item => new GranjaCatalogOptionResponse(item.Id, item.Nombre)).ToList());
 
-        return 0;
-    }
+    private static VacunoCatalogOptionResponse ToResponse(VacunoCatalogOption option)
+        => new(option.Code, option.Nombre);
 
-    private static int ResolverColor(string color)
-    {
-        var normalizado = color.Trim().ToLowerInvariant();
-        return normalizado switch
-        {
-            "negro" => 1,
-            "blanco" => 2,
-            "marron" or "marrón" => 3,
-            "gris" => 4,
-            "rojizo" or "rojo" => 5,
-            _ => 1
-        };
-    }
-
-    public static int IdUbigeo(string? codigo, string valor) => ResolverUbigeo(codigo, valor);
-
-    private static int ResolverUbigeo(string? codigo, string valor)
-    {
-        return int.TryParse(codigo, out var id) && id > 0
-            ? id
-            : ResolverUbigeo(valor);
-    }
-
-    private static int ResolverUbigeo(string valor)
-    {
-        if (string.IsNullOrWhiteSpace(valor))
-            return 0;
-
-        unchecked
-        {
-            var hash = 17;
-            foreach (var character in valor.Trim().ToUpperInvariant())
-            {
-                hash = (hash * 31) + character;
-            }
-
-            return Math.Abs(hash % 10000) + 1;
-        }
-    }
-
-    /// <summary>
-    /// Convierte el Result del Handler en la Response HTTP 201.
-    /// Construye la URL pública de la foto a partir de la ruta relativa almacenada.
-    /// </summary>
-    public static RegistrarVacunoResponse ToResponse(
-        RegistrarVacunoResult result,
-        string baseUrl)
-    {
-        return new RegistrarVacunoResponse
-        {
-            Id = result.Id,
-            Codigo = result.Codigo,
-            Nombre = result.Nombre,
-            FechaNacimiento = result.FechaNacimiento,
-            AdquisicionPor = result.TipoAdquisicion,
-            PrecioCompra = result.PrecioCompra,
-            FotoUrl = result.FotoUrl is not null
-                ? $"{baseUrl}/files/{result.FotoUrl}"
-                : null,
-            CreadoEn = result.CreadoEn
-        };
-    }
+    private static VacunoResponse ToVacunoResponse(VacunoOutput output)
+        => new(
+            output.Id,
+            output.Codigo,
+            output.Nombre,
+            output.FechaNacimiento,
+            output.TipoAdquisicionCode,
+            output.RazaCode,
+            output.ColorCode,
+            output.SexoCode,
+            output.PadreId,
+            output.MadreId,
+            output.GranjaId,
+            output.Observaciones,
+            output.FechaRegistro,
+            output.CreatedAt,
+            output.UpdatedAt);
 }

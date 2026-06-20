@@ -1,7 +1,17 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using ZooTech.Application.Common.Gateway.Time;
+using ZooTech.Domain.Module_Celo.Interfaces;
+using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
+using ZooTech.Domain.Module_Sanidad.Interfaces;
+using ZooTech.Domain.Module_Vacuno.Interfaces;
+using ZooTech.Infrastructure.Common.Time;
 using ZooTech.Infrastructure.Persistence.Context;
+using ZooTech.Infrastructure.Persistence.Modules.Module_Celo.Repositories;
+using ZooTech.Infrastructure.Persistence.Modules.Module_ProduccionLeche.Repositories;
+using ZooTech.Infrastructure.Persistence.Modules.Module_Sanidad.Repositories;
+using ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Repositories;
 
 namespace ZooTech.Infrastructure;
 
@@ -11,40 +21,25 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // ============================================
-        // Connection String
-        // ============================================
+        var connectionName = configuration["Database:ConnectionName"] ?? "DefaultConnection";
+        var connectionString = configuration.GetConnectionString(connectionName);
 
-        var connectionString =
-            configuration.GetConnectionString("DefaultConnection");
-
-        // ============================================
-        // DbContext
-        // ============================================
-
-        /*services.AddDbContext<GanaderiaDbContext>(options =>
+        if (string.IsNullOrWhiteSpace(connectionString))
         {
-            options.UseSqlServer(connectionString);
-        });*/
+            throw new InvalidOperationException(
+                $"No se encontro una cadena de conexion valida en ConnectionStrings:{connectionName}.");
+        }
 
-        // ============================================
-        // Repositories
-        // ============================================
+        services.AddDbContext<GanaderiaDbContext>(options =>
+            options.UseSqlServer(connectionString));
 
-        // services.AddScoped<IAnimalRepository, AnimalRepository>();
+        services.AddScoped<IDateTimeProvider, DateTimeProvider>();
 
-        // ============================================
-        // External Services
-        // ============================================
-
-        // services.AddScoped<IJwtService, JwtService>();
-        // services.AddScoped<IDateTimeProvider, DateTimeProvider>();
-
-        // ============================================
-        // Caching
-        // ============================================
-
-        // services.AddMemoryCache();
+        services.AddScoped<ICeloRepository, CeloRepository>();
+        services.AddScoped<IOrdenioRepository, OrdenioRepository>();
+        services.AddScoped<IVacunoRepository, VacunoRepository>();
+        services.AddScoped<ITriajeRepository, TriajeRepository>();
+        services.AddScoped<ITipoPesoRepository, TipoPesoRepository>();
 
         return services;
     }
