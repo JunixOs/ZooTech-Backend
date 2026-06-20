@@ -21,8 +21,8 @@ public sealed record VacunoListadoItem(
 public sealed record ListarVacunosResumen(int TotalVacunos);
 
 public sealed record ListarVacunosFiltros(
-    DateOnly FechaDesde,
-    DateOnly FechaHasta,
+    DateOnly? FechaDesde,
+    DateOnly? FechaHasta,
     string? Q,
     string? Raza,
     string? Procedencia,

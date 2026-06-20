@@ -1,6 +1,5 @@
 using ZooTech.Application.Common.Exceptions;
-
-
+using ZooTech.Domain.Module_Vacuno.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte;
 
@@ -9,6 +8,7 @@ public sealed class ObtenerRegistroVacunoReporteUseCase : IObtenerRegistroVacuno
     private readonly IRegistroVacunoReadRepository _repository;
     private readonly IRegistroVacunoExcelReportService _excelReportService;
     private readonly IRegistroVacunoPdfReportService _pdfReportService;
+    
     public ObtenerRegistroVacunoReporteUseCase(
         IRegistroVacunoReadRepository repository,
         IRegistroVacunoExcelReportService excelReportService,
@@ -33,12 +33,81 @@ public sealed class ObtenerRegistroVacunoReporteUseCase : IObtenerRegistroVacuno
         var formato = Normalize(query.Formato) ?? "json";
         EnsureFormatoValido(formato, allowedFormats);
 
-        var detalle = await _repository.ObtenerRegistroAsync(query.VacunoId, cancellationToken);
+        var domainEntity = await _repository.ObtenerRegistroAsync(query.VacunoId, cancellationToken);
 
-        if (detalle is null)
+        if (domainEntity is null)
         {
-            throw new ZooTech.Application.Common.Exceptions.NotFoundException("No existe un vacuno con el ID enviado.");
+            throw new NotFoundException("No existe un vacuno con el ID enviado.");
         }
+
+        var v = domainEntity;
+
+        var raza = await _repository.ObtenerNombreCatalogoAsync("raza", v.RazaCode, cancellationToken);
+        var sexo = await _repository.ObtenerNombreCatalogoAsync("sexo", v.SexoCode, cancellationToken);
+        var color = await _repository.ObtenerNombreCatalogoAsync("color", v.ColorCode, cancellationToken);
+        var adquisicionTipo = await _repository.ObtenerNombreCatalogoAsync("tipoadquisicion", v.TipoAdquisicionCode, cancellationToken);
+        var padre = v.PadreId.HasValue ? await _repository.ObtenerCodigoVacunoAsync(v.PadreId.Value, cancellationToken) : null;
+        var madre = v.MadreId.HasValue ? await _repository.ObtenerCodigoVacunoAsync(v.MadreId.Value, cancellationToken) : null;
+        var granja = await _repository.ObtenerDetallesGranjaAsync(v.GranjaId, cancellationToken);
+        var adq = await _repository.ObtenerDetallesAdquisicionAsync(v.Id, cancellationToken);
+        var est = await _repository.ObtenerEstadoActualAsync(v.Id, cancellationToken);
+        var uti = await _repository.ObtenerUtilizacionActualAsync(v.Id, cancellationToken);
+        var foto = await _repository.ObtenerFotoPrincipalAsync(v.Id, cancellationToken);
+        var creadoPor = v.CreatedBy.HasValue ? await _repository.ObtenerNombreUsuarioAsync(v.CreatedBy, cancellationToken) : null;
+        var actualizadoPor = v.UpdatedBy.HasValue ? await _repository.ObtenerNombreUsuarioAsync(v.UpdatedBy, cancellationToken) : null;
+
+        string? NormalizeCatalogValue(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim().ToLowerInvariant().Replace(' ', '_');
+
+        string? DeterminarEstado(string? estadoCode, string? estadoNombre)
+        {
+            if (string.IsNullOrWhiteSpace(estadoCode)) return NormalizeCatalogValue(estadoNombre);
+            return estadoCode.ToUpperInvariant() switch {
+                "ACTIVO" or "VIVO" => "vivo",
+                "MUERTO" or "FALLECIDO" or "BAJA" => "muerto",
+                _ => NormalizeCatalogValue(estadoNombre)
+            };
+        }
+
+        var detalle = new RegistroVacunoDetalle(
+            v.Id,
+            v.Codigo,
+            v.Nombre,
+            v.FechaNacimiento,
+            NormalizeCatalogValue(adquisicionTipo),
+            adq?.PrecioCompra,
+            raza,
+            color,
+            NormalizeCatalogValue(sexo),
+            padre,
+            madre,
+            null, // CodigoAbuelo not implemented recursively here to keep simple
+            null, // CodigoAbuela
+            granja?.Nombre,
+            granja?.Distrito,
+            granja?.Departamento,
+            granja?.Provincia,
+            adq?.Proveedor,
+            NormalizeCatalogValue(uti),
+            adq?.FechaAdquisicion,
+            v.Observaciones,
+            foto?.Id,
+            foto?.NombreOriginal,
+            foto?.NombreAlmacenado,
+            foto?.RutaArchivo,
+            foto?.RutaArchivo, // url same as ruta
+            foto?.Extension,
+            foto?.TamanoBytes,
+            est?.EstadoCode,
+            est?.EstadoNombre,
+            DeterminarEstado(est?.EstadoCode, est?.EstadoNombre),
+            est?.FechaEstado,
+            est?.Motivo,
+            v.FechaRegistro,
+            adq?.FechaAdquisicion,
+            creadoPor,
+            v.CreatedAt,
+            actualizadoPor,
+            v.UpdatedAt);
 
         if (formato is "excel")
         {

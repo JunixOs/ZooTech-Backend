@@ -51,10 +51,28 @@ public sealed class VacunoController : ControllerBase
 
     [HttpGet]
     [ProducesResponseType(typeof(GeneralResponseDTO<List<VacunoItemResponse>>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> ListarVacunos([FromQuery] string? q, CancellationToken cancellationToken)
+    public async Task<IActionResult> ListarVacunos(
+        [FromQuery] string? q,
+        [FromQuery] string? fechaDesde,
+        [FromQuery] string? fechaHasta,
+        [FromQuery] string? estado,
+        [FromQuery] string? page,
+        [FromQuery] string? limit,
+        CancellationToken cancellationToken)
     {
-        // Llamada básica mapeada al comando con valores por defecto para retornar todos
-        var command = new ListarVacunosCommand(null, null, q, null, null, null, null, null, "1", "10000");
+        // Llamada básica mapeada al comando con valores proporcionados o por defecto
+        var command = new ListarVacunosCommand(
+            fechaDesde, 
+            fechaHasta, 
+            q, 
+            null, 
+            null, 
+            estado, 
+            null, 
+            null, 
+            page ?? "1", 
+            limit ?? "10000");
+
         var output = await _listarInputPort.HandleAsync(command, cancellationToken);
         var response = output.Data.Select(x => new VacunoItemResponse(
             x.Id,

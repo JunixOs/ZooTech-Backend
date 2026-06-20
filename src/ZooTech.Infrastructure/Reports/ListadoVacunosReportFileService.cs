@@ -259,7 +259,7 @@ public sealed class ListadoVacunosReportFileService : IListadoVacunosReportFileS
 
     private static string Xml(string value) => WebUtility.HtmlEncode(value) ?? string.Empty;
 
-    private static string FormatDate(DateOnly date) => date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+    private static string FormatDate(DateOnly? date) => date?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? string.Empty;
 
     private static string PdfText(string value)
     {

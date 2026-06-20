@@ -1,3 +1,4 @@
+using ZooTech.Domain.Module_Vacuno.Criteria;
 using ZooTech.Domain.Module_Vacuno.Entities;
 
 namespace ZooTech.Domain.Module_Vacuno.Interfaces;
@@ -18,7 +19,7 @@ public interface IVacunoRepository
 
     Task<Vacuno> UpdateAsync(Vacuno vacuno, CancellationToken cancellationToken = default);
 
-    Task<(IReadOnlyCollection<VacunoListadoItemDomain> Items, int TotalRegistros)> ListarAvanzadoAsync(
+    Task<(IReadOnlyCollection<Vacuno> Items, int TotalRegistros)> ListarAvanzadoAsync(
         ListarVacunosCriteriaDomain criteria,
         CancellationToken cancellationToken = default);
 }

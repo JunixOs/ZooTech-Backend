@@ -110,9 +110,6 @@ public partial class GanaderiaDbContext : DbContext
 
     public virtual DbSet<v_vacuno_utilizacion_vigente> v_vacuno_utilizacion_vigentes { get; set; }
 
-    public virtual DbSet<ZooTech.Infrastructure.Persistence.ReadModels.ReporteVacunoListadoRow> ReporteVacunoListadoRows { get; set; }
-
-    public virtual DbSet<ZooTech.Infrastructure.Persistence.ReadModels.RegistroVacunoReporteRow> RegistroVacunoReporteRows { get; set; }
 
     public virtual DbSet<vacuno> vacunos { get; set; }
 
@@ -604,10 +601,6 @@ public partial class GanaderiaDbContext : DbContext
         {
             entity.ToView("v_vacuno_utilizacion_vigente");
         });
-
-        modelBuilder.Entity<ZooTech.Infrastructure.Persistence.ReadModels.ReporteVacunoListadoRow>().HasNoKey();
-
-        modelBuilder.Entity<ZooTech.Infrastructure.Persistence.ReadModels.RegistroVacunoReporteRow>().HasNoKey();
 
         modelBuilder.Entity<vacuno>(entity =>
         {

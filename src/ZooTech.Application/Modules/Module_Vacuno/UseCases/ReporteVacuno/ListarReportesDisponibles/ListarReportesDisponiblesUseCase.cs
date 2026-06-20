@@ -15,14 +15,11 @@ public sealed class ListarReportesDisponiblesUseCase : IListarReportesDisponible
 
     public async Task<ReportesDisponiblesResponse> HandleAsync(ListarReportesDisponiblesQuery query, CancellationToken cancellationToken = default)
     {
-        var defaultDays = 30;
         var dateFormat = "yyyy-MM-dd";
 
         var rango = ReporteVacunoDateRangeResolver.Resolve(
             query.FechaDesde,
             query.FechaHasta,
-            DateOnly.FromDateTime(_dateTimeProvider.ServerNow),
-            defaultDays,
             dateFormat);
 
         var catalog = new ReporteDisponibleItem[] 

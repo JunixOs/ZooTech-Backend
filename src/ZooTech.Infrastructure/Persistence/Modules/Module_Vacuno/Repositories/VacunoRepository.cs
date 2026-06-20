@@ -1,4 +1,5 @@
 using Microsoft.Data.SqlClient;
+using ZooTech.Domain.Module_Vacuno.Criteria;
 using Microsoft.EntityFrameworkCore;
 using ZooTech.Domain.Module_Vacuno.Entities;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
@@ -131,7 +132,7 @@ public sealed class VacunoRepository : IVacunoRepository
             motivo_eliminacion = domain.MotivoEliminacion
         };
 
-    public async Task<(IReadOnlyCollection<VacunoListadoItemDomain> Items, int TotalRegistros)> ListarAvanzadoAsync(
+    public async Task<(IReadOnlyCollection<Vacuno> Items, int TotalRegistros)> ListarAvanzadoAsync(
         ListarVacunosCriteriaDomain criteria,
         CancellationToken cancellationToken = default)
     {
@@ -139,18 +140,14 @@ public sealed class VacunoRepository : IVacunoRepository
 
         var query = _context.vacunos
             .AsNoTracking()
-            .Include(v => v.raza_codeNavigation)
-            .Include(v => v.vacuno_adquisicion)
-            .Include(v => v.vacuno_estado_historials)
-                .ThenInclude(veh => veh.estado_codeNavigation)
-            .Include(v => v.vacuno_utilizacion_historials)
-                .ThenInclude(vuh => vuh.tipo_utilizacion_codeNavigation)
             .Where(v => v.deleted_at == null);
 
-        var fechaDesde = DateOnly.FromDateTime(criteria.FechaDesde.ToDateTime(TimeOnly.MinValue));
-        var fechaHasta = DateOnly.FromDateTime(criteria.FechaHasta.ToDateTime(TimeOnly.MinValue));
-
-        query = query.Where(v => v.fecha_registro >= fechaDesde && v.fecha_registro <= fechaHasta);
+        if (criteria.FechaDesde.HasValue && criteria.FechaHasta.HasValue)
+        {
+            var fechaDesde = DateOnly.FromDateTime(criteria.FechaDesde.Value.ToDateTime(TimeOnly.MinValue));
+            var fechaHasta = DateOnly.FromDateTime(criteria.FechaHasta.Value.ToDateTime(TimeOnly.MinValue));
+            query = query.Where(v => v.fecha_registro >= fechaDesde && v.fecha_registro <= fechaHasta);
+        }
 
         if (!string.IsNullOrWhiteSpace(criteria.Q))
         {
@@ -205,22 +202,7 @@ public sealed class VacunoRepository : IVacunoRepository
             .Take(criteria.Limit)
             .ToListAsync(cancellationToken);
 
-        var items = pagedEntities
-            .Select(v => {
-                var veh = v.vacuno_estado_historials.OrderByDescending(h => h.id).FirstOrDefault();
-                return new VacunoListadoItemDomain(
-                    v.id,
-                    v.codigo,
-                    v.fecha_registro,
-                    v.nombre,
-                    v.fecha_nacimiento,
-                    v.raza_code,
-                    v.sexo_code,
-                    v.raza_codeNavigation?.nombre,
-                    v.vacuno_adquisicion?.proveedor,
-                    DeterminarEstado(veh?.estado_code, veh?.estado_codeNavigation?.nombre));
-            })
-            .ToList();
+        var items = pagedEntities.Select(ToDomain).ToList();
 
         return (items, total);
     }

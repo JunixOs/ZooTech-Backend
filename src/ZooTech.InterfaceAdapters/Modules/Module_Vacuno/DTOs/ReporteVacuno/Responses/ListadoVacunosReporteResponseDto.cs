@@ -18,8 +18,8 @@ public sealed record VacunoListadoItemDto(
 public sealed record ReporteVacunoResumenDto(int TotalVacunos);
 
 public sealed record ReporteVacunoFiltrosDto(
-    DateOnly FechaDesde,
-    DateOnly FechaHasta,
+    DateOnly? FechaDesde,
+    DateOnly? FechaHasta,
     string? Q,
     string? Raza,
     string? Procedencia,

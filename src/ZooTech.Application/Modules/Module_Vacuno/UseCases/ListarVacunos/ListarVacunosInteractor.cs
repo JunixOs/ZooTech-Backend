@@ -2,6 +2,7 @@ using System.Globalization;
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Common.Gateway.Time;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.Common;
+using ZooTech.Domain.Module_Vacuno.Criteria;
 using ZooTech.Domain.Module_Vacuno.Entities;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
 
@@ -12,30 +13,30 @@ public sealed class ListarVacunosInteractor : IListarVacunosInputPort
     private readonly IVacunoRepository _repository;
     private readonly IListadoVacunosReportFileService _reportFileService;
     private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly IRegistroVacunoReadRepository _readRepository;
 
     public ListarVacunosInteractor(
         IVacunoRepository repository,
         IListadoVacunosReportFileService reportFileService,
-        IDateTimeProvider dateTimeProvider)
+        IDateTimeProvider dateTimeProvider,
+        IRegistroVacunoReadRepository readRepository)
     {
         _repository = repository;
         _reportFileService = reportFileService;
         _dateTimeProvider = dateTimeProvider;
+        _readRepository = readRepository;
     }
 
     public async Task<ListarVacunosOutput> HandleAsync(
         ListarVacunosCommand command,
         CancellationToken cancellationToken = default)
     {
-        var defaultDays = 30;
         var dateFormat = "yyyy-MM-dd";
         var formato = Normalize(command.Formato) ?? "json";
 
         var rango = ReporteVacunoDateRangeResolver.Resolve(
             command.FechaDesde,
             command.FechaHasta,
-            DateOnly.FromDateTime(_dateTimeProvider.ServerNow),
-            defaultDays,
             dateFormat);
 
         var page = ParsePositiveIntOrDefault(command.Page, 1);
@@ -54,7 +55,32 @@ public sealed class ListarVacunosInteractor : IListarVacunosInputPort
             limit);
 
         var pageResult = await _repository.ListarAvanzadoAsync(criteria, cancellationToken);
-        var mappedItems = pageResult.Items.Select(x => new VacunoListadoItem(x.Id, x.Codigo, x.FechaRegistro, x.Nombre, x.FechaNacimiento, x.RazaCode, x.SexoCode, x.Raza, x.Procedencia, x.Estado)).ToList();
+        var pagedItems = pageResult.Items.ToList();
+        var mappedItems = new List<VacunoListadoItem>(pagedItems.Count);
+
+        foreach (var x in pagedItems)
+        {
+            var raza = await _readRepository.ObtenerNombreCatalogoAsync("raza", x.RazaCode, cancellationToken);
+            var adq = await _readRepository.ObtenerDetallesAdquisicionAsync(x.Id, cancellationToken);
+            var est = await _readRepository.ObtenerEstadoActualAsync(x.Id, cancellationToken);
+
+            string? NormalizeCatalogValue(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim().ToLowerInvariant().Replace(' ', '_');
+
+            string? DeterminarEstado(string? estadoCode, string? estadoNombre)
+            {
+                if (string.IsNullOrWhiteSpace(estadoCode)) return NormalizeCatalogValue(estadoNombre);
+                return estadoCode.ToUpperInvariant() switch {
+                    "ACTIVO" or "VIVO" => "vivo",
+                    "MUERTO" or "FALLECIDO" or "BAJA" => "muerto",
+                    _ => NormalizeCatalogValue(estadoNombre)
+                };
+            }
+
+            var procedencia = adq?.Proveedor;
+            var estado = DeterminarEstado(est?.EstadoCode, est?.EstadoNombre);
+
+            mappedItems.Add(new VacunoListadoItem(x.Id, x.Codigo, x.FechaRegistro, x.Nombre, x.FechaNacimiento, x.RazaCode, x.SexoCode, raza, procedencia, estado));
+        }
 
         var resumen = new ListarVacunosResumen(pageResult.TotalRegistros);
         var filtros = new ListarVacunosFiltros(

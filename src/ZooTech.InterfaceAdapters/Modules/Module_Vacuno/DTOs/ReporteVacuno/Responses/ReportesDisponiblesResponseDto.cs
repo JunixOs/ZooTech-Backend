@@ -10,7 +10,7 @@ public sealed record ReporteDisponibleDto(
     string Descripcion);
 
 public sealed record ReportesDisponiblesFiltrosDto(
-    DateOnly FechaDesde,
-    DateOnly FechaHasta,
+    DateOnly? FechaDesde,
+    DateOnly? FechaHasta,
     string? Q);
 
