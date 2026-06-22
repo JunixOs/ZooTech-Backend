@@ -22,7 +22,8 @@ public sealed class ListarVacunosInteractor : IListarVacunosInputPort
             FechaNacimiento: x.Vacuno.FechaNacimiento,
             RazaCode: x.Vacuno.RazaCode,
             SexoCode: x.Vacuno.SexoCode,
-            Procedencia: x.Procedencia)).ToList();
+            Procedencia: x.Procedencia,
+            IsDeleted: x.Vacuno.IsDeleted)).ToList();
 
         return new ListarVacunosOutput(items);
     }

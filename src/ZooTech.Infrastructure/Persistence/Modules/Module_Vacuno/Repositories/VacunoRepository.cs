@@ -26,6 +26,16 @@ public sealed class VacunoRepository : IVacunoRepository
         return entities.Select(ToDomain).ToList();
     }
 
+    public async Task<List<Vacuno>> ListAllWithDeletedAsync(CancellationToken cancellationToken = default)
+    {
+        var entities = await _context.vacunos
+            .AsNoTracking()
+            .OrderBy(v => v.codigo)
+            .ToListAsync(cancellationToken);
+
+        return entities.Select(ToDomain).ToList();
+    }
+
     public async Task<List<(Vacuno Vacuno, string? Procedencia)>> ListAllForDisplayAsync(CancellationToken cancellationToken = default)
     {
         var entities = await _context.vacunos
@@ -34,7 +44,6 @@ public sealed class VacunoRepository : IVacunoRepository
                 .ThenInclude(g => g.distrito_codigoNavigation)
                     .ThenInclude(d => d.provincia_codigoNavigation)
                         .ThenInclude(p => p.departamento_codigoNavigation)
-            .Where(v => v.deleted_at == null)
             .OrderBy(v => v.codigo)
             .ToListAsync(cancellationToken);
 
@@ -60,6 +69,15 @@ public sealed class VacunoRepository : IVacunoRepository
         var entity = await _context.vacunos
             .AsNoTracking()
             .FirstOrDefaultAsync(v => v.id == id && v.deleted_at == null, cancellationToken);
+
+        return entity is null ? null : ToDomain(entity);
+    }
+
+    public async Task<Vacuno?> GetByCodigoAsync(string codigo, CancellationToken cancellationToken = default)
+    {
+        var entity = await _context.vacunos
+            .AsNoTracking()
+            .FirstOrDefaultAsync(v => v.codigo == codigo.Trim() && v.deleted_at == null, cancellationToken);
 
         return entity is null ? null : ToDomain(entity);
     }

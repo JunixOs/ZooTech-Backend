@@ -20,9 +20,10 @@ internal static class VacunoMapper
             FechaNacimiento: item.FechaNacimiento,
             RazaCode: item.RazaCode,
             SexoCode: item.SexoCode,
-            Procedencia: item.Procedencia);
+            Procedencia: item.Procedencia,
+            Estado: item.IsDeleted ? "eliminado" : "activo");
 
-    internal static CreateVacunoCommand ToCommand(CreateVacunoRequest request)
+    internal static CreateVacunoCommand ToCommand(CreateVacunoRequest request, long? padreId, long? madreId, long granjaId)
         => new(
             request.Codigo,
             request.Nombre,
@@ -31,12 +32,12 @@ internal static class VacunoMapper
             request.RazaCode,
             request.ColorCode,
             request.SexoCode,
-            request.PadreId,
-            request.MadreId,
-            request.GranjaId,
+            padreId,
+            madreId,
+            granjaId,
             request.Observaciones);
 
-    internal static UpdateVacunoCommand ToCommand(UpdateVacunoRequest request)
+    internal static UpdateVacunoCommand ToCommand(UpdateVacunoRequest request, long? padreId, long? madreId, long granjaId)
         => new(
             request.Nombre,
             request.FechaNacimiento,
@@ -44,9 +45,9 @@ internal static class VacunoMapper
             request.RazaCode,
             request.ColorCode,
             request.SexoCode,
-            request.PadreId,
-            request.MadreId,
-            request.GranjaId,
+            padreId,
+            madreId,
+            granjaId,
             request.Observaciones);
 
     internal static DeleteVacunoCommand ToCommand(DeleteVacunoRequest request)
@@ -88,5 +89,12 @@ internal static class VacunoMapper
             output.Observaciones,
             output.FechaRegistro,
             output.CreatedAt,
-            output.UpdatedAt);
+            output.UpdatedAt,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null);
 }

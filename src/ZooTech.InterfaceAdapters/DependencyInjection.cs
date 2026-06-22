@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ZooTech.InterfaceAdapters;
 
@@ -24,7 +24,6 @@ public static class DependencyInjection
         // ============================================
 
         // services.AddScoped<ValidationFilter>();
-
         return services;
     }
 }
