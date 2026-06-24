@@ -1,19 +1,19 @@
-using System.Globalization;
-using System.IO.Compression;
-using System.Text;
-using System.Xml;
-using ZooTech.Application.Modules.Module_Sanidad.DTOs.Responses;
+    using System.Globalization;
+    using System.IO.Compression;
+    using System.Text;
+    using System.Xml;
+    using ZooTech.Application.Modules.Module_Sanidad.DTOs.Responses;
 
-namespace ZooTech.Application.Modules.Module_Sanidad.Services;
+    namespace ZooTech.Application.Modules.Module_Sanidad.Services;
 
-public class TriajeReporteFileService
-{
-    private const string ExcelContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-    private const string PdfContentType = "application/pdf";
-
-    public ReporteTriajesArchivoResponse Generate(IEnumerable<TriajeResponse> triajes, string formato)
+    public class TriajeReporteFileService
     {
-        var rows = triajes.ToList();
+        private const string ExcelContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+        private const string PdfContentType = "application/pdf";
+
+        public ReporteTriajesArchivoResponse Generate(IEnumerable<TriajeReporteResponse> triajes, string formato)
+        {
+            var rows = triajes.ToList();
         var normalizedFormat = formato.Trim().ToLowerInvariant();
         var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture);
 
@@ -37,7 +37,7 @@ public class TriajeReporteFileService
         };
     }
 
-    private static byte[] BuildExcel(IReadOnlyCollection<TriajeResponse> rows)
+    private static byte[] BuildExcel(IReadOnlyCollection<TriajeReporteResponse> rows)
     {
         using var stream = new MemoryStream();
         using (var archive = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen: true))
@@ -77,7 +77,7 @@ public class TriajeReporteFileService
         return stream.ToArray();
     }
 
-    private static string BuildSheet(IEnumerable<TriajeResponse> rows)
+    private static string BuildSheet(IEnumerable<TriajeReporteResponse> rows)
     {
         var builder = new StringBuilder();
         builder.Append("""
@@ -99,7 +99,7 @@ public class TriajeReporteFileService
                 row.Codigo,
                 row.FechaHora.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                 row.FechaHora.ToString("HH:mm:ss", CultureInfo.InvariantCulture),
-                row.VacunoNombre,
+                row.VacunoNombre ?? string.Empty,
                 row.TipoPesoCode,
                 row.PesoKg.ToString(CultureInfo.InvariantCulture),
                 row.Observaciones ?? string.Empty
@@ -148,7 +148,7 @@ public class TriajeReporteFileService
         writer.Write(content);
     }
 
-    private static byte[] BuildPdf(IReadOnlyCollection<TriajeResponse> rows)
+    private static byte[] BuildPdf(IReadOnlyCollection<TriajeReporteResponse> rows)
     {
         var lines = new List<string>
         {
@@ -159,7 +159,7 @@ public class TriajeReporteFileService
         };
 
         lines.AddRange(rows.Select(row =>
-            $"{row.Codigo} | {row.FechaHora:yyyy-MM-dd} | {row.FechaHora:HH:mm:ss} | {Trim(row.VacunoNombre, 18)} | {Trim(row.TipoPesoCode, 18)} | {row.PesoKg.ToString(CultureInfo.InvariantCulture)} | {Trim(row.Observaciones ?? string.Empty, 30)}"));
+            $"{row.Codigo} | {row.FechaHora:yyyy-MM-dd} | {row.FechaHora:HH:mm:ss} | {Trim(row.VacunoNombre ?? string.Empty, 18)} | {Trim(row.TipoPesoCode, 18)} | {row.PesoKg.ToString(CultureInfo.InvariantCulture)} | {Trim(row.Observaciones ?? string.Empty, 30)}"));
 
         var pageContents = lines
             .Chunk(38)

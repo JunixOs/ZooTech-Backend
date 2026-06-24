@@ -20,4 +20,5 @@ public interface ITriajeRepository
     Task<string> GenerateCodigoAsync(CancellationToken cancellationToken = default);
 
     Task<IEnumerable<TriajeHistorialItem>> GetHistorialByVacunoIdAsync(long vacunoId, CancellationToken cancellationToken = default);
+    Task<IEnumerable<TriajeDetallePorVacunoItem>> GetDetallesByVacunoIdAsync(long vacunoId, CancellationToken cancellationToken = default);
 }

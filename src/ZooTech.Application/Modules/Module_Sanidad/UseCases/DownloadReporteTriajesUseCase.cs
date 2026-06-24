@@ -34,7 +34,7 @@ public class DownloadReporteTriajesUseCase
             tipoPeso,
             pesoKg);
 
-        var response = triajes.Select(t => new TriajeResponse
+        var response = triajes.Select(t => new TriajeReporteResponse
         {
             Id = t.Id,
             Codigo = t.Codigo,

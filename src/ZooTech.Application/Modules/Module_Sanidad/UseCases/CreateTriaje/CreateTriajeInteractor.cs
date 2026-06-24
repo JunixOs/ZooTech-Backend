@@ -31,7 +31,6 @@ public sealed class CreateTriajeInteractor : ICreateTriajeInputPort
             tipoPesoCode: command.TipoPesoCode,
             pesoKg: command.PesoKg,
             observaciones: command.Observaciones,
-            estadoRegistroCode: command.EstadoRegistroCode,
             encargadoUsuarioId: command.EncargadoUsuarioId,
             utcNow: utcNow);
 

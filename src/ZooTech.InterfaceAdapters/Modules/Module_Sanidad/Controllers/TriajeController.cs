@@ -9,6 +9,7 @@ using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetHistorialByVacunoId
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetTriajeById;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.UpdateTriaje;
 using ZooTech.InterfaceAdapters.DTOs;
+
 using ZooTech.InterfaceAdapters.Modules.Module_Sanidad.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_Sanidad.DTOs.Responses;
 using ZooTech.InterfaceAdapters.Modules.Module_Sanidad.Mappers;
@@ -85,15 +86,15 @@ public sealed class TriajeController : ControllerBase
             GeneralResponseDTO<TriajeResponse>.Ok(TriajeMapper.ToResponse(output)));
     }
 
-    [HttpPut("{id:long}")]
-    [ProducesResponseType(typeof(GeneralResponseDTO<TriajeResponse>), StatusCodes.Status200OK)]
+    [HttpPatch("{id:long}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Update(long id, [FromBody] TriajeRequest request, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Update(long id, [FromBody] UpdateTriajeRequest request, CancellationToken cancellationToken = default)
     {
         var command = TriajeMapper.ToUpdateCommand(request);
-        var output = await _updateInputPort.HandleAsync(id, command, cancellationToken);
-        return Ok(GeneralResponseDTO<TriajeResponse>.Ok(TriajeMapper.ToResponse(output)));
+        await _updateInputPort.HandleAsync(id, command, cancellationToken);
+        return NoContent();
     }
 
     [HttpDelete("{id:long}")]

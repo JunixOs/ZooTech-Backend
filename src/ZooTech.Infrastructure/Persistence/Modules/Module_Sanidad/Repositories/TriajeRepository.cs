@@ -146,9 +146,9 @@ public class TriajeRepository : ITriajeRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<IEnumerable<TriajeDetallePorVacunoItem>> GetDetallesByVacunoIdAsync(long vacunoId)
+    public async Task<IEnumerable<TriajeDetallePorVacunoItem>> GetDetallesByVacunoIdAsync(long vacunoId, CancellationToken cancellationToken = default)
     {
-        return await _context.Triajes
+        return await _context.triajes
             .AsNoTracking()
             .Include(t => t.tipo_peso_codeNavigation)
             .Where(t => t.vacuno_id == vacunoId && t.deleted_at == null)
@@ -161,7 +161,7 @@ public class TriajeRepository : ITriajeRepository
                 PesoKg = t.peso_kg,
                 Observaciones = t.observaciones
             })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
 

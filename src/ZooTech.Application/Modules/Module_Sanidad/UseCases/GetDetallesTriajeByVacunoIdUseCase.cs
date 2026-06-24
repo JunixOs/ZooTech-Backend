@@ -4,7 +4,7 @@ using ZooTech.Domain.Module_Sanidad.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_Sanidad.UseCases;
 
-public class GetDetallesTriajeByVacunoIdUseCase
+public sealed class GetDetallesTriajeByVacunoIdUseCase
 {
     private readonly ITriajeRepository _repository;
 
@@ -13,9 +13,9 @@ public class GetDetallesTriajeByVacunoIdUseCase
         _repository = repository;
     }
 
-    public async Task<IEnumerable<TriajeDetallePorVacunoResponse>> ExecuteAsync(long vacunoId)
+    public async Task<IEnumerable<TriajeDetallePorVacunoResponse>> ExecuteAsync(long vacunoId, CancellationToken cancellationToken = default)
     {
-        var items = await _repository.GetDetallesByVacunoIdAsync(vacunoId);
+        var items = await _repository.GetDetallesByVacunoIdAsync(vacunoId, cancellationToken);
 
         return items.Select(item => new TriajeDetallePorVacunoResponse
         {
