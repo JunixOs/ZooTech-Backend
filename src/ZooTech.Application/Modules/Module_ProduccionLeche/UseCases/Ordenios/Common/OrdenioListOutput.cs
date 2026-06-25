@@ -1,7 +1,11 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
 namespace ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Common;
 
-public sealed record OrdenioOutput(
-    long Id,
+public sealed record OrdenioListOutput(
+    long? Id,
     string Codigo,
     DateTime FechaHora,
     long VacunoId,
