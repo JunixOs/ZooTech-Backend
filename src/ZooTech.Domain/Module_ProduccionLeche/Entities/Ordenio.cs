@@ -13,6 +13,7 @@ public sealed class Ordenio
         long encargadoUsuarioId,
         decimal litros,
         string estadoOrdenioCode,
+        string encargadoNombre,
         string? observaciones,
         DateTime createdAt,
         DateTime updatedAt,
@@ -28,6 +29,7 @@ public sealed class Ordenio
         VacunoId = vacunoId;
         NombreVacuno = nombreVacuno;
         EncargadoUsuarioId = encargadoUsuarioId;
+        EncargadoNombre = encargadoNombre;
         Litros = litros;
         EstadoOrdenioCode = estadoOrdenioCode;
         Observaciones = observaciones;
@@ -46,6 +48,7 @@ public sealed class Ordenio
     public long VacunoId { get; private set; }
     public string NombreVacuno { get; private set; }
     public long EncargadoUsuarioId { get; private set; }
+    public string EncargadoNombre { get; private set; }
     public decimal Litros { get; private set; }
     public string EstadoOrdenioCode { get; private set; }
     public string? Observaciones { get; private set; }
@@ -79,6 +82,7 @@ public sealed class Ordenio
             vacunoId: vacunoId,
             nombreVacuno: string.Empty,
             encargadoUsuarioId: encargadoUsuarioId,
+            encargadoNombre: string.Empty,
             litros: litros,
             estadoOrdenioCode: estadoOrdenioCode.Trim(),
             observaciones: SanitizeObservaciones(observaciones),
@@ -98,6 +102,7 @@ public sealed class Ordenio
         long vacunoId,
         string nombreVacuno,
         long encargadoUsuarioId,
+        string encargadoNombre,
         decimal litros,
         string estadoOrdenioCode,
         string? observaciones,
@@ -120,6 +125,7 @@ public sealed class Ordenio
             encargadoUsuarioId,
             litros,
             estadoOrdenioCode.Trim(),
+            encargadoNombre,
             SanitizeObservaciones(observaciones),
             createdAt,
             updatedAt,

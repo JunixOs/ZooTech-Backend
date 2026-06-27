@@ -7,6 +7,7 @@ public sealed record OrdenioResponse(
     long VacunoId,
     string NombreVacuno,
     long EncargadoUsuarioId,
+    string EncargadoNombre,
     decimal Litros,
     string EstadoOrdenioCode,
     string? Observaciones,

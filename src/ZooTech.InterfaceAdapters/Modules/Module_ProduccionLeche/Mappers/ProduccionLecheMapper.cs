@@ -56,6 +56,7 @@ public static class ProduccionLecheMapper
             output.VacunoId,
             output.NombreVacuno,
             output.EncargadoUsuarioId,
+            output.EncargadoNombre,
             output.Litros,
             output.EstadoOrdenioCode,
             output.Observaciones,

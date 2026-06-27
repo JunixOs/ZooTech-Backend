@@ -12,6 +12,7 @@ internal static class OrdenioMapper
             ordenio.VacunoId,
             ordenio.NombreVacuno,
             ordenio.EncargadoUsuarioId,
+            ordenio.EncargadoNombre,
             ordenio.Litros,
             ordenio.EstadoOrdenioCode,
             ordenio.Observaciones,

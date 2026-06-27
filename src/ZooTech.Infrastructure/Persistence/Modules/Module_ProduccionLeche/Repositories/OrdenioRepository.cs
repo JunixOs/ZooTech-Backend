@@ -39,6 +39,7 @@ public sealed class OrdenioRepository : IOrdenioRepository
     {
         var entity = await _dbContext.ordenios
             .Include(x => x.vacuno)
+            .Include(x => x.encargado_usuario)
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.id == id && x.deleted_at == null, cancellationToken);
 
@@ -75,6 +76,7 @@ public sealed class OrdenioRepository : IOrdenioRepository
 
         var entities = await queryable
             .Include(x => x.vacuno)
+            .Include(x => x.encargado_usuario)
             .OrderByDescending(x => x.fecha_hora)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -88,12 +90,14 @@ public sealed class OrdenioRepository : IOrdenioRepository
         var entity = ToEntity(ordenio);
         _dbContext.ordenios.Add(entity);
         await _dbContext.SaveChangesAsync(cancellationToken);
+        await _dbContext.Entry(entity).Reference(x => x.encargado_usuario).LoadAsync(cancellationToken);
         return ToDomain(entity);
     }
 
     public async Task<Ordenio> UpdateAsync(Ordenio ordenio, CancellationToken cancellationToken)
     {
         var entity = await _dbContext.ordenios
+            .Include(x => x.encargado_usuario)
             .FirstOrDefaultAsync(x => x.id == ordenio.Id, cancellationToken)
             ?? throw new InvalidOperationException("No se encontró el ordeño para actualizar.");
 
@@ -120,6 +124,7 @@ public sealed class OrdenioRepository : IOrdenioRepository
             entity.vacuno_id,
             entity.vacuno?.nombre ?? string.Empty,
             entity.encargado_usuario_id,
+            entity.encargado_usuario?.nombre_completo ?? string.Empty,
             entity.litros,
             entity.estado_ordenio_code,
             entity.observaciones,
