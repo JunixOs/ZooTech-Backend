@@ -28,7 +28,7 @@ namespace ZooTech.Infrastructure.Identity
             }
         }
 
-        public string? UserName =>
+        public string? Email =>
             User?.FindFirstValue(ClaimTypes.Name);
 
         public string? Role =>
