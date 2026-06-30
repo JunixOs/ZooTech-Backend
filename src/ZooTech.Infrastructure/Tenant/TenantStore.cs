@@ -26,26 +26,28 @@ namespace ZooTech.Infrastructure.Tenant
                 return tenantCached;
             }
 
-            var tenantInDb = await _tenantCatalogDb.tenants
+            var tenantInfo = await _tenantCatalogDb.tenants
                 .AsNoTracking()
                 .Include(t => t.address)
                 .Include(t => t.tenant_database_connection)
-                .FirstOrDefaultAsync(t => t.subdomain == subDomain);
+                .Select((t) =>
+                    new TenantInfo
+                    {
+                        Id = t.id,
+                        SubDomain = t.subdomain,
+                        Code = t.code,
+                        DatabaseName = t.tenant_database_connection.database_name,
+                        IsDatabaseActive = t.tenant_database_connection.is_active,
+                        Status = Enum.Parse<TenantStatus>(t.status),
+                        Email = t.email
+                    }
+                )
+                .FirstOrDefaultAsync();
 
-            if (tenantInDb == null || tenantInDb.status == TenantStatus.INACTIVE.ToString() || !tenantInDb.tenant_database_connection.is_active)
+            if (tenantInfo == null || tenantInfo.Status.Equals(TenantStatus.INACTIVE) || !tenantInfo.IsDatabaseActive)
             {
                 return null;
             }
-
-            var tenantInfo = new TenantInfo
-            {
-                Id = tenantInDb.id,
-                SubDomain = tenantInDb.subdomain,
-                Code = tenantInDb.code,
-                DatabaseName = tenantInDb.tenant_database_connection.database_name,
-                Status = Enum.Parse<TenantStatus>(tenantInDb.status),
-                Email = tenantInDb.email
-            };
 
             _cache.Set(cacheKey, tenantInfo, TimeSpan.FromMinutes(5));
 

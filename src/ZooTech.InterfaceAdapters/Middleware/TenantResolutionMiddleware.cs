@@ -28,7 +28,7 @@ namespace ZooTech.InterfaceAdapters.Middleware
             ITenantContext tenantContext
         )
         {
-            var domain = context.Request.Headers["X-Tenant"].FirstOrDefault();
+            var domain = context.Request.Headers["X-Tenant-Url"].FirstOrDefault();
 
             if(domain == null)
             {
@@ -44,6 +44,12 @@ namespace ZooTech.InterfaceAdapters.Middleware
                 return;
             }
 
+            string type = "tenant";
+            if(subDomain == _adminSubDomain)
+            {
+                type = "admin";
+            }
+
             var tenant = await tenantStore.GetBySubDomainAsync(subDomain);
 
             if (tenant == null)
@@ -55,6 +61,8 @@ namespace ZooTech.InterfaceAdapters.Middleware
             tenantContext.SetTenant(
                 tenant.Id,
                 tenant.Code,
+                tenant.LegalName,
+                type,
                 tenant.SubDomain,
                 tenant.DatabaseName
             );

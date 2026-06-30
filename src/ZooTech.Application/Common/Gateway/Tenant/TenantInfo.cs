@@ -9,6 +9,7 @@ namespace ZooTech.Application.Common.Gateway.Tenant
         public string LegalName { get; set; } = default!;
         public string Code { get; set; } = default!;
         public string DatabaseName { get; set; } = default!;
+        public bool IsDatabaseActive { get; set; }
         public TenantStatus Status { get; set; } = TenantStatus.TRIAL;
         public string Email { get; set; } = default!;
     }

@@ -1,7 +1,11 @@
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 using StackExchange.Redis;
+using ZooTech.Application.Common.Gateway.Identity;
 using ZooTech.Application.Common.Gateway.Auditing;
 using ZooTech.Application.Common.Gateway.Caching;
 using ZooTech.Application.Common.Gateway.Context;
@@ -14,6 +18,7 @@ using ZooTech.Application.Common.Gateway.Repositories.Parametrization;
 using ZooTech.Application.Common.Gateway.Tenant;
 using ZooTech.Infrastructure.Auditing.MongoDb;
 using ZooTech.Infrastructure.Caching;
+using ZooTech.Infrastructure.Identity;
 using ZooTech.Infrastructure.Parametrization;
 using ZooTech.Infrastructure.Parametrization.Features;
 using ZooTech.Infrastructure.Parametrization.Rules;
@@ -71,6 +76,38 @@ public static class DependencyInjection
 
         // Multi-Instance Sync (Phase 4)
         services.AddHostedService<ConfigInvalidationSubscriber>();
+
+        // JWT
+        var jwt = configuration.GetSection("Jwt");
+        services.Configure<JwtSettings>(
+            configuration.GetSection("Jwt")
+        );
+        services.AddScoped<IJwtService , JwtService>();
+        services
+            .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+
+                    ValidIssuer = jwt["Issuer"],
+                    ValidAudience = jwt["Audience"],
+
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(jwt["SecretKey"]!)
+                    )
+                };
+            });
+
+            services.AddAuthorization();
+            services.AddScoped<IPasswordHasher , PasswordHasher>();
+
+            services.AddHttpContextAccessor();
+            services.AddScoped<ICurrentUserService , CurrentUserService>();
 
         return services;
     }

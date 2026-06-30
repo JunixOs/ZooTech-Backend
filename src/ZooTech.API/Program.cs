@@ -4,14 +4,14 @@ using ZooTech.Infrastructure;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.InterfaceAdapters;
 using ZooTech.InterfaceAdapters.Middleware;
-using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
+using ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // ======= Configuracion Swagger =======
 builder.Services
     .AddControllers()
-    .AddApplicationPart(typeof(HomeController).Assembly);
+    .AddApplicationPart(typeof(TenancingController).Assembly);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -71,6 +71,12 @@ var app = builder.Build();
 app.UseMiddleware<TenantResolutionMiddleware>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 // ===== Configurar Middlewares =====
+
+// ===== Configurar JWT =====
+app.UseAuthentication();
+app.UseAuthorization();
+// ===== Configurar JWT =====
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

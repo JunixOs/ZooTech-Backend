@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Net.Http.Headers;
 using Moq;
 using ZooTech.Application.Common.Gateway.Context;
 using ZooTech.Application.Common.Gateway.Tenant;
@@ -29,8 +30,10 @@ namespace ZooTech.InterfaceAdapters.UnitTests.Middleware
             {
                 Id = 1,
                 SubDomain = "tenant1",
+                LegalName = "tenant S.A.C",
                 Code = "TENANT_1",
                 DatabaseName = "ZooTech_tenant1_Db",
+                IsDatabaseActive = true,
                 Status = TenantStatus.ACTIVE,
                 Email = "tenant1@gmail.com"
             };
@@ -44,7 +47,7 @@ namespace ZooTech.InterfaceAdapters.UnitTests.Middleware
 
             var middleware = new TenantResolutionMiddleware(next, configuration);
             var context = new DefaultHttpContext();
-            context.Request.Host = new HostString("tenant1.zootech.com");
+            context.Request.Headers["X-Tenant-Url"] = "tenant1.zootech.com";
 
             // Act
             await middleware.InvokeAsync(context, tenantStoreMock.Object, tenantContextMock.Object);
@@ -52,7 +55,7 @@ namespace ZooTech.InterfaceAdapters.UnitTests.Middleware
             // Assert
             nextCalled.Should().BeTrue();
             tenantContextMock.Verify(
-                x => x.SetTenant(tenant.Id, tenant.Code, tenant.SubDomain, tenant.DatabaseName),
+                x => x.SetTenant(tenant.Id, tenant.Code, tenant.LegalName, "tenant", tenant.SubDomain, tenant.DatabaseName),
                 Times.Once
             );
         }
