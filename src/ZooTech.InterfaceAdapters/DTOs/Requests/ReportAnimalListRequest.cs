@@ -10,6 +10,8 @@ public sealed class ReportAnimalListRequest
 
     public string? RazaCode { get; set; }
 
+    public string? ColorCode { get; set; }
+
     public string? SexoCode { get; set; }
 
     public string? TipoAdquisicionCode { get; set; }

@@ -53,6 +53,7 @@ public sealed class AnimalReportRepository : IAnimalReportRepository
                 TipoAdquisicion = tipoAdquisicion != null ? tipoAdquisicion.nombre : DefaultText,
                 RazaCode = animal.raza_code,
                 Raza = raza != null ? raza.nombre : DefaultText,
+                ColorCode = animal.color_code,
                 Color = color != null ? color.nombre : DefaultText,
                 SexoCode = animal.sexo_code,
                 Sexo = sexo != null ? sexo.nombre : DefaultText,
@@ -74,6 +75,10 @@ public sealed class AnimalReportRepository : IAnimalReportRepository
         if (!string.IsNullOrWhiteSpace(filter.RazaCode))
         {
             query = query.Where(animal => animal.RazaCode == filter.RazaCode);
+        }
+        if (!string.IsNullOrWhiteSpace(filter.ColorCode))
+        {
+            query = query.Where(animal => animal.ColorCode == filter.ColorCode);
         }
 
         if (!string.IsNullOrWhiteSpace(filter.SexoCode))

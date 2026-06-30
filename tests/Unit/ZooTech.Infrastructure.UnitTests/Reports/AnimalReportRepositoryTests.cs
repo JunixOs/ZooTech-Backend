@@ -22,6 +22,18 @@ public class AnimalReportRepositoryTests
     }
 
     [Fact]
+    public async Task GetAnimalListAsync_withColorCode_ShouldFilterByColorCode() {
+        await using var context = CreateContext();
+        Seed(context);
+        var repository = new AnimalReportRepository(context);
+
+        var items = await repository.GetAnimalListAsync(CreateFilter(colorCode: "CAF"));
+
+        Assert.Single(items);
+        Assert.Equal("VOO2", items.Single().Codigo);
+    }
+
+        [Fact]
     public async Task GetAnimalListAsync_WithSexoCode_ShouldFilterBySexo()
     {
         await using var context = CreateContext();
@@ -83,6 +95,7 @@ public class AnimalReportRepositoryTests
         var items = await repository.GetAnimalListAsync(CreateFilter(
             keyword: "Lola",
             razaCode: "HOL",
+            colorCode: "NEG", 
             sexoCode: "H",
             tipoAdquisicionCode: "NAC",
             granjaId: 1,
@@ -115,6 +128,7 @@ public class AnimalReportRepositoryTests
     private static ReportAnimalListFilter CreateFilter(
         string? keyword = null,
         string? razaCode = null,
+        string? colorCode = null,
         string? sexoCode = null,
         string? tipoAdquisicionCode = null,
         long? granjaId = null,
@@ -125,6 +139,7 @@ public class AnimalReportRepositoryTests
             new DateOnly(2023, 1, 31),
             keyword,
             razaCode,
+            colorCode,
             sexoCode,
             tipoAdquisicionCode,
             granjaId,

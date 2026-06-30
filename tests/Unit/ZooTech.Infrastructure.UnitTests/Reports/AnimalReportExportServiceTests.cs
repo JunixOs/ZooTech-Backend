@@ -72,6 +72,7 @@ public class AnimalReportExportServiceTests
             new DateOnly(2023, 1, 31),
             "Lola",
             "HOL",
+            "NEG",
             "H",
             "NAC",
             1,

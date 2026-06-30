@@ -7,7 +7,7 @@ using ZooTech.InterfaceAdapters.Presenters;
 namespace ZooTech.InterfaceAdapters.Controllers;
 
 [ApiController]
-[Route("api/reports/animals")]
+[Route("api/v1/vacunos/reportes")]
 [ApiExplorerSettings(GroupName = "public")]
 public sealed class ReportsController : ControllerBase
 {
@@ -57,6 +57,7 @@ public sealed class ReportsController : ControllerBase
             request.FechaFin,
             request.Keyword,
             request.RazaCode,
+            request.ColorCode,
             request.SexoCode,
             request.TipoAdquisicionCode,
             request.GranjaId,

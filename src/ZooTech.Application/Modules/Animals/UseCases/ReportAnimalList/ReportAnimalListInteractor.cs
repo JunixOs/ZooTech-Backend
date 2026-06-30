@@ -41,6 +41,7 @@ public sealed class ReportAnimalListInteractor : IReportAnimalListInputPort
                 filter.FechaFin,
                 filter.Keyword,
                 filter.RazaCode,
+                filter.ColorCode,
                 filter.SexoCode,
                 filter.TipoAdquisicionCode,
                 filter.GranjaId,

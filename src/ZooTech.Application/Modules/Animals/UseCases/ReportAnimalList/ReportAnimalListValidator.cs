@@ -17,6 +17,7 @@ public sealed class ReportAnimalListValidator
             ? null
             : command.Keyword.Trim();
         var razaCode = NormalizeCode(command.RazaCode);
+        var colorCode = NormalizeCode(command.ColorCode);
         var sexoCode = NormalizeCode(command.SexoCode);
         var tipoAdquisicionCode = NormalizeCode(command.TipoAdquisicionCode);
         var estadoCode = NormalizeCode(command.EstadoCode);
@@ -61,6 +62,7 @@ public sealed class ReportAnimalListValidator
             fechaFin,
             keyword,
             razaCode,
+            colorCode,
             sexoCode,
             tipoAdquisicionCode,
             command.GranjaId,

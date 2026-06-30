@@ -5,6 +5,7 @@ public sealed record ReportAnimalListOutput(
     DateOnly FechaFin,
     string? Keyword,
     string? RazaCode,
+    string? ColorCode,
     string? SexoCode,
     string? TipoAdquisicionCode,
     long? GranjaId,

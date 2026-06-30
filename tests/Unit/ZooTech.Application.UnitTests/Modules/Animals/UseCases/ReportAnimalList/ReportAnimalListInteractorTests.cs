@@ -20,6 +20,7 @@ public class ReportAnimalListInteractorTests
             FechaFin: null,
             Keyword: null,
             RazaCode: null,
+            ColorCode: null,
             SexoCode: null,
             TipoAdquisicionCode: null,
             GranjaId: null,
@@ -86,12 +87,14 @@ public class ReportAnimalListInteractorTests
 
         var filter = validator.ValidateAndNormalize(CreateCommand(
             razaCode: " HOL ",
+            colorCode: "NEG",
             sexoCode: " H ",
             tipoAdquisicionCode: " NAC ",
             granjaId: 8,
             estadoCode: " ACT "));
 
         Assert.Equal("HOL", filter.RazaCode);
+        Assert.Equal("NEG", filter.ColorCode);
         Assert.Equal("H", filter.SexoCode);
         Assert.Equal("NAC", filter.TipoAdquisicionCode);
         Assert.Equal(8, filter.GranjaId);
@@ -194,6 +197,7 @@ public class ReportAnimalListInteractorTests
         DateOnly? fechaFin = null,
         string? keyword = null,
         string? razaCode = null,
+        string? colorCode = null,
         string? sexoCode = null,
         string? tipoAdquisicionCode = null,
         long? granjaId = null,
@@ -206,6 +210,7 @@ public class ReportAnimalListInteractorTests
             fechaFin ?? new DateOnly(2023, 1, 31),
             keyword,
             razaCode,
+            colorCode,
             sexoCode,
             tipoAdquisicionCode,
             granjaId,
