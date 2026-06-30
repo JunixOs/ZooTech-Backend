@@ -1,0 +1,9 @@
+@ZooTech.API_HostAddress = http://localhost:5085
+
+GET {{ZooTech.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
+
+GET {{ZooTech.API_HostAddress}}/v1/produccion-leche/
+Accept: application/json

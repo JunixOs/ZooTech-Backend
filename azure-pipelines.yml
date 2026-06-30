@@ -1,0 +1,35 @@
+trigger:
+  branches:
+    include:
+      - develop
+pr:
+  branches:
+    include:
+      - develop
+      
+pool:
+  name: 'Default'
+
+variables:
+  - group: SonarQube
+
+steps:
+  - script: |
+      echo Tools already installed
+    displayName: 'Install tools'
+
+  - script: |
+      D:\tools\dotnet-sonarscanner begin /k:"zootech-backend" /n:"ZooTech Backend" /d:sonar.token="$(SONAR_TOKEN)" /d:sonar.host.url="$(SONAR_HOST_URL)" /d:sonar.cs.vscoveragexml.reportsPaths="coverage.xml"
+    displayName: 'SonarQube Begin'
+
+  - script: |
+      dotnet build "ZooTech Backend - Solution.slnx" --no-incremental --disable-build-servers
+    displayName: 'Build'
+
+  - script: |
+      D:\tools\dotnet-coverage collect "dotnet test ""ZooTech Backend - Solution.slnx"" --no-build" -f xml -o "coverage.xml"
+    displayName: 'Test & Coverage'
+
+  - script: |
+      D:\tools\dotnet-sonarscanner end /d:sonar.token="$(SONAR_TOKEN)"
+    displayName: 'SonarQube End'
