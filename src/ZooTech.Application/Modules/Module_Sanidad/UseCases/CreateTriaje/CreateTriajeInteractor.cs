@@ -1,5 +1,6 @@
 using FluentValidation;
 using ZooTech.Application.Common.Gateway.Time;
+using ZooTech.Domain.Common.Interfaces;
 using ZooTech.Domain.Module_Sanidad.Entities;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
 
@@ -10,12 +11,18 @@ public sealed class CreateTriajeInteractor : ICreateTriajeInputPort
     private readonly ITriajeRepository _repository;
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly IValidator<CreateTriajeCommand> _validator;
+    private readonly IEstadoRegistroRepository _estadoRegistroRepository;
 
-    public CreateTriajeInteractor(ITriajeRepository repository, IDateTimeProvider dateTimeProvider, IValidator<CreateTriajeCommand> validator)
+    public CreateTriajeInteractor(
+        ITriajeRepository repository,
+        IDateTimeProvider dateTimeProvider,
+        IValidator<CreateTriajeCommand> validator,
+        IEstadoRegistroRepository estadoRegistroRepository)
     {
         _repository = repository;
         _dateTimeProvider = dateTimeProvider;
         _validator = validator;
+        _estadoRegistroRepository = estadoRegistroRepository;
     }
 
     public async Task<CreateTriajeOutput> HandleAsync(CreateTriajeCommand command, CancellationToken cancellationToken = default)
@@ -23,6 +30,7 @@ public sealed class CreateTriajeInteractor : ICreateTriajeInputPort
         await _validator.ValidateAndThrowAsync(command, cancellationToken);
         var codigo = await _repository.GenerateCodigoAsync(cancellationToken);
         var utcNow = _dateTimeProvider.ServerNow;
+        var estadoActivo = await _estadoRegistroRepository.GetActiveCodeAsync(cancellationToken);
 
         var triaje = Triaje.CreateNew(
             codigo: codigo,
@@ -31,6 +39,7 @@ public sealed class CreateTriajeInteractor : ICreateTriajeInputPort
             tipoPesoCode: command.TipoPesoCode,
             pesoKg: command.PesoKg,
             observaciones: command.Observaciones,
+            estadoRegistroCode: estadoActivo,
             encargadoUsuarioId: command.EncargadoUsuarioId,
             utcNow: utcNow);
 

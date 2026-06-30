@@ -69,10 +69,12 @@ public sealed class Triaje
         string tipoPesoCode,
         decimal pesoKg,
         string? observaciones,
+        string? estadoRegistroCode,
         long? encargadoUsuarioId,
         DateTime utcNow)
     {
         Validate(vacunoId, tipoPesoCode, pesoKg, fechaHora);
+        ArgumentException.ThrowIfNullOrWhiteSpace(estadoRegistroCode);
         return new Triaje(
             id: 0,
             codigo: codigo.Trim(),
@@ -82,7 +84,7 @@ public sealed class Triaje
             tipoPesoCode: tipoPesoCode.Trim(),
             pesoKg: pesoKg,
             observaciones: SanitizeObservaciones(observaciones),
-            estadoRegistroCode: "ACTIVO",
+            estadoRegistroCode: estadoRegistroCode.Trim(),
             encargadoUsuarioId: encargadoUsuarioId,
             createdBy: encargadoUsuarioId,
             updatedBy: encargadoUsuarioId,
@@ -124,7 +126,7 @@ public sealed class Triaje
             pesoKg, 
             SanitizeObservaciones(observaciones), 
             estadoRegistroCode,
-            encargadoUsuarioId, 
+            encargadoUsuarioId,
             createdBy, 
             updatedBy, 
             deletedBy,
