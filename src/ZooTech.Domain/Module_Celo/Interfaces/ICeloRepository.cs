@@ -4,7 +4,7 @@ namespace ZooTech.Domain.Module_Celo.Interfaces;
 
 public interface ICeloRepository
 {
-    Task<List<Celo>> GetAllAsync(
+    Task<List<CeloListItem>> GetAllAsync(
         CancellationToken cancellationToken = default);
 
     Task<Dictionary<long, int>> GetVecesEnCeloCountsAsync(
