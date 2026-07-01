@@ -1,7 +1,7 @@
 using FluentAssertions;
-using ZooTech.Domain.ValueObjects;
+using ZooTech.Domain.Shared.ValueObjects;
 
-namespace ZooTech.Domain.UnitTests.ValueObjects;
+namespace ZooTech.Domain.UnitTests.Shared.ValueObjects;
 
 public class EmailTests
 {

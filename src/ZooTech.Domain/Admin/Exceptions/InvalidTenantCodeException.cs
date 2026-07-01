@@ -1,4 +1,6 @@
-namespace ZooTech.Domain.Exceptions;
+using ZooTech.Domain.Shared.Exceptions;
+
+namespace ZooTech.Domain.Admin.Exceptions;
 
 public class InvalidTenantCodeException : DomainException
 {

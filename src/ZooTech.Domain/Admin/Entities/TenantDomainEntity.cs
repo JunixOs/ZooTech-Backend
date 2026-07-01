@@ -1,6 +1,6 @@
-using ZooTech.Domain.Enums;
+using ZooTech.Domain.Admin.Enums;
 
-namespace ZooTech.Domain.Entities
+namespace ZooTech.Domain.Admin.Entities
 {
     public class TenantDomainEntity
     {

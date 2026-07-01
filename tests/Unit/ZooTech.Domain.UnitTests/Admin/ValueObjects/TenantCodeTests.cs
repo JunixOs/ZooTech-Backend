@@ -1,7 +1,7 @@
 using FluentAssertions;
-using ZooTech.Domain.ValueObjects;
+using ZooTech.Domain.Admin.ValueObjects;
 
-namespace ZooTech.Domain.UnitTests.ValueObjects;
+namespace ZooTech.Domain.UnitTests.Admin.ValueObjects;
 
 public class TenantCodeTests
 {

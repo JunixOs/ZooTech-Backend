@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace ZooTech.Domain.ValueObjects;
+namespace ZooTech.Domain.Admin.ValueObjects;
 
 public sealed record TenantCode
 {

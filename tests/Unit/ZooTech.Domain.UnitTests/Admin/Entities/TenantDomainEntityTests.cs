@@ -1,8 +1,8 @@
 using FluentAssertions;
-using ZooTech.Domain.Entities;
-using ZooTech.Domain.Enums;
+using ZooTech.Domain.Admin.Entities;
+using ZooTech.Domain.Admin.Enums;
 
-namespace ZooTech.Domain.UnitTests.Entities;
+namespace ZooTech.Domain.UnitTests.Admin.Entities;
 
 public class TenantDomainEntityTests
 {

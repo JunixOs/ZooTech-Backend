@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace ZooTech.Domain.ValueObjects;
+namespace ZooTech.Domain.Shared.ValueObjects;
 
 public sealed record Email
 {

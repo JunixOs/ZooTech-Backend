@@ -1,6 +1,6 @@
 using ZooTech.Domain.Configuration;
 
-namespace ZooTech.Domain.UnitTests;
+namespace ZooTech.Domain.UnitTests.Configuration;
 
 public sealed class ConfigurationModelsTests
 {

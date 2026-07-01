@@ -1,4 +1,4 @@
-namespace ZooTech.Domain.Exceptions;
+namespace ZooTech.Domain.Shared.Exceptions;
 
 public abstract class DomainException : Exception
 {

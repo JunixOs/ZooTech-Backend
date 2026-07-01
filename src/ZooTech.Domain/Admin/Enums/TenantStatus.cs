@@ -1,4 +1,4 @@
-namespace ZooTech.Domain.Enums
+namespace ZooTech.Domain.Admin.Enums
 {
     public enum TenantStatus
     {
