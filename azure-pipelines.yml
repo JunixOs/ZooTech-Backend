@@ -1,0 +1,68 @@
+trigger:
+  branches:
+    include:
+      - develop
+pr:
+  branches:
+    include:
+      - develop
+
+pool:
+  name: 'Default'
+
+variables:
+  - group: SonarQube
+
+steps:
+  - script: |
+      echo Tools already installed
+    displayName: 'Install tools'
+
+  - script: |
+      D:\tools\dotnet-sonarscanner begin /k:"zootech-backend" /n:"ZooTech Backend" /d:sonar.token="$(SONAR_TOKEN)" /d:sonar.host.url="$(SONAR_HOST_URL)" /d:sonar.cs.vscoveragexml.reportsPaths="coverage.xml" /d:sonar.qualitygate.wait=true
+    displayName: 'SonarQube Begin'
+
+  - script: |
+      dotnet build "ZooTech Backend - Solution.slnx" --no-incremental --disable-build-servers
+    displayName: 'Build'
+
+  - script: |
+      D:\tools\dotnet-coverage collect "dotnet test ""ZooTech Backend - Solution.slnx"" --no-build" -f xml -o "coverage.xml"
+    displayName: 'Test & Coverage'
+
+  - script: |
+      D:\tools\dotnet-sonarscanner end /d:sonar.token="$(SONAR_TOKEN)"
+    displayName: 'SonarQube End'
+
+  # ── PUBLISH: genera la version lista para produccion ──
+  - powershell: |
+      dotnet publish "src\ZooTech.API\ZooTech.API.csproj" -c Release -o "$(Build.SourcesDirectory)\publish"
+      if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      if (-not (Test-Path "$(Build.SourcesDirectory)\publish\ZooTech.API.dll")) {
+        Write-Host "##[error]No se genero ZooTech.API.dll en publish"
+        exit 1
+      }
+      Write-Host "Publish completado correctamente."
+    displayName: 'Publish API'
+    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+
+  # ── DEPLOY con app_offline (libera los .dll sin permisos de admin) ──
+  - powershell: |
+      $dest = "C:\sites\zootech-api"
+      $src  = "$(Build.SourcesDirectory)\publish"
+
+      Write-Host "Poniendo app_offline para liberar los DLL..."
+      New-Item -Path "$dest\app_offline.htm" -ItemType File -Force | Out-Null
+      Start-Sleep -Seconds 3
+
+      Write-Host "Copiando archivos desde $src ..."
+      Copy-Item -Path "$src\*" -Destination $dest -Recurse -Force
+
+      Write-Host "Quitando app_offline para reactivar la app..."
+      Remove-Item -Path "$dest\app_offline.htm" -Force
+
+      Write-Host "Deploy completado. Archivos en destino:"
+      Get-ChildItem -Path $dest | Select-Object Name
+    displayName: 'Deploy to IIS'
+    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
