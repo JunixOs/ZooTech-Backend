@@ -62,6 +62,7 @@ namespace ZooTech.InterfaceAdapters.Middleware
                 tenant.Id,
                 tenant.Code,
                 tenant.LegalName,
+                tenant.DisplayName,
                 type,
                 tenant.SubDomain,
                 tenant.DatabaseName

@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using ZooTech.Application.Common.Gateway.Tenant;
-using ZooTech.Domain.Enums;
+using ZooTech.Domain.Admin.Enums;
 using ZooTech.Infrastructure.Persistence.Context;
 
 namespace ZooTech.Infrastructure.Tenant
@@ -35,6 +35,8 @@ namespace ZooTech.Infrastructure.Tenant
                     {
                         Id = t.id,
                         SubDomain = t.subdomain,
+                        LegalName = t.legal_name,
+                        DisplayName = t.display_name,
                         Code = t.code,
                         DatabaseName = t.tenant_database_connection.database_name,
                         IsDatabaseActive = t.tenant_database_connection.is_active,

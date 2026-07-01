@@ -1,4 +1,4 @@
-using ZooTech.Domain.Enums;
+using ZooTech.Domain.Admin.Enums;
 
 namespace ZooTech.Application.Common.Gateway.Tenant
 {
@@ -7,6 +7,7 @@ namespace ZooTech.Application.Common.Gateway.Tenant
         public int Id { get; set; }
         public string SubDomain { get; set; } = default!;
         public string LegalName { get; set; } = default!;
+        public string DisplayName { get; set; } = default!;
         public string Code { get; set; } = default!;
         public string DatabaseName { get; set; } = default!;
         public bool IsDatabaseActive { get; set; }

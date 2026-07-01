@@ -1,5 +1,4 @@
 using FluentValidation;
-using ZooTech.Domain.Enums;
 
 namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant
 {
