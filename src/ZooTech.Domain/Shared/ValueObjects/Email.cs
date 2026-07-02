@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using ZooTech.Domain.Shared.Exceptions;
 
 namespace ZooTech.Domain.Shared.ValueObjects;
 
@@ -13,9 +14,9 @@ public sealed record Email
     public Email(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
-            throw new ArgumentException("Email cannot be empty.", nameof(value));
+            throw new NullEmailException("Email cannot be empty.");
         if (!EmailRegex.IsMatch(value))
-            throw new ArgumentException("Email format is invalid.", nameof(value));
+            throw new InvalidEmailException("Email format is invalid.");
         Value = value;
     }
 

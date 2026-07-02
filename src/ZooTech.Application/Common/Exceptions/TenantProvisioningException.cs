@@ -7,15 +7,14 @@ namespace ZooTech.Application.Common.Exceptions
         public override int StatusCode => (int)HttpStatusCode.InternalServerError;
 
         public TenantProvisioningException() : base(
-            "TENANT_PROVISIONING_ERORR",
-            "No se pudo crear el nuevo Tenant.",
-            null
+            "APPLICATION_TENANT_TENANT_PROVISIONING_ERROR",
+            "the new tenant cannot be created."
         )
         {
         }
 
-        public TenantProvisioningException(string message, Exception innerException)
-            : base("TENANT_PROVISIONING_ERORR", message, null)
+        public TenantProvisioningException(Exception innerException)
+            : base("TENANT_PROVISIONING_ERORR", "the new tenant cannot be created.")
         {
         }
     }

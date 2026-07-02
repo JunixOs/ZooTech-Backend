@@ -1,11 +1,10 @@
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Net.Http.Headers;
 using Moq;
 using ZooTech.Application.Common.Gateway.Context;
 using ZooTech.Application.Common.Gateway.Tenant;
-using ZooTech.Domain.Enums;
+using ZooTech.Domain.Admin.Enums;
 using ZooTech.InterfaceAdapters.Middleware;
 
 namespace ZooTech.InterfaceAdapters.UnitTests.Middleware
@@ -55,7 +54,7 @@ namespace ZooTech.InterfaceAdapters.UnitTests.Middleware
             // Assert
             nextCalled.Should().BeTrue();
             tenantContextMock.Verify(
-                x => x.SetTenant(tenant.Id, tenant.Code, tenant.LegalName, "tenant", tenant.SubDomain, tenant.DatabaseName),
+                x => x.SetTenant(tenant.Id, tenant.Code, tenant.LegalName, tenant.DisplayName, "tenant", tenant.SubDomain, tenant.DatabaseName),
                 Times.Once
             );
         }

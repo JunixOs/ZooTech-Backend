@@ -7,9 +7,8 @@ namespace ZooTech.Application.Common.Exceptions
         public override int StatusCode => (int)HttpStatusCode.NotFound;
 
         public NotFoundException(
-            string code,
-            string message
-        ) : base(code , message)
+            string moduleName
+        ) : base($"APPLICATION_{moduleName.ToUpper()}_NOT_FOUND_ERROR" , "Some elements cannot be founded.")
         {
         }
     }

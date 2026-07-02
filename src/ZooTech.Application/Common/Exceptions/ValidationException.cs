@@ -10,7 +10,7 @@ namespace ZooTech.Application.Common.Exceptions
         public IReadOnlyList<ValidationError> Errors { get; }
 
         public ValidationException(IEnumerable<ValidationFailure> failures)
-            : base("VALIDATION_ERROR", "Errores de validación", failures.Select(f => $"{f.PropertyName}: {f.ErrorMessage}").ToList())
+            : base("APPLICATION_VALIDATION_ERROR", "One or more parameters of the request are invalid or incorrect.", failures.Select(f => $"{f.PropertyName}: {f.ErrorMessage}").ToList())
         {
             Errors = failures.Select(f => new ValidationError(f.PropertyName, f.ErrorMessage)).ToList();
         }

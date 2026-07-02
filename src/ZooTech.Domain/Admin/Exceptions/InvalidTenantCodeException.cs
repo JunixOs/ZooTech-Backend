@@ -2,8 +2,8 @@ using ZooTech.Domain.Shared.Exceptions;
 
 namespace ZooTech.Domain.Admin.Exceptions;
 
-public class InvalidTenantCodeException : DomainException
+public class InvalidTenantCodeException : AppDomainException
 {
-    public InvalidTenantCodeException(string code)
-        : base($"Tenant code '{code}' is invalid. It must be alphanumeric with hyphens only and max 50 chars.") { }
+    public InvalidTenantCodeException(string message)
+        : base("DOMAIN_TENANT_INVALID_TENANT_CODE_ERROR", message) { }
 }

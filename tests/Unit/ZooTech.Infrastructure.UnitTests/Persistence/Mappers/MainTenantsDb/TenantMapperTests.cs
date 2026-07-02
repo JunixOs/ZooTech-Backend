@@ -1,6 +1,7 @@
 using FluentAssertions;
-using ZooTech.Domain.Entities;
-using ZooTech.Domain.Enums;
+using ZooTech.Domain.Admin.Entities;
+using ZooTech.Domain.Admin.Enums;
+using ZooTech.Domain.Shared.ValueObjects;
 using ZooTech.Infrastructure.Persistence.Entities.MainTenantsDb;
 using ZooTech.Infrastructure.Persistence.Mappers.MainTenantsDb;
 
@@ -77,7 +78,7 @@ public class TenantMapperTests
             subDomain: "code2",
             displayName: "Display2",
             legalName: "Legal2 SAC",
-            email: "b@c.com",
+            email: new Email("b@c.com"),
             phone: "654321",
             status: TenantStatus.ACTIVE,
             createdAt: new DateTime(2024, 2, 1, 0, 0, 0, DateTimeKind.Utc),
@@ -85,7 +86,7 @@ public class TenantMapperTests
         );
 
         // Act
-        var entity = TenantMapper.ToEntity(domain);
+        var entity = TenantMapper.ToOrm(domain);
 
         // Assert
         entity.code.Should().Be("CODE2");
