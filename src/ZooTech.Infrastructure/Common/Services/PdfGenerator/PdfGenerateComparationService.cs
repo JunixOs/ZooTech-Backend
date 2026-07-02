@@ -22,6 +22,8 @@ public sealed class PdfGenerateComparationService : IOrdeniosComparationPdfGener
     private static readonly Color PrimaryDark = Color.FromHex("#66223e");
     private static readonly Color PrimaryLight = Color.FromHex("#ecdfe4");   // zebra rows
     private static readonly Color PrimaryLighter = Color.FromHex("#f9f4f6"); // fondos suaves
+
+    [Obsolete]
     public byte[] GenerateOrdeniosReport(GenerateOrdeniosPdfDocument document)
     {
         return Document.Create(container =>
@@ -61,9 +63,21 @@ public sealed class PdfGenerateComparationService : IOrdeniosComparationPdfGener
 
     private static string GetReportTitle(GenerateOrdeniosPdfDocument document)
         => document.VacunoId.HasValue
-            ? $"Comparativo de producción del vacuno {document.VacunoId.Value}"
+            ? $"Comparativo de producción de {GetVacunoDisplayName(document)}"
             : "Comparativo de producción por vacunos";
 
+    private static string GetVacunoDisplayName(GenerateOrdeniosPdfDocument document)
+    {
+        var nombreVacuno = document.Items
+            .Select(x => x.NombreVacuno)
+            .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x));
+
+        return string.IsNullOrWhiteSpace(nombreVacuno)
+            ? $"vacuno {document.VacunoId}"
+            : nombreVacuno;
+    }
+
+    [Obsolete]
     private static string BuildChartSvg(GenerateOrdeniosPdfDocument document, float width, float height)
     {
         using var stream = new MemoryStream();
@@ -75,7 +89,7 @@ public sealed class PdfGenerateComparationService : IOrdeniosComparationPdfGener
         return Encoding.UTF8.GetString(stream.ToArray());
     }
 
-
+    [Obsolete]
     private static void DrawOrdeniosChart(GenerateOrdeniosPdfDocument document, SKCanvas canvas, float width, float height)
     {
         canvas.Clear(SKColors.White);
@@ -89,6 +103,7 @@ public sealed class PdfGenerateComparationService : IOrdeniosComparationPdfGener
         DrawVacunosComparisonChart(document, canvas, width, height);
     }
 
+    [Obsolete]
     private static void DrawVacunoHistoryChart(GenerateOrdeniosPdfDocument document, SKCanvas canvas, float width, float height)
     {
         var data = document.Items
@@ -106,6 +121,7 @@ public sealed class PdfGenerateComparationService : IOrdeniosComparationPdfGener
             yAxisLabel: "Litros (L)");
     }
 
+    [Obsolete]
     private static void DrawVacunosComparisonChart(GenerateOrdeniosPdfDocument document, SKCanvas canvas, float width, float height)
     {
         var data = document.Items
@@ -124,6 +140,8 @@ public sealed class PdfGenerateComparationService : IOrdeniosComparationPdfGener
             yAxisLabel: "Litros (L)");
     }
 
+
+    [Obsolete]
     private static void DrawLineChart(SKCanvas canvas, float width, float height, List<ChartPoint> data, string emptyMessage, string xAxisLabel, string yAxisLabel)
     {
         var marginLeft = 55;
@@ -288,6 +306,7 @@ public sealed class PdfGenerateComparationService : IOrdeniosComparationPdfGener
         }
     }
 
+    [Obsolete]
     private static void DrawBarChart(SKCanvas canvas, float width, float height, List<ChartPoint> data, string emptyMessage, string xAxisLabel, string yAxisLabel)
     {
         var marginLeft = 55;
@@ -373,6 +392,7 @@ public sealed class PdfGenerateComparationService : IOrdeniosComparationPdfGener
         }
     }
 
+    [Obsolete]
     private static void DrawRotatedLabel(SKCanvas canvas, string label, float x, float y, SKPaint textPaint)
     {
         canvas.Save();
@@ -384,6 +404,7 @@ public sealed class PdfGenerateComparationService : IOrdeniosComparationPdfGener
     private static string TruncateLabel(string label)
         => label.Length <= 12 ? label : label[..12];
 
+    [Obsolete]
     private static void CreatePaints(out SKPaint gridPaint, out SKPaint axisPaint, out SKPaint textPaint, out SKPaint titlePaint)
     {
         gridPaint = new SKPaint
