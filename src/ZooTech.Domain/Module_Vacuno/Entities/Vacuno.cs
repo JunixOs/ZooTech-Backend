@@ -17,6 +17,7 @@ public sealed class Vacuno
         long? madreId,
         long granjaId,
         string? observaciones,
+        string? numChip,
         DateOnly fechaRegistro,
         DateTime createdAt,
         DateTime updatedAt,
@@ -38,6 +39,7 @@ public sealed class Vacuno
         MadreId = madreId;
         GranjaId = granjaId;
         Observaciones = observaciones;
+        NumChip = numChip;
         FechaRegistro = fechaRegistro;
         CreatedAt = createdAt;
         UpdatedAt = updatedAt;
@@ -60,6 +62,7 @@ public sealed class Vacuno
     public long? MadreId { get; private set; }
     public long GranjaId { get; private set; }
     public string? Observaciones { get; private set; }
+    public string? NumChip { get; private set; }
     public DateOnly FechaRegistro { get; private set; }
     public DateTime CreatedAt { get; }
     public DateTime UpdatedAt { get; private set; }
@@ -83,6 +86,7 @@ public sealed class Vacuno
         long? madreId,
         long granjaId,
         string? observaciones,
+        string? numChip,
         long? actorUsuarioId,
         DateTime utcNow)
     {
@@ -101,6 +105,7 @@ public sealed class Vacuno
             madreId: madreId,
             granjaId: granjaId,
             observaciones: SanitizeObservaciones(observaciones),
+            numChip: numChip?.Trim(),
             fechaRegistro: DateOnly.FromDateTime(utcNow),
             createdAt: utcNow,
             updatedAt: utcNow,
@@ -124,6 +129,7 @@ public sealed class Vacuno
         long? madreId,
         long granjaId,
         string? observaciones,
+        string? numChip,
         DateOnly fechaRegistro,
         DateTime createdAt,
         DateTime updatedAt,
@@ -148,6 +154,7 @@ public sealed class Vacuno
             madreId,
             granjaId,
             SanitizeObservaciones(observaciones),
+            numChip?.Trim(),
             fechaRegistro,
             createdAt,
             updatedAt,
@@ -169,6 +176,7 @@ public sealed class Vacuno
         long? madreId,
         long granjaId,
         string? observaciones,
+        string? numChip,
         long? actorUsuarioId,
         DateTime utcNow)
     {
@@ -187,6 +195,7 @@ public sealed class Vacuno
         MadreId = madreId;
         GranjaId = granjaId;
         Observaciones = SanitizeObservaciones(observaciones);
+        NumChip = numChip?.Trim();
         UpdatedBy = actorUsuarioId;
         UpdatedAt = utcNow;
     }

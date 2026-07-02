@@ -39,7 +39,8 @@ public sealed class CreateVacunoInteractor : ICreateVacunoInputPort
                 command.MadreId,
                 command.GranjaId,
                 command.Observaciones,
-                null,
+                null, // numChip
+                null, // actorUsuarioId
                 DateTime.UtcNow);
         }
         catch (ArgumentException ex)

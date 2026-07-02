@@ -22,7 +22,8 @@ using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Delet
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GetOrdenioById;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.ListOrdenios;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.UpdateOrdenio;
-using ZooTech.Application.Modules.Module_Vacunos.UseCases.GenerarArbolGenealogico;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.GenerarArbolGenealogico;
+using ZooTech.Application.Modules.Module_Fecundacion.UseCases.CreateFecundacion;
 
 namespace ZooTech.Application;
 
@@ -73,12 +74,12 @@ public static class DependencyInjection
         services.AddScoped<IGetVacunoByIdInputPort, GetVacunoByIdInteractor>();
         services.AddScoped<IUpdateVacunoInputPort, UpdateVacunoInteractor>();
         services.AddScoped<IDeleteVacunoInputPort, DeleteVacunoInteractor>();
+        services.AddScoped<IGenerarArbolGenealogicoInputPort, GenerarArbolGenealogicoInteractor>();
 
         // ============================================
-        // Use Cases - Module_Vacunos
+        // Use Cases - Module_Fecundacion
         // ============================================
-        services.AddScoped<ZooTech.Application.Modules.Module_Vacunos.UseCases.ListarVacunos.IListarVacunosInputPort, ZooTech.Application.Modules.Module_Vacunos.UseCases.ListarVacunos.ListarVacunosInteractor>();
-        services.AddScoped<IGenerarArbolGenealogicoInputPort, GenerarArbolGenealogicoInteractor>();
+        services.AddScoped<ICreateFecundacionInputPort, CreateFecundacionInteractor>();
 
         return services;
     }

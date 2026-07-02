@@ -16,6 +16,9 @@ using ZooTech.Infrastructure.Persistence.Modules.Module_Celo.Repositories;
 using ZooTech.Infrastructure.Persistence.Modules.Module_ProduccionLeche.Repositories;
 using ZooTech.Infrastructure.Persistence.Modules.Module_Sanidad.Repositories;
 using ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Repositories;
+using ZooTech.Application.Modules.Module_Vacuno.Common;
+using ZooTech.Domain.Module_Fecundacion.Interfaces;
+using ZooTech.Infrastructure.Persistence.Modules.Module_Fecundacion.Repositories;
 
 namespace ZooTech.Infrastructure;
 
@@ -54,20 +57,16 @@ public static class DependencyInjection
         services.AddScoped<IFeatureService, DevFeatureService>();
 
         // ============================================
-        // Repositories
-        // ============================================
-
-        services.AddScoped<ZooTech.Application.Common.Gateway.Repositories.IVacunoRepository, ZooTech.Infrastructure.Persistence.Repositories.VacunoRepository>();
-
-        // ============================================
         // Caching
         // ============================================
 
         services.AddScoped<ICeloRepository, CeloRepository>();
         services.AddScoped<IOrdenioRepository, OrdenioRepository>();
         services.AddScoped<IVacunoRepository, VacunoRepository>();
+        services.AddScoped<IVacunoQueryRepository, VacunoRepository>();
         services.AddScoped<ITriajeRepository, TriajeRepository>();
         services.AddScoped<ITipoPesoRepository, TipoPesoRepository>();
+        services.AddScoped<IFecundacionRepository, FecundacionRepository>();
 
         return services;
     }

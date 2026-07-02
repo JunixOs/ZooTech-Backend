@@ -8,7 +8,7 @@ using Xunit;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Persistence.Entities;
 using ZooTech.InterfaceAdapters.DTOs;
-using ZooTech.Application.Modules.Module_Vacunos.UseCases.GenerarArbolGenealogico;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.GenerarArbolGenealogico;
 
 namespace ZooTech.InterfaceAdapters.IntegrationTests.Controllers;
 
@@ -128,7 +128,7 @@ public class VacunosGenealogiaIntegrationTests : IClassFixture<WebApplicationFac
         client.DefaultRequestHeaders.Add("X-Tenant-Id", Guid.NewGuid().ToString());
 
         // Act
-        var response = await client.GetAsync($"/v1/vacunos/{vacunoId}/genealogia?niveles=4");
+        var response = await client.GetAsync($"/api/v1/vacuno/{vacunoId}/genealogia?niveles=4");
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -174,7 +174,7 @@ public class VacunosGenealogiaIntegrationTests : IClassFixture<WebApplicationFac
         client.DefaultRequestHeaders.Add("X-Tenant-Id", Guid.NewGuid().ToString());
 
         // Act
-        var response = await client.GetAsync($"/v1/vacunos/{vacunoId}/genealogia");
+        var response = await client.GetAsync($"/api/v1/vacuno/{vacunoId}/genealogia");
 
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
@@ -197,7 +197,7 @@ public class VacunosGenealogiaIntegrationTests : IClassFixture<WebApplicationFac
         client.DefaultRequestHeaders.Add("X-Tenant-Id", Guid.NewGuid().ToString());
 
         // Act - Pedimos 10 niveles, pero el sistema debe hacer un clamp a 4.
-        var response = await client.GetAsync($"/v1/vacunos/{vacunoId}/genealogia?niveles=10");
+        var response = await client.GetAsync($"/api/v1/vacuno/{vacunoId}/genealogia?niveles=10");
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);

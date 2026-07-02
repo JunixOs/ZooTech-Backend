@@ -23,3 +23,4 @@ public sealed record VacunoResponse(
     string? Provincia,
     string? Departamento,
     string? CodigoDistrito);
+

@@ -2,10 +2,13 @@ using Microsoft.EntityFrameworkCore;
 using ZooTech.Domain.Module_Vacuno.Entities;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
 using ZooTech.Infrastructure.Persistence.Context;
+using ZooTech.Application.Modules.Module_Vacuno.Common;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.GenerarArbolGenealogico;
+using ZooTech.Infrastructure.Persistence.Models;
 
 namespace ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Repositories;
 
-public sealed class VacunoRepository : IVacunoRepository
+public sealed class VacunoRepository : IVacunoRepository, IVacunoQueryRepository
 {
     private readonly GanaderiaDbContext _context;
 
@@ -163,6 +166,7 @@ public sealed class VacunoRepository : IVacunoRepository
             madreId: entity.madre_id,
             granjaId: entity.granja_id,
             observaciones: entity.observaciones,
+            numChip: null,
             fechaRegistro: entity.fecha_registro,
             createdAt: entity.created_at,
             updatedAt: entity.updated_at,
@@ -171,5 +175,141 @@ public sealed class VacunoRepository : IVacunoRepository
             createdBy: entity.created_by,
             updatedBy: entity.updated_by,
             deletedBy: entity.deleted_by);
+    }
+
+    public async Task<VacunoNodoDto?> GetArbolGenealogicoAsync(long vacunoId, int niveles)
+    {
+        if (_context.Database.IsSqlServer())
+        {
+            return await GetArbolSqlAsync(vacunoId, niveles);
+        }
+        else
+        {
+            return await GetArbolInMemoryAsync(vacunoId, niveles);
+        }
+    }
+
+    private async Task<VacunoNodoDto?> GetArbolSqlAsync(long vacunoId, int niveles)
+    {
+        var sql = @"
+            WITH Ancestros AS (
+                -- Nivel 0: El vacuno raíz
+                SELECT 
+                    v.id, v.codigo, v.nombre, v.raza_code, v.sexo_code,
+                    v.padre_id, v.madre_id, 0 AS Nivel
+                FROM vacuno v
+                WHERE v.id = {0} AND v.deleted_at IS NULL
+
+                UNION ALL
+
+                -- Niveles > 0: Padres y Madres
+                SELECT 
+                    p.id, p.codigo, p.nombre, p.raza_code, p.sexo_code,
+                    p.padre_id, p.madre_id, a.Nivel + 1
+                FROM Ancestros a
+                JOIN vacuno p ON (a.padre_id = p.id OR a.madre_id = p.id)
+                WHERE p.deleted_at IS NULL AND a.Nivel < {1}
+            )
+            SELECT DISTINCT 
+                a.id as Id, 
+                a.codigo as Codigo, 
+                a.nombre as Nombre, 
+                ISNULL(r.nombre, a.raza_code) as Raza, 
+                a.sexo_code as Sexo, 
+                a.padre_id as PadreId, 
+                a.madre_id as MadreId, 
+                a.Nivel as Nivel
+            FROM Ancestros a
+            LEFT JOIN cat_raza r ON a.raza_code = r.code;
+        ";
+
+        var ancestrosPlano = await _context.Database.SqlQueryRaw<AncestroDbDto>(sql, vacunoId, niveles).ToListAsync();
+        var arbolDb = ConstruirArbol(ancestrosPlano, vacunoId, 0, niveles);
+        return MapearADtoApplication(arbolDb);
+    }
+
+    private async Task<VacunoNodoDto?> GetArbolInMemoryAsync(long vacunoId, int niveles)
+    {
+        var vacunosInMemory = await _context.vacunos
+            .Include(v => v.raza_codeNavigation)
+            .Where(v => v.deleted_at == null)
+            .ToListAsync();
+
+        var flatList = new List<AncestroDbDto>();
+        void RecorrerMemoria(long id, int nivelActual)
+        {
+            if (nivelActual > niveles) return;
+            var v = vacunosInMemory.FirstOrDefault(x => x.id == id);
+            if (v == null || flatList.Any(f => f.Id == id)) return;
+
+            flatList.Add(new AncestroDbDto
+            {
+                Id = v.id,
+                Codigo = v.codigo,
+                Nombre = v.nombre,
+                Raza = v.raza_codeNavigation?.nombre ?? v.raza_code,
+                Sexo = v.sexo_code,
+                PadreId = v.padre_id,
+                MadreId = v.madre_id,
+                Nivel = nivelActual
+            });
+
+            if (v.padre_id.HasValue) RecorrerMemoria(v.padre_id.Value, nivelActual + 1);
+            if (v.madre_id.HasValue) RecorrerMemoria(v.madre_id.Value, nivelActual + 1);
+        }
+
+        RecorrerMemoria(vacunoId, 0);
+        var arbolDb = ConstruirArbol(flatList, vacunoId, 0, niveles);
+        return MapearADtoApplication(arbolDb);
+    }
+
+    private AncestroDbDto? ConstruirArbol(List<AncestroDbDto> planos, long actualId, int nivelActual, int maxNiveles)
+    {
+        if (nivelActual > maxNiveles) return null;
+
+        var dict = planos.ToDictionary(p => p.Id);
+        return ConstruirNodo(dict, actualId, nivelActual, maxNiveles);
+    }
+
+    private AncestroDbDto? ConstruirNodo(Dictionary<long, AncestroDbDto> dict, long actualId, int nivelActual, int maxNiveles)
+    {
+        if (nivelActual > maxNiveles) return null;
+
+        if (!dict.TryGetValue(actualId, out var nodoDb)) return null;
+
+        var nodoCopia = new AncestroDbDto
+        {
+            Id = nodoDb.Id,
+            Codigo = nodoDb.Codigo,
+            Nombre = nodoDb.Nombre,
+            Raza = nodoDb.Raza,
+            Sexo = nodoDb.Sexo,
+            Nivel = nivelActual
+        };
+
+        if (nodoDb.PadreId.HasValue)
+            nodoCopia.Padre = ConstruirNodo(dict, nodoDb.PadreId.Value, nivelActual + 1, maxNiveles);
+
+        if (nodoDb.MadreId.HasValue)
+            nodoCopia.Madre = ConstruirNodo(dict, nodoDb.MadreId.Value, nivelActual + 1, maxNiveles);
+
+        return nodoCopia;
+    }
+
+    private VacunoNodoDto? MapearADtoApplication(AncestroDbDto? dbDto)
+    {
+        if (dbDto == null) return null;
+
+        return new VacunoNodoDto
+        {
+            Id = dbDto.Id,
+            Codigo = dbDto.Codigo,
+            Nombre = dbDto.Nombre,
+            Raza = dbDto.Raza,
+            Sexo = dbDto.Sexo,
+            Nivel = dbDto.Nivel,
+            Padre = MapearADtoApplication(dbDto.Padre),
+            Madre = MapearADtoApplication(dbDto.Madre)
+        };
     }
 }
