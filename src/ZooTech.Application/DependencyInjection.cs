@@ -41,6 +41,7 @@ public static class DependencyInjection
         services.AddScoped<IGetAllTipoPesosInputPort, GetAllTipoPesosInteractor>();
         services.AddScoped<IGetAllVacunosSanidadInputPort, GetAllVacunosSanidadInteractor>();
         services.AddScoped<IGetHistorialByVacunoIdInputPort, GetHistorialByVacunoIdInteractor>();
+        services.AddScoped<ZooTech.Application.Modules.Module_Sanidad.UseCases.GetHistorialGeneral.IGetHistorialGeneralInputPort, ZooTech.Application.Modules.Module_Sanidad.UseCases.GetHistorialGeneral.GetHistorialGeneralInteractor>();
 
         // ============================================
         // Use Cases - Module_ProduccionLeche

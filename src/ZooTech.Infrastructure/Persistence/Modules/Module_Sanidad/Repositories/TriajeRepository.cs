@@ -31,7 +31,8 @@ public class TriajeRepository : ITriajeRepository
     public async Task<(IEnumerable<Triaje> Items, int Total)> GetAllAsync(
         int pagina,
         int tamano,
-        string? fecha = null,
+        string? fechaInicio = null,
+        string? fechaFin = null,
         string? codigo = null,
         string? nombre = null,
         string? tipoPeso = null,
@@ -56,8 +57,11 @@ public class TriajeRepository : ITriajeRepository
         if (pesoKg.HasValue)
             query = query.Where(t => t.peso_kg == pesoKg);
 
-        if (!string.IsNullOrEmpty(fecha) && DateTime.TryParse(fecha, out var fechaParsed))
-            query = query.Where(t => t.fecha_hora.Date == fechaParsed.Date);
+        if (!string.IsNullOrEmpty(fechaInicio) && DateTime.TryParse(fechaInicio, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var parsedInicio))
+            query = query.Where(t => t.fecha_hora >= parsedInicio.Date);
+
+        if (!string.IsNullOrEmpty(fechaFin) && DateTime.TryParse(fechaFin, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var parsedFin))
+            query = query.Where(t => t.fecha_hora <= parsedFin.Date.AddDays(1).AddTicks(-1));
 
         query = query.OrderByDescending(t => t.fecha_hora);
 
@@ -123,11 +127,24 @@ public class TriajeRepository : ITriajeRepository
         return $"TRI{maxNumber + 1:D3}";
     }
 
-    public async Task<IEnumerable<TriajeHistorialItem>> GetHistorialByVacunoIdAsync(long vacunoId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<TriajeHistorialItem>> GetHistorialByVacunoIdAsync(long vacunoId, string? desde = null, string? hasta = null, CancellationToken cancellationToken = default)
     {
-        return await _context.triajes
+        var query = _context.triajes
             .AsNoTracking()
-            .Where(t => t.vacuno_id == vacunoId && t.deleted_at == null)
+            .Where(t => t.vacuno_id == vacunoId && t.deleted_at == null);
+
+        if (!string.IsNullOrEmpty(desde) && DateTime.TryParse(desde, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var fechaDesde))
+        {
+            query = query.Where(t => t.fecha_hora >= fechaDesde.Date);
+        }
+
+        if (!string.IsNullOrEmpty(hasta) && DateTime.TryParse(hasta, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var fechaHasta))
+        {
+            // Set to end of day to include all records on the 'hasta' date
+            query = query.Where(t => t.fecha_hora <= fechaHasta.Date.AddDays(1).AddTicks(-1));
+        }
+
+        return await query
             .OrderByDescending(t => t.fecha_hora)
             .Select(t => new TriajeHistorialItem
             {
@@ -139,6 +156,34 @@ public class TriajeRepository : ITriajeRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IEnumerable<TriajeHistorialItem>> GetHistorialGeneralAsync(string? desde = null, string? hasta = null, CancellationToken cancellationToken = default)
+    {
+        var query = _context.triajes
+            .AsNoTracking()
+            .Where(t => t.deleted_at == null);
+
+        if (!string.IsNullOrEmpty(desde) && DateTime.TryParse(desde, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var fechaDesde))
+        {
+            query = query.Where(t => t.fecha_hora >= fechaDesde.Date);
+        }
+
+        if (!string.IsNullOrEmpty(hasta) && DateTime.TryParse(hasta, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var fechaHasta))
+        {
+            // Set to end of day to include all records on the 'hasta' date
+            query = query.Where(t => t.fecha_hora <= fechaHasta.Date.AddDays(1).AddTicks(-1));
+        }
+
+        return await query
+            .OrderByDescending(t => t.fecha_hora)
+            .Select(t => new TriajeHistorialItem
+            {
+                Id = t.id,
+                FechaHora = t.fecha_hora,
+                TipoPesoCode = t.tipo_peso_code,
+                PesoKg = t.peso_kg
+            })
+            .ToListAsync(cancellationToken);
+    }
 
     // Mappers
     private static Triaje ToTriaje(triaje e) => Triaje.Rehydrate(
