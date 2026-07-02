@@ -16,20 +16,23 @@ namespace ZooTech.Infrastructure.Identity
 
         private ClaimsPrincipal? User => _contextAccessor.HttpContext?.User;
 
-        public Guid? UserId
+        public int? UserId
         {
             get
             {
                 var value = User?.FindFirstValue(JwtRegisteredClaimNames.Sub);
 
-                return Guid.TryParse(value, out var id)
+                return int.TryParse(value, out var id)
                     ? id
                     : null;
             }
         }
 
-        public string? Email =>
+        public string? UserName =>
             User?.FindFirstValue(ClaimTypes.Name);
+
+        public string? Email =>
+            User?.FindFirstValue(ClaimTypes.Email);
 
         public string? Role =>
             User?.FindFirstValue(ClaimTypes.Role);

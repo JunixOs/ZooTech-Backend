@@ -1,14 +1,17 @@
 using System.Net;
+using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Common.Exceptions
 {
-    public class NotFoundException : AppException
+    public class NotFoundException : AppApplicationException
     {
-        public override int StatusCode => (int)HttpStatusCode.NotFound;
-
         public NotFoundException(
             string moduleName
-        ) : base($"APPLICATION_{moduleName.ToUpper()}_NOT_FOUND_ERROR" , "Some elements cannot be founded.")
+        ) : base(
+            $"APPLICATION_{moduleName.ToUpper()}_NOT_FOUND_ERROR",
+            ErrorType.NotFound,
+            "Some elements cannot be founded."
+        )
         {
         }
     }

@@ -1,5 +1,6 @@
-using ZooTech.Domain.Entities;
-using ZooTech.Domain.Enums;
+using ZooTech.Domain.Admin.Entities;
+using ZooTech.Domain.Admin.Enums;
+using ZooTech.Domain.Shared.ValueObjects;
 using ZooTech.Infrastructure.Persistence.Entities.MainTenantsDb;
 
 namespace ZooTech.Infrastructure.Persistence.Mappers.MainTenantsDb
@@ -14,7 +15,7 @@ namespace ZooTech.Infrastructure.Persistence.Mappers.MainTenantsDb
                 tenantEntity.subdomain,
                 tenantEntity.display_name,
                 tenantEntity.legal_name,
-                tenantEntity.email,
+                new Email(tenantEntity.email),
                 tenantEntity.phone,
                 Enum.Parse<TenantStatus>(tenantEntity.status),
                 tenantEntity.created_at,
@@ -22,7 +23,7 @@ namespace ZooTech.Infrastructure.Persistence.Mappers.MainTenantsDb
             );
         }
 
-        public static tenant ToEntity(TenantDomainEntity tenantDomainEntity)
+        public static tenant ToOrm(TenantDomainEntity tenantDomainEntity)
         {
             return new tenant
             {

@@ -2,9 +2,9 @@ using System.Text.RegularExpressions;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Common.Gateway.Tenant;
 using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant;
+using ZooTech.Infrastructure.Exceptions;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Persistence.Entities.MainTenantsDb;
 
@@ -27,7 +27,7 @@ namespace ZooTech.Infrastructure.Tenant
             _tenantDatabaseMigrator = tenantDatabaseMigrator;
         }
 
-        public async Task<bool> ProvisionAsync(CreateTenantCommand cmd)
+        public async Task ProvisionAsync(CreateTenantCommand cmd)
         {
             var tenantDbName = SanitizeDbName(cmd.Code);
 
@@ -82,12 +82,10 @@ namespace ZooTech.Infrastructure.Tenant
                 var conn = builder.ConnectionString;
 
                 await _tenantDatabaseMigrator.MigrateAsync(conn);
-
-                return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                throw new TenantProvisioningException("Error al provisionar tenant", ex);
+                throw new TenantProvisioningException();
             }
         }
 

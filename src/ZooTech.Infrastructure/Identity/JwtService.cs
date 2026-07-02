@@ -16,7 +16,12 @@ namespace ZooTech.Infrastructure.Identity
             _settings = settings.Value;
         }
 
-        public string GenerateToken(long userId, string email, string userRole)
+        public string GenerateToken(
+            int userId, 
+            string userName,
+            string email, 
+            string userRole
+        )
         {
             var key = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(_settings.SecretKey)
@@ -31,7 +36,8 @@ namespace ZooTech.Infrastructure.Identity
             {
                 new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
                 new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
-                new Claim(ClaimTypes.Name, email),
+                new Claim(ClaimTypes.Email, email),
+                new Claim(ClaimTypes.Name, userName),
                 new Claim(ClaimTypes.Role, userRole),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };

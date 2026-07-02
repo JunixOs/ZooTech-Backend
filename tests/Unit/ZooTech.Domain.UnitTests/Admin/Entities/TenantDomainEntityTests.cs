@@ -1,6 +1,7 @@
 using FluentAssertions;
 using ZooTech.Domain.Admin.Entities;
 using ZooTech.Domain.Admin.Enums;
+using ZooTech.Domain.Shared.ValueObjects;
 
 namespace ZooTech.Domain.UnitTests.Admin.Entities;
 
@@ -19,7 +20,7 @@ public class TenantDomainEntityTests
             subDomain: "code123",
             displayName: "Display",
             legalName: "Legal Name SAC",
-            email: "a@b.com",
+            email: new Email("a@b.com"),
             phone: "123456",
             status: TenantStatus.ACTIVE,
             createdAt: now,
@@ -49,7 +50,7 @@ public class TenantDomainEntityTests
             subDomain: "c",
             displayName: "D",
             legalName: "L",
-            email: "e@f.com",
+            email: new Email("e@f.com"),
             phone: "1",
             status: TenantStatus.TRIAL,
             createdAt: null,
@@ -70,7 +71,7 @@ public class TenantDomainEntityTests
             subDomain: "c",
             displayName: "D",
             legalName: "L",
-            email: "old@mail.com",
+            email: new Email("e@f.com"),
             phone: "111",
             status: TenantStatus.TRIAL,
             createdAt: DateTime.UtcNow.AddMinutes(-10),
@@ -78,10 +79,10 @@ public class TenantDomainEntityTests
         );
 
         // Act
-        tenant.UpdateContactInfo("new@mail.com", "222");
+        tenant.UpdateContactInfo(new Email("new@mail.com"), "222");
 
         // Assert
-        tenant.Email.Should().Be("new@mail.com");
+        tenant.Email.Value.Should().Be("new@mail.com");
         tenant.Phone.Should().Be("222");
         tenant.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
     }
@@ -96,7 +97,7 @@ public class TenantDomainEntityTests
             subDomain: "c",
             displayName: "D",
             legalName: "L",
-            email: "e@f.com",
+            email: new Email("e@f.com"),
             phone: "1",
             status: TenantStatus.TRIAL,
             createdAt: DateTime.UtcNow.AddMinutes(-10),

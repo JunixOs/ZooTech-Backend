@@ -1,9 +1,8 @@
-using MediatR;
-using ZooTech.Domain.Enums;
+using ZooTech.Domain.Admin.Enums;
 
 namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant
 {
-    public class CreateTenantCommand : IRequest<CreateTenantResult>
+    public class CreateTenantCommand
     {
         public string Code { get; init; } = default!;
         public string SubDomain { get; init; } = default!;

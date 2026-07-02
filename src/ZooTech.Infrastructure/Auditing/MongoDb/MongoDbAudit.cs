@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Configuration;
-using MongoDB.Driver;
 using ZooTech.Application.Common.Gateway.Auditing;
 using ZooTech.Application.Common.Gateway.Context;
 
@@ -19,7 +17,7 @@ namespace ZooTech.Infrastructure.Auditing.MongoDb
             _tenantContext = tenantContext;
         }
 
-        public async Task SavingChangesAsync(AuditModel auditModel)
+        public async Task SaveLogAsync(AuditModel auditModel)
         {
             try
             {
@@ -31,7 +29,7 @@ namespace ZooTech.Infrastructure.Auditing.MongoDb
                     Id = Guid.NewGuid(),
                     TenantId = _tenantContext.TenantId,
                     TenantCode = _tenantContext.Code,
-                    EventType = auditModel.EventType,
+                    EventType = auditModel.EventType.ToString(),
                     Action = auditModel.Action,
                     User = new AuditUser
                     {

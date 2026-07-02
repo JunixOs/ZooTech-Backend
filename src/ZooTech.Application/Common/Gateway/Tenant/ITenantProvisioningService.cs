@@ -7,6 +7,6 @@ namespace ZooTech.Application.Common.Gateway.Tenant
 {
     public interface ITenantProvisioningService
     {
-        public Task<bool> ProvisionAsync(CreateTenantCommand cmd);
+        public Task ProvisionAsync(CreateTenantCommand cmd);
     }
 }

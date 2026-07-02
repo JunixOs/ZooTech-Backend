@@ -1,108 +1,142 @@
-using FluentValidation;
+using ZooTech.Application.Common.Validator;
 
 namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant
 {
-    public class CreateTenantValidator : AbstractValidator<CreateTenantCommand>
+    public class CreateTenantValidation : ICommandValidator<CreateTenantCommand>
     {
-        public CreateTenantValidator()
+        public List<string> Validate(CreateTenantCommand command)
         {
-            RuleFor(x => x.Code)
-                .NotEmpty()
-                .WithMessage("El código es requerido.")
-                .MaximumLength(50);
+            var errors = new List<string>();
 
-            RuleFor(x => x.SubDomain)
-                .NotEmpty()
-                .Matches("^[a-z0-9-]+$")
-                .WithMessage("Subdominio inválido.");
+            // Tenant
+            ValidateRequired(command.Code, "TENANT-CODE", errors, 50);
+            ValidateSubDomain(command.SubDomain, errors);
+            ValidateRequired(command.DisplayName, "TENANT-DISPLAY_NAME", errors, 150);
+            ValidateRequired(command.LegalName, "TENANT-LEGAL_NAME", errors, 200);
+            ValidateEmail(command.Email, errors);
+            ValidateRequired(command.Phone, "TENANT-PHONE", errors, 30);
 
-            RuleFor(x => x.DisplayName)
-                .NotEmpty()
-                .MaximumLength(150)
-                .WithMessage("El nombre visible para el tenant es requerido.");
+            if (!Enum.IsDefined(command.Status))
+                errors.Add("TENANCING_CREATE-TENANT-STATUS-INVALID");
 
-            RuleFor(x => x.LegalName)
-                .NotEmpty()
-                .MaximumLength(200)
-                .WithMessage("El nombre legal o razón social es requerido.");
+            // Address
+            if (command.TenantAddress == null)
+            {
+                errors.Add("TENANCING_CREATE-TENANT_ADDRESS-NULL");
+            }
+            else
+            {
+                ValidateAddress(command.TenantAddress, errors);
+            }
 
-            RuleFor(x => x.Email)
-                .NotEmpty()
-                .EmailAddress()
-                .WithMessage("Debe proporcionar un correo");
+            // Branding
+            if (command.TenantBranding == null)
+            {
+                errors.Add("TENANCING_CREATE-TENANT_BRANDING-NULL");
+            }
+            else
+            {
+                ValidateBranding(command.TenantBranding, errors);
+            }
 
-            RuleFor(x => x.Phone)
-                .NotEmpty()
-                .MaximumLength(30)
-                .WithMessage("El teléfono es requerido.");
+            // Database
+            if (command.TenantDatabaseConnection == null)
+            {
+                errors.Add("TENANCING_CREATE-TENANT_DATABASE_CONNECTION-NULL");
+            }
 
-            RuleFor(x => x.Status)
-                .IsInEnum()
-                .WithMessage("Estado inválido.");
-
-            RuleFor(x => x.TenantAddress)
-                .NotNull()
-                .SetValidator(new TenantAddressValidator());
-
-            RuleFor(x => x.TenantBranding)
-                .NotNull()
-                .SetValidator(new TenantBrandingValidator());
-
-            RuleFor(x => x.TenantDatabaseConnection)
-                .NotNull()
-                .SetValidator(new TenantDatabaseConnectionValidator());
+            return errors;
         }
-    }
 
-    public class TenantAddressValidator : AbstractValidator<TenantAddress>
-    {
-        public TenantAddressValidator()
+        private static void ValidateAddress(TenantAddress address, List<string> errors)
         {
-            RuleFor(x => x.Country)
-                .NotEmpty()
-                .WithMessage("El país es requerido.");
-
-            RuleFor(x => x.State)
-                .NotEmpty()
-                .WithMessage("El estado o departamento es requerido.");
-
-            RuleFor(x => x.City)
-                .NotEmpty()
-                .WithMessage("La ciudad es requerida.");
-
-            RuleFor(x => x.AddressLine_1)
-                .NotEmpty()
-                .MaximumLength(300)
-                .WithMessage("Debe proporcionar al menos una dirección.");
+            ValidateRequired(address.Country, "TENANT_ADDRESS-ADDRESS_COUNTRY", errors);
+            ValidateRequired(address.State, "TENANT_ADDRESS-STATE", errors);
+            ValidateRequired(address.City, "TENANT_ADDRESS-CITY", errors);
+            ValidateRequired(address.AddressLine_1, "TENANT_ADDRESS-ADDRESS_LINE_1", errors, 300);
         }
-    }
 
-    public class TenantBrandingValidator : AbstractValidator<TenantBranding>
-    {
-        public TenantBrandingValidator()
+        private static void ValidateBranding(TenantBranding branding, List<string> errors)
         {
-            RuleFor(x => x.PrimaryColor)
-                .Matches("^#([A-Fa-f0-9]{6})$")
-                .WithMessage("Color hexadecimal inválido.");
+            ValidateHexColor(branding.PrimaryColor, "TENANT_BRANDING-PRIMARY_COLOR", errors);
+            ValidateHexColor(branding.SecondaryColor, "TENANT_BRANDING-SECONDARY_COLOR", errors);
 
-            RuleFor(x => x.SecondaryColor)
-                .Matches("^#([A-Fa-f0-9]{6})$");
-
-            RuleFor(x => x.LogoUrl)
-                .Must(url =>
-                    string.IsNullOrWhiteSpace(url)
-                    || Uri.IsWellFormedUriString(url, UriKind.Absolute))
-                .WithMessage("LogoUrl inválido.");
+            if (!string.IsNullOrWhiteSpace(branding.LogoUrl) &&
+                !Uri.IsWellFormedUriString(branding.LogoUrl, UriKind.Absolute))
+            {
+                errors.Add("TENANCING_CREATE-TENANT_BRANDING-LOGO_URL-INVALID");
+            }
         }
-    }
 
-    public class TenantDatabaseConnectionValidator : AbstractValidator<TenantDatabaseConnection>
-    {
-        public TenantDatabaseConnectionValidator()
+        private static void ValidateRequired(string? value, string field, List<string> errors, int? maxLength = null)
         {
-            RuleFor(x => x.IsActive)
-                .NotNull()
-                .WithMessage("Debe especificar el estado de la base de datos.");
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                errors.Add($"TENANCING_CREATE-{field}-NULL");
+                return;
+            }
+
+            if (maxLength.HasValue && value.Length > maxLength.Value)
+            {
+                errors.Add($"TENANCING_CREATE-{field}-INVALID");
+            }
+        }
+
+        private static void ValidateEmail(string? email, List<string> errors)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                errors.Add("TENANCING_CREATE-TENANT-EMAIL-NULL");
+                return;
+            }
+
+            try
+            {
+                _ = new System.Net.Mail.MailAddress(email);
+            }
+            catch
+            {
+                errors.Add("TENANCING_CREATE-TENANT-EMAIL-INVALID");
+            }
+        }
+
+        private static void ValidateSubDomain(string? subDomain, List<string> errors)
+        {
+            if (string.IsNullOrWhiteSpace(subDomain))
+            {
+                errors.Add("TENANCING_CREATE-TENANT-SUBDOMAIN-NULL");
+                return;
+            }
+
+            foreach (char c in subDomain)
+            {
+                if (!(char.IsLower(c) || char.IsDigit(c) || c == '-'))
+                {
+                    errors.Add("TENANCING_CREATE-TENANT-SUBDOMAIN-INVALID");
+                    return;
+                }
+            }
+        }
+
+        private static void ValidateHexColor(string? color, string field, List<string> errors)
+        {
+            if (string.IsNullOrWhiteSpace(color))
+                return;
+
+            if (color.Length != 7 || color[0] != '#')
+            {
+                errors.Add($"TENANCING_CREATE-{field}-INVALID");
+                return;
+            }
+
+            for (int i = 1; i < color.Length; i++)
+            {
+                if (!Uri.IsHexDigit(color[i]))
+                {
+                    errors.Add($"TENANCING_CREATE-{field}-INVALID");
+                    return;
+                }
+            }
         }
     }
 }

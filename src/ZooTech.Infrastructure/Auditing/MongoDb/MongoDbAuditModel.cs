@@ -36,7 +36,7 @@ namespace ZooTech.Infrastructure.Auditing.MongoDb
         public Guid Id { get; set; }
 
         [BsonElement("tenant_id")]
-        public long TenantId { get; set; }
+        public int TenantId { get; set; }
 
         [BsonElement("tenant_code")]
         public string TenantCode { get; set; } = default!;
@@ -63,9 +63,9 @@ namespace ZooTech.Infrastructure.Auditing.MongoDb
     public class AuditUser
     {
         [BsonElement("id")]
-        public long Id { get; set; }
+        public int? Id { get; set; }
 
         [BsonElement("name")]
-        public string Name { get; set; } = default!;
+        public string? Name { get; set; }
     }
 }

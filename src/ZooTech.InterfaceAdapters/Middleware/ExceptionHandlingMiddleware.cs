@@ -1,7 +1,9 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using ZooTech.Application.Common.Exceptions;
+using ZooTech.Domain.Shared.Exceptions;
+using ZooTech.InterfaceAdapters.Models;
+using ZooTech.InterfaceAdapters.Utils;
 
 namespace ZooTech.InterfaceAdapters.Middleware
 {
@@ -22,18 +24,19 @@ namespace ZooTech.InterfaceAdapters.Middleware
             {
                 await _next(context);
             }
-            catch (AppException ex)
+            catch (AppDomainException ex)
             {
-                _logger.LogWarning(ex, "AppException: {Code} - {Message}", ex.Code, ex.Message);
+                _logger.LogWarning(ex, "ApplicationException: {Code} - {Message}", ex.ErrorType, ex.Message);
 
                 context.Response.ContentType = "application/json";
-                context.Response.StatusCode = ex.StatusCode;
 
-                var response = new ErrorResponse
+                context.Response.StatusCode = (int)ToHttpStatusCode.Convert(ex.ErrorType);
+
+                var response = new ErrorResponseModel
                 {
                     Error = new ErrorContent
                     {
-                        Code = ex.Code,
+                        ErrorCode = ex.ErrorCode,
                         Message = ex.Message,
                         Details = ex.Details
                     }
@@ -48,11 +51,11 @@ namespace ZooTech.InterfaceAdapters.Middleware
                 context.Response.ContentType = "application/json";
                 context.Response.StatusCode = 500;
 
-                var response = new ErrorResponse
+                var response = new ErrorResponseModel
                 {
                     Error = new ErrorContent
                     {
-                        Code = "INTERNAL_SERVER_ERROR",
+                        ErrorCode = "INTERNAL_SERVER_ERROR",
                         Message = "Ocurrio un error interno",
                         Details = []
                     }

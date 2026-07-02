@@ -1,11 +1,13 @@
 using Microsoft.EntityFrameworkCore;
-using ZooTech.Domain.Entities;
+using ZooTech.Application.Common.Gateway.Repositories.MainTenantsDb;
+using ZooTech.Application.Modules.Module_Tenancing.ListTenants;
+using ZooTech.Domain.Admin.Entities;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Persistence.Mappers.MainTenantsDb;
 
 namespace ZooTech.Infrastructure.Persistence.Repositories.MainTenantsDb
 {
-    public class TenantRepository : Application.Common.Gateway.Repositories.MainTenantsDb.ITenantRepository
+    public class TenantRepository : ITenantRepository
     {
         private readonly TenantCatalogDb _context;
 
@@ -25,5 +27,11 @@ namespace ZooTech.Infrastructure.Persistence.Repositories.MainTenantsDb
             var entities = await _context.tenants.AsNoTracking().ToListAsync();
             return entities.Select(TenantMapper.ToDomain).ToList();
         }
+
+        public Task<List<ListTenantsOutput?>> ListAllTenants()
+        {
+            throw new NotImplementedException();
+        }
+
     }
 }

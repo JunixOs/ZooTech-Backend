@@ -4,7 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Moq;
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant;
-using ZooTech.Domain.Enums;
+using ZooTech.Domain.Admin.Enums;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Tenant;
 using ZooTech.Tests.Shared.Factories;

@@ -39,14 +39,14 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Mappers
             };
         }
 
-        public static CreateTenantResponseDto ToResponseDto(CreateTenantResult result)
+        public static CreateTenantResponseDto ToResponseDto(CreateTenantOutput output)
         {
             return new CreateTenantResponseDto
             {
-                Code = result.Code,
-                SubDomain = result.SubDomain,
-                DisplayName = result.DisplayName,
-                LegalName = result.LegalName
+                Code = output.Code,
+                SubDomain = output.SubDomain,
+                DisplayName = output.DisplayName,
+                LegalName = output.LegalName
             };
         }
     }
