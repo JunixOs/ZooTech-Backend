@@ -4,6 +4,7 @@ using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetVacunoById;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.UpdateVacuno;
+using ZooTech.Domain.Module_Vacuno.ReadModels;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses;
 
@@ -11,14 +12,13 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Mappers;
 
 internal static class VacunoMapper
 {
-    internal static VacunoItemResponse ToResponse(VacunoItemDto item)
+    internal static VacunoItemResponse ToResponse(VacunoListItem item)
         => new(
             Id: item.Id,
             Codigo: item.Codigo,
             Nombre: item.Nombre,
             FechaNacimiento: item.FechaNacimiento,
             RazaCode: item.RazaCode,
-            SexoCode: item.SexoCode,
             Procedencia: item.Procedencia,
             Estado: item.IsDeleted ? "eliminado" : "activo",
             FechaRegistro: item.FechaRegistro);
@@ -71,7 +71,6 @@ internal static class VacunoMapper
             output.TipoAdquisicionCode,
             output.RazaCode,
             output.ColorCode,
-            output.SexoCode,
             output.PadreId,
             output.MadreId,
             output.GranjaId,

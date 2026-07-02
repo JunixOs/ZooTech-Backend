@@ -6,7 +6,6 @@ public sealed record VacunoItemResponse(
     string Nombre,
     DateOnly FechaNacimiento,
     string RazaCode,
-    string SexoCode,
     string? Procedencia,
     string Estado,
     DateOnly FechaRegistro);

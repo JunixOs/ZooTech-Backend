@@ -8,7 +8,6 @@ public sealed record VacunoResponse(
     string TipoAdquisicionCode,
     string RazaCode,
     string ColorCode,
-    string SexoCode,
     long? PadreId,
     long? MadreId,
     long GranjaId,

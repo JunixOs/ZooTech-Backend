@@ -1,10 +1,9 @@
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 using ZooTech.Domain.Module_Vacuno.Entities;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
 using ZooTech.Infrastructure.Persistence.Context;
-using ZooTech.Application.Modules.Module_Vacuno.Common;
-using ZooTech.Application.Modules.Module_Vacuno.UseCases.GenerarArbolGenealogico;
-using ZooTech.Infrastructure.Persistence.Models;
+using ZooTech.Domain.Module_Vacuno.ReadModels;
 
 namespace ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Repositories;
 
@@ -26,6 +25,7 @@ public sealed class VacunoRepository : IVacunoRepository, IVacunoQueryRepository
             .ToListAsync(cancellationToken);
 
         return entities.Select(ToDomain).ToList();
+
     }
 
     public async Task<List<Vacuno>> ListAllWithDeletedAsync(CancellationToken cancellationToken = default)
@@ -127,7 +127,7 @@ public sealed class VacunoRepository : IVacunoRepository, IVacunoQueryRepository
         return ToDomain(entity);
     }
 
-    public async Task<(List<(Vacuno Vacuno, string? Procedencia)> Items, int TotalCount)> GetPagedAsync(
+    public async Task<(List<VacunoListItem> Items, int TotalCount)> GetPagedAsync(
         string? query, DateTime? fechaDesde, DateTime? fechaHasta, int page, int limit, CancellationToken cancellationToken = default)
     {
         var q = _context.vacunos
@@ -154,31 +154,43 @@ public sealed class VacunoRepository : IVacunoRepository, IVacunoQueryRepository
 
         var totalCount = await q.CountAsync(cancellationToken);
 
-        var entities = await q
+        var rows = await q
             .OrderByDescending(v => v.fecha_registro)
             .ThenByDescending(v => v.id)
             .Skip((page - 1) * limit)
             .Take(limit)
-            .Include(v => v.granja)
-                .ThenInclude(g => g.distrito_codigoNavigation)
-                    .ThenInclude(d => d.provincia_codigoNavigation)
-                        .ThenInclude(p => p.departamento_codigoNavigation)
+            .Select(v => new
+            {
+                v.id,
+                v.codigo,
+                v.nombre,
+                v.fecha_nacimiento,
+                v.raza_code,
+                v.deleted_at,
+                v.fecha_registro,
+                GranjaNombre = v.granja!.nombre,
+                DistritoNombre = v.granja!.distrito_codigoNavigation!.nombre,
+                ProvinciaNombre = v.granja!.distrito_codigoNavigation!.provincia_codigoNavigation!.nombre,
+                DepartamentoNombre = v.granja!.distrito_codigoNavigation!.provincia_codigoNavigation!.departamento_codigoNavigation!.nombre
+            })
             .ToListAsync(cancellationToken);
 
-        var items = entities.Select(v =>
+        var items = rows.Select(r =>
         {
-            string? procedencia = null;
-            var g = v.granja;
-            if (g is not null)
-            {
-                var d = g.distrito_codigoNavigation;
-                var p = d?.provincia_codigoNavigation;
-                var dep = p?.departamento_codigoNavigation;
-                procedencia = string.Join(", ",
-                    new[] { g.nombre, d?.nombre, p?.nombre, dep?.nombre }
-                    .Where(s => !string.IsNullOrWhiteSpace(s)));
-            }
-            return (ToDomain(v), procedencia);
+            var procedencia = string.Join(", ",
+                new[] { r.GranjaNombre, r.DistritoNombre, r.ProvinciaNombre, r.DepartamentoNombre }
+                .Where(s => !string.IsNullOrWhiteSpace(s)));
+
+            return new VacunoListItem(
+                Id: r.id,
+                Codigo: r.codigo,
+                Nombre: r.nombre,
+                FechaNacimiento: r.fecha_nacimiento,
+                RazaCode: r.raza_code,
+                Procedencia: string.IsNullOrWhiteSpace(procedencia) ? null : procedencia,
+                IsDeleted: r.deleted_at != null,
+                FechaRegistro: r.fecha_registro
+            );
         }).ToList();
 
         return (items, totalCount);

@@ -1,4 +1,5 @@
 using ZooTech.Domain.Module_Vacuno.Entities;
+using ZooTech.Domain.Module_Vacuno.ReadModels;
 
 namespace ZooTech.Domain.Module_Vacuno.Interfaces;
 
@@ -22,7 +23,7 @@ public interface IVacunoRepository
 
     Task<Vacuno> UpdateAsync(Vacuno vacuno, CancellationToken cancellationToken = default);
 
-    Task<(List<(Vacuno Vacuno, string? Procedencia)> Items, int TotalCount)> GetPagedAsync(
+    Task<(List<VacunoListItem> Items, int TotalCount)> GetPagedAsync(
         string? query, DateTime? fechaDesde, DateTime? fechaHasta, int page, int limit, CancellationToken cancellationToken = default);
 
     Task<List<Vacuno>> GetArbolGenealogicoAsync(long id, int maxNiveles, CancellationToken cancellationToken = default);

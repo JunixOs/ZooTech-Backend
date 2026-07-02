@@ -31,17 +31,6 @@ public sealed class ListarVacunosInteractor : IListarVacunosInputPort
             command.Limit,
             cancellationToken);
 
-        var dtos = items.Select(x => new VacunoItemDto(
-            Id: x.Vacuno.Id,
-            Codigo: x.Vacuno.Codigo,
-            Nombre: x.Vacuno.Nombre,
-            FechaNacimiento: x.Vacuno.FechaNacimiento,
-            RazaCode: x.Vacuno.RazaCode,
-            SexoCode: x.Vacuno.SexoCode,
-            Procedencia: x.Procedencia,
-            IsDeleted: x.Vacuno.IsDeleted,
-            FechaRegistro: x.Vacuno.FechaRegistro)).ToList();
-
-        return new ListarVacunosOutput(dtos, totalCount);
+        return new ListarVacunosOutput(items, totalCount);
     }
 }
