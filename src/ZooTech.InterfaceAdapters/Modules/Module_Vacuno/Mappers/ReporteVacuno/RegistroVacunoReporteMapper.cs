@@ -1,7 +1,8 @@
-using ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ListarVacunosReporte;
-using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.ReporteVacuno.Requests;
-using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.ReporteVacuno.Responses;
+using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Requests;
+using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses;
+using AppRegistroVacunoReporteResponse = ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte.RegistroVacunoReporteResponse;
+using ObtenerRegistroVacunoReporteQuery = ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte.ObtenerRegistroVacunoReporteQuery;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Mappers.ReporteVacuno;
 
@@ -9,35 +10,35 @@ public static class RegistroVacunoReporteMapper
 {
     public static ObtenerRegistroVacunoReporteQuery ToApplicationQuery(
         long vacunoId,
-        RegistroVacunoReporteQueryDto dto)
+        RegistroVacunoReporteRequest request)
     {
-        return new ObtenerRegistroVacunoReporteQuery(vacunoId, dto.Formato);
+        return new ObtenerRegistroVacunoReporteQuery(vacunoId, request.Formato);
     }
 
-    public static ListarVacunosReporteQuery ToApplicationQuery(ListadoVacunosReporteQueryDto dto)
+    public static ListarVacunosReporteQuery ToApplicationQuery(ListadoVacunosRequest request)
     {
         return new ListarVacunosReporteQuery(
-            dto.FechaDesde,
-            dto.FechaHasta,
-            dto.Q,
-            dto.Codigo,
-            dto.FechaRegistro,
-            dto.Nombre,
-            dto.Raza,
-            dto.Procedencia,
-            dto.Estado,
-            dto.EstadoRegistro,
-            dto.AptoPara,
-            dto.Formato,
-            dto.Page,
-            dto.Limit);
+            request.FechaDesde,
+            request.FechaHasta,
+            request.Q,
+            request.Codigo,
+            request.FechaRegistro,
+            request.Nombre,
+            request.Raza,
+            request.Procedencia,
+            request.Estado,
+            request.EstadoRegistro,
+            request.AptoPara,
+            request.Formato,
+            request.Page,
+            request.Limit);
     }
 
-    public static ListadoVacunosReporteResponseDto ToDto(ListarVacunosReporteResponse response)
+    public static ListadoVacunosReporteResponse ToResponse(ListarVacunosReporteResponse response)
     {
-        return new ListadoVacunosReporteResponseDto(
+        return new ListadoVacunosReporteResponse(
             response.Data
-                .Select(item => new VacunoListadoItemDto(
+                .Select(item => new VacunoListadoItemResponse(
                     item.Id,
                     item.Codigo,
                     item.FechaRegistro,
@@ -47,8 +48,8 @@ public static class RegistroVacunoReporteMapper
                     item.Estado,
                     item.EstadoRegistro))
                 .ToList(),
-            new ReporteVacunoResumenDto(response.Resumen.TotalVacunos),
-            new ReporteVacunoFiltrosDto(
+            new ReporteVacunoResumenResponse(response.Resumen.TotalVacunos),
+            new ReporteVacunoFiltrosResponse(
                 response.Filtros.FechaDesde,
                 response.Filtros.FechaHasta,
                 response.Filtros.Q,
@@ -64,12 +65,12 @@ public static class RegistroVacunoReporteMapper
             response.DownloadUrl);
     }
 
-    public static RegistroVacunoReporteResponseDto ToDto(RegistroVacunoReporteResponse response)
+    public static RegistroVacunoReporteResponse ToResponse(AppRegistroVacunoReporteResponse response)
     {
         var v = response.Vacuno;
 
-        return new RegistroVacunoReporteResponseDto(
-            new RegistroVacunoDetalleDto(
+        return new RegistroVacunoReporteResponse(
+            new RegistroVacunoDetalleResponse(
                 v.Id,
                 v.Codigo,
                 v.Nombre,

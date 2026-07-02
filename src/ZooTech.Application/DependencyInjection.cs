@@ -4,6 +4,10 @@ using ZooTech.Application.Modules.Module_Celo.UseCases.CreateCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.DeleteCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetCelos;
 using ZooTech.Application.Modules.Module_Celo.UseCases.UpdateCelo;
+using ZooTech.Application.Modules.Module_Fecundacion.UseCases.GetFecundacionForEdit;
+using ZooTech.Application.Modules.Module_Fecundacion.UseCases.GetFecundacionOptions;
+using ZooTech.Application.Modules.Module_Fecundacion.UseCases.SearchFecundacionVacunos;
+using ZooTech.Application.Modules.Module_Fecundacion.UseCases.UpdateFecundacion;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.CreateTriaje;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.DeleteTriaje;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllTipoPesos;
@@ -65,6 +69,14 @@ public static class DependencyInjection
         services.AddScoped<ICreateCeloInputPort, CreateCeloInteractor>();
         services.AddScoped<IUpdateCeloInputPort, UpdateCeloInteractor>();
         services.AddScoped<IDeleteCeloInputPort, DeleteCeloInteractor>();
+
+        // ============================================
+        // Use Cases - Module_Fecundacion
+        // ============================================
+        services.AddScoped<IGetFecundacionForEditInputPort, GetFecundacionForEditInteractor>();
+        services.AddScoped<IGetFecundacionOptionsInputPort, GetFecundacionOptionsInteractor>();
+        services.AddScoped<ISearchFecundacionVacunosInputPort, SearchFecundacionVacunosInteractor>();
+        services.AddScoped<IUpdateFecundacionInputPort, UpdateFecundacionInteractor>();
 
         // ============================================
         // Use Cases - Module_Vacuno

@@ -12,10 +12,10 @@ using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Mappers;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ListarVacunosReporte;
-using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.ReporteVacuno.Requests;
-using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.ReporteVacuno.Responses;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Mappers.ReporteVacuno;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Services;
+using ListadoVacunosReporteApiResponse = ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses.ListadoVacunosReporteResponse;
+using RegistroVacunoReporteApiResponse = ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses.RegistroVacunoReporteResponse;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Controllers;
 
@@ -249,30 +249,31 @@ public sealed class VacunoController : ControllerBase
     }
 
     [HttpGet("{vacunoId:long}/reporte")]
-    [ProducesResponseType(typeof(RegistroVacunoReporteResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(RegistroVacunoReporteApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetReporteIndividual(
         [FromRoute] long vacunoId,
-        [FromQuery] RegistroVacunoReporteQueryDto dto,
+        [FromQuery] RegistroVacunoReporteRequest request,
         CancellationToken cancellationToken)
     {
-        var query = RegistroVacunoReporteMapper.ToApplicationQuery(vacunoId, dto);
+        var query = RegistroVacunoReporteMapper.ToApplicationQuery(vacunoId, request);
         var response = await _reporteUseCase.HandleAsync(query, cancellationToken);
         
-        return Ok(GeneralResponseDTO<RegistroVacunoReporteResponseDto>.Ok(RegistroVacunoReporteMapper.ToDto(response)));
+        return Ok(GeneralResponseDTO<RegistroVacunoReporteApiResponse>.Ok(
+            RegistroVacunoReporteMapper.ToResponse(response)));
     }
 
     [HttpGet("reportes/listado")]
-    [ProducesResponseType(typeof(GeneralResponseDTO<ListadoVacunosReporteResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(GeneralResponseDTO<ListadoVacunosReporteApiResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ReportesListado(
-        [FromQuery] ListadoVacunosReporteQueryDto query, 
+        [FromQuery] ListadoVacunosRequest request, 
         CancellationToken cancellationToken)
     {
         var response = await _listarVacunosReporteUseCase.HandleAsync(
-            RegistroVacunoReporteMapper.ToApplicationQuery(query),
+            RegistroVacunoReporteMapper.ToApplicationQuery(request),
             cancellationToken);
 
-        return Ok(GeneralResponseDTO<ListadoVacunosReporteResponseDto>.Ok(
-            RegistroVacunoReporteMapper.ToDto(response)));
+        return Ok(GeneralResponseDTO<ListadoVacunosReporteApiResponse>.Ok(
+            RegistroVacunoReporteMapper.ToResponse(response)));
     }
 }

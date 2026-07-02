@@ -1,12 +1,12 @@
-namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.ReporteVacuno.Responses;
+namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses;
 
-public sealed record ListadoVacunosReporteResponseDto(
-    IReadOnlyCollection<VacunoListadoItemDto> Data,
-    ReporteVacunoResumenDto Resumen,
-    ReporteVacunoFiltrosDto Filtros,
+public sealed record ListadoVacunosReporteResponse(
+    IReadOnlyCollection<VacunoListadoItemResponse> Data,
+    ReporteVacunoResumenResponse Resumen,
+    ReporteVacunoFiltrosResponse Filtros,
     string? DownloadUrl);
 
-public sealed record VacunoListadoItemDto(
+public sealed record VacunoListadoItemResponse(
     long Id,
     string Codigo,
     DateOnly FechaRegistro,
@@ -16,9 +16,9 @@ public sealed record VacunoListadoItemDto(
     string? Estado,
     string? EstadoRegistro);
 
-public sealed record ReporteVacunoResumenDto(int TotalVacunos);
+public sealed record ReporteVacunoResumenResponse(int TotalVacunos);
 
-public sealed record ReporteVacunoFiltrosDto(
+public sealed record ReporteVacunoFiltrosResponse(
     DateOnly? FechaDesde,
     DateOnly? FechaHasta,
     string? Q,

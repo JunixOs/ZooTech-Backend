@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.ReporteVacuno.Requests;
+namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Requests;
 
-public sealed class ListadoVacunosReporteQueryDto
+public sealed class ListadoVacunosRequest
 {
     [FromQuery(Name = "fechaDesde")]
     public string? FechaDesde { get; init; }

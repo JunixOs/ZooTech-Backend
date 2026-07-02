@@ -1,11 +1,11 @@
-namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.ReporteVacuno.Responses;
+namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses;
 
-public sealed record RegistroVacunoReporteResponseDto(
-    RegistroVacunoDetalleDto Vacuno,
+public sealed record RegistroVacunoReporteResponse(
+    RegistroVacunoDetalleResponse Vacuno,
     IReadOnlyCollection<object> Historial,
     string? DownloadUrl);
 
-public sealed record RegistroVacunoDetalleDto(
+public sealed record RegistroVacunoDetalleResponse(
     long Id,
     string Codigo,
     string Nombre,
