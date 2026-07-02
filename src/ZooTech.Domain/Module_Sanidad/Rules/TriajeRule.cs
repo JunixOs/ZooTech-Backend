@@ -18,6 +18,14 @@ public static class TriajeRule
     {
         if (pesoKg <= 0)
             throw new ArgumentException("El peso debe ser mayor que cero.", nameof(pesoKg));
+        if (pesoKg > 2000)
+            throw new ArgumentException("El peso registrado excede un valor razonable para un vacuno (máx 2000 kg).");
+    }
+
+    public static void ValidarObservaciones(string? observaciones)
+    {
+        if (!string.IsNullOrWhiteSpace(observaciones) && observaciones.Trim().Length > 250)
+            throw new ArgumentException("Las observaciones no pueden exceder los 250 caracteres.");
     }
 
     public static void ValidarEstadoRegistroCode(string estadoRegistroCode)

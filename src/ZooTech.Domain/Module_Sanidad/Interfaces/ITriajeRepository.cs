@@ -22,4 +22,13 @@ public interface ITriajeRepository
 
     Task<IEnumerable<TriajeHistorialItem>> GetHistorialByVacunoIdAsync(long vacunoId, string? desde = null, string? hasta = null, CancellationToken cancellationToken = default);
     Task<IEnumerable<TriajeHistorialItem>> GetHistorialGeneralAsync(string? desde = null, string? hasta = null, CancellationToken cancellationToken = default);
+
+    // Validaciones de existencia (Rendimiento optimizado con AnyAsync)
+    Task<bool> ExisteVacunoAsync(long vacunoId);
+    Task<bool> ExisteTipoPesoAsync(string tipoPesoCode);
+
+    // Tipo peso
+    Task<IEnumerable<TipoPeso>> GetAllTipoPesosAsync();
+    // Vacuno id codigo nombre
+    Task<IEnumerable<VacunoOption>> GetAllVacunosAsync();
 }

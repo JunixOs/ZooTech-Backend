@@ -185,6 +185,44 @@ public class TriajeRepository : ITriajeRepository
             .ToListAsync(cancellationToken);
     }
 
+    // Validaciones de existencia ultra rápidas
+    public async Task<bool> ExisteVacunoAsync(long vacunoId)
+    {
+        return await _context.Vacunos.AnyAsync(v => v.id == vacunoId && v.deleted_at == null);
+    }
+
+    public async Task<bool> ExisteTipoPesoAsync(string tipoPesoCode)
+    {
+        return await _context.CatTipoPesos.AnyAsync(tp => tp.code == tipoPesoCode && tp.activo);
+    }
+
+    // Tipo peso
+    public async Task<IEnumerable<TipoPeso>> GetAllTipoPesosAsync()
+    {
+        return await _context.CatTipoPesos
+            .Where(t => t.activo)
+            .Select(t => new TipoPeso
+            {
+                Code = t.code,
+                Nombre = t.nombre
+            })
+            .ToListAsync();
+    }
+
+    // Vacuno id codigo nombre
+    public async Task<IEnumerable<VacunoOption>> GetAllVacunosAsync()
+    {
+        return await _context.Vacunos
+            .Where(v => v.deleted_at == null)
+            .Select(v => new VacunoOption
+            {
+                Id = v.id,
+                Codigo = v.codigo,
+                Nombre = v.nombre
+            })
+            .ToListAsync();
+    }
+
     // Mappers
     private static Triaje ToTriaje(triaje e) => Triaje.Rehydrate(
         id: e.id,
