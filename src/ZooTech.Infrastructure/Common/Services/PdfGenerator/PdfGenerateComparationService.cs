@@ -1,4 +1,5 @@
-﻿using QuestPDF.Fluent;
+﻿using System.Text;
+using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using SkiaSharp;
@@ -42,19 +43,13 @@ public sealed class PdfGenerateComparationService : IOrdeniosComparationPdfGener
 
                     column.Item().Height(20);
 
-                    column.Item()
-                           .Border(1)
-                           .BorderColor(Primary)
-                            .Background(PrimaryLight)
-                            .Padding(15)
-                            .Height(360)
-                            .Canvas((canvas, size) =>
-                            {
-                                if (canvas is not SKCanvas skCanvas)
-                                    throw new InvalidOperationException("El canvas de QuestPDF llegó nulo. No se puede dibujar el gráfico.");
-
-                                DrawOrdeniosChart(document, skCanvas, size.Width, size.Height);
-                            });
+                     column.Item()
+                            .Border(1)
+                            .BorderColor(Primary)
+                             .Background(PrimaryLight)
+                             .Padding(15)
+                             .Height(360)
+                             .Svg(size => BuildChartSvg(document, size.Width, size.Height));
 
                 });
 
@@ -63,8 +58,19 @@ public sealed class PdfGenerateComparationService : IOrdeniosComparationPdfGener
 
     }
 
+    private static string BuildChartSvg(GenerateOrdeniosPdfDocument document, float width, float height)
+    {
+        using var stream = new MemoryStream();
+        using (var canvas = SKSvgCanvas.Create(new SKRect(0, 0, width, height), stream))
+        {
+            DrawOrdeniosChart(document, canvas, width, height);
+        }
 
-    private void DrawOrdeniosChart(GenerateOrdeniosPdfDocument document, SKCanvas canvas, float width, float height)
+        return Encoding.UTF8.GetString(stream.ToArray());
+    }
+
+
+    private static void DrawOrdeniosChart(GenerateOrdeniosPdfDocument document, SKCanvas canvas, float width, float height)
     {
         canvas.Clear(SKColors.White);
 

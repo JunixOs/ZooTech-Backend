@@ -11,10 +11,9 @@ public class OrdenioTests
 
         var action = () => Ordenio.CreateNew(
             codigo: "ORD-001",
-            fechaHora: DateTime.Now.AddMinutes(1),
+            fechaHora: DateTime.UtcNow.AddMinutes(1),
             vacunoId: 1,
             encargadoUsuarioId: 2,
-            nombreCompleto: "Juan Perez",
             litros: 10,
             estadoOrdenioCode: "ACTIVO",
             observaciones: null,
@@ -35,7 +34,6 @@ public class OrdenioTests
             fechaHora: now,
             vacunoId: 1,
             encargadoUsuarioId: 2,
-            nombreCompleto: "Juan Perez",
             litros: 0,
             estadoOrdenioCode: "ACTIVO",
             observaciones: null,
