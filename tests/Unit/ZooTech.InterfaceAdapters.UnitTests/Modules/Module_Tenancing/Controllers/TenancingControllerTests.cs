@@ -1,7 +1,8 @@
 using FluentAssertions;
-using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
+using ZooTech.Application.Common.Behaviors;
+using ZooTech.Application.Common.Behaviors.Module_Tenancing;
 using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant;
 using ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers;
 using ZooTech.InterfaceAdapters.Modules.Module_Tenancing.DTOs.Requests;
@@ -15,8 +16,7 @@ public class TenancingControllerTests
     public async Task CreateTenant_Should_Send_Command_And_Return_Ok()
     {
         // Arrange
-        var mediatorMock = new Mock<IMediator>();
-        var expectedResult = new CreateTenantResult
+        var expectedResult = new CreateTenantOutput
         {
             Code = "tenant-01",
             SubDomain = "tenant-01",
@@ -24,11 +24,17 @@ public class TenancingControllerTests
             LegalName = "Legal"
         };
 
-        mediatorMock
-            .Setup(m => m.Send(It.IsAny<CreateTenantCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(expectedResult);
+        var pipeline = new BehaviorPipeline<CreateTenantCommand, CreateTenantOutput>(
+            [],
+            _ => Task.FromResult(expectedResult)
+        );
 
-        var controller = new TenancingController(mediatorMock.Object);
+        var pipelineFactoryMock = new Mock<ICreateTenantPipelineFactory>();
+        pipelineFactoryMock
+            .Setup(bm => bm.Create())
+            .Returns(pipeline);
+
+        var controller = new TenancingController(pipelineFactoryMock.Object);
 
         var request = new CreateTenantRequestDto
         {
@@ -65,6 +71,6 @@ public class TenancingControllerTests
         responseDto.Code.Should().Be(expectedResult.Code);
         responseDto.SubDomain.Should().Be(expectedResult.SubDomain);
 
-        mediatorMock.Verify(m => m.Send(It.IsAny<CreateTenantCommand>(), It.IsAny<CancellationToken>()), Times.Once);
+        pipelineFactoryMock.Verify(bm => bm.Create(), Times.Once);
     }
 }

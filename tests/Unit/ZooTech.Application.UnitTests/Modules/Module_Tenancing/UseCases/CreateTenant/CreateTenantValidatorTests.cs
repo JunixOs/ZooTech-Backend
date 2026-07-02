@@ -1,12 +1,12 @@
 using FluentAssertions;
 using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant;
-using ZooTech.Domain.Enums;
+using ZooTech.Domain.Admin.Enums;
 
 namespace ZooTech.Application.UnitTests.Modules.Module_Tenancing.UseCases.CreateTenant;
 
 public class CreateTenantValidatorTests
 {
-    private readonly CreateTenantValidator _validator = new();
+    private readonly CreateTenantValidation _validator = new();
 
     private static CreateTenantCommand CreateCommand(
         string? code = "tenant-01",
@@ -64,11 +64,10 @@ public class CreateTenantValidatorTests
         var command = CreateCommand();
 
         // Act
-        var result = _validator.Validate(command);
+        var errors = _validator.Validate(command);
 
         // Assert
-        result.IsValid.Should().BeTrue();
-        result.Errors.Should().BeEmpty();
+        errors.Should().BeEmpty();
     }
 
     [Theory]
@@ -80,11 +79,11 @@ public class CreateTenantValidatorTests
         var command = CreateCommand(code: code);
 
         // Act
-        var result = _validator.Validate(command);
+        var errors = _validator.Validate(command);
 
         // Assert
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "Code");
+        errors.Should().NotBeEmpty();
+        errors.Should().Contain(e => e.Contains("TENANT-CODE"));
     }
 
     [Fact]
@@ -94,11 +93,11 @@ public class CreateTenantValidatorTests
         var command = CreateCommand(code: new string('a', 51));
 
         // Act
-        var result = _validator.Validate(command);
+        var errors = _validator.Validate(command);
 
         // Assert
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "Code");
+        errors.Should().NotBeEmpty();
+        errors.Should().Contain(e => e.Contains("TENANT-CODE"));
     }
 
     [Theory]
@@ -111,11 +110,11 @@ public class CreateTenantValidatorTests
         var command = CreateCommand(subDomain: subDomain);
 
         // Act
-        var result = _validator.Validate(command);
+        var errors = _validator.Validate(command);
 
         // Assert
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "SubDomain");
+        errors.Should().NotBeEmpty();
+        errors.Should().Contain(e => e.Contains("SUBDOMAIN"));
     }
 
     [Theory]
@@ -127,11 +126,11 @@ public class CreateTenantValidatorTests
         var command = CreateCommand(email: email);
 
         // Act
-        var result = _validator.Validate(command);
+        var errors = _validator.Validate(command);
 
         // Assert
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "Email");
+        errors.Should().NotBeEmpty();
+        errors.Should().Contain(e => e.Contains("EMAIL"));
     }
 
     [Fact]
@@ -141,11 +140,11 @@ public class CreateTenantValidatorTests
         var command = CreateCommand(status: (TenantStatus)999);
 
         // Act
-        var result = _validator.Validate(command);
+        var errors = _validator.Validate(command);
 
         // Assert
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "Status");
+        errors.Should().NotBeEmpty();
+        errors.Should().Contain(e => e.Contains("STATUS"));
     }
 
     [Fact]
@@ -178,11 +177,11 @@ public class CreateTenantValidatorTests
         };
 
         // Act
-        var result = _validator.Validate(command);
+        var errors = _validator.Validate(command);
 
         // Assert
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "TenantAddress");
+        errors.Should().NotBeEmpty();
+        errors.Should().Contain(e => e.Contains("TENANT_ADDRESS"));
     }
 
     [Fact]
@@ -199,11 +198,11 @@ public class CreateTenantValidatorTests
         });
 
         // Act
-        var result = _validator.Validate(command);
+        var errors = _validator.Validate(command);
 
         // Assert
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "TenantAddress.Country");
+        errors.Should().NotBeEmpty();
+        errors.Should().Contain(e => e.Contains("ADDRESS_COUNTRY"));
     }
 
     [Fact]
@@ -218,11 +217,11 @@ public class CreateTenantValidatorTests
         });
 
         // Act
-        var result = _validator.Validate(command);
+        var errors = _validator.Validate(command);
 
         // Assert
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "TenantBranding.PrimaryColor");
+        errors.Should().NotBeEmpty();
+        errors.Should().Contain(e => e.Contains("PRIMARY_COLOR"));
     }
 
     [Fact]
@@ -237,11 +236,11 @@ public class CreateTenantValidatorTests
         });
 
         // Act
-        var result = _validator.Validate(command);
+        var errors = _validator.Validate(command);
 
         // Assert
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "TenantBranding.LogoUrl");
+        errors.Should().NotBeEmpty();
+        errors.Should().Contain(e => e.Contains("LOGO_URL"));
     }
 
     [Fact]
@@ -256,9 +255,9 @@ public class CreateTenantValidatorTests
         });
 
         // Act
-        var result = _validator.Validate(command);
+        var errors = _validator.Validate(command);
 
         // Assert
-        result.IsValid.Should().BeTrue();
+        errors.Should().BeEmpty();
     }
 }

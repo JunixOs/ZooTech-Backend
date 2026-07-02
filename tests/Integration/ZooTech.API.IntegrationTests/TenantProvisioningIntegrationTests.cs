@@ -9,9 +9,8 @@ using ZooTech.Application.Common.Gateway.Auditing;
 using ZooTech.Application.Common.Gateway.Context;
 using ZooTech.Application.Common.Gateway.Tenant;
 using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant;
-using ZooTech.Domain.Enums;
-using ZooTech.Infrastructure.Tenant;
-
+using ZooTech.Domain.Admin.Enums;
+using ZooTech.Infrastructure.Context;
 namespace ZooTech.API.IntegrationTests;
 
 public class TenantProvisioningIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
@@ -22,8 +21,7 @@ public class TenantProvisioningIntegrationTests : IClassFixture<WebApplicationFa
     {
         var provisioningMock = new Mock<ITenantProvisioningService>();
         provisioningMock
-            .Setup(x => x.ProvisionAsync(It.IsAny<CreateTenantCommand>()))
-            .ReturnsAsync(true);
+            .Setup(x => x.ProvisionAsync(It.IsAny<CreateTenantCommand>()));
 
         var auditMock = new Mock<IAppAuditService>();
 

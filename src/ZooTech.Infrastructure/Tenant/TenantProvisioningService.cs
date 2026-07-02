@@ -17,12 +17,12 @@ namespace ZooTech.Infrastructure.Tenant
         private readonly ITenantDatabaseMigrator _tenantDatabaseMigrator;
 
         public TenantProvisioningService(
-            TenantCatalogDb tenantCatalogDb,
+            ITenantDbContextFactory tenantDbContextFactory,
             IConfiguration config,
             ITenantDatabaseMigrator tenantDatabaseMigrator
         )
         {
-            _tenantCatalogDb = tenantCatalogDb;
+            _tenantCatalogDb = tenantDbContextFactory.CreateDbContext();
             _config = config;
             _tenantDatabaseMigrator = tenantDatabaseMigrator;
         }
@@ -76,12 +76,7 @@ namespace ZooTech.Infrastructure.Tenant
                 _tenantCatalogDb.tenants.Add(tenant);
                 await _tenantCatalogDb.SaveChangesAsync();
 
-                var template = _config.GetConnectionString("TenantTemplate");
-                var builder = new SqlConnectionStringBuilder(template);
-                builder.InitialCatalog = tenantDbName;
-                var conn = builder.ConnectionString;
-
-                await _tenantDatabaseMigrator.MigrateAsync(conn);
+                await _tenantDatabaseMigrator.MigrateAsync();
             }
             catch (Exception)
             {

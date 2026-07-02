@@ -1,5 +1,4 @@
-using FluentValidation;
-using MediatR;
+using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Common.Validator;
 
 namespace ZooTech.Application.Common.Behaviors
@@ -19,7 +18,12 @@ namespace ZooTech.Application.Common.Behaviors
             Func<Task<TResponse>> next
         )
         {
-            _validator.Validate(request);
+            List<string> errors = _validator.Validate(request);
+
+            if(errors.Count != 0)
+            {
+                throw new ValidationException(_validator.ModuleName.ToString(), errors);
+            }
 
             return await next();
         }

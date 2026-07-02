@@ -1,44 +1,38 @@
 using FluentAssertions;
-using FluentValidation;
-using FluentValidation.Results;
-using MediatR;
 using Moq;
 using ZooTech.Application.Common.Behaviors;
-using ValidationException = ZooTech.Application.Common.Exceptions.ValidationException;
+using ZooTech.Application.Common.Exceptions;
+using ZooTech.Application.Common.Validator;
+using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.UnitTests.Common.Behaviors;
 
 public class ValidationBehaviorTests
 {
-    public record TestRequest : IRequest<string>;
+    public record TestRequest;
 
-    [Fact]
-    public async Task Should_Continue_When_No_Validators_Are_Registered()
+    private class TestValidator : ICommandValidator<TestRequest>
     {
-        // Arrange
-        var validators = Array.Empty<IValidator<TestRequest>>();
-        var behavior = new ValidationBehavior<TestRequest, string>(validators);
+        private readonly List<string> _errors;
+        public ModuleName ModuleName => ModuleName.Tenancing;
 
-        // Act
-        var result = await behavior.Handle(new TestRequest(), _ => Task.FromResult("ok"), CancellationToken.None);
+        public TestValidator(List<string>? errors = null)
+        {
+            _errors = errors ?? new List<string>();
+        }
 
-        // Assert
-        result.Should().Be("ok");
+        public List<string> Validate(TestRequest request) => _errors;
     }
 
     [Fact]
     public async Task Should_Continue_When_Validation_Passes()
     {
         // Arrange
-        var validatorMock = new Mock<IValidator<TestRequest>>();
-        validatorMock
-            .Setup(v => v.Validate(It.IsAny<ValidationContext<TestRequest>>()))
-            .Returns(new ValidationResult());
-
-        var behavior = new ValidationBehavior<TestRequest, string>(new[] { validatorMock.Object });
+        var validator = new TestValidator();
+        var behavior = new ValidationBehavior<TestRequest, string>(validator);
 
         // Act
-        var result = await behavior.Handle(new TestRequest(), ct => Task.FromResult("ok"), CancellationToken.None);
+        var result = await behavior.Handle(new TestRequest(), () => Task.FromResult("ok"));
 
         // Assert
         result.Should().Be("ok");
@@ -48,24 +42,16 @@ public class ValidationBehaviorTests
     public async Task Should_Throw_ValidationException_When_Validation_Fails()
     {
         // Arrange
-        var failures = new List<ValidationFailure>
-        {
-            new("Property", "Error message")
-        };
-
-        var validatorMock = new Mock<IValidator<TestRequest>>();
-        validatorMock
-            .Setup(v => v.Validate(It.IsAny<ValidationContext<TestRequest>>()))
-            .Returns(new ValidationResult(failures));
-
-        var behavior = new ValidationBehavior<TestRequest, string>(new[] { validatorMock.Object });
+        var errors = new List<string> { "TENANCING_CREATE-TENANT-CODE-NULL" };
+        var validator = new TestValidator(errors);
+        var behavior = new ValidationBehavior<TestRequest, string>(validator);
 
         // Act
-        var act = async () => await behavior.Handle(new TestRequest(), ct => Task.FromResult("ok"), CancellationToken.None);
+        var act = async () => await behavior.Handle(new TestRequest(), () => Task.FromResult("ok"));
 
         // Assert
         var ex = await act.Should().ThrowAsync<ValidationException>();
-        ex.Which.Errors.Should().ContainSingle()
-           .Which.PropertyName.Should().Be("Property");
+        ex.Which.Details.Should().ContainSingle()
+           .Which.Should().Be("TENANCING_CREATE-TENANT-CODE-NULL");
     }
 }

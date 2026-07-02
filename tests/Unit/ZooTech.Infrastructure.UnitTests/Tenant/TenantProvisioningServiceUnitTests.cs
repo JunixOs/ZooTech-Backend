@@ -2,9 +2,8 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Moq;
-using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant;
-using ZooTech.Domain.Admin.Enums;
+using ZooTech.Infrastructure.Exceptions;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Tenant;
 using ZooTech.Tests.Shared.Factories;
@@ -13,13 +12,16 @@ namespace ZooTech.Infrastructure.UnitTests.Tenant
 {
     public class TenantProvisioningServiceUnitTests
     {
-        private static (TenantCatalogDb Db, IConfiguration Config, Mock<ITenantDatabaseMigrator> Migrator) CreateDependencies()
+        private static (Mock<ITenantDbContextFactory> DbFactoryMock, IConfiguration Config, Mock<ITenantDatabaseMigrator> Migrator) CreateDependencies()
         {
             var options = new DbContextOptionsBuilder<TenantCatalogDb>()
                 .UseInMemoryDatabase(Guid.NewGuid().ToString())
                 .Options;
 
             var db = new TenantCatalogDb(options);
+
+            var dbFactoryMock = new Mock<ITenantDbContextFactory>();
+            dbFactoryMock.Setup(f => f.CreateDbContext()).Returns(db);
 
             var configData = new Dictionary<string, string>
             {
@@ -32,34 +34,34 @@ namespace ZooTech.Infrastructure.UnitTests.Tenant
 
             var migratorMock = new Mock<ITenantDatabaseMigrator>();
 
-            return (db, configuration, migratorMock);
+            return (dbFactoryMock, configuration, migratorMock);
         }
 
         [Fact]
-        public async Task ProvisionAsync_Should_Return_True_When_Migration_Succeeds()
+        public async Task ProvisionAsync_Should_Executes_Normally_When_Migration_Succeeds()
         {
             // Arrange
-            var (db, config, migratorMock) = CreateDependencies();
-            migratorMock.Setup(x => x.MigrateAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
+            var (dbFactoryMock, config, migratorMock) = CreateDependencies();
+            migratorMock.Setup(x => x.MigrateAsync()).Returns(Task.CompletedTask);
 
-            var service = new TenantProvisioningService(db, config, migratorMock.Object);
+            var service = new TenantProvisioningService(dbFactoryMock.Object, config, migratorMock.Object);
             var cmd = TenantTestDataFactory.CreateValidCommand();
 
             // Act
-            var result = await service.ProvisionAsync(cmd);
+            await service.ProvisionAsync(cmd);
 
             // Assert
-            result.Should().BeTrue();
+            migratorMock.Verify(m => m.MigrateAsync(), Times.Once);
         }
 
         [Fact]
         public async Task ProvisionAsync_Should_Throw_TenantProvisioningException_When_Migration_Fails()
         {
             // Arrange
-            var (db, config, migratorMock) = CreateDependencies();
-            migratorMock.Setup(x => x.MigrateAsync(It.IsAny<string>())).ThrowsAsync(new Exception("Migration failed"));
+            var (dbFactoryMock, config, migratorMock) = CreateDependencies();
+            migratorMock.Setup(x => x.MigrateAsync()).ThrowsAsync(new Exception("Migration failed"));
 
-            var service = new TenantProvisioningService(db, config, migratorMock.Object);
+            var service = new TenantProvisioningService(dbFactoryMock.Object, config, migratorMock.Object);
             var cmd = TenantTestDataFactory.CreateValidCommand();
 
             // Act

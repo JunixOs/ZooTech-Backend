@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Moq;
 using ZooTech.Application.Common.Exceptions;
+using ZooTech.Application.Common.Gateway.Auditing;
 using ZooTech.InterfaceAdapters.Middleware;
 
 namespace ZooTech.InterfaceAdapters.UnitTests.Middleware;
@@ -13,7 +14,8 @@ public class ExceptionHandlingMiddlewareTests
     private static ExceptionHandlingMiddleware CreateMiddleware(RequestDelegate next)
     {
         var loggerMock = new Mock<ILogger<ExceptionHandlingMiddleware>>();
-        return new ExceptionHandlingMiddleware(next, loggerMock.Object);
+        var auditServiceMock = new Mock<IAppAuditService>();
+        return new ExceptionHandlingMiddleware(next, loggerMock.Object, auditServiceMock.Object);
     }
 
     private static DefaultHttpContext CreateHttpContext()
@@ -34,7 +36,7 @@ public class ExceptionHandlingMiddlewareTests
     public async Task Should_Return_Json_For_AppException()
     {
         // Arrange
-        var middleware = CreateMiddleware(_ => throw new ValidationException(new List<FluentValidation.Results.ValidationFailure>()));
+        var middleware = CreateMiddleware(_ => throw new ValidationException("TENANCING", new List<string>()));
         var context = CreateHttpContext();
 
         // Act

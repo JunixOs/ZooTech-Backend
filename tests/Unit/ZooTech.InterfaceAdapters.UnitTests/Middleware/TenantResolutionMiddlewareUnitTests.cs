@@ -30,6 +30,7 @@ namespace ZooTech.InterfaceAdapters.UnitTests.Middleware
                 Id = 1,
                 SubDomain = "tenant1",
                 LegalName = "tenant S.A.C",
+                DisplayName = "Tenant 1",
                 Code = "TENANT_1",
                 DatabaseName = "ZooTech_tenant1_Db",
                 IsDatabaseActive = true,

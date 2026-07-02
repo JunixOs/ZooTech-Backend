@@ -1,6 +1,6 @@
 namespace ZooTech.Application.Common.Gateway.Identity
 {
-    public class ICurrentUserService
+    public interface ICurrentUserService
     {
         public int? UserId { get; }
         public string? UserName { get; }

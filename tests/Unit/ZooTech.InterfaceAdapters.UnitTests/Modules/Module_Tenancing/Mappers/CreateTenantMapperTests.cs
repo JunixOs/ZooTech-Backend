@@ -105,7 +105,7 @@ public class CreateTenantMapperTests
     public void ToResponseDto_Should_Map_All_Fields()
     {
         // Arrange
-        var result = new CreateTenantResult
+        var result = new CreateTenantOutput
         {
             Code = "tenant-01",
             SubDomain = "tenant-01",

@@ -5,7 +5,7 @@ using Moq;
 using ZooTech.Application.Common.Gateway.Context;
 using ZooTech.Infrastructure.Tenant;
 
-namespace ZooTech.Infrastructure.UnitTests.Tenant
+namespace ZooTech.Infrastructure.UnitTests.Persistence.Context
 {
     public class TenantDbContextFactoryUnitTests
     {

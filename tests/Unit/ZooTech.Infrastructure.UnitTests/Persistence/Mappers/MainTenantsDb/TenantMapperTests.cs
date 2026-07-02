@@ -36,7 +36,7 @@ public class TenantMapperTests
         domain.SubDomain.Should().Be("code1");
         domain.DisplayName.Should().Be("Display");
         domain.LegalName.Should().Be("Legal SAC");
-        domain.Email.Should().Be("a@b.com");
+        domain.Email.Value.Should().Be("a@b.com");
         domain.Phone.Should().Be("123456");
         domain.Status.Should().Be(TenantStatus.TRIAL);
         domain.CreatedAt.Should().Be(entity.created_at.Value);

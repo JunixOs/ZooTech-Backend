@@ -5,18 +5,16 @@ namespace ZooTech.Infrastructure.Tenant
 {
     public class TenantDatabaseMigrator : ITenantDatabaseMigrator
     {
-        private readonly IGanaderiaDbContextFactory _ganaderiaDbContextFactory;
+        private readonly GanaderiaDbContext _ganaderiaDbContext;
 
         public TenantDatabaseMigrator(IGanaderiaDbContextFactory ganaderiaDbContextFactory)
         {
-            _ganaderiaDbContextFactory = ganaderiaDbContextFactory;
+            _ganaderiaDbContext = ganaderiaDbContextFactory.CreateDbContext();
         }
 
-        public async Task MigrateAsync(string connectionString)
+        public async Task MigrateAsync()
         {
-            await using var context = _ganaderiaDbContextFactory.Create(connectionString);
-
-            await context.Database.MigrateAsync();
+            await _ganaderiaDbContext.Database.MigrateAsync();
         }
     }
 }

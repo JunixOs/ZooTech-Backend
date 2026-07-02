@@ -1,4 +1,5 @@
 using FluentAssertions;
+using ZooTech.Domain.Shared.Exceptions;
 using ZooTech.Domain.Shared.ValueObjects;
 
 namespace ZooTech.Domain.UnitTests.Shared.ValueObjects;
@@ -28,7 +29,7 @@ public class EmailTests
         var act = () => new Email(email!);
 
         // Assert
-        act.Should().Throw<ArgumentException>();
+        act.Should().Throw<NullEmailException>();
     }
 
     [Theory]
@@ -42,7 +43,7 @@ public class EmailTests
         var act = () => new Email(email);
 
         // Assert
-        act.Should().Throw<ArgumentException>();
+        act.Should().Throw<InvalidEmailException>();
     }
 
     [Fact]

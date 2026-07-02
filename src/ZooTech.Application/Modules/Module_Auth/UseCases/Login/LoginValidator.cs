@@ -1,10 +1,13 @@
 using System.Text.RegularExpressions;
 using ZooTech.Application.Common.Validator;
+using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Auth.UseCases
 {
     public class LoginValidator : ICommandValidator<LoginCommand>
     {
+        public ModuleName ModuleName => ModuleName.Auth;
+
         public List<string> Validate(LoginCommand cmd)
         {
             List<string> errors = new List<string>();

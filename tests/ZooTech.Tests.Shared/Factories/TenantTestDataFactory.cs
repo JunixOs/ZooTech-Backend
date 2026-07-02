@@ -1,5 +1,5 @@
 using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant;
-using ZooTech.Domain.Enums;
+using ZooTech.Domain.Admin.Enums;
 using ZooTech.Infrastructure.Persistence.Entities.MainTenantsDb;
 
 namespace ZooTech.Tests.Shared.Factories;

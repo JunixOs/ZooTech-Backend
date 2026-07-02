@@ -4,6 +4,6 @@ namespace ZooTech.Infrastructure.Tenant
 {
     public interface ITenantDbContextFactory
     {
-        GanaderiaDbContext CreateDbContext();
+        TenantCatalogDb CreateDbContext();
     }
 }

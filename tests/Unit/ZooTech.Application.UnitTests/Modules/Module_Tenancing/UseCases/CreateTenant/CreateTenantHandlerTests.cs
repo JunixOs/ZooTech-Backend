@@ -1,6 +1,5 @@
 using FluentAssertions;
 using Moq;
-using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Common.Gateway.Tenant;
 using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant;
 using ZooTech.Tests.Shared.Factories;
@@ -16,13 +15,13 @@ public class CreateTenantHandlerTests
         var provisioningServiceMock = new Mock<ITenantProvisioningService>();
         provisioningServiceMock
             .Setup(x => x.ProvisionAsync(It.IsAny<CreateTenantCommand>()))
-            .ReturnsAsync(true);
+            .Returns(Task.CompletedTask);
 
-        var handler = new CreateTenantHandler(provisioningServiceMock.Object);
+        var handler = new CreateTenantInteractor(provisioningServiceMock.Object);
         var command = TenantTestDataFactory.CreateValidCommand();
 
         // Act
-        var result = await handler.Handle(command, CancellationToken.None);
+        var result = await handler.Handle(command);
 
         // Assert
         result.Should().NotBeNull();
@@ -33,21 +32,21 @@ public class CreateTenantHandlerTests
     }
 
     [Fact]
-    public async Task Handle_Should_Throw_TenantProvisioningException_When_Provisioning_Fails()
+    public async Task Handle_Should_Throw_When_Provisioning_Fails()
     {
         // Arrange
         var provisioningServiceMock = new Mock<ITenantProvisioningService>();
         provisioningServiceMock
             .Setup(x => x.ProvisionAsync(It.IsAny<CreateTenantCommand>()))
-            .ReturnsAsync(false);
+            .ThrowsAsync(new Exception("Provisioning failed"));
 
-        var handler = new CreateTenantHandler(provisioningServiceMock.Object);
+        var handler = new CreateTenantInteractor(provisioningServiceMock.Object);
         var command = TenantTestDataFactory.CreateValidCommand();
 
         // Act
-        var act = async () => await handler.Handle(command, CancellationToken.None);
+        var act = async () => await handler.Handle(command);
 
         // Assert
-        await act.Should().ThrowAsync<TenantProvisioningException>();
+        await act.Should().ThrowAsync<Exception>();
     }
 }

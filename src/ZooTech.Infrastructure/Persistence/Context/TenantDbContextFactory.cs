@@ -19,7 +19,7 @@ namespace ZooTech.Infrastructure.Tenant
             _config = config;
         }
 
-        public GanaderiaDbContext CreateDbContext()
+        public TenantCatalogDb CreateDbContext()
         {
             var template = _config.GetConnectionString("TenantTemplate");
 
@@ -29,11 +29,11 @@ namespace ZooTech.Infrastructure.Tenant
 
             var conn = builder.ConnectionString;
 
-            var options = new DbContextOptionsBuilder<GanaderiaDbContext>()
+            var options = new DbContextOptionsBuilder<TenantCatalogDb>()
                 .UseSqlServer(conn)
                 .Options;
 
-            return new GanaderiaDbContext(options);
+            return new TenantCatalogDb(options);
         }
     }
 }
