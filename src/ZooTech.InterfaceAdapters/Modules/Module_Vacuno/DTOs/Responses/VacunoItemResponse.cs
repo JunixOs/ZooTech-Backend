@@ -5,7 +5,13 @@ public sealed record VacunoItemResponse(
     string Codigo,
     string Nombre,
     DateOnly FechaNacimiento,
+    DateOnly FechaRegistro,
     string RazaCode,
-    string SexoCode,
     string? Procedencia,
     string Estado);
+
+public sealed record VacunoReferenceResponse(
+    long Id,
+    string Codigo,
+    string Nombre,
+    string SexoCode);

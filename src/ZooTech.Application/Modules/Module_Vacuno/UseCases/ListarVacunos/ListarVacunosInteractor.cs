@@ -14,17 +14,6 @@ public sealed class ListarVacunosInteractor : IListarVacunosInputPort
     public async Task<ListarVacunosOutput> HandleAsync(CancellationToken cancellationToken = default)
     {
         var vacunos = await _vacunoRepository.ListAllForDisplayAsync(cancellationToken);
-
-        var items = vacunos.Select(x => new VacunoItemDto(
-            Id: x.Vacuno.Id,
-            Codigo: x.Vacuno.Codigo,
-            Nombre: x.Vacuno.Nombre,
-            FechaNacimiento: x.Vacuno.FechaNacimiento,
-            RazaCode: x.Vacuno.RazaCode,
-            SexoCode: x.Vacuno.SexoCode,
-            Procedencia: x.Procedencia,
-            IsDeleted: x.Vacuno.IsDeleted)).ToList();
-
-        return new ListarVacunosOutput(items);
+        return new ListarVacunosOutput(vacunos);
     }
 }

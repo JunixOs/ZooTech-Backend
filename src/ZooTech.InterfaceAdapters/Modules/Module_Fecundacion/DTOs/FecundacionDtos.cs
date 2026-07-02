@@ -20,3 +20,5 @@ public sealed record FecundacionResponse(
     string Responsable,
     string Resultado,
     string? Observaciones);
+
+public sealed record DeleteFecundacionRequest(string? Razon);

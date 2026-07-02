@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using ZooTech.Domain.Module_Vacuno.Entities;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
 using ZooTech.Domain.Module_Vacuno.Models;
+using ZooTech.Domain.Module_Vacuno.ReadModels;
 using ZooTech.Infrastructure.Persistence.Context;
 
 namespace ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Repositories;
@@ -36,32 +37,40 @@ public sealed class VacunoRepository : IVacunoRepository
         return entities.Select(ToDomain).ToList();
     }
 
-    public async Task<List<(Vacuno Vacuno, string? Procedencia)>> ListAllForDisplayAsync(CancellationToken cancellationToken = default)
+    public async Task<List<VacunoListItem>> ListAllForDisplayAsync(CancellationToken cancellationToken = default)
     {
-        var entities = await _context.vacunos
+        return await _context.vacunos
             .AsNoTracking()
-            .Include(v => v.granja)
-                .ThenInclude(g => g.distrito_codigoNavigation)
-                    .ThenInclude(d => d.provincia_codigoNavigation)
-                        .ThenInclude(p => p.departamento_codigoNavigation)
             .OrderBy(v => v.codigo)
+            .Select(v => new VacunoListItem(
+                v.id,
+                v.codigo,
+                v.nombre,
+                v.fecha_nacimiento,
+                v.fecha_registro,
+                v.raza_code,
+                v.granja == null
+                    ? null
+                    : v.granja.nombre + ", "
+                        + v.granja.distrito_codigoNavigation.nombre + ", "
+                        + v.granja.distrito_codigoNavigation.provincia_codigoNavigation.nombre + ", "
+                        + v.granja.distrito_codigoNavigation.provincia_codigoNavigation.departamento_codigoNavigation.nombre,
+                v.deleted_at != null))
             .ToListAsync(cancellationToken);
+    }
 
-        return entities.Select(v =>
-        {
-            string? procedencia = null;
-            var g = v.granja;
-            if (g is not null)
-            {
-                var d = g.distrito_codigoNavigation;
-                var p = d?.provincia_codigoNavigation;
-                var dep = p?.departamento_codigoNavigation;
-                procedencia = string.Join(", ",
-                    new[] { g.nombre, d?.nombre, p?.nombre, dep?.nombre }
-                    .Where(s => !string.IsNullOrWhiteSpace(s)));
-            }
-            return (ToDomain(v), procedencia);
-        }).ToList();
+    public async Task<List<VacunoReferenceItem>> ListReferencesAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.vacunos
+            .AsNoTracking()
+            .Where(v => v.deleted_at == null)
+            .OrderBy(v => v.codigo)
+            .Select(v => new VacunoReferenceItem(
+                v.id,
+                v.codigo,
+                v.nombre,
+                v.sexo_code))
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<Vacuno?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
@@ -120,6 +129,13 @@ public sealed class VacunoRepository : IVacunoRepository
             .Select(item => new VacunoCatalogOption(item.code, item.nombre))
             .ToListAsync(cancellationToken);
 
+        var utilizaciones = await _context.cat_tipo_utilizacions
+            .AsNoTracking()
+            .Where(item => item.activo)
+            .OrderBy(item => item.nombre)
+            .Select(item => new VacunoCatalogOption(item.code, item.nombre))
+            .ToListAsync(cancellationToken);
+
         var granjas = await _context.granjas
             .AsNoTracking()
             .Where(item => item.activo)
@@ -127,7 +143,7 @@ public sealed class VacunoRepository : IVacunoRepository
             .Select(item => new GranjaCatalogOption(item.id, item.nombre))
             .ToListAsync(cancellationToken);
 
-        return new VacunoCatalogs(tiposAdquisicion, razas, colores, sexos, granjas);
+        return new VacunoCatalogs(tiposAdquisicion, razas, colores, sexos, utilizaciones, granjas);
     }
 
     public async Task<Vacuno> AddAsync(Vacuno vacuno, CancellationToken cancellationToken = default)

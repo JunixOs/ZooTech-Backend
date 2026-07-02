@@ -9,6 +9,7 @@ using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.UpdateVacuno;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
 using ZooTech.Infrastructure.Persistence.Context;
+using ZooTech.Infrastructure.Persistence.Entities;
 using ZooTech.InterfaceAdapters.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses;
@@ -95,6 +96,16 @@ public sealed class VacunoController : ControllerBase
         return Ok(GeneralResponseDTO<VacunoCatalogsResponse>.Ok(VacunoMapper.ToResponse(catalogs)));
     }
 
+    [HttpGet("referencias")]
+    [ProducesResponseType(typeof(GeneralResponseDTO<List<VacunoReferenceResponse>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ListarReferencias(CancellationToken cancellationToken)
+    {
+        var items = await _vacunoRepository.ListReferencesAsync(cancellationToken);
+        return Ok(GeneralResponseDTO<List<VacunoReferenceResponse>>.Ok(items.Select(VacunoMapper.ToResponse).ToList()));
+    }
+
+
+
     [HttpPost]
     [ProducesResponseType(typeof(GeneralResponseDTO<VacunoResponse>), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -136,6 +147,20 @@ public sealed class VacunoController : ControllerBase
             });
         }
 
+        var catalogValidation = await ValidateCatalogCodesAsync(
+            request.TipoAdquisicionCode,
+            request.RazaCode,
+            request.ColorCode,
+            request.SexoCode,
+            request.AptoPara,
+            db,
+            cancellationToken);
+
+        if (catalogValidation is not null)
+        {
+            return catalogValidation;
+        }
+
         long? padreId = null;
         if (!string.IsNullOrWhiteSpace(request.CodigoPadre))
         {
@@ -154,6 +179,10 @@ public sealed class VacunoController : ControllerBase
                         }
                     }
                 });
+            }
+            if (VacunoMapper.NormalizeCatalogCode(padre.sexo_code) != "MACHO")
+            {
+                return ValidationError("codigoPadre", "El código padre debe pertenecer a un vacuno macho registrado.");
             }
             padreId = padre.id;
         }
@@ -176,6 +205,10 @@ public sealed class VacunoController : ControllerBase
                         }
                     }
                 });
+            }
+            if (VacunoMapper.NormalizeCatalogCode(madre.sexo_code) != "HEMBRA")
+            {
+                return ValidationError("codigoMadre", "El código madre debe pertenecer a un vacuno hembra registrado.");
             }
             madreId = madre.id;
         }
@@ -244,6 +277,14 @@ public sealed class VacunoController : ControllerBase
 
         var command = VacunoMapper.ToCommand(request, padreId, madreId, granjaId);
         var output = await _createInputPort.HandleAsync(command, cancellationToken);
+        await PersistVacunoExtrasAsync(
+            output.Data.Id,
+            request.TipoAdquisicionCode,
+            request.PrecioCompra,
+            request.AptoPara,
+            request.FechaEspecificacion,
+            db,
+            cancellationToken);
         var response = await EnrichResponseAsync(output.Data, db, cancellationToken);
         return Created($"/api/v1/vacuno/{response.Id}", GeneralResponseDTO<VacunoResponse>.Ok(response));
     }
@@ -313,6 +354,20 @@ public sealed class VacunoController : ControllerBase
             });
         }
 
+        var catalogValidation = await ValidateCatalogCodesAsync(
+            request.TipoAdquisicionCode,
+            request.RazaCode,
+            request.ColorCode,
+            request.SexoCode,
+            request.AptoPara,
+            db,
+            cancellationToken);
+
+        if (catalogValidation is not null)
+        {
+            return catalogValidation;
+        }
+
         long? padreId = null;
         if (!string.IsNullOrWhiteSpace(request.CodigoPadre))
         {
@@ -331,6 +386,10 @@ public sealed class VacunoController : ControllerBase
                         }
                     }
                 });
+            }
+            if (VacunoMapper.NormalizeCatalogCode(padre.sexo_code) != "MACHO")
+            {
+                return ValidationError("codigoPadre", "El código padre debe pertenecer a un vacuno macho registrado.");
             }
             padreId = padre.id;
         }
@@ -353,6 +412,10 @@ public sealed class VacunoController : ControllerBase
                         }
                     }
                 });
+            }
+            if (VacunoMapper.NormalizeCatalogCode(madre.sexo_code) != "HEMBRA")
+            {
+                return ValidationError("codigoMadre", "El código madre debe pertenecer a un vacuno hembra registrado.");
             }
             madreId = madre.id;
         }
@@ -421,6 +484,14 @@ public sealed class VacunoController : ControllerBase
 
         var command = VacunoMapper.ToCommand(request, padreId, madreId, granjaId);
         var output = await _updateInputPort.HandleAsync(id, command, cancellationToken);
+        await PersistVacunoExtrasAsync(
+            output.Data.Id,
+            request.TipoAdquisicionCode,
+            request.PrecioCompra,
+            request.AptoPara,
+            request.FechaEspecificacion,
+            db,
+            cancellationToken);
         var response = await EnrichResponseAsync(output.Data, db, cancellationToken);
         return Ok(GeneralResponseDTO<VacunoResponse>.Ok(response));
     }
@@ -542,6 +613,9 @@ public sealed class VacunoController : ControllerBase
         string? provinciaNombre = null;
         string? departamentoNombre = null;
         string? codigoDistrito = null;
+        decimal? precioCompra = null;
+        string? aptoPara = null;
+        DateOnly? fechaEspecificacion = null;
 
         var granja = await db.granjas
             .Include(g => g.distrito_codigoNavigation)
@@ -556,6 +630,27 @@ public sealed class VacunoController : ControllerBase
             distritoNombre = granja.distrito_codigoNavigation?.nombre;
             provinciaNombre = granja.distrito_codigoNavigation?.provincia_codigoNavigation?.nombre;
             departamentoNombre = granja.distrito_codigoNavigation?.provincia_codigoNavigation?.departamento_codigoNavigation?.nombre;
+        }
+
+        var adquisicion = await db.vacuno_adquisicions
+            .AsNoTracking()
+            .FirstOrDefaultAsync(item => item.vacuno_id == dto.Id, cancellationToken);
+
+        if (adquisicion != null)
+        {
+            precioCompra = adquisicion.precio_compra;
+        }
+
+        var utilizacion = await db.vacuno_utilizacion_historials
+            .AsNoTracking()
+            .Where(item => item.vacuno_id == dto.Id)
+            .OrderByDescending(item => item.created_at)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (utilizacion != null)
+        {
+            aptoPara = utilizacion.tipo_utilizacion_code;
+            fechaEspecificacion = DateOnly.FromDateTime(utilizacion.created_at);
         }
 
         return new VacunoResponse(
@@ -580,8 +675,125 @@ public sealed class VacunoController : ControllerBase
             distritoNombre,
             provinciaNombre,
             departamentoNombre,
-            codigoDistrito);
+            codigoDistrito,
+            precioCompra,
+            aptoPara,
+            fechaEspecificacion);
     }
+
+    private async Task<IActionResult?> ValidateCatalogCodesAsync(
+        string tipoAdquisicionCode,
+        string razaCode,
+        string colorCode,
+        string sexoCode,
+        string? aptoPara,
+        GanaderiaDbContext db,
+        CancellationToken cancellationToken)
+    {
+        var tipo = VacunoMapper.NormalizeCatalogCode(tipoAdquisicionCode);
+        var raza = VacunoMapper.NormalizeCatalogCode(razaCode);
+        var color = VacunoMapper.NormalizeCatalogCode(colorCode);
+        var sexo = VacunoMapper.NormalizeCatalogCode(sexoCode);
+        var apto = VacunoMapper.NormalizeCatalogCode(aptoPara);
+
+        if (!await db.cat_tipo_adquisicions.AnyAsync(item => item.code == tipo && item.activo, cancellationToken))
+        {
+            return ValidationError("TipoAdquisicionCode", "El tipo de adquisición seleccionado no existe en la base de datos.");
+        }
+
+        if (!await db.cat_razas.AnyAsync(item => item.code == raza && item.activo, cancellationToken))
+        {
+            return ValidationError("RazaCode", "La raza seleccionada no existe en la base de datos.");
+        }
+
+        if (!await db.cat_colors.AnyAsync(item => item.code == color && item.activo, cancellationToken))
+        {
+            return ValidationError("ColorCode", "El color seleccionado no existe en la base de datos.");
+        }
+
+        if (!await db.cat_sexos.AnyAsync(item => item.code == sexo, cancellationToken))
+        {
+            return ValidationError("SexoCode", "El sexo seleccionado no existe en la base de datos.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(apto)
+            && !await db.cat_tipo_utilizacions.AnyAsync(item => item.code == apto && item.activo, cancellationToken))
+        {
+            return ValidationError("AptoPara", "La utilización seleccionada no existe en la base de datos.");
+        }
+
+        return null;
+    }
+
+    private async Task PersistVacunoExtrasAsync(
+        long vacunoId,
+        string tipoAdquisicionCode,
+        decimal? precioCompra,
+        string? aptoPara,
+        DateOnly? fechaEspecificacion,
+        GanaderiaDbContext db,
+        CancellationToken cancellationToken)
+    {
+        var tipo = VacunoMapper.NormalizeCatalogCode(tipoAdquisicionCode);
+        var fecha = fechaEspecificacion ?? DateOnly.FromDateTime(DateTime.UtcNow);
+        var compra = tipo == "COMPRA" ? precioCompra : null;
+
+        var adquisicion = await db.vacuno_adquisicions
+            .FirstOrDefaultAsync(item => item.vacuno_id == vacunoId, cancellationToken);
+
+        if (adquisicion == null)
+        {
+            db.vacuno_adquisicions.Add(new vacuno_adquisicion
+            {
+                vacuno_id = vacunoId,
+                tipo_adquisicion_code = tipo,
+                precio_compra = compra,
+                fecha_adquisicion = fecha,
+                created_at = DateTime.UtcNow
+            });
+        }
+        else
+        {
+            adquisicion.tipo_adquisicion_code = tipo;
+            adquisicion.precio_compra = compra;
+            adquisicion.fecha_adquisicion = fecha;
+        }
+
+        var apto = VacunoMapper.NormalizeCatalogCode(aptoPara);
+        if (!string.IsNullOrWhiteSpace(apto))
+        {
+            var lastUtilizacion = await db.vacuno_utilizacion_historials
+                .Where(item => item.vacuno_id == vacunoId)
+                .OrderByDescending(item => item.created_at)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (lastUtilizacion == null || lastUtilizacion.tipo_utilizacion_code != apto)
+            {
+                db.vacuno_utilizacion_historials.Add(new vacuno_utilizacion_historial
+                {
+                    vacuno_id = vacunoId,
+                    tipo_utilizacion_code = apto,
+                    created_at = fecha.ToDateTime(TimeOnly.MinValue)
+                });
+            }
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
+    private BadRequestObjectResult ValidationError(string field, string message)
+        => BadRequest(new
+        {
+            error = new
+            {
+                code = "VALIDATION_ERROR",
+                message = "Los datos enviados no son válidos.",
+                details = new[]
+                {
+                    new { field, message }
+                }
+            }
+        });
 
     private async Task<long> ResolveIdAsync(string identifier, CancellationToken cancellationToken)
     {

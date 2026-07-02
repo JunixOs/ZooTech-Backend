@@ -9,4 +9,5 @@ public sealed record VacunoCatalogsResponse(
     IReadOnlyList<VacunoCatalogOptionResponse> Razas,
     IReadOnlyList<VacunoCatalogOptionResponse> Colores,
     IReadOnlyList<VacunoCatalogOptionResponse> Sexos,
+    IReadOnlyList<VacunoCatalogOptionResponse> Utilizaciones,
     IReadOnlyList<GranjaCatalogOptionResponse> Granjas);
