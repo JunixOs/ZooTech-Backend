@@ -112,10 +112,11 @@ public sealed class ProduccionLecheController : ControllerBase
         [FromQuery] string? estadoOrdenioCode,
         [FromQuery] DateTime? fechaDesde,
         [FromQuery] DateTime? fechaHasta,
+        [FromQuery] bool comparativo,
         CancellationToken cancellationToken)
     {
         var report = await _getOrdeniosPdfInputPort.HandleAsync(
-            new GenerateOrdeniosComparationPdfQuery(vacunoId, estadoOrdenioCode, fechaDesde, fechaHasta),
+            new GenerateOrdeniosComparationPdfQuery(vacunoId, estadoOrdenioCode, fechaDesde, fechaHasta, comparativo),
             cancellationToken);
 
         return File(report.Content, report.ContentType, report.FileName);

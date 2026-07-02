@@ -9,7 +9,7 @@ public sealed record ListOrdenioCommand(
     DateTime FechaHora,
     long VacunoId,
     long EncargadoUsuarioId,
-    string EncargadoUsuarioNombre,
+    string NombreEncargado,
     decimal Litros,
     string EstadoOrdenioCode,
     string? Observaciones

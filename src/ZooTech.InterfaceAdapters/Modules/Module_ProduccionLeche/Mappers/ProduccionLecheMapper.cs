@@ -30,7 +30,7 @@ public static class ProduccionLecheMapper
     request.FechaHora,
     request.VacunoId,
     request.EncargadoUsuarioId,
-    request.EncargadoUsuarioNombre,
+    request.NombreEncargado,
     request.Litros,
     request.EstadoOrdenioCode,
     request.Observaciones

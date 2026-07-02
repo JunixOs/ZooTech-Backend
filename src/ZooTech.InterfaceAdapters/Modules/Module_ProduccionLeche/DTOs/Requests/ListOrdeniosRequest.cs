@@ -8,7 +8,7 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.DTOs.Requests
     DateTime FechaHora,
     long VacunoId,
     long EncargadoUsuarioId,
-    string EncargadoUsuarioNombre,
+    string NombreEncargado,
     decimal Litros,
     string EstadoOrdenioCode,
     string? Observaciones,
