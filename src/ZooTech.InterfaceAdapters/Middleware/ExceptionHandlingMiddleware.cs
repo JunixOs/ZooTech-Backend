@@ -3,6 +3,7 @@ using System.Text.Json;
 using FluentValidation;
 using Microsoft.AspNetCore.Http;
 using ZooTech.Application.Common.Exceptions;
+using ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.Common;
 using ZooTech.InterfaceAdapters.DTOs;
 
 namespace ZooTech.InterfaceAdapters.Middleware;
@@ -26,6 +27,11 @@ public sealed class ExceptionHandlingMiddleware
         {
             await WriteErrorAsync(context, HttpStatusCode.BadRequest,
                 string.Join(" | ", ex.Errors.Select(e => e.ErrorMessage)));
+        }
+        catch (FecundacionEstadoValidationException ex)
+        {
+            await WriteErrorAsync(context, HttpStatusCode.BadRequest,
+                string.Join(" | ", ex.Errors.Select(e => e.Value)));
         }
         catch (NotFoundException ex)
         {

@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using ZooTech.Application.Common.Gateway.Time;
 using ZooTech.Application.Modules.Animals.UseCases.DeleteAnimal;
 using ZooTech.Application.Modules.Animals.UseCases.ReportAnimalList;
+using ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.Common;
 using ZooTech.Domain.Module_Celo.Interfaces;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
@@ -46,6 +47,7 @@ public static class DependencyInjection
         services.AddScoped<IAnimalReportExcelService, AnimalReportExcelService>();
         services.AddScoped<IAnimalReportPdfService, AnimalReportPdfService>();
         services.AddScoped<ICeloRepository, CeloRepository>();
+        services.AddScoped<IFecundacionEstadoRepository, FecundacionEstadoRepository>();
         services.AddScoped<IOrdenioRepository, OrdenioRepository>();
         services.AddScoped<IVacunoRepository, VacunoRepository>();
         services.AddScoped<ITriajeRepository, TriajeRepository>();
