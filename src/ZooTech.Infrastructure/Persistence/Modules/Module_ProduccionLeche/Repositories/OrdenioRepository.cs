@@ -67,6 +67,7 @@ public sealed class OrdenioRepository : IOrdenioRepository
             .OrderByDescending(x => x.fecha_hora)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
+            .AsNoTracking()
             .ToListAsync(cancellationToken);
 
         return (entities.Select(ToDomain).ToList(), totalCount);
