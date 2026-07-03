@@ -1,8 +1,8 @@
-﻿namespace ZooTech.Application.Modules.Module_Sanidad.DTOs.Responses;
+namespace ZooTech.Application.Modules.Module_Sanidad.DTOs.Responses;
 
 public class PagedResponse<T>
 {
-    public IEnumerable<T> Data { get; set; }
+    public IEnumerable<T> Data { get; set; } = Enumerable.Empty<T>();
     public int TotalRegistros { get; set; }
     public int Pagina { get; set; }
     public int Tamano { get; set; }
