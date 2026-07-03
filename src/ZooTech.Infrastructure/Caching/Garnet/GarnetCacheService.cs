@@ -1,21 +1,26 @@
 using System.Globalization;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
+using SharpCompress.Factories;
 using ZooTech.Application.Common.Gateway.Caching;
+using ZooTech.Application.Common.Gateway.Context;
 
 namespace ZooTech.Infrastructure.Caching
 {
     public class GarnetCacheService : IAppCacheService
     {
         private readonly GarnetCacheConnection _garnetCacheConnection;
+        private readonly ITenantContext _tenantContext;
         private readonly TimeSpan _defaultExpiration;
 
         public GarnetCacheService(
             GarnetCacheConnection garnetCacheConnection, 
+            ITenantContext tenantContext,
             IConfiguration configuration
         )
         {
             _garnetCacheConnection = garnetCacheConnection;
+            _tenantContext = tenantContext;
             
             var expirationTime = configuration["Garnet:ExpirationTime"];
             if (TimeSpan.TryParseExact(
@@ -34,6 +39,8 @@ namespace ZooTech.Infrastructure.Caching
 
         public async Task<(bool Found, T? Value)> TryGetAsync<T>(string key)
         {
+            key = $"{_tenantContext.TenantId}:{key}";
+
             var garnetDatabase = _garnetCacheConnection.GetDatabase();
 
             var json = await garnetDatabase.StringGetAsync(key);
@@ -68,6 +75,8 @@ namespace ZooTech.Infrastructure.Caching
             TimeSpan ttl
         )
         {
+            key = $"{_tenantContext.TenantId}:{key}";
+
             var (found , value) = await TryGetAsync<T>(key);
 
             if(found)
@@ -92,9 +101,35 @@ namespace ZooTech.Infrastructure.Caching
 
         public async Task RemoveByKeyAsync(string key)
         {
+            key = $"{_tenantContext.TenantId}:{key}";
+
             var garnetDatabase = _garnetCacheConnection.GetDatabase();
 
             await garnetDatabase.KeyDeleteAsync(key);
+        }
+
+        public async Task SaveAsync<T>(
+            string key,
+            T valueToCaching,
+            TimeSpan ttl
+        )
+        {
+            key = $"{_tenantContext.TenantId}:{key}";
+
+            var garnetDatabase = _garnetCacheConnection.GetDatabase();
+
+            var (found , value) = await TryGetAsync<T>(key);
+
+            if(!found)
+            {
+                var serialized = JsonSerializer.Serialize(valueToCaching);
+
+                await garnetDatabase.StringSetAsync(
+                    key,
+                    serialized, 
+                    ttl
+                );
+            }
         }
     }
 }

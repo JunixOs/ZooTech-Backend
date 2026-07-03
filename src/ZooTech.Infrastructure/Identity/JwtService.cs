@@ -4,6 +4,7 @@ using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using ZooTech.Application.Common.Gateway.Identity;
+using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Infrastructure.Identity
 {
@@ -20,7 +21,7 @@ namespace ZooTech.Infrastructure.Identity
             int userId, 
             string userName,
             string email, 
-            string userRole
+            UserRole userRole
         )
         {
             var key = new SymmetricSecurityKey(
@@ -38,7 +39,7 @@ namespace ZooTech.Infrastructure.Identity
                 new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
                 new Claim(ClaimTypes.Email, email),
                 new Claim(ClaimTypes.Name, userName),
-                new Claim(ClaimTypes.Role, userRole),
+                new Claim(ClaimTypes.Role, userRole.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 

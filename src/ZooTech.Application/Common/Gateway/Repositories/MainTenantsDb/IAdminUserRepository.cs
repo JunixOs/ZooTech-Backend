@@ -9,5 +9,6 @@ namespace ZooTech.Application.Common.Gateway.Repositories.MainTenantsDb
         Task<AdminUserDomainEntity?> GetById(int id);
 
         Task<string?> GetPasswordHashByEmail(string email);
+        Task<AdminUserDomainEntity?> GetByEmail(string email);
     }
 }

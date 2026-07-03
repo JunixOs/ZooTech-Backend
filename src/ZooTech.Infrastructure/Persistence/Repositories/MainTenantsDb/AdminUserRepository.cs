@@ -59,5 +59,21 @@ namespace ZooTech.Infrastructure.Persistence.Repositories.MainTenantsDb
 
             await tenantDbContext.SaveChangesAsync();
         }
+
+        public async Task<AdminUserDomainEntity?> GetByEmail(string email)
+        {
+            var tenantDbContext = await _dbContextFactory.GetTenantDbContext();
+
+            var adminUserOrm = await tenantDbContext.admin_users
+                .Where(au => au.email == email)
+                .FirstOrDefaultAsync();
+
+            if(adminUserOrm is null)
+            {
+                return null;
+            }
+
+            return AdminUserMapper.ToDomain(adminUserOrm);
+        }
     }
 }

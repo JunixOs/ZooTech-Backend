@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ZooTech.Application.Common.Behaviors.Module_Tenancing;
 using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant;
+using ZooTech.Domain.Shared.Enums;
 using ZooTech.InterfaceAdapters.Filters;
 using ZooTech.InterfaceAdapters.Modules.Module_Tenancing.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Mappers;
@@ -9,8 +10,8 @@ using ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Mappers;
 namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers
 {
     [ApiController]
-    [Route("tenancing")]
-    [ApiExplorerSettings(GroupName = "admin")]
+    [Route("api/vi/tenancing")]
+    [ApiExplorerSettings(GroupName = "tenancing")]
     public class TenancingController : ControllerBase
     {
         private readonly ICreateTenantPipelineFactory _pipeline;
@@ -23,7 +24,7 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers
         }
 
         [ServiceFilter(typeof(TenantHeaderFilter))]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = AuthorizationRoles.Admin)]
         [HttpPost("create")]
         public async Task<IActionResult> CreateTenant([FromBody] CreateTenantRequestDto requestDto)
         {
@@ -36,7 +37,7 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers
         }
 
         [ServiceFilter(typeof(TenantHeaderFilter))]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = AuthorizationRoles.Admin)]
         [HttpGet("info")]
         public async Task GetTenantInfo()
         {

@@ -9,7 +9,7 @@ namespace ZooTech.Infrastructure.Context
         public string Code { get; private set; } = "";
         public string LegalName { get; private set; } = "";
         public string DisplayName { get; private set; } = ""; 
-        public TenantType Type { get; private set; } = "";
+        public TenantType Type { get; private set; }
         public string SubDomain { get; private set; } = "";
         public string DatabaseName { get; private set; } = "";
 
