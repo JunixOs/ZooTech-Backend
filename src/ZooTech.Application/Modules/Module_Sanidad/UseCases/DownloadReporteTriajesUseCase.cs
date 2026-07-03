@@ -19,6 +19,7 @@ public class DownloadReporteTriajesUseCase
 
     public async Task<ReporteTriajesArchivoResponse> ExecuteAsync(
         string formato,
+        long? vacunoId = null,
         string? desde = null,
         string? hasta = null,
         string? codigo = null,
@@ -29,6 +30,7 @@ public class DownloadReporteTriajesUseCase
         var (triajes, _) = await _repository.GetAllAsync(
             pagina: 1,
             tamano: int.MaxValue,
+            vacunoId,
             desde,
             hasta,
             codigo,

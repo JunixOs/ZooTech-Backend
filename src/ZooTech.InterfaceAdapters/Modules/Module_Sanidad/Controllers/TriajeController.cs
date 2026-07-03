@@ -18,6 +18,7 @@ public class TriajeController : ControllerBase
     private readonly GetAllVacunosUseCase _getVacunosUseCase;
     private readonly GetHistorialByVacunoIdUseCase _getHistorialUseCase;
     private readonly GetHistorialGeneralUseCase _getHistorialGeneralUseCase;
+    private readonly DownloadReporteTriajesUseCase _downloadUseCase;
 
     public TriajeController(
         GetAllTriajesUseCase getAllUseCase,
@@ -28,7 +29,8 @@ public class TriajeController : ControllerBase
             GetAllTipoPesosUseCase getTipoPesosUseCase,
             GetAllVacunosUseCase getVacunosUseCase,
             GetHistorialByVacunoIdUseCase getHistorialUseCase,
-            GetHistorialGeneralUseCase getHistorialGeneralUseCase)
+            GetHistorialGeneralUseCase getHistorialGeneralUseCase,
+            DownloadReporteTriajesUseCase downloadUseCase)
     {
         _getAllUseCase = getAllUseCase;
         _getByIdUseCase = getByIdUseCase;
@@ -39,12 +41,14 @@ public class TriajeController : ControllerBase
         _getVacunosUseCase = getVacunosUseCase;
         _getHistorialUseCase = getHistorialUseCase;
         _getHistorialGeneralUseCase = getHistorialGeneralUseCase;
+        _downloadUseCase = downloadUseCase;
     }
 
     [HttpGet]
     public async Task<ActionResult<PagedResponse<TriajeResponse>>> GetAll(
         [FromQuery] int pagina = 1,
         [FromQuery] int tamano = 10,
+        [FromQuery] long? vacunoId = null,
         [FromQuery] string? desde = null,
         [FromQuery] string? hasta = null,
         [FromQuery] string? codigo = null,
@@ -52,7 +56,7 @@ public class TriajeController : ControllerBase
         [FromQuery] string? tipoPeso = null,
         [FromQuery] decimal? pesoKg = null)
     {
-        var result = await _getAllUseCase.ExecuteAsync(pagina, tamano, desde, hasta, codigo, nombre, tipoPeso, pesoKg);
+        var result = await _getAllUseCase.ExecuteAsync(pagina, tamano, vacunoId, desde, hasta, codigo, nombre, tipoPeso, pesoKg);
         return Ok(result);
     }
 
@@ -134,5 +138,22 @@ public class TriajeController : ControllerBase
     {
         var result = await _getHistorialGeneralUseCase.ExecuteAsync(desde, hasta);
         return Ok(result);
+    }
+
+    [HttpGet("descargar")]
+    public async Task<IActionResult> Descargar(
+        [FromQuery] string formato,
+        [FromQuery] long? vacunoId = null,
+        [FromQuery] string? desde = null,
+        [FromQuery] string? hasta = null,
+        [FromQuery] string? codigo = null,
+        [FromQuery] string? nombre = null,
+        [FromQuery] string? tipoPeso = null,
+        [FromQuery] decimal? pesoKg = null)
+    {
+        var result = await _downloadUseCase.ExecuteAsync(
+            formato, vacunoId, desde, hasta, codigo, nombre, tipoPeso, pesoKg);
+
+        return File(result.Content, result.ContentType, result.FileName);
     }
 }

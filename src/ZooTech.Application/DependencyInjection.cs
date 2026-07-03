@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases;
 
 namespace ZooTech.Application;
@@ -20,6 +20,9 @@ public static class DependencyInjection
         services.AddScoped<GetAllTipoPesosUseCase>();
         services.AddScoped<GetAllVacunosUseCase>();
         services.AddScoped<GetHistorialByVacunoIdUseCase>();
+        services.AddScoped<GetHistorialGeneralUseCase>();
+        services.AddScoped<DownloadReporteTriajesUseCase>();
+        services.AddScoped<ZooTech.Application.Modules.Module_Sanidad.Services.TriajeReporteFileService>();
 
 
         // ============================================

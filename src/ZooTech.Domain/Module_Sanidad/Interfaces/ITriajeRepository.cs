@@ -8,6 +8,7 @@ public interface ITriajeRepository
     Task<(IEnumerable<Triaje> Items, int Total)> GetAllAsync(
         int pagina,
         int tamano,
+        long? vacunoId = null,
         string? desde = null,
         string? hasta = null,
         string? codigo = null,

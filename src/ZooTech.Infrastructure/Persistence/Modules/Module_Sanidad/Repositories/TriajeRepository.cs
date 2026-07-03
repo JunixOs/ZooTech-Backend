@@ -31,6 +31,7 @@ public class TriajeRepository : ITriajeRepository
     public async Task<(IEnumerable<Triaje> Items, int Total)> GetAllAsync(
         int pagina,
         int tamano,
+        long? vacunoId = null,
         string? desde = null,
         string? hasta = null,
         string? codigo = null,
@@ -43,6 +44,9 @@ public class TriajeRepository : ITriajeRepository
             .Include(t => t.vacuno)
             .Where(t => t.deleted_at == null)
             .AsQueryable();
+
+        if (vacunoId.HasValue)
+            query = query.Where(t => t.vacuno_id == vacunoId.Value);
 
         if (!string.IsNullOrEmpty(desde) && DateTime.TryParse(desde, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var fechaDesde))
             query = query.Where(t => t.fecha_hora >= fechaDesde.Date);

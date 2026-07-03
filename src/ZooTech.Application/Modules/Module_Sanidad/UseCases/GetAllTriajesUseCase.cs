@@ -15,6 +15,7 @@ public class GetAllTriajesUseCase
     public async Task<PagedResponse<TriajeResponse>> ExecuteAsync(
         int pagina,
         int tamano,
+        long? vacunoId = null,
         string? desde = null,
         string? hasta = null,
         string? codigo = null,
@@ -23,7 +24,7 @@ public class GetAllTriajesUseCase
         decimal? pesoKg = null)
     {
         var (triajes, total) = await _repository.GetAllAsync(
-            pagina, tamano, desde, hasta, codigo, nombre, tipoPeso, pesoKg);
+            pagina, tamano, vacunoId, desde, hasta, codigo, nombre, tipoPeso, pesoKg);
 
         var items = triajes.Select(t => new TriajeResponse
         {
