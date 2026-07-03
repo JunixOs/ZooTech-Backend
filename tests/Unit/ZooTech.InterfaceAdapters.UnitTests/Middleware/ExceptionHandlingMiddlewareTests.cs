@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Common.Gateway.Auditing;
+using ZooTech.Domain.Shared.Enums;
 using ZooTech.InterfaceAdapters.Middleware;
 
 namespace ZooTech.InterfaceAdapters.UnitTests.Middleware;
@@ -36,7 +37,7 @@ public class ExceptionHandlingMiddlewareTests
     public async Task Should_Return_Json_For_AppException()
     {
         // Arrange
-        var middleware = CreateMiddleware(_ => throw new ValidationException("TENANCING", new List<string>()));
+        var middleware = CreateMiddleware(_ => throw new ValidationException(new List<string> { "ERROR" }, ScopeName.Application, ModuleName.Tenancing));
         var context = CreateHttpContext();
 
         // Act

@@ -5,6 +5,7 @@ using Moq;
 using ZooTech.Application.Common.Gateway.Context;
 using ZooTech.Application.Common.Gateway.Tenant;
 using ZooTech.Domain.Admin.Enums;
+using ZooTech.Domain.Shared.Enums;
 using ZooTech.InterfaceAdapters.Middleware;
 
 namespace ZooTech.InterfaceAdapters.UnitTests.Middleware
@@ -55,7 +56,7 @@ namespace ZooTech.InterfaceAdapters.UnitTests.Middleware
             // Assert
             nextCalled.Should().BeTrue();
             tenantContextMock.Verify(
-                x => x.SetTenant(tenant.Id, tenant.Code, tenant.LegalName, tenant.DisplayName, "tenant", tenant.SubDomain, tenant.DatabaseName),
+                x => x.SetTenant(tenant.Id, tenant.Code, tenant.LegalName, tenant.DisplayName, TenantType.Tenant, tenant.SubDomain, tenant.DatabaseName),
                 Times.Once
             );
         }

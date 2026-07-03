@@ -1,5 +1,6 @@
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Common.Validator;
+using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Common.Behaviors
 {
@@ -22,7 +23,7 @@ namespace ZooTech.Application.Common.Behaviors
 
             if(errors.Count != 0)
             {
-                throw new ValidationException(_validator.ModuleName.ToString(), errors);
+                throw new ValidationException(errors, ScopeName.Application, _validator.ModuleName);
             }
 
             return await next();

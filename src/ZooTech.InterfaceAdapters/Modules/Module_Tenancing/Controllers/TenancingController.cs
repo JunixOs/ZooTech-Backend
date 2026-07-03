@@ -24,6 +24,13 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers
         }
 
         [ServiceFilter(typeof(TenantHeaderFilter))]
+        [HttpGet("health")]
+        public IActionResult Health()
+        {
+            return Ok();
+        }
+
+        [ServiceFilter(typeof(TenantHeaderFilter))]
         [Authorize(Roles = AuthorizationRoles.Admin)]
         [HttpPost("create")]
         public async Task<IActionResult> CreateTenant([FromBody] CreateTenantRequestDto requestDto)
