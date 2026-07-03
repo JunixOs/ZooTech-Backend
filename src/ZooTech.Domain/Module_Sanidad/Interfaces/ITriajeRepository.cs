@@ -1,4 +1,4 @@
-﻿using ZooTech.Domain.Module_Sanidad.Entities;
+using ZooTech.Domain.Module_Sanidad.Entities;
 
 namespace ZooTech.Domain.Module_Sanidad.Interfaces;
 
@@ -23,5 +23,7 @@ public interface ITriajeRepository
     // Vacuno id codigo nombre
     Task<IEnumerable<VacunoOption>> GetAllVacunosAsync();
 
-    Task<IEnumerable<TriajeHistorialItem>> GetHistorialByVacunoIdAsync(long vacunoId);
+    Task<IEnumerable<TriajeHistorialItem>> GetHistorialByVacunoIdAsync(long vacunoId, string? desde = null, string? hasta = null);
+    Task<IEnumerable<TriajeHistorialItem>> GetHistorialGeneralAsync(string? desde = null, string? hasta = null);
+    Task<IEnumerable<TriajeDetallePorVacunoItem>> GetDetallesByVacunoIdAsync(long vacunoId);
 }

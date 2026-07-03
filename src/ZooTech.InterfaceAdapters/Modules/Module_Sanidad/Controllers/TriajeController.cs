@@ -17,6 +17,7 @@ public class TriajeController : ControllerBase
     private readonly GetAllTipoPesosUseCase _getTipoPesosUseCase;
     private readonly GetAllVacunosUseCase _getVacunosUseCase;
     private readonly GetHistorialByVacunoIdUseCase _getHistorialUseCase;
+    private readonly GetHistorialGeneralUseCase _getHistorialGeneralUseCase;
 
     public TriajeController(
         GetAllTriajesUseCase getAllUseCase,
@@ -26,7 +27,8 @@ public class TriajeController : ControllerBase
         DeleteTriajeUseCase deleteUseCase,
             GetAllTipoPesosUseCase getTipoPesosUseCase,
             GetAllVacunosUseCase getVacunosUseCase,
-            GetHistorialByVacunoIdUseCase getHistorialUseCase)
+            GetHistorialByVacunoIdUseCase getHistorialUseCase,
+            GetHistorialGeneralUseCase getHistorialGeneralUseCase)
     {
         _getAllUseCase = getAllUseCase;
         _getByIdUseCase = getByIdUseCase;
@@ -36,6 +38,7 @@ public class TriajeController : ControllerBase
         _getTipoPesosUseCase = getTipoPesosUseCase;
         _getVacunosUseCase = getVacunosUseCase;
         _getHistorialUseCase = getHistorialUseCase;
+        _getHistorialGeneralUseCase = getHistorialGeneralUseCase;
     }
 
     [HttpGet]
@@ -99,7 +102,6 @@ public class TriajeController : ControllerBase
         return NoContent();
     }
 
-    
     [HttpGet("tipos-peso")]
     public async Task<ActionResult<IEnumerable<TipoPesoResponse>>> GetTiposPeso()
     {
@@ -113,10 +115,23 @@ public class TriajeController : ControllerBase
         var result = await _getVacunosUseCase.ExecuteAsync();
         return Ok(result);
     }
+
     [HttpGet("historial/{vacunoId:long}")]
-    public async Task<ActionResult<IEnumerable<TriajeHistorialResponse>>> GetHistorial(long vacunoId)
+    public async Task<ActionResult<IEnumerable<TriajeHistorialResponse>>> GetHistorial(
+        long vacunoId,
+        [FromQuery] string? desde = null,
+        [FromQuery] string? hasta = null)
     {
-        var result = await _getHistorialUseCase.ExecuteAsync(vacunoId);
+        var result = await _getHistorialUseCase.ExecuteAsync(vacunoId, desde, hasta);
         return Ok(result);
     }
-}
+
+    [HttpGet("historial-general")]
+    public async Task<ActionResult<IEnumerable<TriajeHistorialResponse>>> GetHistorialGeneral(
+        [FromQuery] string? desde = null,
+        [FromQuery] string? hasta = null)
+    {
+        var result = await _getHistorialGeneralUseCase.ExecuteAsync(desde, hasta);
+        return Ok(result);
+    }
+}

@@ -3,18 +3,18 @@ using ZooTech.Domain.Module_Sanidad.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_Sanidad.UseCases;
 
-public class GetHistorialByVacunoIdUseCase
+public class GetHistorialGeneralUseCase
 {
     private readonly ITriajeRepository _repository;
 
-    public GetHistorialByVacunoIdUseCase(ITriajeRepository repository)
+    public GetHistorialGeneralUseCase(ITriajeRepository repository)
     {
         _repository = repository;
     }
 
-    public async Task<IEnumerable<TriajeHistorialResponse>> ExecuteAsync(long vacunoId, string? desde = null, string? hasta = null)
+    public async Task<IEnumerable<TriajeHistorialResponse>> ExecuteAsync(string? desde = null, string? hasta = null)
     {
-        var items = await _repository.GetHistorialByVacunoIdAsync(vacunoId, desde, hasta);
+        var items = await _repository.GetHistorialGeneralAsync(desde, hasta);
 
         return items.Select(t => new TriajeHistorialResponse
         {

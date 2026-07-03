@@ -144,11 +144,19 @@ public class TriajeRepository : ITriajeRepository
             })
             .ToListAsync();
     }
-    public async Task<IEnumerable<TriajeHistorialItem>> GetHistorialByVacunoIdAsync(long vacunoId)
+    public async Task<IEnumerable<TriajeHistorialItem>> GetHistorialByVacunoIdAsync(long vacunoId, string? desde = null, string? hasta = null)
     {
-        return await _context.Triajes
+        var query = _context.Triajes
             .AsNoTracking()
-            .Where(t => t.vacuno_id == vacunoId && t.deleted_at == null)
+            .Where(t => t.vacuno_id == vacunoId && t.deleted_at == null);
+
+        if (!string.IsNullOrEmpty(desde) && DateTime.TryParse(desde, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var fechaDesde))
+            query = query.Where(t => t.fecha_hora >= fechaDesde.Date);
+
+        if (!string.IsNullOrEmpty(hasta) && DateTime.TryParse(hasta, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var fechaHasta))
+            query = query.Where(t => t.fecha_hora <= fechaHasta.Date.AddDays(1).AddTicks(-1));
+
+        return await query
             .OrderByDescending(t => t.fecha_hora)
             .Select(t => new TriajeHistorialItem
             {
@@ -160,6 +168,47 @@ public class TriajeRepository : ITriajeRepository
             .ToListAsync();
     }
 
+    public async Task<IEnumerable<TriajeHistorialItem>> GetHistorialGeneralAsync(string? desde = null, string? hasta = null)
+    {
+        var query = _context.Triajes
+            .AsNoTracking()
+            .Where(t => t.deleted_at == null);
+
+        if (!string.IsNullOrEmpty(desde) && DateTime.TryParse(desde, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var fechaDesde))
+            query = query.Where(t => t.fecha_hora >= fechaDesde.Date);
+
+        if (!string.IsNullOrEmpty(hasta) && DateTime.TryParse(hasta, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var fechaHasta))
+            query = query.Where(t => t.fecha_hora <= fechaHasta.Date.AddDays(1).AddTicks(-1));
+
+        return await query
+            .OrderByDescending(t => t.fecha_hora)
+            .Select(t => new TriajeHistorialItem
+            {
+                Id = t.id,
+                FechaHora = t.fecha_hora,
+                TipoPesoCode = t.tipo_peso_code,
+                PesoKg = t.peso_kg
+            })
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<TriajeDetallePorVacunoItem>> GetDetallesByVacunoIdAsync(long vacunoId)
+    {
+        return await _context.Triajes
+            .AsNoTracking()
+            .Include(t => t.vacuno)
+            .Where(t => t.vacuno_id == vacunoId && t.deleted_at == null)
+            .OrderByDescending(t => t.fecha_hora)
+            .Select(t => new TriajeDetallePorVacunoItem
+            {
+                CodigoRegistro = t.codigo,
+                FechaHora = t.fecha_hora,
+                TipoPesoMedido = t.tipo_peso_code,
+                PesoKg = t.peso_kg,
+                Observaciones = t.observaciones
+            })
+            .ToListAsync();
+    }
 
     // Mappers
     private static Triaje ToTriaje(triaje e) => new()
