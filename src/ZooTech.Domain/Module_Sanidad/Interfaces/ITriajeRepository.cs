@@ -26,9 +26,4 @@ public interface ITriajeRepository
     // Validaciones de existencia (Rendimiento optimizado con AnyAsync)
     Task<bool> ExisteVacunoAsync(long vacunoId);
     Task<bool> ExisteTipoPesoAsync(string tipoPesoCode);
-
-    // Tipo peso
-    Task<IEnumerable<TipoPeso>> GetAllTipoPesosAsync();
-    // Vacuno id codigo nombre
-    Task<IEnumerable<VacunoOption>> GetAllVacunosAsync();
 }
