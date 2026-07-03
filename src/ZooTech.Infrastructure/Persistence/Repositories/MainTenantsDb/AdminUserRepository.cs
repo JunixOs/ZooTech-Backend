@@ -1,37 +1,63 @@
+using Microsoft.EntityFrameworkCore;
 using ZooTech.Application.Common.Gateway.Repositories.MainTenantsDb;
 using ZooTech.Domain.Admin.Entities;
 using ZooTech.Infrastructure.Persistence.Context;
+using ZooTech.Infrastructure.Persistence.Mappers.MainTenantsDb;
 
 namespace ZooTech.Infrastructure.Persistence.Repositories.MainTenantsDb
 {
     public class AdminUserRepository : IAdminUserRepository
     {
-        private readonly IGanaderiaDbContextFactory _factory;
+        private readonly IDbContextFactory _dbContextFactory;
 
-        public AdminUserRepository(IGanaderiaDbContextFactory factory)
+        public AdminUserRepository(IDbContextFactory dbContextFactory)
         {
-            _factory = factory;
+            _dbContextFactory = dbContextFactory;
         }
 
-        public Task Create(AdminUserDomainEntity adminUserDomainEntity)
+        public async Task Create(AdminUserDomainEntity adminUserDomainEntity)
         {
+            var tenantDbContext = await _dbContextFactory.GetTenantDbContext();
+
+            await tenantDbContext.admin_users.AddAsync(
+                AdminUserMapper.ToOrm(adminUserDomainEntity)
+            );
+
+            await tenantDbContext.SaveChangesAsync();
+        }
+
+        public async Task<AdminUserDomainEntity?> GetById(int id)
+        {
+            var tenantDbContext = await _dbContextFactory.GetTenantDbContext();
+
+            var adminUserOrm = await tenantDbContext.admin_users.FindAsync(id);
             
-            throw new NotImplementedException();
+            if(adminUserOrm is null)
+            {
+                return null;
+            }
+
+            return AdminUserMapper.ToDomain(adminUserOrm);
         }
 
-        public Task<AdminUserDomainEntity> GetById(string id)
+        public async Task<string?> GetPasswordHashByEmail(string email)
         {
-            throw new NotImplementedException();
+            var tenantDbContext = await _dbContextFactory.GetTenantDbContext();
+
+            return await tenantDbContext.admin_users
+                .Where(au => au.email == email)
+                .Select(au => au.password_hash)
+                .FirstOrDefaultAsync();
         }
 
-        public Task<string> GetPasswordHashByEmail(string email)
+        public async Task Update(AdminUserDomainEntity adminUserDomainEntity)
         {
-            throw new NotImplementedException();
-        }
+            var tenantDbContext = await _dbContextFactory.GetTenantDbContext();
 
-        public Task Update(AdminUserDomainEntity adminUserDomainEntity)
-        {
-            throw new NotImplementedException();
+            var adminUserOrm = AdminUserMapper.ToOrm(adminUserDomainEntity);
+            tenantDbContext.admin_users.Update(adminUserOrm);
+
+            await tenantDbContext.SaveChangesAsync();
         }
     }
 }

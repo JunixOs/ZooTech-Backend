@@ -38,7 +38,7 @@ namespace ZooTech.Domain.Shared.Enums
 
         // Otros
         Custom,
-        ApplicationException,
+        ZooTechException,
         UnhandledException
     }
 }

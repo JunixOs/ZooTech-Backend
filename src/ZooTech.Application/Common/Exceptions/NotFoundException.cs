@@ -6,11 +6,14 @@ namespace ZooTech.Application.Common.Exceptions
     public class NotFoundException : AppApplicationException
     {
         public NotFoundException(
-            string moduleName
+            ScopeName scopeName,
+            ModuleName? moduleName = null
         ) : base(
-            $"APPLICATION_{moduleName.ToUpper()}_NOT_FOUND_ERROR",
+            "NOT_FOUND_ERROR",
             ErrorType.NotFound,
-            "Some elements cannot be founded."
+            scopeName,
+            "Some elements cannot be founded.",
+            moduleName
         )
         {
         }

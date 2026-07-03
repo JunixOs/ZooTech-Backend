@@ -1,16 +1,17 @@
 using ZooTech.Domain.Shared.Enums;
+using ZooTech.Domain.Shared.Exceptions;
 
 namespace ZooTech.Infrastructure.Exceptions
 {
-    public class UndefinedConfigurationValue : AppInfrastructureException
+    public class EmptyTenantContextValues : AppInfrastructureException
     {
-        public UndefinedConfigurationValue(
+        public EmptyTenantContextValues(
             ModuleName? moduleName = null
         ) : base(
-            "UNDEFINED_CONFIGURATION_VALUE_ERROR",
+            "EMPTY_TENANT_CONTEXT_VALUES_ERROR",
             ErrorType.Infrastructure,
             ScopeName.Infrastructure,
-            "One or more values of the application configuration are Undefined.",
+            "all or some values of the TenantContext are empty",
             moduleName
         )
         {

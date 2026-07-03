@@ -34,13 +34,13 @@ namespace ZooTech.InterfaceAdapters.Middleware
             }
             catch (AppDomainException ex)
             {
-                _logger.LogWarning(ex, "ApplicationException: {Code} - {Message}", ex.ErrorType, ex.Message);
+                _logger.LogWarning(ex, "ZooTechException: {Code} - {Type} - {Message} - {Scope}", ex.ErrorCode.ToString(), ex.ErrorType.ToString(), ex.Message.ToString(), ex.ScopeName.ToString());
                 
                 await _appAuditService.SaveLogAsync(
                     new AuditModel
                     {
-                        EventType = AuditEventType.ApplicationException,
-                        Action =  $"ApplicationException: {ex.ErrorType} - {ex.Message}",
+                        EventType = AuditEventType.ZooTechException,
+                        Action =  $"ZooTechException: {ex.ErrorCode.ToString()} - {ex.ErrorType.ToString()} - {ex.Message.ToString()} - {ex.ScopeName.ToString()}",
                     }
                 );
                 
@@ -52,7 +52,7 @@ namespace ZooTech.InterfaceAdapters.Middleware
                 {
                     Error = new ErrorContent
                     {
-                        ErrorCode = ex.ErrorCode,
+                        ErrorCode = ex.CompleteErrorCode,
                         Message = ex.Message,
                         Details = ex.Details
                     }

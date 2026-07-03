@@ -2,15 +2,16 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Infrastructure.Exceptions
 {
-    public class UndefinedConfigurationValue : AppInfrastructureException
+    public class InvalidTenantTypeException : AppInfrastructureException
     {
-        public UndefinedConfigurationValue(
+        public InvalidTenantTypeException(
+            string actualTenanTypeValue,
             ModuleName? moduleName = null
         ) : base(
-            "UNDEFINED_CONFIGURATION_VALUE_ERROR",
+            "INVALID_TENANT_TYPE_ERROR",
             ErrorType.Infrastructure,
             ScopeName.Infrastructure,
-            "One or more values of the application configuration are Undefined.",
+            $"The value [{actualTenanTypeValue}] is invalid for TenantType",
             moduleName
         )
         {

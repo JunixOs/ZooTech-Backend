@@ -1,25 +1,17 @@
 using ZooTech.Domain.Shared.Enums;
-using ZooTech.Domain.Shared.Exceptions;
 
 namespace ZooTech.Infrastructure.Exceptions
 {
-    public class TenantProvisioningException : AppDomainException
+    public class TenantProvisioningException : AppInfrastructureException
     {
 
         public TenantProvisioningException() : base(
-            "INFRASTRUCTURE_TENANT_PROVISIONING_ERROR",
+            "TENANT_PROVISIONING_ERROR",
             ErrorType.Infrastructure,
-            "the new tenant cannot be created."
+            ScopeName.Infrastructure,
+            "the new tenant cannot be created.",
+            Domain.Shared.Enums.ModuleName.Tenancing
         )
-        {
-        }
-
-        public TenantProvisioningException(Exception innerException)
-            : base(
-                "APPLICATION_TENANT_PROVISIONING_ERORR",
-                ErrorType.Infrastructure, 
-                "the new tenant cannot be created."
-            )
         {
         }
     }

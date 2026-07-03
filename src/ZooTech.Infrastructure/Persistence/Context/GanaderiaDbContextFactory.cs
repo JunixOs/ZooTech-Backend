@@ -1,8 +1,8 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
 using ZooTech.Application.Common.Gateway.Context;
+using ZooTech.Infrastructure.Exceptions;
 
 namespace ZooTech.Infrastructure.Persistence.Context
 {
@@ -18,11 +18,17 @@ namespace ZooTech.Infrastructure.Persistence.Context
             _config = config;
         }
 
-        public GanaderiaDbContext CreateDbContext()
+        public async Task<GanaderiaDbContext> CreateDbContext()
         {
             var template = _config.GetConnectionString("TenantTemplate");
 
+            if (string.IsNullOrWhiteSpace(template))
+                throw new UndefinedConfigurationValue();
+
             var builder = new SqlConnectionStringBuilder(template);
+
+            if (string.IsNullOrWhiteSpace(_tenantContext.DatabaseName))
+                throw new EmptyTenantContextValues();
 
             builder.InitialCatalog = _tenantContext.DatabaseName;
 
@@ -32,7 +38,12 @@ namespace ZooTech.Infrastructure.Persistence.Context
                 .UseSqlServer(conn)
                 .Options;
 
-            return new GanaderiaDbContext(options);
+            var ganaderiaDbContext = new GanaderiaDbContext(options);
+
+            if (!await ganaderiaDbContext.Database.CanConnectAsync())
+                throw new DatabaseConnectionException(_tenantContext.DatabaseName);
+
+            return ganaderiaDbContext;
         }
     }
 }

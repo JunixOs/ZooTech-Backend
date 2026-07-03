@@ -1,12 +1,11 @@
 using ZooTech.Domain.Shared.Enums;
 using ZooTech.Domain.Shared.Exceptions;
 
-namespace ZooTech.Application.Common.Exceptions
+namespace ZooTech.InterfaceAdapters.Exceptions
 {
-    public abstract class AppApplicationException : AppDomainException
+    public abstract class AppInterfaceAdaptersException : AppDomainException
     {
-
-        protected AppApplicationException(
+        protected AppInterfaceAdaptersException(
             string errorCode,
             ErrorType errorType,
             ScopeName scopeName,

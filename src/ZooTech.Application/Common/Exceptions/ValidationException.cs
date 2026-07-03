@@ -5,12 +5,15 @@ namespace ZooTech.Application.Common.Exceptions
     public class ValidationException : AppApplicationException
     {
         public ValidationException(
-            string moduleName, 
-            List<string> errors
+            List<string> errors,
+            ScopeName scopeName,
+            ModuleName? moduleName = null 
         ) : base(
-            $"APPLICATION_{moduleName.ToUpper()}_VALIDATION_ERROR",
+            "VALIDATION_ERROR",
             ErrorType.Validation,
+            scopeName,
             "One or more parameters of the request are invalid or incorrect.",
+            moduleName,
             errors
         )
         {

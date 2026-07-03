@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using ZooTech.Application.Common.Gateway.Context;
 using ZooTech.Application.Common.Gateway.Tenant;
+using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.InterfaceAdapters.Middleware
 {
@@ -44,12 +45,6 @@ namespace ZooTech.InterfaceAdapters.Middleware
                 return;
             }
 
-            string type = "tenant";
-            if(subDomain == _adminSubDomain)
-            {
-                type = "admin";
-            }
-
             var tenant = await tenantStore.GetBySubDomainAsync(subDomain);
 
             if (tenant == null)
@@ -63,7 +58,7 @@ namespace ZooTech.InterfaceAdapters.Middleware
                 tenant.Code,
                 tenant.LegalName,
                 tenant.DisplayName,
-                type,
+                subDomain == _adminSubDomain ? TenantType.Admin : TenantType.Tenant,
                 tenant.SubDomain,
                 tenant.DatabaseName
             );

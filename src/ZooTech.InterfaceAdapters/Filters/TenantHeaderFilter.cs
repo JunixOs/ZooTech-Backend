@@ -20,7 +20,7 @@ namespace ZooTech.InterfaceAdapters.Filters
             headers.Append("X-Tenant-Id", _tenantContext.TenantId.ToString());
             headers.Append("X-Tenant-Name", _tenantContext.Code);
             headers.Append("X-Tenant-Legal-Name", _tenantContext.LegalName);
-            headers.Append("X-App-Variant", _tenantContext.Type);
+            headers.Append("X-App-Variant", _tenantContext.Type.ToString());
         }
 
         public void OnActionExecuting(ActionExecutingContext context)

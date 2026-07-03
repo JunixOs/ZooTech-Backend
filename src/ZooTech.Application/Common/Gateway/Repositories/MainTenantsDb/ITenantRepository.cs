@@ -8,5 +8,5 @@ public interface ITenantRepository
     Task<TenantDomainEntity?> GetByIdAsync(int id);
     Task<List<TenantDomainEntity>> ListAllAsync();
 
-    Task<List<ListTenantsOutput?>> ListAllTenants();
+    Task<List<ListTenantsOutput>> ListAllTenants();
 }

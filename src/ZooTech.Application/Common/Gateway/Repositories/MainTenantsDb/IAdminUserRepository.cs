@@ -6,8 +6,8 @@ namespace ZooTech.Application.Common.Gateway.Repositories.MainTenantsDb
     {  
         Task Create(AdminUserDomainEntity adminUserDomainEntity);
         Task Update(AdminUserDomainEntity adminUserDomainEntity);
-        Task<AdminUserDomainEntity> GetById(string id);
+        Task<AdminUserDomainEntity?> GetById(int id);
 
-        Task<string> GetPasswordHashByEmail(string email);
+        Task<string?> GetPasswordHashByEmail(string email);
     }
 }

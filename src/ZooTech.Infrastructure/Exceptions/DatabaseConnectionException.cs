@@ -2,15 +2,16 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Infrastructure.Exceptions
 {
-    public class UndefinedConfigurationValue : AppInfrastructureException
+    public class DatabaseConnectionException : AppInfrastructureException
     {
-        public UndefinedConfigurationValue(
+        public DatabaseConnectionException(
+            string databaseName,
             ModuleName? moduleName = null
         ) : base(
-            "UNDEFINED_CONFIGURATION_VALUE_ERROR",
+            "DATABASE_CONNECTION_ERROR",
             ErrorType.Infrastructure,
             ScopeName.Infrastructure,
-            "One or more values of the application configuration are Undefined.",
+            $"a connection to the database [{databaseName}] could not be established.",
             moduleName
         )
         {

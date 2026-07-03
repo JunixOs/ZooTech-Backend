@@ -1,3 +1,5 @@
+using ZooTech.Domain.Shared.Enums;
+
 namespace ZooTech.Application.Common.Gateway.Context
 {
     public interface ITenantContext
@@ -7,9 +9,9 @@ namespace ZooTech.Application.Common.Gateway.Context
         string SubDomain { get; }
         string LegalName { get; }
         string DisplayName { get; }
-        string Type { get; }
+        TenantType Type { get; }
         string DatabaseName { get; }
 
-        void SetTenant(int id, string code, string legalName, string displayName, string type, string subDomain, string databaseName);
+        void SetTenant(int id, string code, string legalName, string displayName, TenantType type, string subDomain, string databaseName);
     }
 }
