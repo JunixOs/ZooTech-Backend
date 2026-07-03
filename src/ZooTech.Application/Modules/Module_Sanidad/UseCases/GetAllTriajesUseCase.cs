@@ -1,4 +1,4 @@
-﻿using ZooTech.Application.Modules.Module_Sanidad.DTOs.Responses;
+using ZooTech.Application.Modules.Module_Sanidad.DTOs.Responses;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_Sanidad.UseCases;
@@ -15,14 +15,15 @@ public class GetAllTriajesUseCase
     public async Task<PagedResponse<TriajeResponse>> ExecuteAsync(
         int pagina,
         int tamano,
-        string? fecha = null,
+        string? desde = null,
+        string? hasta = null,
         string? codigo = null,
         string? nombre = null,
         string? tipoPeso = null,
         decimal? pesoKg = null)
     {
         var (triajes, total) = await _repository.GetAllAsync(
-            pagina, tamano, fecha, codigo, nombre, tipoPeso, pesoKg);
+            pagina, tamano, desde, hasta, codigo, nombre, tipoPeso, pesoKg);
 
         var items = triajes.Select(t => new TriajeResponse
         {

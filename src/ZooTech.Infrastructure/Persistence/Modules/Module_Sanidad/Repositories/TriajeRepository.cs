@@ -31,7 +31,8 @@ public class TriajeRepository : ITriajeRepository
     public async Task<(IEnumerable<Triaje> Items, int Total)> GetAllAsync(
         int pagina,
         int tamano,
-        string? fecha = null,
+        string? desde = null,
+        string? hasta = null,
         string? codigo = null,
         string? nombre = null,
         string? tipoPeso = null,
@@ -42,6 +43,12 @@ public class TriajeRepository : ITriajeRepository
             .Include(t => t.vacuno)
             .Where(t => t.deleted_at == null)
             .AsQueryable();
+
+        if (!string.IsNullOrEmpty(desde) && DateTime.TryParse(desde, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var fechaDesde))
+            query = query.Where(t => t.fecha_hora >= fechaDesde.Date);
+
+        if (!string.IsNullOrEmpty(hasta) && DateTime.TryParse(hasta, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var fechaHasta))
+            query = query.Where(t => t.fecha_hora <= fechaHasta.Date.AddDays(1).AddTicks(-1));
 
         if (!string.IsNullOrEmpty(codigo))
             query = query.Where(t => t.codigo.Contains(codigo));
