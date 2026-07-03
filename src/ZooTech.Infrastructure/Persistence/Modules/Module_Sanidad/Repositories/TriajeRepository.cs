@@ -50,6 +50,13 @@ public class TriajeRepository : ITriajeRepository
         if (!string.IsNullOrEmpty(nombre))
             query = query.Where(t => t.vacuno.nombre.Contains(nombre));
 
+        if (!string.IsNullOrEmpty(fecha) && DateTime.TryParse(fecha, out var fechaFiltro))
+        {
+            var desde = fechaFiltro.Date;
+            var hasta = desde.AddDays(1);
+            query = query.Where(t => t.fecha_hora >= desde && t.fecha_hora < hasta);
+        }
+
         if (!string.IsNullOrEmpty(tipoPeso))
             query = query.Where(t => t.tipo_peso_code == tipoPeso);
 
@@ -135,6 +142,24 @@ public class TriajeRepository : ITriajeRepository
                 FechaHora = t.fecha_hora,
                 TipoPesoCode = t.tipo_peso_code,
                 PesoKg = t.peso_kg
+            })
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IEnumerable<TriajeDetallePorVacunoItem>> GetDetallesByVacunoIdAsync(long vacunoId, CancellationToken cancellationToken = default)
+    {
+        return await _context.triajes
+            .AsNoTracking()
+            .Include(t => t.tipo_peso_codeNavigation)
+            .Where(t => t.vacuno_id == vacunoId && t.deleted_at == null)
+            .OrderByDescending(t => t.fecha_hora)
+            .Select(t => new TriajeDetallePorVacunoItem
+            {
+                CodigoRegistro = t.codigo,
+                FechaHora = t.fecha_hora,
+                TipoPesoMedido = t.tipo_peso_codeNavigation.nombre,
+                PesoKg = t.peso_kg,
+                Observaciones = t.observaciones
             })
             .ToListAsync(cancellationToken);
     }

@@ -11,11 +11,11 @@ internal static class TriajeMapper
 {
     public static CreateTriajeCommand ToCreateCommand(TriajeRequest request)
         => new(request.VacunoId, request.TipoPesoCode, request.PesoKg,
-               request.Observaciones, request.EstadoRegistroCode, request.EncargadoUsuarioId);
+               request.Observaciones, request.EncargadoUsuarioId, request.FechaHora);
 
-    public static UpdateTriajeCommand ToUpdateCommand(TriajeRequest request)
-        => new(request.VacunoId, request.TipoPesoCode, request.PesoKg,
-               request.Observaciones, request.EstadoRegistroCode, request.EncargadoUsuarioId);
+    public static UpdateTriajeCommand ToUpdateCommand(UpdateTriajeRequest request)
+        => new(request.TipoPesoCode, request.PesoKg,
+               request.Observaciones, request.EncargadoUsuarioId);
 
     public static TriajeResponse ToResponse(CreateTriajeOutput output)
         => new(output.Id, output.Codigo, output.FechaHora, output.VacunoId,
@@ -25,11 +25,6 @@ internal static class TriajeMapper
     public static TriajeResponse ToResponse(GetTriajeByIdOutput output)
         => new(output.Id, output.Codigo, output.FechaHora, output.VacunoId,
                output.VacunoNombre, output.TipoPesoCode, output.PesoKg, output.Observaciones,
-               output.EstadoRegistroCode, output.EncargadoUsuarioId, output.CreatedAt);
-
-    public static TriajeResponse ToResponse(UpdateTriajeOutput output)
-        => new(output.Id, output.Codigo, output.FechaHora, output.VacunoId,
-               null, output.TipoPesoCode, output.PesoKg, output.Observaciones,
                output.EstadoRegistroCode, output.EncargadoUsuarioId, output.CreatedAt);
 
     public static PagedTriajeResponse ToPagedResponse(GetAllTriajesOutput output)
