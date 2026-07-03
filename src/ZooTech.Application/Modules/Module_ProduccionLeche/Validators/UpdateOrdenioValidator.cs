@@ -7,9 +7,6 @@ internal sealed class UpdateOrdenioValidator : AbstractValidator<UpdateOrdenioCo
 {
     public UpdateOrdenioValidator()
     {
-        RuleFor(x => x.FechaHora)
-            .NotEmpty().WithMessage("La fecha y hora del ordeño es obligatoria.");
-
         RuleFor(x => x.EncargadoUsuarioId)
             .GreaterThan(0).WithMessage("El ID del encargado debe ser mayor que cero.");
 
