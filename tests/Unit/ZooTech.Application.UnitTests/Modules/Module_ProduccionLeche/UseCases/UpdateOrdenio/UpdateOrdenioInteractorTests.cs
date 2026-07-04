@@ -39,8 +39,8 @@ public class UpdateOrdenioInteractorTests
         var interactor = new UpdateOrdenioInteractor(repository, validator);
 
         var command = new UpdateOrdenioCommand(
-            FechaHora: null,
-            EncargadoUsuarioId: null,
+            FechaHora: default,
+            EncargadoUsuarioId: 0,
             Litros: 18,
             EstadoOrdenioCode: null,
             Observaciones: null);
