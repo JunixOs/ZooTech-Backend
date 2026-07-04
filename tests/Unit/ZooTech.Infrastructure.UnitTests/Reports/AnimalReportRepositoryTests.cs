@@ -22,7 +22,8 @@ public class AnimalReportRepositoryTests
     }
 
     [Fact]
-    public async Task GetAnimalListAsync_withColorCode_ShouldFilterByColorCode() {
+    public async Task GetAnimalListAsync_withColorCode_ShouldFilterByColorCode()
+    {
         await using var context = CreateContext();
         Seed(context);
         var repository = new AnimalReportRepository(context);
@@ -30,10 +31,10 @@ public class AnimalReportRepositoryTests
         var items = await repository.GetAnimalListAsync(CreateFilter(colorCode: "CAF"));
 
         Assert.Single(items);
-        Assert.Equal("VOO2", items.Single().Codigo);
+        Assert.Equal("V002", items.Single().Codigo);
     }
 
-        [Fact]
+    [Fact]
     public async Task GetAnimalListAsync_WithSexoCode_ShouldFilterBySexo()
     {
         await using var context = CreateContext();
