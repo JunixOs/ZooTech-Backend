@@ -2,6 +2,8 @@ namespace ZooTech.Application.Modules.Module_Celo.UseCases.GetCelos;
 
 public sealed class CeloItemDto
 {
+    public long Id { get; set; }
+
     public string CodigoRegistro { get; set; } = null!;
     public DateOnly Fecha { get; set; }
     public TimeOnly Hora { get; set; }

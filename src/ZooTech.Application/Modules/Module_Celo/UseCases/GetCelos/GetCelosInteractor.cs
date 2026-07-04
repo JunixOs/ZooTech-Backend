@@ -18,6 +18,8 @@ public sealed class GetCelosInteractor : IGetCelosInputPort
 
         var items = celos.Select(c => new CeloItemDto
         {
+            Id = c.Id,
+
             CodigoRegistro = c.Codigo,
             Fecha = DateOnly.FromDateTime(c.FechaHora),
             Hora = TimeOnly.FromDateTime(c.FechaHora),
