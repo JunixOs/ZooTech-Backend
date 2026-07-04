@@ -10,6 +10,9 @@ public interface ICeloRepository
     Task<Dictionary<long, int>> GetVecesEnCeloCountsAsync(
         CancellationToken cancellationToken = default);
 
+    Task<Dictionary<long, int>> GetCriasCountsAsync(
+        CancellationToken cancellationToken = default);
+
     Task<Celo?> GetByIdAsync(
         long id,
         CancellationToken cancellationToken = default);

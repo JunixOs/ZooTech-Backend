@@ -52,6 +52,49 @@ public sealed class CeloController : ControllerBase
         return Ok(GeneralResponseDTO<List<CeloItemResponse>>.Ok(response));
     }
 
+    [HttpGet("reportes/por-vacuno")]
+    [ProducesResponseType(typeof(GeneralResponseDTO<List<ReporteCeloPorVacunoResponse>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetReporteCeloPorVacuno(CancellationToken cancellationToken)
+    {
+        var output = await _getCelosInputPort.HandleAsync(cancellationToken);
+
+        var response = output.Items
+            .GroupBy(item => new
+            {
+                item.CodigoVacuno,
+                item.NombreVacuno
+            })
+            .Select(group => new ReporteCeloPorVacunoResponse
+            {
+                CodigoVacuno = group.Key.CodigoVacuno,
+                Nombre = group.Key.NombreVacuno,
+                UltimoCelo = group.Max(item => item.Fecha),
+                VecesEnCelo = group.Count()
+            })
+            .OrderByDescending(item => item.UltimoCelo)
+            .ToList();
+
+        return Ok(GeneralResponseDTO<List<ReporteCeloPorVacunoResponse>>.Ok(response));
+    }
+
+    [HttpGet("reportes/por-vacuno/{codigoVacuno}")]
+    [ProducesResponseType(typeof(GeneralResponseDTO<List<CeloItemResponse>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetDetalleCeloPorVacuno(
+    string codigoVacuno,
+    CancellationToken cancellationToken)
+    {
+        var output = await _getCelosInputPort.HandleAsync(cancellationToken);
+
+        var response = output.Items
+            .Where(item => item.CodigoVacuno == codigoVacuno)
+            .OrderByDescending(item => item.Fecha)
+            .ThenByDescending(item => item.Hora)
+            .Select(CeloMapper.ToResponse)
+            .ToList();
+
+        return Ok(GeneralResponseDTO<List<CeloItemResponse>>.Ok(response));
+    }
+
     [HttpGet("vacas-en-celo")]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetVacasEnCelo(CancellationToken cancellationToken)

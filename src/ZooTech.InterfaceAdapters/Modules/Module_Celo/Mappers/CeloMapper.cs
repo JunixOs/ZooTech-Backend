@@ -58,7 +58,11 @@ internal static class CeloMapper
             Hora = item.Hora,
             CodigoVacuno = item.CodigoVacuno,
             NombreVacuno = item.NombreVacuno,
-            VecesEnCelo = item.VecesEnCelo
+            VecesEnCelo = item.VecesEnCelo,
+            Caracteristicas = item.Caracteristicas,
+            ListaCaracteristicas = item.ListaCaracteristicas,
+            Observaciones = item.Observaciones,
+            Crias = item.Crias
         };
     }
 }

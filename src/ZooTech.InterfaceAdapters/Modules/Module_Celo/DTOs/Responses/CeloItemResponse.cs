@@ -8,4 +8,8 @@ public class CeloItemResponse
     public string CodigoVacuno { get; set; } = null!;
     public string NombreVacuno { get; set; } = null!;
     public int VecesEnCelo { get; set; }
+    public int Caracteristicas { get; set; }
+    public List<string> ListaCaracteristicas { get; set; } = new();
+    public string Observaciones { get; set; } = string.Empty;
+    public int Crias { get; set; }
 }

@@ -15,6 +15,7 @@ public sealed class GetCelosInteractor : IGetCelosInputPort
     {
         var celos = await _celoRepository.GetAllAsync(cancellationToken);
         var counts = await _celoRepository.GetVecesEnCeloCountsAsync(cancellationToken);
+        var criasCounts = await _celoRepository.GetCriasCountsAsync(cancellationToken);
 
         var items = celos.Select(c => new CeloItemDto
         {
@@ -23,7 +24,11 @@ public sealed class GetCelosInteractor : IGetCelosInputPort
             Hora = TimeOnly.FromDateTime(c.FechaHora),
             CodigoVacuno = c.VacunoCodigo,
             NombreVacuno = c.NombreVacuno,
-            VecesEnCelo = counts.GetValueOrDefault(c.VacunoId, 1)
+            VecesEnCelo = counts.GetValueOrDefault(c.VacunoId, 1),
+            Caracteristicas = c.CaracteristicaCodes.Count,
+            ListaCaracteristicas = c.CaracteristicaCodes.ToList(),
+            Observaciones = c.Observaciones ?? string.Empty,
+            Crias = criasCounts.GetValueOrDefault(c.VacunoId, 0)
         }).ToList();
 
         return new GetCelosOutput(items);
