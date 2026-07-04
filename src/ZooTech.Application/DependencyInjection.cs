@@ -1,7 +1,12 @@
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
+using ZooTech.Application.Modules.Animals.UseCases.DeleteAnimal;
+using ZooTech.Application.Modules.Animals.UseCases.ReportAnimalList;
 using ZooTech.Application.Modules.Module_Celo.UseCases.CreateCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.DeleteCelo;
+using ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.Common;
+using ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.GetFecundacionEstado;
+using ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.UpdateFecundacionEstado;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetCelos;
 using ZooTech.Application.Modules.Module_Celo.UseCases.UpdateCelo;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.CreateFecundacion;
@@ -72,6 +77,18 @@ public static class DependencyInjection
         services.AddScoped<ICreateCeloInputPort, CreateCeloInteractor>();
         services.AddScoped<IUpdateCeloInputPort, UpdateCeloInteractor>();
         services.AddScoped<IDeleteCeloInputPort, DeleteCeloInteractor>();
+        services.AddScoped<IGetFecundacionEstadoInputPort, GetFecundacionEstadoInteractor>();
+        services.AddScoped<IUpdateFecundacionEstadoInputPort, UpdateFecundacionEstadoInteractor>();
+        services.AddScoped<UpdateFecundacionEstadoValidator>();
+        services.AddScoped<FecundacionEstadoTransitionValidator>();
+
+        // ============================================
+        // Use Cases - Animals
+        // ============================================
+        services.AddScoped<DeleteAnimalValidator>();
+        services.AddScoped<IDeleteAnimalInputPort, DeleteAnimalInteractor>();
+        services.AddScoped<ReportAnimalListValidator>();
+        services.AddScoped<IReportAnimalListInputPort, ReportAnimalListInteractor>();
 
         // ============================================
         // Use Cases - Module_Fecundacion

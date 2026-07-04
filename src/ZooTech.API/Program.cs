@@ -47,9 +47,7 @@ builder.Services
     .AddApplication()
     .AddInfrastructure(builder.Configuration)
     .AddInterfaceAdapters();
-var frontendPort = builder.Configuration["Frontend:FrontendPort"];
-var frontendIP = builder.Configuration["Frontend:FrontendIP"];
-var frontendProtocol = builder.Configuration["Frontend:FrontendProtocol"];
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
@@ -107,10 +105,6 @@ if (!app.Environment.IsDevelopment())
 
 app.UseCors("AllowFrontend");
 
-
-// Middleware: Resolución de Tenant desde header X-Tenant-Id
-// El TenantContext ya lee el header internamente vía IHttpContextAccessor,
-// pero este log ayuda a diagnosticar qué tenant se está usando.
 app.Use(async (context, next) =>
 {
     var logger = context.RequestServices.GetRequiredService<ILoggerFactory>()
@@ -127,39 +121,37 @@ app.Use(async (context, next) =>
 
     await next();
 });
+
 app.UseAuthorization();
 app.MapControllers();
 
-// ==========================================
-// CÓDIGO DE CALENTAMIENTO (WARM-UP)
-// ==========================================
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var logger = services.GetRequiredService<ILoggerFactory>().CreateLogger("WarmUp");
-    
+
     try
     {
         logger.LogInformation("Iniciando calentamiento del modelo de Entity Framework Core...");
         var sw = System.Diagnostics.Stopwatch.StartNew();
-        
+
         var db = services.GetRequiredService<ZooTech.Infrastructure.Persistence.Context.GanaderiaDbContext>();
-        
+
         if (await db.Database.CanConnectAsync())
         {
             await db.vacunos.AnyAsync();
             sw.Stop();
-            logger.LogInformation("¡Calentamiento de Entity Framework completado con éxito en {ElapsedMs}ms!", sw.ElapsedMilliseconds);
+            logger.LogInformation("Calentamiento de Entity Framework completado en {ElapsedMs}ms.", sw.ElapsedMilliseconds);
         }
         else
         {
             sw.Stop();
-            logger.LogWarning("No se pudo establecer conexión con la base de datos durante el calentamiento. Duración: {ElapsedMs}ms.", sw.ElapsedMilliseconds);
+            logger.LogWarning("No se pudo establecer conexion con la base de datos durante el calentamiento. Duracion: {ElapsedMs}ms.", sw.ElapsedMilliseconds);
         }
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "Ocurrió un error inesperado al calentar Entity Framework.");
+        logger.LogError(ex, "Error inesperado al calentar Entity Framework.");
     }
 }
 

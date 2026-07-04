@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
+using ZooTech.Application.Modules.Animals.UseCases.DeleteAnimal;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetVacunoById;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetVacunoCatalogs;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ListarVacunosReporte;
@@ -14,6 +14,7 @@ using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Mappers;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Mappers.ReporteVacuno;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Services;
+using ZooTech.InterfaceAdapters.Presenters;
 using ListadoVacunosReporteApiResponse = ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses.ListadoVacunosReporteResponse;
 using RegistroVacunoReporteApiResponse = ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses.RegistroVacunoReporteResponse;
 
@@ -24,9 +25,11 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Controllers;
 [ApiExplorerSettings(GroupName = "public")]
 public sealed class VacunoController : ControllerBase
 {
+    private const string DeletedByHeaderName = "X-User-Id";
+
     private readonly IGetVacunoByIdInputPort _getByIdInputPort;
     private readonly IGetVacunoCatalogsInputPort _getCatalogsInputPort;
-    private readonly IDeleteVacunoInputPort _deleteInputPort;
+    private readonly IDeleteAnimalInputPort _deleteAnimalInputPort;
     private readonly IVacunoRepository _vacunoRepository;
     private readonly IVacunoActivityStatsReadRepository _activityStatsReadRepository;
     private readonly IObtenerRegistroVacunoReporteUseCase _reporteUseCase;
@@ -37,7 +40,7 @@ public sealed class VacunoController : ControllerBase
     public VacunoController(
         IGetVacunoByIdInputPort getByIdInputPort,
         IGetVacunoCatalogsInputPort getCatalogsInputPort,
-        IDeleteVacunoInputPort deleteInputPort,
+        IDeleteAnimalInputPort deleteAnimalInputPort,
         IVacunoRepository vacunoRepository,
         IVacunoActivityStatsReadRepository activityStatsReadRepository,
         IObtenerRegistroVacunoReporteUseCase reporteUseCase,
@@ -47,7 +50,7 @@ public sealed class VacunoController : ControllerBase
     {
         _getByIdInputPort = getByIdInputPort;
         _getCatalogsInputPort = getCatalogsInputPort;
-        _deleteInputPort = deleteInputPort;
+        _deleteAnimalInputPort = deleteAnimalInputPort;
         _vacunoRepository = vacunoRepository;
         _activityStatsReadRepository = activityStatsReadRepository;
         _reporteUseCase = reporteUseCase;
@@ -122,15 +125,37 @@ public sealed class VacunoController : ControllerBase
         return Ok(GeneralResponseDTO<VacunoResponse>.Ok(result.Response!));
     }
 
-    [HttpDelete("{identifier}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [HttpDelete("{id:long}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Delete([FromRoute] string identifier, [FromBody] DeleteVacunoRequest request, CancellationToken cancellationToken)
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> Delete(
+        [FromRoute] long id,
+        [FromBody] DeleteVacunoRequest request,
+        CancellationToken cancellationToken)
     {
-        long id = await ResolveIdAsync(identifier, cancellationToken);
-        await _deleteInputPort.HandleAsync(id, VacunoMapper.ToCommand(request), cancellationToken);
-        return NoContent();
+        var presenter = new DeleteAnimalPresenter();
+        var command = new DeleteAnimalCommand(
+            id,
+            request.MotivoEliminacion,
+            GetDeletedByFromHeader());
+
+        await _deleteAnimalInputPort.Handle(command, presenter, cancellationToken);
+
+        return presenter.Result;
+    }
+
+    private long? GetDeletedByFromHeader()
+    {
+        if (!Request.Headers.TryGetValue(DeletedByHeaderName, out var values))
+        {
+            return null;
+        }
+
+        return long.TryParse(values.FirstOrDefault(), out var deletedBy)
+            ? deletedBy
+            : -1;
     }
 
     private IActionResult ToReferenceErrorResult(VacunoReferenceError error)

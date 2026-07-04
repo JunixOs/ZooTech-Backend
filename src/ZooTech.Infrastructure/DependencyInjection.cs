@@ -4,6 +4,9 @@ using Microsoft.Extensions.DependencyInjection;
 using ZooTech.Application.Common.Gateway.Context;
 using ZooTech.Application.Common.Gateway.Features;
 using ZooTech.Application.Common.Gateway.Time;
+using ZooTech.Application.Modules.Animals.UseCases.DeleteAnimal;
+using ZooTech.Application.Modules.Animals.UseCases.ReportAnimalList;
+using ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.Common;
 using ZooTech.Domain.Module_Celo.Interfaces;
 using ZooTech.Domain.Module_Fecundacion.Interfaces;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
@@ -17,6 +20,8 @@ using ZooTech.Infrastructure.Persistence.Modules.Module_Fecundacion.Repositories
 using ZooTech.Infrastructure.Persistence.Modules.Module_ProduccionLeche.Repositories;
 using ZooTech.Infrastructure.Persistence.Modules.Module_Sanidad.Repositories;
 using ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Repositories;
+using ZooTech.Infrastructure.Reports;
+using ZooTech.Infrastructure.Repositories;
 using ZooTech.Infrastructure.Tenant;
 
 namespace ZooTech.Infrastructure;
@@ -55,8 +60,13 @@ public static class DependencyInjection
         services.AddScoped<ITenantContext, TenantContext>();
         services.AddScoped<IFeatureService, DevFeatureService>();
 
+        services.AddScoped<IAnimalRepository, AnimalRepository>();
+        services.AddScoped<IAnimalReportRepository, AnimalReportRepository>();
+        services.AddScoped<IAnimalReportExcelService, AnimalReportExcelService>();
+        services.AddScoped<IAnimalReportPdfService, AnimalReportPdfService>();
         services.AddScoped<ICeloRepository, CeloRepository>();
         services.AddScoped<IFecundacionRepository, FecundacionRepository>();
+        services.AddScoped<IFecundacionEstadoRepository, FecundacionEstadoRepository>();
         services.AddScoped<IOrdenioRepository, OrdenioRepository>();
         services.AddScoped<IVacunoRepository, VacunoRepository>();
         services.AddScoped<IVacunoListadoReadRepository, VacunoListadoReadRepository>();
@@ -65,8 +75,8 @@ public static class DependencyInjection
         services.AddScoped<ITriajeRepository, TriajeRepository>();
         services.AddScoped<ITipoPesoRepository, TipoPesoRepository>();
         services.AddScoped<IRegistroVacunoReadRepository, RegistroVacunoReadRepository>();
-        services.AddScoped<ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte.IRegistroVacunoExcelReportService, ZooTech.Infrastructure.Reports.RegistroVacunoExcelReportService>();
-        services.AddScoped<ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte.IRegistroVacunoPdfReportService, ZooTech.Infrastructure.Reports.RegistroVacunoPdfReportService>();
+        services.AddScoped<ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte.IRegistroVacunoExcelReportService, RegistroVacunoExcelReportService>();
+        services.AddScoped<ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte.IRegistroVacunoPdfReportService, RegistroVacunoPdfReportService>();
 
         return services;
     }
