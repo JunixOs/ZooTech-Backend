@@ -1,11 +1,8 @@
 namespace ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllTriajes;
 
 public sealed record GetAllTriajesOutput(
-    IReadOnlyList<TriajeItemOutput> Items,
-    int TotalRegistros,
-    int Pagina,
-    int Tamano,
-    int TotalPaginas);
+    IReadOnlyList<TriajeItemOutput> Data,
+    int TotalCount);
 
 public sealed record TriajeItemOutput(
     long Id,

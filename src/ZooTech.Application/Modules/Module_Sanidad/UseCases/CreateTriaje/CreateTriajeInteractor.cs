@@ -1,10 +1,31 @@
 using FluentValidation;
+using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Common.Gateway.Time;
 using ZooTech.Domain.Common.Interfaces;
 using ZooTech.Domain.Module_Sanidad.Entities;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_Sanidad.UseCases.CreateTriaje;
+
+internal static class TriajeReferenceValidator
+{
+    public static async Task EnsureReferencesExistAsync(
+        ITriajeRepository repository,
+        long vacunoId,
+        long? encargadoUsuarioId,
+        string tipoPesoCode,
+        CancellationToken cancellationToken)
+    {
+        if (!await repository.ExistsVacunoAsync(vacunoId, cancellationToken))
+            throw new ConflictException("El vacuno indicado no existe.");
+
+        if (encargadoUsuarioId.HasValue && !await repository.ExistsUsuarioAsync(encargadoUsuarioId.Value, cancellationToken))
+            throw new ConflictException("El usuario encargado indicado no existe.");
+
+        if (!await repository.ExistsTipoPesoAsync(tipoPesoCode, cancellationToken))
+            throw new ConflictException("El tipo de peso indicado no existe.");
+    }
+}
 
 public sealed class CreateTriajeInteractor : ICreateTriajeInputPort
 {
@@ -28,6 +49,9 @@ public sealed class CreateTriajeInteractor : ICreateTriajeInputPort
     public async Task<CreateTriajeOutput> HandleAsync(CreateTriajeCommand command, CancellationToken cancellationToken = default)
     {
         await _validator.ValidateAndThrowAsync(command, cancellationToken);
+        await TriajeReferenceValidator.EnsureReferencesExistAsync(
+            _repository, command.VacunoId, command.EncargadoUsuarioId, command.TipoPesoCode, cancellationToken);
+
         var codigo = await _repository.GenerateCodigoAsync(cancellationToken);
         var utcNow = _dateTimeProvider.ServerNow;
         var estadoActivo = await _estadoRegistroRepository.GetActiveCodeAsync(cancellationToken);

@@ -1,30 +1,30 @@
 using System.Globalization;
 using ZooTech.Application.Modules.Module_Sanidad.DTOs.Responses;
+using ZooTech.Domain.Module_Sanidad.Entities;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_Sanidad.UseCases;
 
-public sealed class GetDetallesTriajeByVacunoIdUseCase
+public interface IGetDetallesTriajeByVacunoIdInputPort
+{
+    Task<GetDetallesTriajeByVacunoIdOutput> HandleAsync(long vacunoId, CancellationToken cancellationToken = default);
+}
+
+public sealed record GetDetallesTriajeByVacunoIdOutput(
+    IReadOnlyList<TriajeDetallePorVacunoItem> Items);
+
+public sealed class GetDetallesTriajeByVacunoIdInteractor : IGetDetallesTriajeByVacunoIdInputPort
 {
     private readonly ITriajeRepository _repository;
 
-    public GetDetallesTriajeByVacunoIdUseCase(ITriajeRepository repository)
+    public GetDetallesTriajeByVacunoIdInteractor(ITriajeRepository repository)
     {
         _repository = repository;
     }
 
-    public async Task<IEnumerable<TriajeDetallePorVacunoResponse>> ExecuteAsync(long vacunoId, CancellationToken cancellationToken = default)
+    public async Task<GetDetallesTriajeByVacunoIdOutput> HandleAsync(long vacunoId, CancellationToken cancellationToken = default)
     {
         var items = await _repository.GetDetallesByVacunoIdAsync(vacunoId, cancellationToken);
-
-        return items.Select(item => new TriajeDetallePorVacunoResponse
-        {
-            CodigoRegistro = item.CodigoRegistro,
-            Fecha = item.FechaHora.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-            Hora = item.FechaHora.ToString("HH:mm:ss", CultureInfo.InvariantCulture),
-            TipoPesoMedido = item.TipoPesoMedido,
-            PesoKg = item.PesoKg,
-            Observaciones = item.Observaciones
-        });
+        return new GetDetallesTriajeByVacunoIdOutput(items.ToList());
     }
 }

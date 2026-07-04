@@ -93,11 +93,12 @@ public class TriajeRepository : ITriajeRepository
         }
     }
 
-    public async Task UpdateAsync(Triaje triaje, CancellationToken cancellationToken = default)
+    public async Task<Triaje> UpdateAsync(Triaje triaje, CancellationToken cancellationToken = default)
     {
         var entity = ToEntity(triaje);
         _context.triajes.Update(entity);
         await _context.SaveChangesAsync(cancellationToken);
+        return ToTriaje(entity);
     }
 
     public async Task DeleteAsync(long id, CancellationToken cancellationToken = default)
@@ -144,6 +145,21 @@ public class TriajeRepository : ITriajeRepository
                 PesoKg = t.peso_kg
             })
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<bool> ExistsVacunoAsync(long vacunoId, CancellationToken cancellationToken = default)
+    {
+        return await _context.vacunos.AnyAsync(v => v.id == vacunoId, cancellationToken);
+    }
+
+    public async Task<bool> ExistsUsuarioAsync(long usuarioId, CancellationToken cancellationToken = default)
+    {
+        return await _context.usuarios.AnyAsync(u => u.id == usuarioId, cancellationToken);
+    }
+
+    public async Task<bool> ExistsTipoPesoAsync(string tipoPesoCode, CancellationToken cancellationToken = default)
+    {
+        return await _context.cat_tipo_pesos.AnyAsync(tp => tp.code == tipoPesoCode, cancellationToken);
     }
 
     public async Task<IEnumerable<TriajeDetallePorVacunoItem>> GetDetallesByVacunoIdAsync(long vacunoId, CancellationToken cancellationToken = default)
