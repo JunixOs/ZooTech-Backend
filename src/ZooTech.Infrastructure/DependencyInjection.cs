@@ -9,15 +9,15 @@ using ZooTech.Domain.Module_Fecundacion.Interfaces;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
+using ZooTech.Infrastructure.Common.Time;
 using ZooTech.Infrastructure.Features;
-using ZooTech.Infrastructure.Tenant;
-using ZooTech.Infrastructure.Time;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Persistence.Modules.Module_Celo.Repositories;
 using ZooTech.Infrastructure.Persistence.Modules.Module_Fecundacion.Repositories;
 using ZooTech.Infrastructure.Persistence.Modules.Module_ProduccionLeche.Repositories;
 using ZooTech.Infrastructure.Persistence.Modules.Module_Sanidad.Repositories;
 using ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Repositories;
+using ZooTech.Infrastructure.Tenant;
 
 namespace ZooTech.Infrastructure;
 
@@ -29,53 +29,31 @@ public static class DependencyInjection
     {
         QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
-        // ============================================
-        // Configuration Options
-        // ============================================
-        services.Configure<ZooTech.Infrastructure.Storage.ReportStorageOptions>(options => 
+        services.Configure<ZooTech.Infrastructure.Storage.ReportStorageOptions>(options =>
         {
             options.ReportesBasePath = configuration["StorageConfig:ReportesBasePath"] ?? options.ReportesBasePath;
             options.ReportesVacunosPath = configuration["StorageConfig:ReportesVacunosPath"] ?? options.ReportesVacunosPath;
             options.ReportesUrlBase = configuration["StorageConfig:ReportesUrlBase"] ?? options.ReportesUrlBase;
         });
 
-        var connectionString = configuration.GetConnectionString("DefaultConnection")
-            ?? throw new InvalidOperationException("No se encontró ConnectionStrings:DefaultConnection.");
+        var connectionName = configuration["Database:ConnectionName"] ?? "DefaultConnection";
+        var connectionString = configuration.GetConnectionString(connectionName);
+
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            throw new InvalidOperationException(
+                $"No se encontro una cadena de conexion valida en ConnectionStrings:{connectionName}.");
+        }
 
         services.AddDbContext<GanaderiaDbContext>(options =>
             options.UseSqlServer(connectionString));
 
-        // ============================================
-        // Transversal
-        // ============================================
-
         services.AddScoped<IDateTimeProvider, DateTimeProvider>();
-
-        // ============================================
-        // Repositories
-        // ============================================
-
-     // Multi-Tenant
-        // ============================================
+        services.AddScoped<ITimeProvider, ZooTech.Infrastructure.Time.SystemTimeProvider>();
 
         services.AddHttpContextAccessor();
         services.AddScoped<ITenantContext, TenantContext>();
-
-        // ============================================
-        // Feature Flags
-        // ============================================
-
         services.AddScoped<IFeatureService, DevFeatureService>();
-
-        // ============================================
-        // Repositories
-        // ============================================
-
-        services.AddScoped<ZooTech.Application.Common.Gateway.Repositories.IVacunoRepository, ZooTech.Infrastructure.Persistence.Repositories.VacunoRepository>();
-
-        // ============================================
-        // Caching
-        // ============================================
 
         services.AddScoped<ICeloRepository, CeloRepository>();
         services.AddScoped<IFecundacionRepository, FecundacionRepository>();
@@ -93,4 +71,3 @@ public static class DependencyInjection
         return services;
     }
 }
-

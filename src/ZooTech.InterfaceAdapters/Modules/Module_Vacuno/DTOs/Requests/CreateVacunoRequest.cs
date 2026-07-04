@@ -16,4 +16,7 @@ public sealed record CreateVacunoRequest(
     string? Departamento,
     string? Provincia,
     string? CodigoDistrito,
+    decimal? PrecioCompra,
+    string? AptoPara,
+    DateOnly? FechaEspecificacion,
     string? Observaciones);

@@ -22,4 +22,7 @@ public sealed record VacunoResponse(
     string? Distrito,
     string? Provincia,
     string? Departamento,
-    string? CodigoDistrito);
+    string? CodigoDistrito,
+    decimal? PrecioCompra,
+    string? AptoPara,
+    DateOnly? FechaEspecificacion);

@@ -50,6 +50,26 @@ public sealed class VacunoResponseEnricher : IVacunoResponseEnricher
             })
             .FirstOrDefaultAsync(cancellationToken);
 
+        var adquisicion = await _db.vacuno_adquisicions
+            .AsNoTracking()
+            .Where(a => a.vacuno_id == dto.Id)
+            .Select(a => new
+            {
+                a.precio_compra
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var utilizacion = await _db.vacuno_utilizacion_historials
+            .AsNoTracking()
+            .Where(u => u.vacuno_id == dto.Id)
+            .OrderByDescending(u => u.created_at)
+            .Select(u => new
+            {
+                u.tipo_utilizacion_code,
+                u.created_at
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
         return new VacunoResponse(
             dto.Id,
             dto.Codigo,
@@ -72,6 +92,9 @@ public sealed class VacunoResponseEnricher : IVacunoResponseEnricher
             granja?.Distrito,
             granja?.Provincia,
             granja?.Departamento,
-            granja?.CodigoDistrito);
+            granja?.CodigoDistrito,
+            adquisicion?.precio_compra,
+            utilizacion?.tipo_utilizacion_code,
+            utilizacion is null ? null : DateOnly.FromDateTime(utilizacion.created_at));
     }
 }

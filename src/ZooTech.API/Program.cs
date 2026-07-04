@@ -9,6 +9,10 @@ using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Controllers;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+
 builder.Services
     .AddControllers()
     .AddApplicationPart(typeof(HomeController).Assembly)
@@ -96,7 +100,11 @@ app.UseStaticFiles(new StaticFileOptions
     RequestPath = "/api/v1/storage"
 });
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseCors("AllowFrontend");
 
 

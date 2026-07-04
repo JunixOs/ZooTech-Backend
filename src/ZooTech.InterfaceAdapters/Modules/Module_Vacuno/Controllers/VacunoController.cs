@@ -3,15 +3,15 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetVacunoById;
-using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetVacunoCatalogs;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ListarVacunosReporte;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.InterfaceAdapters.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Mappers;
-using ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte;
-using ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ListarVacunosReporte;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Mappers.ReporteVacuno;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Services;
 using ListadoVacunosReporteApiResponse = ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses.ListadoVacunosReporteResponse;
@@ -25,6 +25,7 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Controllers;
 public sealed class VacunoController : ControllerBase
 {
     private readonly IGetVacunoByIdInputPort _getByIdInputPort;
+    private readonly IGetVacunoCatalogsInputPort _getCatalogsInputPort;
     private readonly IDeleteVacunoInputPort _deleteInputPort;
     private readonly IVacunoRepository _vacunoRepository;
     private readonly IVacunoActivityStatsReadRepository _activityStatsReadRepository;
@@ -35,6 +36,7 @@ public sealed class VacunoController : ControllerBase
 
     public VacunoController(
         IGetVacunoByIdInputPort getByIdInputPort,
+        IGetVacunoCatalogsInputPort getCatalogsInputPort,
         IDeleteVacunoInputPort deleteInputPort,
         IVacunoRepository vacunoRepository,
         IVacunoActivityStatsReadRepository activityStatsReadRepository,
@@ -44,6 +46,7 @@ public sealed class VacunoController : ControllerBase
         IVacunoResponseEnricher responseEnricher)
     {
         _getByIdInputPort = getByIdInputPort;
+        _getCatalogsInputPort = getCatalogsInputPort;
         _deleteInputPort = deleteInputPort;
         _vacunoRepository = vacunoRepository;
         _activityStatsReadRepository = activityStatsReadRepository;
@@ -51,6 +54,22 @@ public sealed class VacunoController : ControllerBase
         _listarVacunosReporteUseCase = listarVacunosReporteUseCase;
         _mutationService = mutationService;
         _responseEnricher = responseEnricher;
+    }
+
+    [HttpGet("catalogos")]
+    [ProducesResponseType(typeof(GeneralResponseDTO<VacunoCatalogsResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetCatalogos(CancellationToken cancellationToken)
+    {
+        var catalogs = await _getCatalogsInputPort.HandleAsync(cancellationToken);
+        return Ok(GeneralResponseDTO<VacunoCatalogsResponse>.Ok(VacunoMapper.ToResponse(catalogs)));
+    }
+
+    [HttpGet("referencias")]
+    [ProducesResponseType(typeof(GeneralResponseDTO<List<VacunoReferenceResponse>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ListarReferencias(CancellationToken cancellationToken)
+    {
+        var items = await _vacunoRepository.ListReferencesAsync(cancellationToken);
+        return Ok(GeneralResponseDTO<List<VacunoReferenceResponse>>.Ok(items.Select(VacunoMapper.ToResponse).ToList()));
     }
 
     [HttpPost]
@@ -126,7 +145,7 @@ public sealed class VacunoController : ControllerBase
             error = new
             {
                 code = "VALIDATION_ERROR",
-                message = "Los datos enviados no son válidos.",
+                message = "Los datos enviados no son validos.",
                 details = new[]
                 {
                     new { field = error.Field, message = error.Message }
@@ -239,7 +258,7 @@ public sealed class VacunoController : ControllerBase
     {
         var query = RegistroVacunoReporteMapper.ToApplicationQuery(vacunoId, request);
         var response = await _reporteUseCase.HandleAsync(query, cancellationToken);
-        
+
         return Ok(GeneralResponseDTO<RegistroVacunoReporteApiResponse>.Ok(
             RegistroVacunoReporteMapper.ToResponse(response)));
     }
@@ -247,7 +266,7 @@ public sealed class VacunoController : ControllerBase
     [HttpGet("reportes/listado")]
     [ProducesResponseType(typeof(GeneralResponseDTO<ListadoVacunosReporteApiResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ReportesListado(
-        [FromQuery] ListadoVacunosRequest request, 
+        [FromQuery] ListadoVacunosRequest request,
         CancellationToken cancellationToken)
     {
         var response = await _listarVacunosReporteUseCase.HandleAsync(

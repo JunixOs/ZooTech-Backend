@@ -4,6 +4,7 @@ using ZooTech.Application.Modules.Module_Celo.UseCases.CreateCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.DeleteCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetCelos;
 using ZooTech.Application.Modules.Module_Celo.UseCases.UpdateCelo;
+using ZooTech.Application.Modules.Module_Fecundacion.UseCases.CreateFecundacion;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.GetFecundacionForEdit;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.GetFecundacionOptions;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.SearchFecundacionVacunos;
@@ -19,6 +20,7 @@ using ZooTech.Application.Modules.Module_Sanidad.UseCases.UpdateTriaje;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.CreateVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetVacunoById;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetVacunoCatalogs;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ListarVacunosReporte;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.UpdateVacuno;
@@ -74,6 +76,7 @@ public static class DependencyInjection
         // ============================================
         // Use Cases - Module_Fecundacion
         // ============================================
+        services.AddScoped<ICreateFecundacionInputPort, CreateFecundacionInteractor>();
         services.AddScoped<IGetFecundacionForEditInputPort, GetFecundacionForEditInteractor>();
         services.AddScoped<IGetFecundacionOptionsInputPort, GetFecundacionOptionsInteractor>();
         services.AddScoped<ISearchFecundacionVacunosInputPort, SearchFecundacionVacunosInteractor>();
@@ -85,6 +88,7 @@ public static class DependencyInjection
         services.AddScoped<IListarVacunosInputPort, ListarVacunosInteractor>();
         services.AddScoped<ICreateVacunoInputPort, CreateVacunoInteractor>();
         services.AddScoped<IGetVacunoByIdInputPort, GetVacunoByIdInteractor>();
+        services.AddScoped<IGetVacunoCatalogsInputPort, GetVacunoCatalogsInteractor>();
         services.AddScoped<IUpdateVacunoInputPort, UpdateVacunoInteractor>();
         services.AddScoped<IDeleteVacunoInputPort, DeleteVacunoInteractor>();
         services.AddScoped<ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte.IObtenerRegistroVacunoReporteUseCase, ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte.ObtenerRegistroVacunoReporteUseCase>();

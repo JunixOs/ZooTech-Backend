@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using ZooTech.Domain.Module_Vacuno.Entities;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
+using ZooTech.Domain.Module_Vacuno.Models;
+using ZooTech.Domain.Module_Vacuno.ReadModels;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Mappers;
 
@@ -24,6 +26,52 @@ public sealed class VacunoRepository : IVacunoRepository
             .ToListAsync(cancellationToken);
 
         return entities.Select(VacunoPersistenceMapper.ToDomain).ToList();
+    }
+
+    public async Task<List<Vacuno>> ListAllWithDeletedAsync(CancellationToken cancellationToken = default)
+    {
+        var entities = await _context.vacunos
+            .AsNoTracking()
+            .OrderBy(v => v.codigo)
+            .ToListAsync(cancellationToken);
+
+        return entities.Select(VacunoPersistenceMapper.ToDomain).ToList();
+    }
+
+    public async Task<List<VacunoListItem>> ListAllForDisplayAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.vacunos
+            .AsNoTracking()
+            .OrderBy(v => v.codigo)
+            .Select(v => new VacunoListItem(
+                v.id,
+                v.codigo,
+                v.nombre,
+                v.fecha_nacimiento,
+                v.fecha_registro,
+                v.raza_code,
+                v.granja == null
+                    ? null
+                    : v.granja.nombre + ", "
+                        + v.granja.distrito_codigoNavigation.nombre + ", "
+                        + v.granja.distrito_codigoNavigation.provincia_codigoNavigation.nombre + ", "
+                        + v.granja.distrito_codigoNavigation.provincia_codigoNavigation.departamento_codigoNavigation.nombre,
+                v.deleted_at != null))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<List<VacunoReferenceItem>> ListReferencesAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.vacunos
+            .AsNoTracking()
+            .Where(v => v.deleted_at == null)
+            .OrderBy(v => v.codigo)
+            .Select(v => new VacunoReferenceItem(
+                v.id,
+                v.codigo,
+                v.nombre,
+                v.sexo_code))
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<Vacuno?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
@@ -53,6 +101,52 @@ public sealed class VacunoRepository : IVacunoRepository
     public Task<bool> ExistsCodigoAsync(string codigo, CancellationToken cancellationToken = default)
         => _context.vacunos.AnyAsync(v => v.deleted_at == null && v.codigo == codigo.Trim(), cancellationToken);
 
+    public async Task<VacunoCatalogs> GetCatalogsAsync(CancellationToken cancellationToken = default)
+    {
+        var tiposAdquisicion = await _context.cat_tipo_adquisicions
+            .AsNoTracking()
+            .Where(item => item.activo)
+            .OrderBy(item => item.nombre)
+            .Select(item => new VacunoCatalogOption(item.code, item.nombre))
+            .ToListAsync(cancellationToken);
+
+        var razas = await _context.cat_razas
+            .AsNoTracking()
+            .Where(item => item.activo)
+            .OrderBy(item => item.nombre)
+            .Select(item => new VacunoCatalogOption(item.code, item.nombre))
+            .ToListAsync(cancellationToken);
+
+        var colores = await _context.cat_colors
+            .AsNoTracking()
+            .Where(item => item.activo)
+            .OrderBy(item => item.nombre)
+            .Select(item => new VacunoCatalogOption(item.code, item.nombre))
+            .ToListAsync(cancellationToken);
+
+        var sexos = await _context.cat_sexos
+            .AsNoTracking()
+            .OrderBy(item => item.nombre)
+            .Select(item => new VacunoCatalogOption(item.code, item.nombre))
+            .ToListAsync(cancellationToken);
+
+        var utilizaciones = await _context.cat_tipo_utilizacions
+            .AsNoTracking()
+            .Where(item => item.activo)
+            .OrderBy(item => item.nombre)
+            .Select(item => new VacunoCatalogOption(item.code, item.nombre))
+            .ToListAsync(cancellationToken);
+
+        var granjas = await _context.granjas
+            .AsNoTracking()
+            .Where(item => item.activo)
+            .OrderBy(item => item.nombre)
+            .Select(item => new GranjaCatalogOption(item.id, item.nombre))
+            .ToListAsync(cancellationToken);
+
+        return new VacunoCatalogs(tiposAdquisicion, razas, colores, sexos, utilizaciones, granjas);
+    }
+
     public async Task<Vacuno> AddAsync(Vacuno vacuno, CancellationToken cancellationToken = default)
     {
         var entity = VacunoPersistenceMapper.ToEntity(vacuno);
@@ -65,7 +159,7 @@ public sealed class VacunoRepository : IVacunoRepository
     {
         var entity = await _context.vacunos
             .FirstOrDefaultAsync(v => v.id == vacuno.Id, cancellationToken)
-            ?? throw new InvalidOperationException("No se encontró el vacuno para actualizar.");
+            ?? throw new InvalidOperationException("No se encontro el vacuno para actualizar.");
 
         entity.nombre = vacuno.Nombre;
         entity.fecha_nacimiento = vacuno.FechaNacimiento;
