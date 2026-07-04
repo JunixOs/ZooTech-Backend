@@ -1,8 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using ZooTech.Application.Common.Behaviors.Module_Auth.AdminLogin;
 using ZooTech.Application.Common.Behaviors.Module_Auth.RegularLogin;
-using ZooTech.Application.Modules.Module_Auth.UseCases.AdminLogin;
 using ZooTech.InterfaceAdapters.Filters;
+using ZooTech.InterfaceAdapters.Modules.Module_Auth.DTOs;
+using ZooTech.InterfaceAdapters.Modules.Module_Auth.Mappers;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_Auth
 {
@@ -26,11 +27,15 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Auth
         [ServiceFilter(typeof(TenantHeaderFilter))]
         [RestrictTenantType(Domain.Shared.Enums.TenantType.Tenant)]
         [HttpPost("user/login")]
-        public async Task<IActionResult> LoginRegularUsers(string email)
+        public async Task<IActionResult> LoginRegularUsers(
+            [FromBody] RegularLoginRequest request
+        )
         {
             var behaviorPipeline = _regularLoginBehaviorPipeline.Create();
 
-            var result = await behaviorPipeline.Execute(email);
+            var result = await behaviorPipeline.Execute(
+                RegularLoginMapper.ToCommand(request)
+            );
 
             return Ok(result);
         }
@@ -38,19 +43,24 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Auth
         [ServiceFilter(typeof(TenantHeaderFilter))]
         [RestrictTenantType(Domain.Shared.Enums.TenantType.Admin)]
         [HttpPost("admin/login")]
-        public async Task<IActionResult> LoginAdminUsers(string email, string password)
+        public async Task<IActionResult> LoginAdminUsers(
+            [FromBody] AdminLoginRequest requestDto
+        )
         {
             var behaviorPipeline = _adminLoginBehaviorPipeline.Create();
 
             var result = await behaviorPipeline.Execute(
-                new AdminLoginCommand
-                {
-                    Email = email,
-                    Password = password
-                }
+                AdminLoginMapper.ToCommand(requestDto)
             );
 
             return Ok(result);
+        }
+
+        [ServiceFilter(typeof(TenantHeaderFilter))]
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            return Ok();
         }
     }
 }

@@ -1,5 +1,7 @@
+using Microsoft.Extensions.Logging;
 using ZooTech.Application.Common.Gateway.Auditing;
 using ZooTech.Application.Common.Gateway.Context;
+using ZooTech.Application.Common.Gateway.Identity;
 
 namespace ZooTech.Infrastructure.Auditing.MongoDb
 {
@@ -7,14 +9,23 @@ namespace ZooTech.Infrastructure.Auditing.MongoDb
     {
         private readonly MongoDbContext _mongoDbContext;
         private readonly ITenantContext _tenantContext;
+        private readonly ICurrentUserService _currentUserService;
+
+        private readonly ILogger<MongoDbAudit> _logger;
 
         public MongoDbAudit(
             MongoDbContext mongoDbContext , 
-            ITenantContext tenantContext
+            ITenantContext tenantContext,
+            ICurrentUserService currentUserService,
+            
+            ILogger<MongoDbAudit> logger
         )
         {
             _mongoDbContext = mongoDbContext;
             _tenantContext = tenantContext;
+            _currentUserService = currentUserService;
+
+            _logger = logger;
         }
 
         public async Task SaveLogAsync(AuditModel auditModel)
@@ -32,8 +43,8 @@ namespace ZooTech.Infrastructure.Auditing.MongoDb
                     Action = auditModel.Action,
                     User = new AuditUser
                     {
-                        Id = auditModel.UserId,
-                        Name = auditModel.UserName
+                        Id = _currentUserService.UserId,
+                        Name = _currentUserService.UserName
                     },
                     OldValues = auditModel.OldValues,
                     NewValues = auditModel.NewValues,
@@ -44,7 +55,11 @@ namespace ZooTech.Infrastructure.Auditing.MongoDb
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                _logger.LogError(
+                    ex,
+                    "ZooTechException: Failed to save audit log to MongoDB. Tenant: {TenantId}, Event: {EventType}",
+                    _tenantContext.TenantId,
+                    auditModel.EventType);
             }
 
         }

@@ -4,6 +4,6 @@ namespace ZooTech.Application.Common.Behaviors.Module_Auth.RegularLogin
 {
     public interface IRegularLoginBehaviorPipeline
     {
-        BehaviorPipeline<string, string> Create();
+        BehaviorPipeline<RegularLoginCommand, string> Create();
     }
 }

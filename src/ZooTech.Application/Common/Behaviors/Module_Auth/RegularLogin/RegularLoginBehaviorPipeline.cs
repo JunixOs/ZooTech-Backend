@@ -4,16 +4,16 @@ namespace ZooTech.Application.Common.Behaviors.Module_Auth.RegularLogin
 {
     public class RegularLoginBehaviorPipeline : IRegularLoginBehaviorPipeline
     {
-        private readonly ValidationBehavior<string , string> _validation;
-        private readonly LoggingBehavior<string, string> _logging;
-        private readonly AuditBehavior<string, string> _audit;
+        private readonly ValidationBehavior<RegularLoginCommand , string> _validation;
+        private readonly LoggingBehavior<RegularLoginCommand, string> _logging;
+        private readonly AuditBehavior<RegularLoginCommand, string> _audit;
 
         private readonly IRegularLoginInputPort _handler;
 
         public RegularLoginBehaviorPipeline(
-            ValidationBehavior<string , string> validation,
-            LoggingBehavior<string, string> logging,
-            AuditBehavior<string, string> audit,
+            ValidationBehavior<RegularLoginCommand , string> validation,
+            LoggingBehavior<RegularLoginCommand, string> logging,
+            AuditBehavior<RegularLoginCommand, string> audit,
 
             IRegularLoginInputPort handler
         )
@@ -25,9 +25,9 @@ namespace ZooTech.Application.Common.Behaviors.Module_Auth.RegularLogin
             _handler = handler;
         }
 
-        public BehaviorPipeline<string, string> Create()
+        public BehaviorPipeline<RegularLoginCommand, string> Create()
         {
-            return new BehaviorPipeline<string, string>(
+            return new BehaviorPipeline<RegularLoginCommand, string>(
             [
                 _validation,
                 _logging,

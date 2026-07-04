@@ -33,6 +33,7 @@ namespace ZooTech.Infrastructure.Auditing.MongoDb
     public class MongoDbAuditModel
     {
         [BsonId]
+        [BsonGuidRepresentation(GuidRepresentation.Standard)]
         public Guid Id { get; set; }
 
         [BsonElement("tenant_id")]

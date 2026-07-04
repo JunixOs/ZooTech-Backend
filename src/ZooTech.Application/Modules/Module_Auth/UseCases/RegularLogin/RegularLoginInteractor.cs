@@ -29,9 +29,9 @@ namespace ZooTech.Application.Modules.Module_Auth.UseCases.RegularLogin
             _jwtService = jwtService;
         }
 
-        public async Task<string> Handle(string email)
+        public async Task<string> Handle(RegularLoginCommand cmd)
         {
-            UsuarioDomainEntity? domainEntity = await _usuarioRepository.GetByEmail(email);
+            UsuarioDomainEntity? domainEntity = await _usuarioRepository.GetByEmail(cmd.Email);
             
             if(domainEntity is null)
             {
