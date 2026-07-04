@@ -1,12 +1,14 @@
 using ClosedXML.Excel;
 using ZooTech.Application.Common.Gateway.Services;
 using ZooTech.Domain.Module_Vacuno.Entities;
+using ZooTech.Domain.Module_Vacuno.ReadModels.GetArbolGenealogico;
 
 namespace ZooTech.Infrastructure.Reports.Vacunos;
 
 public sealed class ArbolGenealogicoExcelExportService : IArbolGenealogicoExportService
 {
-    public Task<byte[]> GenerateExcelAsync(List<Vacuno> arbolGenealogico, Vacuno raiz, CancellationToken cancellationToken = default)
+    public Task<byte[]> GenerateExcelAsync(
+        List<VacunoGenealogiaNode> arbolGenealogico, Vacuno raiz, CancellationToken cancellationToken = default)
     {
         using var workbook = new XLWorkbook();
         var worksheet = workbook.Worksheets.Add("Árbol Genealógico");
@@ -17,48 +19,50 @@ public sealed class ArbolGenealogicoExcelExportService : IArbolGenealogicoExport
         worksheet.Cell(1, 4).Value = "Nombre";
         worksheet.Cell(1, 5).Value = "Raza";
         worksheet.Cell(1, 6).Value = "Sexo";
+        worksheet.Cell(1, 7).Value = "Procedencia";
 
         var headerRow = worksheet.Row(1);
         headerRow.Style.Font.Bold = true;
         headerRow.Style.Fill.BackgroundColor = XLColor.LightGray;
 
         int row = 2;
-        
-        var queue = new Queue<(Vacuno Node, int Nivel, string Relacion)>();
-        queue.Enqueue((raiz, 1, "Raíz"));
-        
+
+        var raizNodo = arbolGenealogico.FirstOrDefault(n => n.Vacuno.Id == raiz.Id);
+        var queue = new Queue<(VacunoGenealogiaNode Node, List<string> Cadena)>();
+        queue.Enqueue((raizNodo ?? new VacunoGenealogiaNode(raiz, 1, null), new List<string>()));
         var visited = new HashSet<long> { raiz.Id };
 
         while (queue.Count > 0)
         {
             var current = queue.Dequeue();
+            var v = current.Node.Vacuno;
 
-            worksheet.Cell(row, 1).Value = current.Nivel;
-            worksheet.Cell(row, 2).Value = current.Relacion;
-            worksheet.Cell(row, 3).Value = current.Node.Codigo;
-            worksheet.Cell(row, 4).Value = current.Node.Nombre;
-            worksheet.Cell(row, 5).Value = current.Node.RazaCode ?? "-";
-            worksheet.Cell(row, 6).Value = current.Node.SexoCode ?? "-";
-
+            worksheet.Cell(row, 1).Value = current.Node.Nivel;
+            worksheet.Cell(row, 2).Value = GetRelacion(current.Node.Nivel, current.Cadena);
+            worksheet.Cell(row, 3).Value = v.Codigo;
+            worksheet.Cell(row, 4).Value = v.Nombre;
+            worksheet.Cell(row, 5).Value = v.RazaCode ?? "-";
+            worksheet.Cell(row, 6).Value = v.SexoCode ?? "-";
+            worksheet.Cell(row, 7).Value = current.Node.Procedencia ?? "-";
             row++;
 
-            if (current.Node.PadreId.HasValue && !visited.Contains(current.Node.PadreId.Value))
+            if (v.PadreId.HasValue && !visited.Contains(v.PadreId.Value))
             {
-                var padre = arbolGenealogico.FirstOrDefault(x => x.Id == current.Node.PadreId.Value);
+                var padre = arbolGenealogico.FirstOrDefault(x => x.Vacuno.Id == v.PadreId.Value);
                 if (padre != null)
                 {
-                    visited.Add(padre.Id);
-                    queue.Enqueue((padre, current.Nivel + 1, GetRelacion(current.Nivel + 1, "Padre")));
+                    visited.Add(padre.Vacuno.Id);
+                    queue.Enqueue((padre, new List<string>(current.Cadena) { "Padre" }));
                 }
             }
 
-            if (current.Node.MadreId.HasValue && !visited.Contains(current.Node.MadreId.Value))
+            if (v.MadreId.HasValue && !visited.Contains(v.MadreId.Value))
             {
-                var madre = arbolGenealogico.FirstOrDefault(x => x.Id == current.Node.MadreId.Value);
+                var madre = arbolGenealogico.FirstOrDefault(x => x.Vacuno.Id == v.MadreId.Value);
                 if (madre != null)
                 {
-                    visited.Add(madre.Id);
-                    queue.Enqueue((madre, current.Nivel + 1, GetRelacion(current.Nivel + 1, "Madre")));
+                    visited.Add(madre.Vacuno.Id);
+                    queue.Enqueue((madre, new List<string>(current.Cadena) { "Madre" }));
                 }
             }
         }
@@ -70,15 +74,21 @@ public sealed class ArbolGenealogicoExcelExportService : IArbolGenealogicoExport
         return Task.FromResult(stream.ToArray());
     }
 
-    private static string GetRelacion(int nivel, string tipo)
+    private static string GetRelacion(int nivel, List<string> cadena)
     {
+        if (nivel == 1) return "Raíz";
+        if (nivel == 2) return cadena[^1]; 
+
+        var esPaterno = cadena[0] == "Padre";
+        var ladoTexto = esPaterno ? "paterno" : "materno";
+        var ladoTextoF = esPaterno ? "paterna" : "materna";
+        var esRamaFemenina = cadena[^1] == "Madre";
+
         return nivel switch
         {
-            1 => "Raíz",
-            2 => tipo,
-            3 => tipo == "Padre" ? "Abuelo paterno" : "Abuela materna", // Technically Padre could be Madre's father, but BFS simplifies it. We just use Abuelo/Abuela for simplicity based on the branch.
-            4 => tipo == "Padre" ? "Bisabuelo" : "Bisabuela",
-            _ => "Ancestro"
+            3 => esRamaFemenina ? $"Abuela {ladoTextoF}" : $"Abuelo {ladoTexto}",
+            4 => esRamaFemenina ? $"Bisabuela {ladoTextoF}" : $"Bisabuelo {ladoTexto}",
+            _ => $"Ancestro {ladoTexto} (nivel {nivel})"
         };
     }
 }

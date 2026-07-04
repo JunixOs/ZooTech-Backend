@@ -70,7 +70,6 @@ public static class DependencyInjection
         services.AddScoped<ICeloRepository, CeloRepository>();
         services.AddScoped<IOrdenioRepository, OrdenioRepository>();
         services.AddScoped<IVacunoRepository, VacunoRepository>();
-        services.AddScoped<IVacunoQueryRepository, VacunoRepository>();
         services.AddScoped<ITriajeRepository, TriajeRepository>();
         services.AddScoped<ITipoPesoRepository, TipoPesoRepository>();
         services.AddScoped<IFecundacionRepository, FecundacionRepository>();

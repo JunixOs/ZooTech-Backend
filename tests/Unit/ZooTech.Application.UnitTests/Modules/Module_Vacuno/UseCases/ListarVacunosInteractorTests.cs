@@ -3,8 +3,8 @@ using FluentAssertions;
 using Xunit;
 using ZooTech.Application.Common.Configuration;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
-using ZooTech.Domain.Module_Vacuno.Entities;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
+using ZooTech.Domain.Module_Vacuno.ReadModels.ListarVacuno;
 
 namespace ZooTech.Application.UnitTests.Modules.Module_Vacuno.UseCases;
 
@@ -27,14 +27,14 @@ public class ListarVacunosInteractorTests
     [Fact]
     public async Task HandleAsync_WhenValidRequest_ReturnsPagedDataSuccessfully()
     {
-        var fakeVacunos = new List<(Vacuno Vacuno, string? Procedencia)>
+        var fakeItems = new List<VacunoListItem>
         {
-            (Vacuno.Rehydrate(1L, "V-001", "Lola", DateOnly.Parse("2020-01-01"), "C01", "R01", "C01", "HEMBRA", null, null, 1L, null, DateOnly.FromDateTime(DateTime.UtcNow), DateTime.UtcNow, DateTime.UtcNow, null, null, null, null, null), "Granja A")
+            new VacunoListItem(1L, "V-001", "Lola", DateOnly.Parse("2020-01-01"), "R01", "Granja A", false, DateOnly.FromDateTime(DateTime.UtcNow))
         };
 
         _vacunoRepositoryMock.Setup(x => x.GetPagedAsync(
                 It.IsAny<string?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((fakeVacunos, 1));
+            .ReturnsAsync((fakeItems, 1));
 
         var command = new ListarVacunosCommand(Page: 1, Limit: 10);
 

@@ -5,7 +5,6 @@ using System.Net;
 using System.Net.Http.Json;
 using ZooTech.InterfaceAdapters.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses;
-using ZooTech.Application.Modules.Module_Vacuno.UseCases.GenerarArbolGenealogico;
 
 namespace ZooTech.API.IntegrationTests.Controllers;
 

@@ -1,13 +1,17 @@
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetArbolGenealogico;
 using ZooTech.Domain.Module_Vacuno.Entities;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
+using ZooTech.Domain.Module_Vacuno.ReadModels.GetArbolGenealogico;
+using ZooTech.Domain.Module_Vacuno.ReadModels.ListarVacuno;
 using ZooTech.Infrastructure.Persistence.Context;
-using ZooTech.Domain.Module_Vacuno.ReadModels;
+using ZooTech.Infrastructure.Persistence.Mappers;
+using ZooTech.Infrastructure.Persistence.Models;
 
 namespace ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Repositories;
 
-public sealed class VacunoRepository : IVacunoRepository, IVacunoQueryRepository
+public sealed class VacunoRepository : IVacunoRepository
 {
     private readonly GanaderiaDbContext _context;
 
@@ -128,29 +132,36 @@ public sealed class VacunoRepository : IVacunoRepository, IVacunoQueryRepository
     }
 
     public async Task<(List<VacunoListItem> Items, int TotalCount)> GetPagedAsync(
-        string? query, DateTime? fechaDesde, DateTime? fechaHasta, int page, int limit, CancellationToken cancellationToken = default)
+    string? query, DateTime? fechaDesde, DateTime? fechaHasta, string? estado,
+    int page, int limit, CancellationToken cancellationToken = default)
     {
         var q = _context.vacunos
             .AsNoTracking()
-            .Where(v => v.deleted_at == null);
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(estado))
+        {
+            var estadoNormalizado = estado.Trim().ToLower();
+            if (estadoNormalizado == "vivo")
+                q = q.Where(v => v.deleted_at == null);
+            else if (estadoNormalizado == "muerto")
+                q = q.Where(v => v.deleted_at != null);
+            // cualquier otro valor no reconocido: no se aplica filtro, se comporta como "todos"
+        }
+        // si estado es null o "" -> no se filtra, trae vivos y muertos
 
         if (!string.IsNullOrWhiteSpace(query))
         {
-            var lowerQuery = query.ToLower();
-            q = q.Where(v => v.codigo.ToLower().Contains(lowerQuery) || v.nombre.ToLower().Contains(lowerQuery));
+            var pattern = $"%{query}%";
+            q = q.Where(v => EF.Functions.Like(v.codigo, pattern)
+                          || EF.Functions.Like(v.nombre, pattern));
         }
 
         if (fechaDesde.HasValue)
-        {
-            var fd = DateOnly.FromDateTime(fechaDesde.Value);
-            q = q.Where(v => v.fecha_registro >= fd);
-        }
+            q = q.Where(v => v.fecha_registro >= DateOnly.FromDateTime(fechaDesde.Value));
 
         if (fechaHasta.HasValue)
-        {
-            var fh = DateOnly.FromDateTime(fechaHasta.Value);
-            q = q.Where(v => v.fecha_registro <= fh);
-        }
+            q = q.Where(v => v.fecha_registro <= DateOnly.FromDateTime(fechaHasta.Value));
 
         var totalCount = await q.CountAsync(cancellationToken);
 
@@ -171,7 +182,9 @@ public sealed class VacunoRepository : IVacunoRepository, IVacunoQueryRepository
                 GranjaNombre = v.granja!.nombre,
                 DistritoNombre = v.granja!.distrito_codigoNavigation!.nombre,
                 ProvinciaNombre = v.granja!.distrito_codigoNavigation!.provincia_codigoNavigation!.nombre,
-                DepartamentoNombre = v.granja!.distrito_codigoNavigation!.provincia_codigoNavigation!.departamento_codigoNavigation!.nombre
+                DepartamentoNombre = v.granja!.distrito_codigoNavigation!
+                                        .provincia_codigoNavigation!
+                                        .departamento_codigoNavigation!.nombre
             })
             .ToListAsync(cancellationToken);
 
@@ -186,7 +199,7 @@ public sealed class VacunoRepository : IVacunoRepository, IVacunoQueryRepository
                 Codigo: r.codigo,
                 Nombre: r.nombre,
                 FechaNacimiento: r.fecha_nacimiento,
-                RazaCode: r.raza_code,
+                RazaCode: r.raza_code ?? string.Empty,
                 Procedencia: string.IsNullOrWhiteSpace(procedencia) ? null : procedencia,
                 IsDeleted: r.deleted_at != null,
                 FechaRegistro: r.fecha_registro
@@ -196,30 +209,57 @@ public sealed class VacunoRepository : IVacunoRepository, IVacunoQueryRepository
         return (items, totalCount);
     }
 
-    public async Task<List<Vacuno>> GetArbolGenealogicoAsync(long id, int maxNiveles, CancellationToken cancellationToken = default)
+    public async Task<List<VacunoGenealogiaNode>> GetArbolGenealogicoAsync(
+    long id, int maxNiveles, CancellationToken cancellationToken = default)
     {
-        var query = $@"
-            WITH CTE AS (
-                SELECT *, 1 AS Nivel
-                FROM vacuno
-                WHERE id = {{0}} AND deleted_at IS NULL
-                
-                UNION ALL
-                
-                SELECT v.*, CTE.Nivel + 1
-                FROM vacuno v
-                INNER JOIN CTE ON (v.id = CTE.padre_id OR v.id = CTE.madre_id)
-                WHERE CTE.Nivel < {{1}} AND v.deleted_at IS NULL
-            )
-            SELECT DISTINCT * FROM CTE ORDER BY Nivel, id;
-        ";
+        var nivelPorId = new Dictionary<long, int>();
+        var resultado = new List<VacunoGenealogiaNode>();
+        var idsNivelActual = new List<long> { id };
+        var nivel = 1;
 
-        var entities = await _context.vacunos
-            .FromSqlRaw(query, id, maxNiveles)
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
+        while (idsNivelActual.Count > 0 && nivel <= maxNiveles)
+        {
+            var entidadesNivel = await _context.vacunos
+                .AsNoTracking()
+                .Include(v => v.granja)
+                    .ThenInclude(g => g.distrito_codigoNavigation)
+                        .ThenInclude(d => d.provincia_codigoNavigation)
+                            .ThenInclude(p => p.departamento_codigoNavigation)
+                .Where(v => idsNivelActual.Contains(v.id) && v.deleted_at == null)
+                .ToListAsync(cancellationToken);
 
-        return entities.Select(ToDomain).ToList();
+            var siguienteNivel = new List<long>();
+
+            foreach (var v in entidadesNivel)
+            {
+                if (nivelPorId.ContainsKey(v.id)) continue;
+
+                nivelPorId[v.id] = nivel;
+
+                string? procedencia = null;
+                var g = v.granja;
+                if (g is not null)
+                {
+                    var d = g.distrito_codigoNavigation;
+                    var p = d?.provincia_codigoNavigation;
+                    var dep = p?.departamento_codigoNavigation;
+                    procedencia = string.Join(", ",
+                        new[] { g.nombre, d?.nombre, p?.nombre, dep?.nombre }
+                        .Where(s => !string.IsNullOrWhiteSpace(s)));
+                    if (string.IsNullOrWhiteSpace(procedencia)) procedencia = null;
+                }
+
+                resultado.Add(new VacunoGenealogiaNode(ToDomain(v), nivel, procedencia));
+
+                if (v.padre_id.HasValue) siguienteNivel.Add(v.padre_id.Value);
+                if (v.madre_id.HasValue) siguienteNivel.Add(v.madre_id.Value);
+            }
+
+            idsNivelActual = siguienteNivel.Distinct().Where(i => !nivelPorId.ContainsKey(i)).ToList();
+            nivel++;
+        }
+
+        return resultado.OrderBy(n => n.Nivel).ThenBy(n => n.Vacuno.Id).ToList();
     }
 
     private static Entities.vacuno ToEntity(Vacuno domain)
@@ -270,141 +310,5 @@ public sealed class VacunoRepository : IVacunoRepository, IVacunoQueryRepository
             createdBy: entity.created_by,
             updatedBy: entity.updated_by,
             deletedBy: entity.deleted_by);
-    }
-
-    public async Task<VacunoNodoDto?> GetArbolGenealogicoAsync(long vacunoId, int niveles)
-    {
-        if (_context.Database.IsSqlServer())
-        {
-            return await GetArbolSqlAsync(vacunoId, niveles);
-        }
-        else
-        {
-            return await GetArbolInMemoryAsync(vacunoId, niveles);
-        }
-    }
-
-    private async Task<VacunoNodoDto?> GetArbolSqlAsync(long vacunoId, int niveles)
-    {
-        var sql = @"
-            WITH Ancestros AS (
-                -- Nivel 0: El vacuno raíz
-                SELECT 
-                    v.id, v.codigo, v.nombre, v.raza_code, v.sexo_code,
-                    v.padre_id, v.madre_id, 0 AS Nivel
-                FROM vacuno v
-                WHERE v.id = {0} AND v.deleted_at IS NULL
-
-                UNION ALL
-
-                -- Niveles > 0: Padres y Madres
-                SELECT 
-                    p.id, p.codigo, p.nombre, p.raza_code, p.sexo_code,
-                    p.padre_id, p.madre_id, a.Nivel + 1
-                FROM Ancestros a
-                JOIN vacuno p ON (a.padre_id = p.id OR a.madre_id = p.id)
-                WHERE p.deleted_at IS NULL AND a.Nivel < {1}
-            )
-            SELECT DISTINCT 
-                a.id as Id, 
-                a.codigo as Codigo, 
-                a.nombre as Nombre, 
-                ISNULL(r.nombre, a.raza_code) as Raza, 
-                a.sexo_code as Sexo, 
-                a.padre_id as PadreId, 
-                a.madre_id as MadreId, 
-                a.Nivel as Nivel
-            FROM Ancestros a
-            LEFT JOIN cat_raza r ON a.raza_code = r.code;
-        ";
-
-        var ancestrosPlano = await _context.Database.SqlQueryRaw<AncestroDbDto>(sql, vacunoId, niveles).ToListAsync();
-        var arbolDb = ConstruirArbol(ancestrosPlano, vacunoId, 0, niveles);
-        return MapearADtoApplication(arbolDb);
-    }
-
-    private async Task<VacunoNodoDto?> GetArbolInMemoryAsync(long vacunoId, int niveles)
-    {
-        var vacunosInMemory = await _context.vacunos
-            .Include(v => v.raza_codeNavigation)
-            .Where(v => v.deleted_at == null)
-            .ToListAsync();
-
-        var flatList = new List<AncestroDbDto>();
-        void RecorrerMemoria(long id, int nivelActual)
-        {
-            if (nivelActual > niveles) return;
-            var v = vacunosInMemory.FirstOrDefault(x => x.id == id);
-            if (v == null || flatList.Any(f => f.Id == id)) return;
-
-            flatList.Add(new AncestroDbDto
-            {
-                Id = v.id,
-                Codigo = v.codigo,
-                Nombre = v.nombre,
-                Raza = v.raza_codeNavigation?.nombre ?? v.raza_code,
-                Sexo = v.sexo_code,
-                PadreId = v.padre_id,
-                MadreId = v.madre_id,
-                Nivel = nivelActual
-            });
-
-            if (v.padre_id.HasValue) RecorrerMemoria(v.padre_id.Value, nivelActual + 1);
-            if (v.madre_id.HasValue) RecorrerMemoria(v.madre_id.Value, nivelActual + 1);
-        }
-
-        RecorrerMemoria(vacunoId, 0);
-        var arbolDb = ConstruirArbol(flatList, vacunoId, 0, niveles);
-        return MapearADtoApplication(arbolDb);
-    }
-
-    private AncestroDbDto? ConstruirArbol(List<AncestroDbDto> planos, long actualId, int nivelActual, int maxNiveles)
-    {
-        if (nivelActual > maxNiveles) return null;
-
-        var dict = planos.ToDictionary(p => p.Id);
-        return ConstruirNodo(dict, actualId, nivelActual, maxNiveles);
-    }
-
-    private AncestroDbDto? ConstruirNodo(Dictionary<long, AncestroDbDto> dict, long actualId, int nivelActual, int maxNiveles)
-    {
-        if (nivelActual > maxNiveles) return null;
-
-        if (!dict.TryGetValue(actualId, out var nodoDb)) return null;
-
-        var nodoCopia = new AncestroDbDto
-        {
-            Id = nodoDb.Id,
-            Codigo = nodoDb.Codigo,
-            Nombre = nodoDb.Nombre,
-            Raza = nodoDb.Raza,
-            Sexo = nodoDb.Sexo,
-            Nivel = nivelActual
-        };
-
-        if (nodoDb.PadreId.HasValue)
-            nodoCopia.Padre = ConstruirNodo(dict, nodoDb.PadreId.Value, nivelActual + 1, maxNiveles);
-
-        if (nodoDb.MadreId.HasValue)
-            nodoCopia.Madre = ConstruirNodo(dict, nodoDb.MadreId.Value, nivelActual + 1, maxNiveles);
-
-        return nodoCopia;
-    }
-
-    private VacunoNodoDto? MapearADtoApplication(AncestroDbDto? dbDto)
-    {
-        if (dbDto == null) return null;
-
-        return new VacunoNodoDto
-        {
-            Id = dbDto.Id,
-            Codigo = dbDto.Codigo,
-            Nombre = dbDto.Nombre,
-            Raza = dbDto.Raza,
-            Sexo = dbDto.Sexo,
-            Nivel = dbDto.Nivel,
-            Padre = MapearADtoApplication(dbDto.Padre),
-            Madre = MapearADtoApplication(dbDto.Madre)
-        };
     }
 }

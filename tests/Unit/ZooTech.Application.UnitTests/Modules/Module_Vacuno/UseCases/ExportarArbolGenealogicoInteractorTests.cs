@@ -27,7 +27,7 @@ public class ExportarArbolGenealogicoInteractorTests
         // Arrange
         var vacunoId = 1L;
         var command = new ExportarArbolGenealogicoCommand(4);
-        var raiz = Vacuno.Rehydrate(vacunoId, "V1", "Estrella", new DateOnly(2020, 1, 1), "COMPRA", "HOLSTEIN", "BLANCO_NEGRO", "HEMBRA", null, null, 1, null, new DateOnly(2020, 1, 1), DateTime.UtcNow, DateTime.UtcNow, null, null, null, null, null);
+        var raiz = Vacuno.Rehydrate(vacunoId, "V1", "Estrella", new DateOnly(2020, 1, 1), "COMPRA", "HOLSTEIN", "BLANCO_NEGRO", "HEMBRA", null, null, 1, null, null, new DateOnly(2020, 1, 1), DateTime.UtcNow, DateTime.UtcNow, null, null, null, null, null);
         var arbol = new List<Vacuno> { raiz };
         var expectedBytes = new byte[] { 0x01, 0x02 };
 

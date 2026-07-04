@@ -27,6 +27,7 @@ public sealed class ListarVacunosInteractor : IListarVacunosInputPort
             command.Query,
             fechaDesde,
             command.FechaHasta,
+            command.Estado,
             command.Page,
             command.Limit,
             cancellationToken);

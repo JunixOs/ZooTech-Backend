@@ -1,3 +1,4 @@
+using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Common.Gateway.Services;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
 
@@ -16,16 +17,17 @@ public sealed class ExportarArbolGenealogicoInteractor : IExportarArbolGenealogi
         _exportService = exportService;
     }
 
-    public async Task<byte[]> HandleAsync(long vacunoId, ExportarArbolGenealogicoCommand command, CancellationToken cancellationToken = default)
+    public async Task<byte[]> HandleAsync(
+        long vacunoId, ExportarArbolGenealogicoCommand command, CancellationToken cancellationToken = default)
     {
         var vacunoRaiz = await _vacunoRepository.GetByIdAsync(vacunoId, cancellationToken);
         if (vacunoRaiz == null)
         {
-            throw new ArgumentException($"No se encontró el vacuno con ID {vacunoId}.");
+            throw new NotFoundException($"No se encontró el vacuno con ID {vacunoId}.");
         }
+        var nodosArbol = await _vacunoRepository.GetArbolGenealogicoAsync(
+            vacunoId, command.Niveles, cancellationToken);
 
-        var arbol = await _vacunoRepository.GetArbolGenealogicoAsync(vacunoId, command.Niveles, cancellationToken);
-
-        return await _exportService.GenerateExcelAsync(arbol, vacunoRaiz, cancellationToken);
+        return await _exportService.GenerateExcelAsync(nodosArbol, vacunoRaiz, cancellationToken);
     }
 }

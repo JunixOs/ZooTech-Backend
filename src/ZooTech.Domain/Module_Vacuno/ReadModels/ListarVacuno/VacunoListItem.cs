@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace ZooTech.Domain.Module_Vacuno.ReadModels;
+namespace ZooTech.Domain.Module_Vacuno.ReadModels.ListarVacuno;
 
 public sealed record VacunoListItem(
     long Id,

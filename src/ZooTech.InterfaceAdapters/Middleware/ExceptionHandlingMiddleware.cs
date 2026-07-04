@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.InterfaceAdapters.DTOs;
 
+
 namespace ZooTech.InterfaceAdapters.Middleware;
 
 public sealed class ExceptionHandlingMiddleware
@@ -53,7 +54,5 @@ public sealed class ExceptionHandlingMiddleware
         var body = JsonSerializer.Serialize(
             GeneralResponseDTO<object>.Fail(message),
             new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
-
-        await context.Response.WriteAsync(body);
     }
 }

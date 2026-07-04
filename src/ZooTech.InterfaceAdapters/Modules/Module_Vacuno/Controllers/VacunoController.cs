@@ -6,18 +6,17 @@ using System.Net;
 using System.Text;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.CreateVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetArbolGenealogico;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetVacunoById;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
-using ZooTech.Application.Modules.Module_Vacuno.UseCases.GenerarArbolGenealogico;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.UpdateVacuno;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarArbolGenealogico;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.InterfaceAdapters.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Mappers;
-using ZooTech.Application.Modules.Module_Vacuno.UseCases.GenerarArbolGenealogico;
-using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Presenters;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Controllers;
 
@@ -31,9 +30,9 @@ public sealed class VacunoController : ControllerBase
     private readonly IGetVacunoByIdInputPort _getByIdInputPort;
     private readonly IUpdateVacunoInputPort _updateInputPort;
     private readonly IDeleteVacunoInputPort _deleteInputPort;
-    private readonly IGenerarArbolGenealogicoInputPort _generarArbolInputPort;
-    private readonly ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarArbolGenealogico.IExportarArbolGenealogicoInputPort _exportarArbolInputPort;
+    private readonly IExportarArbolGenealogicoInputPort _exportarArbolInputPort;
     private readonly IVacunoRepository _vacunoRepository;
+    private readonly IGetArbolGenealogicoInputPort _getArbolGenealogicoInputPort;
 
     public VacunoController(
         IListarVacunosInputPort listarInputPort,
@@ -41,8 +40,8 @@ public sealed class VacunoController : ControllerBase
         IGetVacunoByIdInputPort getByIdInputPort,
         IUpdateVacunoInputPort updateInputPort,
         IDeleteVacunoInputPort deleteInputPort,
-        IGenerarArbolGenealogicoInputPort generarArbolInputPort,
-        ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarArbolGenealogico.IExportarArbolGenealogicoInputPort exportarArbolInputPort,
+        IGetArbolGenealogicoInputPort getArbolGenealogicoInputPort,
+        IExportarArbolGenealogicoInputPort exportarArbolInputPort,
         IVacunoRepository vacunoRepository)
     {
         _listarInputPort = listarInputPort;
@@ -50,30 +49,45 @@ public sealed class VacunoController : ControllerBase
         _getByIdInputPort = getByIdInputPort;
         _updateInputPort = updateInputPort;
         _deleteInputPort = deleteInputPort;
-        _generarArbolInputPort = generarArbolInputPort;
         _exportarArbolInputPort = exportarArbolInputPort;
         _vacunoRepository = vacunoRepository;
+        _getArbolGenealogicoInputPort = getArbolGenealogicoInputPort;
     }
 
     [HttpGet]
     [ProducesResponseType(typeof(PagedResponse<List<VacunoItemResponse>>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> ListarVacunos([FromQuery] string? query, [FromQuery] DateTime? fechaDesde, [FromQuery] DateTime? fechaHasta, [FromQuery] int page = 1, [FromQuery] int limit = 20, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> ListarVacunos(
+    [FromQuery] string? query,
+    [FromQuery] DateTime? fechaDesde,
+    [FromQuery] DateTime? fechaHasta,
+    [FromQuery] string? estado,
+    [FromQuery] int page = 1,
+    [FromQuery] int limit = 20,
+    CancellationToken cancellationToken = default)
     {
-        var command = new ListarVacunosCommand(query, fechaDesde, fechaHasta, page, limit);
+        var command = new ListarVacunosCommand(
+            Query: query,
+            FechaDesde: fechaDesde,
+            FechaHasta: fechaHasta,
+            Estado: estado,
+            Page: page,
+            Limit: limit);
+
         var output = await _listarInputPort.HandleAsync(command, cancellationToken);
         var response = output.Items.Select(VacunoMapper.ToResponse).ToList();
         return Ok(PagedResponse<List<VacunoItemResponse>>.OkPaged(response, page, limit, output.TotalCount));
     }
 
     [HttpGet("{id:long}/genealogia")]
-    [ProducesResponseType(typeof(GeneralResponseDTO<IReadOnlyList<ArbolVacunoDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetArbolGenealogico([FromRoute] long id, [FromQuery] int niveles = 4, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> GetArbolGenealogico(
+    [FromRoute] long id, [FromQuery] int niveles = 4, CancellationToken cancellationToken = default)
     {
-        var command = new GenerarArbolGenealogicoCommand(niveles);
-        var output = await _generarArbolInputPort.HandleAsync(id, command, cancellationToken);
-        return Ok(GeneralResponseDTO<IReadOnlyList<ArbolVacunoDto>>.Ok(output.Arbol));
+        var command = new GetArbolGenealogicoCommand(id, niveles);
+        var output = await _getArbolGenealogicoInputPort.HandleAsync(command, cancellationToken);
+        return Ok(GeneralResponseDTO<object>.Ok(output.Arbol));
     }
 
     [HttpGet("{id:long}/genealogia/exportar")]
@@ -82,7 +96,7 @@ public sealed class VacunoController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ExportarArbolGenealogico([FromRoute] long id, [FromQuery] int niveles = 4, CancellationToken cancellationToken = default)
     {
-        var command = new ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarArbolGenealogico.ExportarArbolGenealogicoCommand(niveles);
+        var command = new ExportarArbolGenealogicoCommand(niveles);
         var bytes = await _exportarArbolInputPort.HandleAsync(id, command, cancellationToken);
         return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Genealogia_{id}.xlsx");
     }
@@ -460,27 +474,6 @@ public sealed class VacunoController : ControllerBase
         return NoContent();
     }
 
-    [HttpGet("{identifier}/genealogia")]
-    [ProducesResponseType(typeof(GeneralResponseDTO<GenerarArbolGenealogicoOutput>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GenerarArbolGenealogico(
-        [FromRoute] string identifier,
-        [FromServices] IGenerarArbolGenealogicoInputPort arbolInputPort,
-        [FromServices] GenerarArbolGenealogicoPresenter arbolPresenter,
-        [FromQuery] int niveles = 4,
-        CancellationToken cancellationToken = default)
-    {
-        long id = await ResolveIdAsync(identifier, cancellationToken);
-        var command = new GenerarArbolGenealogicoCommand
-        {
-            VacunoId = id,
-            Niveles = niveles
-        };
-
-        await arbolInputPort.Handle(command);
-
-        return StatusCode(arbolPresenter.StatusCode, arbolPresenter.Response);
-    }
 
     [HttpGet("reportes")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -758,7 +751,6 @@ public sealed class VacunoController : ControllerBase
             dto.TipoAdquisicionCode,
             dto.RazaCode,
             dto.ColorCode,
-            dto.SexoCode,
             dto.PadreId,
             dto.MadreId,
             dto.GranjaId,
@@ -882,7 +874,7 @@ public sealed class VacunoController : ControllerBase
             precioCompra = (decimal?)null,
             raza = response.RazaCode,
             color = response.ColorCode,
-            sexo = response.SexoCode,
+            sexo = (string?)null,
             codigoPadre = response.CodigoPadre,
             codigoMadre = response.CodigoMadre,
             codigoAbuelo,
