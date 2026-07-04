@@ -88,6 +88,7 @@ public sealed class ProduccionLecheController : ControllerBase
 
     [HttpGet]
     [ProducesResponseType(typeof(GeneralResponseDTO<ListOrdeniosResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> List(
         [FromQuery] long? vacunoId,
         [FromQuery] string? estadoOrdenioCode,
@@ -109,15 +110,17 @@ public sealed class ProduccionLecheController : ControllerBase
 
     [HttpGet("reporte/pdf")]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GeneratePdf(
         [FromQuery] long? vacunoId,
         [FromQuery] string? estadoOrdenioCode,
         [FromQuery] DateTime? fechaDesde,
         [FromQuery] DateTime? fechaHasta,
+        [FromQuery] bool comparativo,
         CancellationToken cancellationToken)
     {
         var report = await _getOrdeniosPdfInputPort.HandleAsync(
-            new GenerateOrdeniosComparationPdfQuery(vacunoId, estadoOrdenioCode, fechaDesde, fechaHasta),
+            new GenerateOrdeniosComparationPdfQuery(vacunoId, estadoOrdenioCode, fechaDesde, fechaHasta, comparativo),
             cancellationToken);
 
         return File(report.Content, report.ContentType, report.FileName);

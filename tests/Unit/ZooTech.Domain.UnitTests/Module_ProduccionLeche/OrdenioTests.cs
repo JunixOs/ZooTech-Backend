@@ -11,7 +11,7 @@ public class OrdenioTests
 
         var action = () => Ordenio.CreateNew(
             codigo: "ORD-001",
-            fechaHora: DateTime.Now.AddMinutes(1),
+            fechaHora: DateTime.UtcNow.AddMinutes(1),
             vacunoId: 1,
             encargadoUsuarioId: 2,
             litros: 10,

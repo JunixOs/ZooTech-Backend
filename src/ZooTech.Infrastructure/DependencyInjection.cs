@@ -36,6 +36,8 @@ public static class DependencyInjection
 
         services.AddScoped<IDateTimeProvider, DateTimeProvider>();
         services.AddScoped<IPdfGeneratorService, PdfGeneratorService>();
+        services.AddScoped<IOrdeniosComparationPdfGeneratorService, PdfGenerateComparationService>();
+
         services.AddScoped<IExcelGeneratorService, ExcelGeneratorService>();
         // ============================================
         // Repositories

@@ -8,7 +8,7 @@ namespace ZooTech.Application.UnitTests.Modules.Module_ProduccionLeche.UseCases.
 public class UpdateOrdenioInteractorTests
 {
     [Fact]
-    public async Task HandleAsync_WhenOnlyLitrosIsSent_UpdatesOnlyThatField()
+    public async Task HandleAsync_WhenValidCommandIsSent_UpdatesOrdenio()
     {
         var fecha = new DateTime(2026, 6, 18, 8, 0, 0, DateTimeKind.Local);
         var existing = Ordenio.Rehydrate(
@@ -18,6 +18,7 @@ public class UpdateOrdenioInteractorTests
             vacunoId: 1,
             nombreVacuno: "Luna",
             encargadoUsuarioId: 2,
+            nombreCompleto: "Juan Perez",
             litros: 12,
             estadoOrdenioCode: "ACTIVO",
             observaciones: "Inicial",
@@ -37,21 +38,22 @@ public class UpdateOrdenioInteractorTests
         };
         var validator = new InlineValidator<UpdateOrdenioCommand>();
         var interactor = new UpdateOrdenioInteractor(repository, validator);
+        var nuevaFecha = fecha.AddHours(2);
 
         var command = new UpdateOrdenioCommand(
-            FechaHora: default,
-            EncargadoUsuarioId: 0,
+            FechaHora: nuevaFecha,
+            EncargadoUsuarioId: 5,
             Litros: 18,
-            EstadoOrdenioCode: null,
-            Observaciones: null);
+            EstadoOrdenioCode: "FINALIZADO",
+            Observaciones: "Actualizado");
 
         var result = await interactor.HandleAsync(10, command, CancellationToken.None);
 
         Assert.Equal(18, result.Data.Litros);
-        Assert.Equal(fecha, result.Data.FechaHora);
-        Assert.Equal(2, result.Data.EncargadoUsuarioId);
-        Assert.Equal("ACTIVO", result.Data.EstadoOrdenioCode);
-        Assert.Equal("Inicial", result.Data.Observaciones);
+        Assert.Equal(nuevaFecha, result.Data.FechaHora);
+        Assert.Equal(5, result.Data.EncargadoUsuarioId);
+        Assert.Equal("FINALIZADO", result.Data.EstadoOrdenioCode);
+        Assert.Equal("Actualizado", result.Data.Observaciones);
     }
 
     private sealed class FakeOrdenioRepository : IOrdenioRepository

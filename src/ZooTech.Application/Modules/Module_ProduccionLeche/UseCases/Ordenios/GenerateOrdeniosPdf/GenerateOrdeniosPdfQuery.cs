@@ -4,4 +4,5 @@ public sealed record GenerateOrdeniosComparationPdfQuery(
     long? VacunoId,
     string? EstadoOrdenioCode,
     DateTime? FechaDesde,
-    DateTime? FechaHasta);
+    DateTime? FechaHasta,
+    bool Comparativo = false);

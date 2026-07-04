@@ -9,15 +9,18 @@ public sealed class GenerateOrdeniosPdfInteractor : IGetOrdeniosPdfInputPort
 {
     private readonly IOrdenioRepository _repository;
     private readonly IPdfGeneratorService _pdfGeneratorService;
+    private readonly IOrdeniosComparationPdfGeneratorService _comparationPdfGeneratorService;
     private readonly IDateTimeProvider _dateTimeProvider;
 
     public GenerateOrdeniosPdfInteractor(
         IOrdenioRepository repository,
         IPdfGeneratorService pdfGeneratorService,
+        IOrdeniosComparationPdfGeneratorService comparationPdfGeneratorService,
         IDateTimeProvider dateTimeProvider)
     {
         _repository = repository;
         _pdfGeneratorService = pdfGeneratorService;
+        _comparationPdfGeneratorService = comparationPdfGeneratorService;
         _dateTimeProvider = dateTimeProvider;
     }
 
@@ -40,10 +43,18 @@ public sealed class GenerateOrdeniosPdfInteractor : IGetOrdeniosPdfInputPort
             query.FechaHasta,
             _dateTimeProvider.ServerNow);
 
+        var pdfContent = query.Comparativo
+            ? _comparationPdfGeneratorService.GenerateOrdeniosReport(document)
+            : _pdfGeneratorService.GenerateOrdeniosReport(document);
+
+        var fileNamePrefix = query.Comparativo
+            ? "reporte-comparativo-ordenios"
+            : "reporte-ordenios";
+
         return new GenerateOrdeniosPdfOutput(
-            _pdfGeneratorService.GenerateOrdeniosReport(document),
+            pdfContent,
             "application/pdf",
-            $"reporte-ordenios-{document.GeneratedAtUtc:yyyyMMddHHmmss}.pdf");
+            $"{fileNamePrefix}-{document.GeneratedAtUtc:yyyyMMddHHmmss}.pdf");
     }
 
    

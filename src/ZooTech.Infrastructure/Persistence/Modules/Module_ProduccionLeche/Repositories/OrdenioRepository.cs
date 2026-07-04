@@ -39,6 +39,7 @@ public sealed class OrdenioRepository : IOrdenioRepository
     {
         var entity = await _dbContext.ordenios
             .Include(x => x.vacuno)
+            .Include(x => x.encargado_usuario)
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.id == id && x.deleted_at == null, cancellationToken);
 
@@ -56,13 +57,17 @@ public sealed class OrdenioRepository : IOrdenioRepository
     {
         var queryable = BuildListQuery(vacunoId, estadoOrdenioCode, fechaDesde, fechaHasta);
 
+
         var totalCount = await queryable.CountAsync(cancellationToken);
+
 
         var entities = await queryable
             .Include(x => x.vacuno)
+            .Include(x => x.encargado_usuario)
             .OrderByDescending(x => x.fecha_hora)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
+            .AsNoTracking()
             .ToListAsync(cancellationToken);
 
         return (entities.Select(ToDomain).ToList(), totalCount);
@@ -146,6 +151,7 @@ public sealed class OrdenioRepository : IOrdenioRepository
             entity.vacuno_id,
             entity.vacuno?.nombre ?? string.Empty,
             entity.encargado_usuario_id,
+            entity.encargado_usuario?.nombre_completo ?? string.Empty,
             entity.litros,
             entity.estado_ordenio_code,
             entity.observaciones,
