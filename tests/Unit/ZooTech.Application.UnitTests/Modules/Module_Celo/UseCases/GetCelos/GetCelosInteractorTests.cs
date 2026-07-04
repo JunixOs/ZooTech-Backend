@@ -29,6 +29,25 @@ public sealed class FakeCeloRepository : ICeloRepository
 
     public Task<bool> ExistsCodigoAsync(string codigo, CancellationToken cancellationToken = default)
         => Task.FromResult(false);
+    public Task<List<Celo>> GetByDateRangeAsync(
+    DateTime? fechaInicio,
+    DateTime? fechaFin,
+    CancellationToken cancellationToken = default)
+    {
+        var query = Celos.AsEnumerable();
+
+        if (fechaInicio.HasValue)
+        {
+            query = query.Where(c => c.FechaHora >= fechaInicio.Value);
+        }
+
+        if (fechaFin.HasValue)
+        {
+            query = query.Where(c => c.FechaHora <= fechaFin.Value);
+        }
+
+        return Task.FromResult(query.ToList());
+    }
 }
 
 public sealed class GetCelosInteractorTests
