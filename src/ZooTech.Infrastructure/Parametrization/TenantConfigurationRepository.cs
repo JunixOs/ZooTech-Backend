@@ -1,60 +1,65 @@
-using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
+using Microsoft.EntityFrameworkCore;
 using ZooTech.Application.Common.Gateway.Repositories.Parametrization;
 using ZooTech.Domain.Configuration;
+using ZooTech.Infrastructure.Tenant;
 
 namespace ZooTech.Infrastructure.Parametrization;
 
 public sealed class TenantConfigurationRepository : ITenantConfigurationRepository
 {
-    private readonly string _connectionString;
+    private readonly ITenantDbContextFactory _tenantDbContextFactory;
 
-    public TenantConfigurationRepository(IConfiguration configuration)
+    public TenantConfigurationRepository(
+        ITenantDbContextFactory tenantDbContextFactory
+    )
     {
-        _connectionString = configuration.GetConnectionString("TenantCatalogConnection")
-            ?? throw new InvalidOperationException("TenantCatalogConnection is not configured.");
+        _tenantDbContextFactory = tenantDbContextFactory;
     }
 
     public async Task<TenantConfiguration> LoadTenantConfigAsync(int tenantId)
     {
-        await using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        var tenantDbContext = await _tenantDbContextFactory.CreateDbContextBySettingsValue();
 
-        var settings = new Dictionary<string, string>();
-        var features = new HashSet<string>();
-        var rules = new HashSet<string>();
+        var settings = await tenantDbContext.setting_definitions
+            .Where(sd => 
+                sd.is_active &&
+                sd.deleted_at == null &&
+                sd.setting_group.is_active &&
+                sd.setting_group.deleted_at == null
+            )
+            .Select(sd => new
+                {
+                    sd.code,
+                    Value = sd.setting_values
+                        .Where(v => 
+                            v.tenant_id == tenantId &&
+                            v.actor_type == "TENANT" &&
+                            v.actor_id == null &&
+                            v.deleted_at == null
+                        )
+                        .Select(v => v.value)
+                        .FirstOrDefault() ?? sd.default_value
+                }
+            )
+            .ToDictionaryAsync(x => x.code, x => x.Value);
 
-        using (var cmd = new SqlCommand(SettingsQuery, connection))
-        {
-            cmd.Parameters.AddWithValue("@tenantId", tenantId);
-            using var reader = await cmd.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
-            {
-                var code = reader.GetString(0);
-                var value = reader.IsDBNull(1) ? null : reader.GetString(1);
-                settings[code] = value!;
-            }
-        }
+        var features = await tenantDbContext.tenant_features
+            .Where(tf =>
+                tf.tenant_id == tenantId &&
+                tf.is_enabled &&
+                tf.feature.is_active &&
+                tf.feature.deleted_at == null)
+            .Select(tf => tf.feature.code)
+            .ToHashSetAsync();
 
-        using (var cmd = new SqlCommand(FeaturesQuery, connection))
-        {
-            cmd.Parameters.AddWithValue("@tenantId", tenantId);
-            using var reader = await cmd.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
-            {
-                features.Add(reader.GetString(0));
-            }
-        }
-
-        using (var cmd = new SqlCommand(RulesQuery, connection))
-        {
-            cmd.Parameters.AddWithValue("@tenantId", tenantId);
-            using var reader = await cmd.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
-            {
-                rules.Add(reader.GetString(0));
-            }
-        }
+        var rules = await tenantDbContext.tenant_business_rules
+            .Where(r =>
+                r.tenant_id == tenantId &&
+                r.is_active &&
+                r.rule_definition.is_active &&
+                r.rule_definition.deleted_at == null)
+            .Select(r => r.rule_definition.code)
+            .ToHashSetAsync();
 
         return new TenantConfiguration
         {
@@ -65,44 +70,4 @@ public sealed class TenantConfigurationRepository : ITenantConfigurationReposito
             LoadedAt = DateTime.UtcNow
         };
     }
-
-    private const string SettingsQuery = """
-        SELECT
-            sd.code,
-            COALESCE(sv.value, sd.default_value) AS value
-        FROM setting_definitions sd
-        LEFT JOIN setting_groups sg ON sd.setting_group_id = sg.id
-        LEFT JOIN setting_values sv
-            ON sv.setting_definition_id = sd.id
-            AND sv.tenant_id = @tenantId
-            AND sv.actor_type = 'TENANT'
-            AND sv.actor_id IS NULL
-            AND sv.deleted_at IS NULL
-        WHERE sd.is_active = 1
-          AND sd.deleted_at IS NULL
-          AND sg.is_active = 1
-          AND sg.deleted_at IS NULL;
-        """;
-
-    private const string FeaturesQuery = """
-        SELECT f.code
-        FROM features f
-        INNER JOIN tenant_features tf
-            ON tf.feature_id = f.id
-            AND tf.tenant_id = @tenantId
-        WHERE f.is_active = 1
-          AND f.deleted_at IS NULL
-          AND tf.is_enabled = 1;
-        """;
-
-    private const string RulesQuery = """
-        SELECT rd.code
-        FROM rule_definitions rd
-        INNER JOIN tenant_business_rules tbr
-            ON tbr.rule_definition_id = rd.id
-            AND tbr.tenant_id = @tenantId
-        WHERE rd.is_active = 1
-          AND rd.deleted_at IS NULL
-          AND tbr.is_active = 1;
-        """;
 }
