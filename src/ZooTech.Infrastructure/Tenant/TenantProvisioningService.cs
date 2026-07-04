@@ -1,29 +1,22 @@
 using System.Text.RegularExpressions;
-using Microsoft.Data.SqlClient;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using ZooTech.Application.Common.Gateway.Tenant;
 using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant;
 using ZooTech.Infrastructure.Exceptions;
-using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Persistence.Entities.MainTenantsDb;
 
 namespace ZooTech.Infrastructure.Tenant
 {
     public class TenantProvisioningService : ITenantProvisioningService
     {
-        private readonly TenantCatalogDb _tenantCatalogDb;
-        private readonly IConfiguration _config;
+        private readonly ITenantDbContextFactory _tenantDbContextFactory;
         private readonly ITenantDatabaseMigrator _tenantDatabaseMigrator;
 
         public TenantProvisioningService(
             ITenantDbContextFactory tenantDbContextFactory,
-            IConfiguration config,
             ITenantDatabaseMigrator tenantDatabaseMigrator
         )
         {
-            _tenantCatalogDb = tenantDbContextFactory.CreateDbContext();
-            _config = config;
+            _tenantDbContextFactory = tenantDbContextFactory;
             _tenantDatabaseMigrator = tenantDatabaseMigrator;
         }
 
@@ -73,10 +66,12 @@ namespace ZooTech.Infrastructure.Tenant
 
             try
             {
-                _tenantCatalogDb.tenants.Add(tenant);
-                await _tenantCatalogDb.SaveChangesAsync();
+                var tenantCatalogDb = await _tenantDbContextFactory.CreateDbContextByTenantContext();
 
-                await _tenantDatabaseMigrator.MigrateAsync();
+                tenantCatalogDb.tenants.Add(tenant);
+                await tenantCatalogDb.SaveChangesAsync();
+
+                await _tenantDatabaseMigrator.MigrateAsync(tenantDatabaseConnectionEntity.database_name);
             }
             catch (Exception)
             {

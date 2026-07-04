@@ -13,20 +13,20 @@ namespace ZooTech.InterfaceAdapters.Middleware
     {
         private readonly RequestDelegate _next;
         private readonly ILogger<ExceptionHandlingMiddleware> _logger;
-        private readonly IAppAuditService _appAuditService;
 
         public ExceptionHandlingMiddleware(
             RequestDelegate next, 
-            ILogger<ExceptionHandlingMiddleware> logger,
-            IAppAuditService appAuditService
+            ILogger<ExceptionHandlingMiddleware> logger
         )
         {
             _next = next;
             _logger = logger;
-            _appAuditService = appAuditService;
         }
 
-        public async Task InvokeAsync(HttpContext context)
+        public async Task InvokeAsync(
+            HttpContext context,
+            IAppAuditService appAuditService
+        )
         {
             try
             {
@@ -36,7 +36,7 @@ namespace ZooTech.InterfaceAdapters.Middleware
             {
                 _logger.LogWarning(ex, "ZooTechException: {Code} - {Type} - {Message} - {Scope}", ex.ErrorCode.ToString(), ex.ErrorType.ToString(), ex.Message.ToString(), ex.ScopeName.ToString());
                 
-                await _appAuditService.SaveLogAsync(
+                await appAuditService.SaveLogAsync(
                     new AuditModel
                     {
                         EventType = AuditEventType.ZooTechException,
@@ -64,7 +64,7 @@ namespace ZooTech.InterfaceAdapters.Middleware
             {
                 _logger.LogError(ex, "Unhandled exception");
 
-                await _appAuditService.SaveLogAsync(
+                await appAuditService.SaveLogAsync(
                     new AuditModel
                     {
                         EventType = AuditEventType.UnhandledException,

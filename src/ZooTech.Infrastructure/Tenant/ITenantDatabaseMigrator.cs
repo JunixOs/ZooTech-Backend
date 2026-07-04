@@ -2,6 +2,6 @@ namespace ZooTech.Infrastructure.Tenant
 {
     public interface ITenantDatabaseMigrator
     {
-        Task MigrateAsync();
+        Task MigrateAsync(string tenantDatabaseName);
     }
 }

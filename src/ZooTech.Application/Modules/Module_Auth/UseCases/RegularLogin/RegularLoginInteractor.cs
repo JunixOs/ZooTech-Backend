@@ -40,8 +40,8 @@ namespace ZooTech.Application.Modules.Module_Auth.UseCases.RegularLogin
 
             var token = _jwtService.GenerateToken(
                 domainEntity.Id,
-                domainEntity.UserName,
-                domainEntity.Email,
+                domainEntity.UserName ?? string.Empty,
+                domainEntity.Email.Value,
                 UserRole.Regular
             );
 

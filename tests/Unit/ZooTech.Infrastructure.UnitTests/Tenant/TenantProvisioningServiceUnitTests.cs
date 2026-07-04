@@ -21,7 +21,7 @@ namespace ZooTech.Infrastructure.UnitTests.Tenant
             var db = new TenantCatalogDb(options);
 
             var dbFactoryMock = new Mock<ITenantDbContextFactory>();
-            dbFactoryMock.Setup(f => f.CreateDbContext()).Returns(db);
+            dbFactoryMock.Setup(f => f.CreateDbContext()).ReturnsAsync(db);
 
             var configData = new Dictionary<string, string>
             {

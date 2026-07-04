@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using MongoDB.Driver;
+using ZooTech.Infrastructure.Exceptions;
 
 namespace ZooTech.Infrastructure.Auditing.MongoDb
 {
@@ -8,14 +9,19 @@ namespace ZooTech.Infrastructure.Auditing.MongoDb
         private readonly IMongoDatabase _mongoDatabase;
         private readonly string _auditCollectionName;
 
-        public MongoDbContext(IConfiguration configuration)
+        public MongoDbContext(
+            MongoClient client,
+            IConfiguration configuration
+        )
         {
-            var connectionString = configuration["MongoDb:ConnectionString"] ?? throw new InvalidOperationException("MongoDB ConnectionString no configurado");
-            var databaseName = configuration["MongoDb:DatabaseName"] ?? throw new InvalidOperationException("MongoDB DatabaseName no configurado");
+            var databaseName = configuration["MongoDb:DatabaseName"] ?? throw new UndefinedConfigurationValue(
+                message: "Missing configuration: MongoDb:DatabaseName"
+            );
             
-            _auditCollectionName = configuration["MongoDb:AuditCollectionName"] ?? throw new InvalidOperationException("MongoDB CollectionName no configurado");
+            _auditCollectionName = configuration["MongoDb:AuditCollectionName"] ?? throw new UndefinedConfigurationValue(
+                message: "Missing configuration: MongoDb:AuditCollectionName"
+            );
         
-            var client = new MongoClient(connectionString);
             _mongoDatabase = client.GetDatabase(databaseName);
         }
 

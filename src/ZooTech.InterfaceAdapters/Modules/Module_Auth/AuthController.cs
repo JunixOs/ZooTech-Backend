@@ -7,7 +7,7 @@ using ZooTech.InterfaceAdapters.Filters;
 namespace ZooTech.InterfaceAdapters.Modules.Module_Auth
 {
     [ApiController]
-    [Route("api/vi/auth")]
+        [Route("api/v1/auth")]
     [ApiExplorerSettings(GroupName = "auth")]
     public class AuthController : ControllerBase
     {

@@ -106,5 +106,22 @@ namespace ZooTech.Infrastructure.Caching
             var redisDatabase = _redisCacheConnection.GetDatabase();
             await redisDatabase.KeyDeleteAsync(key);
         }
+
+        public async Task SaveAsync<T>(
+            string key,
+            T valueToCaching,
+            TimeSpan ttl
+        )
+        {
+            var redisDatabase = _redisCacheConnection.GetDatabase();
+
+            var serialized = JsonSerializer.Serialize(valueToCaching);
+
+            await redisDatabase.StringSetAsync(
+                key,
+                serialized,
+                ttl
+            );
+        }
     }
 }

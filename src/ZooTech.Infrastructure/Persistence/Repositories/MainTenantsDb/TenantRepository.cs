@@ -2,23 +2,25 @@ using Microsoft.EntityFrameworkCore;
 using ZooTech.Application.Common.Gateway.Repositories.MainTenantsDb;
 using ZooTech.Application.Modules.Module_Tenancing.UseCases.ListTenants;
 using ZooTech.Domain.Admin.Entities;
-using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Persistence.Mappers.MainTenantsDb;
+using ZooTech.Infrastructure.Tenant;
 
 namespace ZooTech.Infrastructure.Persistence.Repositories.MainTenantsDb
 {
     public class TenantRepository : ITenantRepository
     {
-        private readonly IDbContextFactory _dbContextFactory;
+        private readonly ITenantDbContextFactory _tenantDbContextFactory;
 
-        public TenantRepository(IDbContextFactory dbContextFactory)
+        public TenantRepository(
+            ITenantDbContextFactory tenantDbContextFactory
+        )
         {
-            _dbContextFactory = dbContextFactory;
+            _tenantDbContextFactory = tenantDbContextFactory;
         }
 
         public async Task<TenantDomainEntity?> GetByIdAsync(int id)
         {
-            var tenantDbContext = await _dbContextFactory.GetTenantDbContext();
+            var tenantDbContext = await _tenantDbContextFactory.CreateDbContextByTenantContext();
 
             var entity = await tenantDbContext.tenants.FindAsync(id);
             return entity == null ? null : TenantMapper.ToDomain(entity);
@@ -26,7 +28,7 @@ namespace ZooTech.Infrastructure.Persistence.Repositories.MainTenantsDb
 
         public async Task<List<TenantDomainEntity>> ListAllAsync()
         {
-            var tenantDbContext = await _dbContextFactory.GetTenantDbContext();
+            var tenantDbContext = await _tenantDbContextFactory.CreateDbContextByTenantContext();
 
             var entities = await tenantDbContext.tenants.AsNoTracking().ToListAsync();
             return entities.Select(TenantMapper.ToDomain).ToList();
@@ -34,7 +36,7 @@ namespace ZooTech.Infrastructure.Persistence.Repositories.MainTenantsDb
 
         public async Task<List<ListTenantsOutput>> ListAllTenants()
         {
-            var tenantDbContext = await _dbContextFactory.GetTenantDbContext();
+            var tenantDbContext = await _tenantDbContextFactory.CreateDbContextByTenantContext();
 
             return await tenantDbContext.tenants
                 .Select(t => new ListTenantsOutput

@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
+using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Common.Gateway.Context;
 using ZooTech.Application.Common.Gateway.Tenant;
 using ZooTech.Domain.Shared.Enums;
+using ZooTech.InterfaceAdapters.Exceptions;
 
 namespace ZooTech.InterfaceAdapters.Middleware
 {
@@ -19,8 +21,13 @@ namespace ZooTech.InterfaceAdapters.Middleware
         {
             _next = next;
             _baseDomain = config["MultiTenant:BaseDomain"]
-                ?? throw new InvalidOperationException("Missing configuration: MultiTenant:BaseDomain");
-            _adminSubDomain = config["MultiTenant:AdminSubDomain"];
+                ?? throw new UndefinedConfigurationValue(
+                    message: "Missing configuration: MultiTenant:BaseDomain"
+                );
+            _adminSubDomain = config["MultiTenant:AdminSubDomain"]
+                ?? throw new UndefinedConfigurationValue(
+                    message: "Missing configuration: MultiTenant:BaseDomain"
+                );
         }
 
         public async Task InvokeAsync(
@@ -33,24 +40,21 @@ namespace ZooTech.InterfaceAdapters.Middleware
 
             if(domain == null)
             {
-                context.Response.StatusCode = 404;
-                return;
+                throw new NotFoundException(ScopeName.Interface_Adapters);
             }
 
             var subDomain = ExtractSubDomain(domain);
 
             if (subDomain == null)
             {
-                context.Response.StatusCode = 404;
-                return;
+                throw new NotFoundException(ScopeName.Interface_Adapters);
             }
 
             var tenant = await tenantStore.GetBySubDomainAsync(subDomain);
 
             if (tenant == null)
             {
-                context.Response.StatusCode = 404;
-                return;
+                throw new NotFoundException(ScopeName.Interface_Adapters);
             }
 
             tenantContext.SetTenant(

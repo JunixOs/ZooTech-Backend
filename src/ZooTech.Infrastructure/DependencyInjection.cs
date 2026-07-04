@@ -1,6 +1,5 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -13,6 +12,7 @@ using ZooTech.Application.Common.Gateway.Parametrization;
 using ZooTech.Application.Common.Gateway.Parametrization.Features;
 using ZooTech.Application.Common.Gateway.Parametrization.Rules;
 using ZooTech.Application.Common.Gateway.Parametrization.Settings;
+using ZooTech.Application.Common.Gateway.Repositories.GanaderiaDb;
 using ZooTech.Application.Common.Gateway.Repositories.MainTenantsDb;
 using ZooTech.Application.Common.Gateway.Repositories.Parametrization;
 using ZooTech.Application.Common.Gateway.Tenant;
@@ -25,9 +25,11 @@ using ZooTech.Infrastructure.Parametrization.Features;
 using ZooTech.Infrastructure.Parametrization.Rules;
 using ZooTech.Infrastructure.Parametrization.Settings;
 using ZooTech.Infrastructure.Persistence.Context;
+using ZooTech.Infrastructure.Persistence.Repositories.GanaderiaDb;
 using ZooTech.Infrastructure.Persistence.Repositories.MainTenantsDb;
 using ZooTech.Infrastructure.Tenant;
 using ZooTech.Infrastructure.Context;
+using MongoDB.Driver;
 
 namespace ZooTech.Infrastructure;
 
@@ -39,11 +41,12 @@ public static class DependencyInjection
     {
         var garnetConnectionString = configuration["Garnet:ConnectionString"]
             ?? throw new InvalidOperationException("Garnet:ConnectionString no configurado");
-        var multiplexer = ConnectionMultiplexer.Connect(garnetConnectionString);
-        services.AddSingleton<IConnectionMultiplexer>(multiplexer);
+
+        services.AddSingleton<IConnectionMultiplexer>(sp =>
+            ConnectionMultiplexer.Connect(garnetConnectionString));
 
         services.AddSingleton<GarnetCacheConnection>();
-        services.AddSingleton<IAppCacheService, GarnetCacheService>();
+        services.AddScoped<IAppCacheService, GarnetCacheService>();
 
         services.AddScoped<ITenantStore, TenantStore>();
         services.AddScoped<ITenantContext, TenantContext>();
@@ -52,16 +55,18 @@ public static class DependencyInjection
         services.AddScoped<IGanaderiaDbContextFactory, GanaderiaDbContextFactory>();
         services.AddScoped<ITenantDbContextFactory, TenantDbContextFactory>();
 
+        services.AddSingleton<MongoClient>(_ =>
+        {
+            var connection = configuration["MongoDb:ConnectionString"];
+
+            return new MongoClient(connection);
+        });
         services.AddSingleton<MongoDbContext>();
         services.AddScoped<IAppAuditService, MongoDbAudit>();
 
         services.AddScoped<ITenantRepository, TenantRepository>();
-
-        services.AddScoped<GanaderiaDbContext>(sp =>
-        {
-            var factory = sp.GetRequiredService<ITenantDbContextFactory>();
-            return factory.CreateDbContext();
-        });
+        services.AddScoped<IAdminUserRepository, AdminUserRepository>();
+        services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 
         // Unified Tenant Configuration (Phase 1-2)
         services.AddScoped<ITenantConfigurationRepository, TenantConfigurationRepository>();

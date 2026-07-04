@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Common.Gateway.Context;
 using ZooTech.Domain.Shared.Enums;
 
@@ -22,7 +23,7 @@ namespace ZooTech.InterfaceAdapters.Filters
         {
             if (_tenantContext.Type != _allowedType)
             {
-                throw new Exceptions.UnauthorizedAccessException();
+                throw new ForbiddenException(ScopeName.Interface_Adapters);
             }
         }
 

@@ -33,7 +33,7 @@ public class TenantDomainEntityTests
         tenant.SubDomain.Should().Be("code123");
         tenant.DisplayName.Should().Be("Display");
         tenant.LegalName.Should().Be("Legal Name SAC");
-        tenant.Email.Should().Be("a@b.com");
+        tenant.Email.Value.Should().Be("a@b.com");
         tenant.Phone.Should().Be("123456");
         tenant.Status.Should().Be(TenantStatus.ACTIVE);
         tenant.CreatedAt.Should().Be(now);

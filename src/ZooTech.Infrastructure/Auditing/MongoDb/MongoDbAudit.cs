@@ -21,7 +21,6 @@ namespace ZooTech.Infrastructure.Auditing.MongoDb
         {
             try
             {
-
                 var mongoDbCollection = _mongoDbContext.GetCollection<MongoDbAuditModel>();
 
                 var newLog = new MongoDbAuditModel

@@ -16,7 +16,7 @@ namespace ZooTech.Application.Modules.Module_Auth.UseCases.AdminLogin
             {
                 errors.Add("AUTH_LOGIN_PASSWORD_NULL");
             }
-            else if (cmd.Password.Length <= 8 || cmd.Password.Length == 0)
+            else if (cmd.Password.Length < 8)
             {
                 errors.Add("AUTH_LOGIN_PASSWORD_LENGTH");
             }

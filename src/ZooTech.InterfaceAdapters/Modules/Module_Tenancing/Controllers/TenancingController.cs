@@ -10,7 +10,7 @@ using ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Mappers;
 namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers
 {
     [ApiController]
-    [Route("api/vi/tenancing")]
+    [Route("api/v1/tenancing")]
     [ApiExplorerSettings(GroupName = "tenancing")]
     public class TenancingController : ControllerBase
     {
@@ -44,7 +44,6 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers
         }
 
         [ServiceFilter(typeof(TenantHeaderFilter))]
-        [Authorize(Roles = AuthorizationRoles.Admin)]
         [HttpGet("info")]
         public async Task GetTenantInfo()
         {

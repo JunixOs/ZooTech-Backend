@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using ZooTech.Application.Common.Gateway.Context;
+using ZooTech.Domain.Shared.Enums;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Tenant;
 
@@ -34,20 +35,19 @@ public class GanaderiaDbContextFactoryUnitTests
             "tenant-01",
             "Legal",
             "Display",
-            "tenant",
+            TenantType.Tenant,
             "tenant-01",
             "TestDb"
         ));
 
-        factoryMock.Setup(f => f.CreateDbContext()).Returns(context);
+        factoryMock.Setup(f => f.CreateDbContext()).ReturnsAsync(context);
 
         var migrator = new TenantDatabaseMigrator(factoryMock.Object);
         
         // Act
-        var act = async () => await migrator.MigrateAsync();
+        await migrator.MigrateAsync();
 
-        // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>();
+        // Assert - InMemory provider skips migration (IsRelational() = false)
         factoryMock.Verify(f => f.CreateDbContext(), Times.Once);
     }
 }

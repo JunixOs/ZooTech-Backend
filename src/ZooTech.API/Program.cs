@@ -68,8 +68,8 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 // ===== Configurar Middlewares =====
-app.UseMiddleware<TenantResolutionMiddleware>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseMiddleware<TenantResolutionMiddleware>();
 // ===== Configurar Middlewares =====
 
 // ===== Configurar JWT =====
@@ -101,7 +101,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
-app.UseAuthorization();
 app.MapControllers();
 
 app.Run();

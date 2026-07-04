@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using StackExchange.Redis;
+using ZooTech.Infrastructure.Exceptions;
 
 namespace ZooTech.Infrastructure.Caching
 {
@@ -10,8 +11,9 @@ namespace ZooTech.Infrastructure.Caching
             IConfiguration configuration
         )
         {
-            var redisConnectionString = configuration["Redis:ConnectionString"] ?? throw new InvalidOperationException(
-                    "Redis:ConnectionString no configurado");
+            var redisConnectionString = configuration["Redis:ConnectionString"] ?? throw new UndefinedConfigurationValue(
+                    message: "Missing configuration: Redis:ConnectionString"
+                );
 
             _connection = ConnectionMultiplexer.Connect(redisConnectionString);
         }

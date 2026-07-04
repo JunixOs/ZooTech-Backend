@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
-using SharpCompress.Factories;
 using ZooTech.Application.Common.Gateway.Caching;
 using ZooTech.Application.Common.Gateway.Context;
 
@@ -118,18 +117,13 @@ namespace ZooTech.Infrastructure.Caching
 
             var garnetDatabase = _garnetCacheConnection.GetDatabase();
 
-            var (found , value) = await TryGetAsync<T>(key);
+            var serialized = JsonSerializer.Serialize(valueToCaching);
 
-            if(!found)
-            {
-                var serialized = JsonSerializer.Serialize(valueToCaching);
-
-                await garnetDatabase.StringSetAsync(
-                    key,
-                    serialized, 
-                    ttl
-                );
-            }
+            await garnetDatabase.StringSetAsync(
+                key,
+                serialized, 
+                ttl
+            );
         }
     }
 }

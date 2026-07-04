@@ -32,7 +32,7 @@ public abstract class AppDomainException : Exception
         CompleteErrorCode = ModuleName is null
             ? ScopeName.ToString().ToUpper()
             : $"{ScopeName.ToString().ToUpper()}_{ModuleName?.ToString().ToUpper()}";
-        CompleteErrorCode.Concat($"_{errorCode.ToUpper()}");
+        CompleteErrorCode = $"{CompleteErrorCode}_{errorCode.ToUpper()}";
 
         Details = details ?? [];
     }
@@ -55,7 +55,7 @@ public abstract class AppDomainException : Exception
         CompleteErrorCode = ModuleName is null
             ? ScopeName.ToString().ToUpper()
             : $"{ScopeName.ToString().ToUpper()}_{ModuleName?.ToString().ToUpper()}";
-        CompleteErrorCode.Concat($"_{errorCode}");
+        CompleteErrorCode = $"{CompleteErrorCode}_{errorCode.ToUpper()}";
 
         Details = details ?? [];
     }

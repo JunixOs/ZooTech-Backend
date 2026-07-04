@@ -15,8 +15,7 @@ public class ExceptionHandlingMiddlewareTests
     private static ExceptionHandlingMiddleware CreateMiddleware(RequestDelegate next)
     {
         var loggerMock = new Mock<ILogger<ExceptionHandlingMiddleware>>();
-        var auditServiceMock = new Mock<IAppAuditService>();
-        return new ExceptionHandlingMiddleware(next, loggerMock.Object, auditServiceMock.Object);
+        return new ExceptionHandlingMiddleware(next, loggerMock.Object);
     }
 
     private static DefaultHttpContext CreateHttpContext()
@@ -40,8 +39,10 @@ public class ExceptionHandlingMiddlewareTests
         var middleware = CreateMiddleware(_ => throw new ValidationException(new List<string> { "ERROR" }, ScopeName.Application, ModuleName.Tenancing));
         var context = CreateHttpContext();
 
+        var auditServiceMock = new Mock<IAppAuditService>();
+
         // Act
-        await middleware.InvokeAsync(context);
+        await middleware.InvokeAsync(context , auditServiceMock.Object);
 
         // Assert
         context.Response.StatusCode.Should().Be(400);
@@ -57,8 +58,10 @@ public class ExceptionHandlingMiddlewareTests
         var middleware = CreateMiddleware(_ => throw new Exception("Boom"));
         var context = CreateHttpContext();
 
+        var auditServiceMock = new Mock<IAppAuditService>();
+
         // Act
-        await middleware.InvokeAsync(context);
+        await middleware.InvokeAsync(context , auditServiceMock.Object);
 
         // Assert
         context.Response.StatusCode.Should().Be(500);

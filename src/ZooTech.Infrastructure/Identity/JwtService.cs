@@ -47,7 +47,9 @@ namespace ZooTech.Infrastructure.Identity
                 issuer: _settings.Issuer,
                 audience: _settings.Audience,
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(int.Parse(_settings.ExpirationMinutes)),
+                expires: DateTime.UtcNow.AddMinutes(
+                    int.TryParse(_settings.ExpirationMinutes, out var minutes) ? minutes : 30
+                ),
                 signingCredentials: credentials
             );
 

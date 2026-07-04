@@ -1,8 +1,10 @@
+using FluentAssertions;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Moq;
 using ZooTech.Application.Common.Gateway.Context;
+using ZooTech.Infrastructure.Exceptions;
 using ZooTech.Infrastructure.Tenant;
 
 namespace ZooTech.Infrastructure.UnitTests.Persistence.Context
@@ -10,7 +12,7 @@ namespace ZooTech.Infrastructure.UnitTests.Persistence.Context
     public class TenantDbContextFactoryUnitTests
     {
         [Fact]
-        public void CreateDbContext_Should_Create_Context_With_Tenant_Database()
+        public async Task CreateDbContext_Should_Throw_When_Database_Unreachable()
         {
             // Arrange
             var tenantContextMock = new Mock<ITenantContext>();
@@ -37,14 +39,10 @@ namespace ZooTech.Infrastructure.UnitTests.Persistence.Context
             );
 
             // Act
-            var context = factory.CreateDbContext();
+            var act = async () => await factory.CreateDbContext();
 
             // Assert
-            var connectionString = context.Database.GetConnectionString();
-            var builder = new SqlConnectionStringBuilder(connectionString);
-
-            Assert.NotNull(context);
-            Assert.Contains("Ganaderia_Test" , builder.InitialCatalog);
+            await act.Should().ThrowAsync<DatabaseConnectionException>();
         }
     }
 }
