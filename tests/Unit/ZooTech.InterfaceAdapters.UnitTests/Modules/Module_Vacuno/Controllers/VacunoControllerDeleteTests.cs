@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using ZooTech.Application.Modules.Animals.UseCases.DeleteAnimal;
+using System.Threading;
+using System.Threading.Tasks;
+using Xunit;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Controllers;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Requests;
 
@@ -9,63 +12,57 @@ namespace ZooTech.InterfaceAdapters.UnitTests.Modules.Module_Vacuno.Controllers;
 public sealed class VacunoControllerDeleteTests
 {
     [Fact]
-    public async Task Delete_ShouldDelegateToOfficialDeleteAnimalInputPort()
+    public async Task Delete_ShouldDelegateToOfficialDeleteVacunoInputPort()
     {
-        var deleteAnimalInputPort = new CapturingDeleteAnimalInputPort();
+        var deleteVacunoInputPort = new CapturingDeleteVacunoInputPort();
         var controller = new VacunoController(
             getByIdInputPort: null!,
             getCatalogsInputPort: null!,
-            deleteAnimalInputPort: deleteAnimalInputPort,
+            deleteVacunoInputPort: deleteVacunoInputPort,
             vacunoRepository: null!,
             activityStatsReadRepository: null!,
+            granjaReadRepository: null!,
             reporteUseCase: null!,
             listarVacunosReporteUseCase: null!,
             mutationService: null!,
-            responseEnricher: null!)
+            listarPaginadoInputPort: null!,
+            listarPaginadoPresenter: null!,
+            reportAnimalListInputPort: null!,
+            exportarArbolInputPort: null!)
         {
             ControllerContext = new ControllerContext
             {
                 HttpContext = new DefaultHttpContext()
             }
         };
-        controller.Request.Headers["X-User-Id"] = "34";
 
         var result = await controller.Delete(
             77,
             new DeleteVacunoRequest("Baja por duplicidad"),
             CancellationToken.None);
 
-        var ok = Assert.IsType<OkObjectResult>(result);
-        Assert.Equal(StatusCodes.Status200OK, ok.StatusCode);
-        Assert.Equal(1, deleteAnimalInputPort.Calls);
-        Assert.NotNull(deleteAnimalInputPort.Command);
-        Assert.Equal(77, deleteAnimalInputPort.Command.Id);
-        Assert.Equal("Baja por duplicidad", deleteAnimalInputPort.Command.MotivoEliminacion);
-        Assert.Equal(34, deleteAnimalInputPort.Command.EliminadoPor);
+        var noContent = Assert.IsType<NoContentResult>(result);
+        Assert.Equal(StatusCodes.Status204NoContent, noContent.StatusCode);
+        Assert.Equal(1, deleteVacunoInputPort.Calls);
+        Assert.NotNull(deleteVacunoInputPort.Command);
+        Assert.Equal(77, deleteVacunoInputPort.Id);
+        Assert.Equal("Baja por duplicidad", deleteVacunoInputPort.Command.MotivoEliminacion);
     }
 
-    private sealed class CapturingDeleteAnimalInputPort : IDeleteAnimalInputPort
+    private sealed class CapturingDeleteVacunoInputPort : IDeleteVacunoInputPort
     {
         public int Calls { get; private set; }
+        public long Id { get; private set; }
+        public DeleteVacunoCommand? Command { get; private set; }
 
-        public DeleteAnimalCommand? Command { get; private set; }
-
-        public Task Handle(
-            DeleteAnimalCommand command,
-            IDeleteAnimalOutputPort outputPort,
+        public Task HandleAsync(
+            long id,
+            DeleteVacunoCommand command,
             CancellationToken cancellationToken = default)
         {
             Calls++;
+            Id = id;
             Command = command;
-            outputPort.PresentSuccess(new DeleteAnimalOutput(
-                command.Id,
-                "VAC-001",
-                "Luna",
-                command.MotivoEliminacion!,
-                command.EliminadoPor,
-                new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
-                false));
-
             return Task.CompletedTask;
         }
     }

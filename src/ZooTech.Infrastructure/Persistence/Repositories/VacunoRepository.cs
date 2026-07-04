@@ -27,10 +27,9 @@ public class VacunoRepository : IVacunoRepository
         int skip,
         int take)
     {
-        // Query base SIN includes
+        // Query base SIN filtro incondicional de deleted_at
         var query = _db.vacunos
             .AsNoTracking()
-            .Where(v => v.deleted_at == null)
             .AsQueryable();
 
         // Filtro por fecha de registro
@@ -46,12 +45,25 @@ public class VacunoRepository : IVacunoRepository
             query = query.Where(v => v.fecha_registro <= hasta);
         }
 
-        // Filtro por estado usando la vista
+        // Filtro por estado manejando vacunos eliminados (MUERTO)
         if (estado.HasValue)
         {
-            var estadoStr = estado.Value.ToString();
-            query = query.Where(v => _db.v_vacuno_estado_vigentes
-                .Any(e => e.vacuno_id == v.id && e.estado_code == estadoStr));
+            if (estado.Value == EstadoAnimal.MUERTO)
+            {
+                query = query.Where(v => v.deleted_at != null || _db.v_vacuno_estado_vigentes
+                    .Any(e => e.vacuno_id == v.id && e.estado_code == "MUERTO"));
+            }
+            else
+            {
+                var estadoStr = estado.Value.ToString();
+                query = query.Where(v => v.deleted_at == null && _db.v_vacuno_estado_vigentes
+                    .Any(e => e.vacuno_id == v.id && e.estado_code == estadoStr));
+            }
+        }
+        else
+        {
+            // Por defecto, solo vacunos activos
+            query = query.Where(v => v.deleted_at == null);
         }
 
         // Filtro por búsqueda de texto
@@ -78,17 +90,19 @@ public class VacunoRepository : IVacunoRepository
                 Procedencia = v.granja != null 
                     ? v.granja.nombre + " - " + v.granja.distrito_codigoNavigation.nombre + " - " + v.granja.distrito_codigoNavigation.provincia_codigoNavigation.nombre + " - " + v.granja.distrito_codigoNavigation.provincia_codigoNavigation.departamento_codigoNavigation.nombre
                     : "Sin granja",
-                EstadoString = _db.v_vacuno_estado_vigentes
-                                .Where(e => e.vacuno_id == v.id)
-                                .Select(e => e.estado_code)
-                                .FirstOrDefault() ?? "VIVO"
+                EstadoString = v.deleted_at != null
+                    ? "MUERTO"
+                    : (_db.v_vacuno_estado_vigentes
+                        .Where(e => e.vacuno_id == v.id)
+                        .Select(e => e.estado_code)
+                        .FirstOrDefault() ?? "SANO")
             })
             .ToListAsync();
 
         // Mapeo final en memoria al DTO de Application
         var data = dataRaw.Select(x =>
         {
-            var estadoParsed = Enum.TryParse<EstadoAnimal>(x.EstadoString, true, out var e) ? e : EstadoAnimal.VIVO;
+            var estadoParsed = Enum.TryParse<EstadoAnimal>(x.EstadoString, true, out var e) ? e : EstadoAnimal.SANO;
             return new VacunoResumen
             {
                 Id = x.Id,

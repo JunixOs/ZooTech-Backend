@@ -68,13 +68,22 @@ public sealed class ObtenerRegistroVacunoReporteUseCase : IObtenerRegistroVacuno
 
         string? NormalizeCatalogValue(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim().ToLowerInvariant().Replace(' ', '_');
 
-        string? DeterminarEstado(string? estadoCode, string? estadoNombre)
+        string DeterminarEstado(string? estadoCode, string? estadoNombre)
         {
-            if (string.IsNullOrWhiteSpace(estadoCode)) return NormalizeCatalogValue(estadoNombre);
-            return estadoCode.ToUpperInvariant() switch {
-                "ACTIVO" or "VIVO" => "vivo",
-                "MUERTO" or "FALLECIDO" or "BAJA" => "muerto",
-                _ => NormalizeCatalogValue(estadoNombre)
+            var normalizedCode = estadoCode?.Trim().ToUpperInvariant();
+            if (normalizedCode is "SANO" or "ENFERMO" or "CUARENTENA" or "MUERTO")
+            {
+                return normalizedCode;
+            }
+
+            var normalizedName = estadoNombre?.Trim().ToUpperInvariant();
+            return normalizedName switch
+            {
+                "SANO" => "SANO",
+                "ENFERMO" => "ENFERMO",
+                "CUARENTENA" => "CUARENTENA",
+                "MUERTO" => "MUERTO",
+                _ => "SANO"
             };
         }
 

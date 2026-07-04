@@ -1,5 +1,6 @@
 using FluentValidation;
 using ZooTech.Application.Common.Exceptions;
+using ZooTech.Application.Modules.Module_Fecundacion.Exceptions;
 using ZooTech.Domain.Module_Fecundacion.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_Fecundacion.UseCases.UpdateFecundacion;
@@ -23,6 +24,16 @@ public sealed class UpdateFecundacionInteractor : IUpdateFecundacionInputPort
     {
         await _validator.ValidateAndThrowAsync(command, cancellationToken);
 
+        var existing = await _repository.GetForEditAsync(command.Id, cancellationToken);
+        if (existing is null)
+            throw new FecundacionNotFoundException();
+
+        if (!await _repository.ExistsVacunoAsync(command.VacunoReceptorId, cancellationToken))
+            throw new FecundacionVacunoNotFoundException();
+
+        if (await _repository.HasActiveFecundacionAsync(command.Id, command.VacunoReceptorId, cancellationToken))
+            throw new FecundacionPendingActiveException();
+
         var values = new FecundacionUpdateValues(
             command.TipoFecundacionCode,
             command.VacunoReceptorId,
@@ -38,10 +49,10 @@ public sealed class UpdateFecundacionInteractor : IUpdateFecundacionInputPort
             command.CodigoEmbrion);
 
         var updated = await _repository.UpdateAsync(command.Id, values, cancellationToken)
-            ?? throw new NotFoundException($"No se encontró la fecundación con ID {command.Id}.");
+            ?? throw new FecundacionNotFoundException();
 
         var detail = await _repository.GetForEditAsync(command.Id, cancellationToken)
-            ?? throw new NotFoundException($"No se encontró la fecundación con ID {command.Id}.");
+            ?? throw new FecundacionNotFoundException();
 
         return new UpdateFecundacionOutput(
             detail.Id,

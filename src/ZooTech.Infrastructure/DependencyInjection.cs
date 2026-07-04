@@ -8,6 +8,7 @@ using ZooTech.Application.Modules.Animals.UseCases.DeleteAnimal;
 using ZooTech.Application.Modules.Animals.UseCases.ReportAnimalList;
 using ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.Common;
 using ZooTech.Domain.Module_Celo.Interfaces;
+using ZooTech.Application.Modules.Module_Fecundacion.Common;
 using ZooTech.Domain.Module_Fecundacion.Interfaces;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
@@ -20,6 +21,7 @@ using ZooTech.Infrastructure.Persistence.Modules.Module_Fecundacion.Repositories
 using ZooTech.Infrastructure.Persistence.Modules.Module_ProduccionLeche.Repositories;
 using ZooTech.Infrastructure.Persistence.Modules.Module_Sanidad.Repositories;
 using ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Repositories;
+using ZooTech.Application.Modules.Module_Vacuno.Common;
 using ZooTech.Infrastructure.Reports;
 using ZooTech.Infrastructure.Repositories;
 using ZooTech.Infrastructure.Tenant;
@@ -66,17 +68,27 @@ public static class DependencyInjection
         services.AddScoped<IAnimalReportPdfService, AnimalReportPdfService>();
         services.AddScoped<ICeloRepository, CeloRepository>();
         services.AddScoped<IFecundacionRepository, FecundacionRepository>();
+        services.AddScoped<IFecundacionQueryRepository, FecundacionRepository>();
         services.AddScoped<IFecundacionEstadoRepository, FecundacionEstadoRepository>();
         services.AddScoped<IOrdenioRepository, OrdenioRepository>();
         services.AddScoped<IVacunoRepository, VacunoRepository>();
+        services.AddScoped<IVacunoQueryRepository, VacunoRepository>();
+        services.AddScoped<
+            ZooTech.Application.Common.Gateway.Repositories.IVacunoRepository,
+            ZooTech.Infrastructure.Persistence.Repositories.VacunoRepository>();
         services.AddScoped<IVacunoListadoReadRepository, VacunoListadoReadRepository>();
         services.AddScoped<IVacunoActivityStatsReadRepository, VacunoActivityStatsReadRepository>();
+        services.AddScoped<IVacunoGranjaReadRepository, VacunoGranjaReadRepository>();
+        services.AddScoped<IVacunoMutationUnitOfWork, VacunoMutationUnitOfWork>();
+        services.AddScoped<IVacunoReferenceReadRepository, VacunoReferenceReadRepository>();
+        services.AddScoped<IVacunoResponseReadRepository, VacunoResponseReadRepository>();
         services.AddScoped<IListadoVacunosReporteReadRepository, ListadoVacunosReporteReadRepository>();
         services.AddScoped<ITriajeRepository, TriajeRepository>();
         services.AddScoped<ITipoPesoRepository, TipoPesoRepository>();
         services.AddScoped<IRegistroVacunoReadRepository, RegistroVacunoReadRepository>();
         services.AddScoped<ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte.IRegistroVacunoExcelReportService, RegistroVacunoExcelReportService>();
         services.AddScoped<ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte.IRegistroVacunoPdfReportService, RegistroVacunoPdfReportService>();
+        services.AddScoped<ZooTech.Application.Common.Gateway.Services.IArbolGenealogicoExportService, ZooTech.Infrastructure.Reports.Vacunos.ArbolGenealogicoExcelExportService>();
 
         return services;
     }

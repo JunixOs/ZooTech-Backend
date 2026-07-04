@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using ZooTech.Application.Modules.Module_Vacuno.Common;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.CreateVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
@@ -17,23 +19,21 @@ internal static class VacunoMapper
         => new(
             Id: item.Id,
             Codigo: item.Codigo,
-            Nombre: item.Nombre,
-            FechaNacimiento: item.FechaNacimiento,
             FechaRegistro: item.FechaRegistro,
-            RazaCode: item.RazaCode,
+            Nombre: item.Nombre,
+            Raza: item.RazaCode,
             Procedencia: item.Procedencia,
-            Estado: item.IsDeleted ? "eliminado" : "activo");
+            Estado: item.IsDeleted ? "MUERTO" : "SANO");
 
     internal static VacunoItemResponse ToResponse(VacunoListItem item)
         => new(
             Id: item.Id,
             Codigo: item.Codigo,
-            Nombre: item.Nombre,
-            FechaNacimiento: item.FechaNacimiento,
             FechaRegistro: item.FechaRegistro,
-            RazaCode: item.RazaCode,
+            Nombre: item.Nombre,
+            Raza: item.RazaCode,
             Procedencia: item.Procedencia,
-            Estado: item.IsDeleted ? "eliminado" : "activo");
+            Estado: item.IsDeleted ? "MUERTO" : "SANO");
 
     internal static VacunoReferenceResponse ToResponse(VacunoReferenceItem item)
         => new(item.Id, item.Codigo, item.Nombre, item.SexoCode);
@@ -50,7 +50,9 @@ internal static class VacunoMapper
             padreId,
             madreId,
             granjaId,
-            request.Observaciones);
+            request.Observaciones,
+            request.PrecioCompra,
+            NormalizeCatalogCode(request.AptoPara));
 
     internal static UpdateVacunoCommand ToCommand(UpdateVacunoRequest request, long? padreId, long? madreId, long granjaId)
         => new(
@@ -63,19 +65,38 @@ internal static class VacunoMapper
             padreId,
             madreId,
             granjaId,
-            request.Observaciones);
+            request.Observaciones,
+            request.PrecioCompra,
+            NormalizeCatalogCode(request.AptoPara));
 
     internal static DeleteVacunoCommand ToCommand(DeleteVacunoRequest request)
         => new(request.MotivoEliminacion);
 
-    internal static VacunoResponse ToResponse(CreateVacunoOutput output)
-        => ToVacunoResponse(output.Data);
-
-    internal static VacunoResponse ToResponse(GetVacunoByIdOutput output)
-        => ToVacunoResponse(output.Data);
-
-    internal static VacunoResponse ToResponse(UpdateVacunoOutput output)
-        => ToVacunoResponse(output.Data);
+    internal static VacunoResponse ToResponse(VacunoDetalleDto detail)
+        => new(
+            Id: detail.Id,
+            Codigo: detail.Codigo,
+            Nombre: detail.Nombre,
+            FechaNacimiento: detail.FechaNacimiento,
+            AdquisicionPor: detail.AdquisicionPor == "compra" ? "compra" : "monta",
+            PrecioCompra: detail.PrecioCompra,
+            Raza: detail.Raza,
+            Color: detail.Color,
+            Sexo: detail.Sexo == "hembra" ? "hembra" : "macho",
+            CodigoPadre: detail.CodigoPadre,
+            CodigoMadre: detail.CodigoMadre,
+            Granja: detail.Granja,
+            Distrito: detail.Distrito,
+            Departamento: detail.Departamento,
+            Provincia: detail.Provincia,
+            CodigoDistrito: detail.CodigoDistrito,
+            AptoPara: detail.AptoPara,
+            FechaEspecificacion: detail.FechaEspecificacion,
+            Observaciones: detail.Observaciones,
+            FotoUrl: detail.FotoUrl,
+            Estado: detail.Estado,
+            CreadoEn: detail.CreadoEn,
+            ActualizadoEn: detail.ActualizadoEn);
 
     internal static VacunoCatalogsResponse ToResponse(VacunoCatalogs catalogs)
         => new(
@@ -83,6 +104,7 @@ internal static class VacunoMapper
             catalogs.Razas.Select(ToResponse).ToList(),
             catalogs.Colores.Select(ToResponse).ToList(),
             catalogs.Sexos.Select(ToResponse).ToList(),
+            catalogs.Estados.Select(ToResponse).ToList(),
             catalogs.Utilizaciones.Select(ToResponse).ToList(),
             catalogs.Granjas.Select(item => new GranjaCatalogOptionResponse(item.Id, item.Nombre)).ToList());
 
@@ -106,32 +128,4 @@ internal static class VacunoMapper
             .Replace('-', '_')
             .ToUpperInvariant();
     }
-
-    private static VacunoResponse ToVacunoResponse(VacunoOutput output)
-        => new(
-            output.Id,
-            output.Codigo,
-            output.Nombre,
-            output.FechaNacimiento,
-            output.TipoAdquisicionCode,
-            output.RazaCode,
-            output.ColorCode,
-            output.SexoCode,
-            output.PadreId,
-            output.MadreId,
-            output.GranjaId,
-            output.Observaciones,
-            output.FechaRegistro,
-            output.CreatedAt,
-            output.UpdatedAt,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null);
 }

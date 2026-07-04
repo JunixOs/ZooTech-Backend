@@ -95,7 +95,7 @@ public class ListarVacunosPaginadoInteractorTests
             FechaRegistro = new DateTime(2020, 1, 2),
             Raza = "Angus",
             Procedencia = "G1 - D1 - P1 - Dep1",
-            Estado = EstadoAnimal.VIVO
+            Estado = EstadoAnimal.SANO
         };
 
         _repositoryMock.GetPagedAsync(Arg.Any<DateTime?>(), Arg.Any<DateTime?>(), Arg.Any<EstadoAnimal?>(), Arg.Any<string>(), Arg.Any<int>(), Arg.Any<int>())

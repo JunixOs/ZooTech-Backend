@@ -127,7 +127,7 @@ public class VacunoMapperTests
 
         // Assert
         animal.Id.Value.Should().Be(42);
-        animal.Estado.Should().Be(EstadoAnimal.VIVO);
+        animal.Estado.Should().Be(EstadoAnimal.SANO);
         animal.Raza.Code.Should().Be("JER");
         animal.Raza.Nombre.Should().Be("Jersey");
     }

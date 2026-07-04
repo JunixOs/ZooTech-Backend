@@ -1,8 +1,10 @@
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ZooTech.Application;
 using ZooTech.Infrastructure;
 using ZooTech.InterfaceAdapters;
 using ZooTech.InterfaceAdapters.Controllers;
+using ZooTech.InterfaceAdapters.DTOs.Responses;
 using ZooTech.InterfaceAdapters.Middleware;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.Controllers;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
@@ -19,6 +21,27 @@ builder.Services
     .AddApplicationPart(typeof(CeloController).Assembly)
     .AddApplicationPart(typeof(VacunoController).Assembly)
     .AddApplicationPart(typeof(ProduccionLecheController).Assembly);
+
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var details = context.ModelState
+            .Where(entry => entry.Value?.Errors.Count > 0)
+            .SelectMany(entry => entry.Value!.Errors.Select(error => new ErrorDetail
+            {
+                Field = entry.Key,
+                Message = string.IsNullOrWhiteSpace(error.ErrorMessage)
+                    ? "El valor enviado no es valido."
+                    : error.ErrorMessage
+            }));
+
+        return new BadRequestObjectResult(ErrorResponse.Create(
+            "VALIDATION_ERROR",
+            "Los datos enviados no son validos.",
+            details));
+    };
+});
 
 builder.Services.AddEndpointsApiExplorer();
 
@@ -122,7 +145,6 @@ app.Use(async (context, next) =>
     await next();
 });
 
-app.UseAuthorization();
 app.MapControllers();
 
 using (var scope = app.Services.CreateScope())

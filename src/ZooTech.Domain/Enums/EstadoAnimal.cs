@@ -2,6 +2,8 @@ namespace ZooTech.Domain.Enums;
 
 public enum EstadoAnimal
 {
-    VIVO,
+    SANO,
+    ENFERMO,
+    CUARENTENA,
     MUERTO
 }

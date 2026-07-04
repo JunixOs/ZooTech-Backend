@@ -87,8 +87,8 @@ public sealed class ListarVacunosReporteUseCase : IListarVacunosReporteUseCase
 
     private static string? NormalizeEstado(string? value)
     {
-        var normalized = Normalize(value)?.ToLowerInvariant();
-        return normalized is "vivo" or "muerto" ? normalized : null;
+        var normalized = Normalize(value)?.ToUpperInvariant();
+        return normalized is "SANO" or "ENFERMO" or "CUARENTENA" or "MUERTO" ? normalized : null;
     }
 
     private static string? NormalizeEstadoRegistro(string? value)

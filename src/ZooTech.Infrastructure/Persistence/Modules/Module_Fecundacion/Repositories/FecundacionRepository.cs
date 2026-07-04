@@ -1,4 +1,10 @@
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using ZooTech.Application.Modules.Module_Fecundacion.Common;
 using ZooTech.Domain.Module_Fecundacion.Entities;
 using ZooTech.Domain.Module_Fecundacion.Interfaces;
 using ZooTech.Domain.Module_Fecundacion.Rules;
@@ -7,7 +13,7 @@ using ZooTech.Infrastructure.Persistence.Entities;
 
 namespace ZooTech.Infrastructure.Persistence.Modules.Module_Fecundacion.Repositories;
 
-public sealed class FecundacionRepository : IFecundacionRepository
+public sealed class FecundacionRepository : IFecundacionRepository, IFecundacionQueryRepository
 {
     private readonly GanaderiaDbContext _context;
 
@@ -123,53 +129,38 @@ public sealed class FecundacionRepository : IFecundacionRepository
         long id,
         CancellationToken cancellationToken = default)
     {
-        var entity = await _context.fecundacions
+        return await _context.fecundacions
             .AsNoTracking()
-            .Include(f => f.vacuno_receptor)
-            .Include(f => f.responsable)
-            .Include(f => f.fecundacion_donante)
-                .ThenInclude(d => d!.vacuno_donante)
-            .Include(f => f.fecundacion_donante)
-                .ThenInclude(d => d!.externo_donante)
-            .Include(f => f.fecundacion_inseminacion)
-            .Include(f => f.fecundacion_embrion)
-            .FirstOrDefaultAsync(f => f.id == id, cancellationToken);
-
-        if (entity is null)
-            return null;
-
-        var estadoActual = await _context.vacuno_estado_fecundacion_historials
-            .AsNoTracking()
-            .Where(h => h.fecundacion_id == id && h.deleted_at == null)
-            .OrderByDescending(h => h.fecha_actualizacion)
-            .ThenByDescending(h => h.id)
-            .Select(h => h.estado_fecundacion_code)
-            .FirstOrDefaultAsync(cancellationToken) ?? string.Empty;
-
-        var donante = entity.fecundacion_donante;
-
-        return new FecundacionEditData(
-            entity.id,
-            entity.codigo,
-            entity.tipo_fecundacion_code,
-            entity.vacuno_receptor_id,
-            entity.vacuno_receptor.codigo,
-            entity.vacuno_receptor.nombre,
-            donante?.tipo_donante ?? FecundacionRules.TipoDonanteInterno,
-            donante?.vacuno_donante_id,
-            donante?.vacuno_donante?.codigo,
-            donante?.vacuno_donante?.nombre,
-            donante?.externo_donante_id,
-            donante?.externo_donante?.nombre,
-            entity.fecha_procedimiento,
-            entity.responsable.nombre_completo ?? string.Empty,
-            entity.resultado_code,
-            estadoActual,
-            entity.observaciones_veterinarias,
-            entity.fecundacion_inseminacion?.codigo_semen,
-            entity.fecundacion_embrion?.codigo_embrion,
-            entity.created_at,
-            entity.updated_at);
+            .Where(f => f.id == id && (f.observaciones_veterinarias == null || !f.observaciones_veterinarias.StartsWith("ANULADO_FECUNDACION:")))
+            .Select(f => new FecundacionEditData(
+                f.id,
+                f.codigo,
+                f.tipo_fecundacion_code,
+                f.vacuno_receptor_id,
+                f.vacuno_receptor.codigo,
+                f.vacuno_receptor.nombre,
+                f.fecundacion_donante != null ? f.fecundacion_donante.tipo_donante : "INTERNO",
+                f.fecundacion_donante != null ? f.fecundacion_donante.vacuno_donante_id : null,
+                f.fecundacion_donante != null && f.fecundacion_donante.vacuno_donante != null ? f.fecundacion_donante.vacuno_donante.codigo : null,
+                f.fecundacion_donante != null && f.fecundacion_donante.vacuno_donante != null ? f.fecundacion_donante.vacuno_donante.nombre : null,
+                f.fecundacion_donante != null ? f.fecundacion_donante.externo_donante_id : null,
+                f.fecundacion_donante != null && f.fecundacion_donante.externo_donante != null ? f.fecundacion_donante.externo_donante.nombre : null,
+                f.fecha_procedimiento,
+                f.responsable.nombre_completo ?? string.Empty,
+                f.resultado_code,
+                f.vacuno_estado_fecundacion_historials
+                    .Where(h => h.deleted_at == null)
+                    .OrderByDescending(h => h.fecha_actualizacion)
+                    .ThenByDescending(h => h.id)
+                    .Select(h => h.estado_fecundacion_code)
+                    .FirstOrDefault() ?? string.Empty,
+                f.observaciones_veterinarias,
+                f.fecundacion_inseminacion != null ? f.fecundacion_inseminacion.codigo_semen : null,
+                f.fecundacion_embrion != null ? f.fecundacion_embrion.codigo_embrion : null,
+                f.created_at,
+                f.updated_at
+            ))
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<FecundacionOptionsData> GetOptionsAsync(CancellationToken cancellationToken = default)
@@ -323,20 +314,26 @@ public sealed class FecundacionRepository : IFecundacionRepository
                 throw new ArgumentException("El donante interno debe ser un macho activo.");
         }
 
-        if (await HasOtherActiveFecundacionAsync(fecundacionId, values.VacunoReceptorId, cancellationToken))
+        if (await HasActiveFecundacionAsync(fecundacionId, values.VacunoReceptorId, cancellationToken))
             throw new ArgumentException("La hembra ya tiene otra fecundación activa pendiente o en confirmación.");
     }
 
-    private async Task<bool> HasOtherActiveFecundacionAsync(
-        long fecundacionId,
+    public async Task<bool> HasActiveFecundacionAsync(
+        long? fecundacionId,
         long receptorId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken = default)
     {
-        var otherIds = await _context.fecundacions
+        var query = _context.fecundacions
             .AsNoTracking()
-            .Where(f => f.id != fecundacionId && f.vacuno_receptor_id == receptorId)
-            .Select(f => f.id)
-            .ToListAsync(cancellationToken);
+            .Where(f => f.vacuno_receptor_id == receptorId && 
+                       (f.observaciones_veterinarias == null || !f.observaciones_veterinarias.StartsWith("ANULADO_FECUNDACION:")));
+
+        if (fecundacionId.HasValue)
+        {
+            query = query.Where(f => f.id != fecundacionId.Value);
+        }
+
+        var otherIds = await query.Select(f => f.id).ToListAsync(cancellationToken);
 
         if (otherIds.Count == 0)
             return false;
@@ -505,4 +502,158 @@ public sealed class FecundacionRepository : IFecundacionRepository
 
     private static string Normalize(string? value)
         => value?.Trim().ToLowerInvariant() ?? string.Empty;
+
+    public async Task<(List<FecundacionItemDto> Data, int Total)> GetPagedAsync(
+        int page,
+        int limit,
+        DateOnly? fechaDesde,
+        DateOnly? fechaHasta,
+        string? q,
+        string? tipoFecundacion,
+        string? estado,
+        string? responsable,
+        CancellationToken cancellationToken = default)
+    {
+        var queryable = _context.fecundacions
+            .AsNoTracking()
+            .Where(x => x.observaciones_veterinarias == null || !x.observaciones_veterinarias.StartsWith("ANULADO_FECUNDACION:"));
+
+        if (fechaDesde == null && fechaHasta == null)
+        {
+            var limitDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-30));
+            queryable = queryable.Where(x => x.fecha_procedimiento >= limitDate);
+        }
+        else
+        {
+            if (fechaDesde.HasValue)
+            {
+                queryable = queryable.Where(x => x.fecha_procedimiento >= fechaDesde.Value);
+            }
+            if (fechaHasta.HasValue)
+            {
+                queryable = queryable.Where(x => x.fecha_procedimiento <= fechaHasta.Value);
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(q))
+        {
+            var keyword = q.Trim().ToLower();
+            queryable = queryable.Where(x => x.vacuno_receptor.codigo.ToLower().Contains(keyword) || 
+                                             x.vacuno_receptor.nombre.ToLower().Contains(keyword));
+        }
+
+        if (!string.IsNullOrWhiteSpace(tipoFecundacion))
+        {
+            var normalizedTipo = tipoFecundacion.Trim().ToLower();
+            queryable = queryable.Where(x => x.tipo_fecundacion_code.ToLower() == normalizedTipo);
+        }
+
+        if (!string.IsNullOrWhiteSpace(estado))
+        {
+            var normalizedEstado = estado.Trim().ToLower();
+            queryable = queryable.Where(x => x.resultado_code.ToLower() == normalizedEstado);
+        }
+
+        if (!string.IsNullOrWhiteSpace(responsable))
+        {
+            var respName = responsable.Trim().ToLower();
+            queryable = queryable.Where(x => x.responsable.nombre_completo.ToLower().Contains(respName));
+        }
+
+        var total = await queryable.CountAsync(cancellationToken);
+
+        var rawData = await queryable
+            .Include(x => x.tipo_fecundacion_codeNavigation)
+            .Include(x => x.vacuno_receptor)
+            .Include(x => x.responsable)
+            .Include(x => x.resultado_codeNavigation)
+            .Include(x => x.fecundacion_donante)
+                .ThenInclude(d => d!.vacuno_donante)
+            .Include(x => x.fecundacion_donante)
+                .ThenInclude(d => d!.externo_donante)
+            .OrderByDescending(x => x.fecha_procedimiento)
+            .ThenByDescending(x => x.id)
+            .Skip((page - 1) * limit)
+            .Take(limit)
+            .ToListAsync(cancellationToken);
+
+        var mappedData = rawData.Select(x => {
+            var donanteNombre = string.Empty;
+            if (x.fecundacion_donante != null)
+            {
+                if (string.Equals(x.fecundacion_donante.tipo_donante, FecundacionRules.TipoDonanteExterno, StringComparison.OrdinalIgnoreCase))
+                {
+                    donanteNombre = x.fecundacion_donante.externo_donante?.nombre ?? string.Empty;
+                }
+                else
+                {
+                    donanteNombre = x.fecundacion_donante.vacuno_donante?.nombre ?? x.fecundacion_donante.vacuno_donante?.codigo ?? string.Empty;
+                }
+            }
+
+            return new FecundacionItemDto(
+                x.id,
+                x.codigo,
+                x.fecha_procedimiento,
+                $"{x.vacuno_receptor.codigo} - {x.vacuno_receptor.nombre}",
+                x.tipo_fecundacion_codeNavigation.nombre,
+                donanteNombre,
+                x.responsable.nombre_completo ?? string.Empty,
+                x.resultado_codeNavigation.nombre
+            );
+        }).ToList();
+
+        return (mappedData, total);
+    }
+
+    public async Task DeleteAsync(long id, string razon, CancellationToken cancellationToken = default)
+    {
+        var entity = await _context.fecundacions
+            .Include(x => x.fecundacion_cria)
+            .FirstOrDefaultAsync(x => x.id == id, cancellationToken);
+
+        if (entity is null)
+            return;
+
+        var now = DateTime.UtcNow;
+        var reason = razon.Trim();
+        var deleteNote = BuildDeleteNote(now, reason, entity.observaciones_veterinarias);
+
+        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+        entity.observaciones_veterinarias = deleteNote;
+        entity.updated_at = now;
+
+        var activeHistory = await _context.vacuno_estado_fecundacion_historials
+            .Where(x => x.fecundacion_id == entity.id && x.deleted_at == null)
+            .ToListAsync(cancellationToken);
+
+        foreach (var history in activeHistory)
+        {
+            history.deleted_at = now;
+            history.motivo_eliminacion = Truncate(reason, 250);
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+    }
+
+    private static string BuildDeleteNote(DateTime date, string reason, string? originalObservations)
+    {
+        var parts = new List<string> { $"ANULADO_FECUNDACION: {date:yyyy-MM-dd HH:mm:ss}" };
+        if (!string.IsNullOrWhiteSpace(reason))
+            parts.Add($"Motivo: {reason}");
+        if (!string.IsNullOrWhiteSpace(originalObservations))
+            parts.Add($"Obs: {originalObservations}");
+
+        return Truncate(string.Join(" | ", parts), 250);
+    }
+
+    private static string Truncate(string value, int maxLength) =>
+        value.Length <= maxLength ? value : value[..maxLength];
+
+    public async Task<bool> HasCriaAsync(long id, CancellationToken cancellationToken = default)
+    {
+        return await _context.fecundacion_cria
+            .AnyAsync(x => x.fecundacion_id == id, cancellationToken);
+    }
 }

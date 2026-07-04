@@ -70,5 +70,5 @@ public sealed class ReportAnimalListValidator
     }
 
     private static string? NormalizeCode(string? value)
-        => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+        => string.IsNullOrWhiteSpace(value) ? null : value.Trim().ToUpperInvariant();
 }

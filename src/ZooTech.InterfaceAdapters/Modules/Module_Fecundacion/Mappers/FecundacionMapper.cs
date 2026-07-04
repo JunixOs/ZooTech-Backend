@@ -1,15 +1,37 @@
+using System.Text.Json;
+using ZooTech.Application.Modules.Module_Fecundacion.UseCases.CreateFecundacion;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.GetFecundacionForEdit;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.GetFecundacionOptions;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.SearchFecundacionVacunos;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.UpdateFecundacion;
 using ZooTech.Domain.Module_Fecundacion.Rules;
-using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.DTOs.Requests;
+using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.DTOs.Responses;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.Mappers;
 
 public static class FecundacionMapper
 {
+    public static CreateFecundacionCommand ToCommand(CreateFecundacionRequest request, long createdById)
+    {
+        var isExternal = request.MachoExterno;
+        var donorId = !isExternal ? ReadDonorId(request.MachoODonante) : null;
+        var donorName = isExternal ? ReadDonorName(request.MachoODonante) : null;
+
+        return new CreateFecundacionCommand(
+            ToInternalTipo(request.TipoFecundacion) ?? string.Empty,
+            request.VacunoReceptorId,
+            null, // CeloRegistroId
+            request.FechaProcedimiento.ToDateTime(TimeOnly.MinValue),
+            request.Responsable,
+            ToInternalResultado(request.Resultado) ?? string.Empty,
+            request.Observaciones,
+            request.MachoExterno,
+            donorName,
+            donorId,
+            createdById);
+    }
+
     public static UpdateFecundacionCommand ToCommand(
         UpdateFecundacionRequest request,
         GetFecundacionForEditOutput current,
@@ -40,8 +62,8 @@ public static class FecundacionMapper
             ToInternalTipo(request.TipoFecundacion) ?? string.Empty,
             request.VacunoReceptorId ?? 0,
             request.MachoExterno == true ? FecundacionRules.TipoDonanteExterno : FecundacionRules.TipoDonanteInterno,
-            request.MachoExterno == true ? null : ReadDonorId(request),
-            request.MachoExterno == true ? ReadDonorName(request) : null,
+            request.MachoExterno == true ? null : ReadDonorId(request.MachoODonante),
+            request.MachoExterno == true ? ReadDonorName(request.MachoODonante) : null,
             request.FechaProcedimiento ?? default,
             request.Responsable ?? string.Empty,
             ToInternalResultado(request.Resultado) ?? string.Empty,
@@ -188,31 +210,40 @@ public static class FecundacionMapper
         }
 
         return isExternal
-            ? new DonorValues(null, ReadDonorName(request))
-            : new DonorValues(ReadDonorId(request), null);
+            ? new DonorValues(null, ReadDonorName(request.MachoODonante))
+            : new DonorValues(ReadDonorId(request.MachoODonante), null);
     }
 
-    private static long? ReadDonorId(UpdateFecundacionRequest request)
+    private static long? ReadDonorId(JsonElement? value)
     {
-        if (request.MachoODonante is not { } value)
+        if (value is not { } val)
             return null;
 
-        if (value.ValueKind == System.Text.Json.JsonValueKind.Number &&
-            value.TryGetInt64(out var id))
+        if (val.ValueKind == JsonValueKind.Number &&
+            val.TryGetInt64(out var id))
         {
             return id;
+        }
+
+        if (val.ValueKind == JsonValueKind.String &&
+            long.TryParse(val.GetString(), out var idParsed))
+        {
+            return idParsed;
         }
 
         throw new ArgumentException("machoODonante debe ser numérico cuando machoExterno es false.");
     }
 
-    private static string? ReadDonorName(UpdateFecundacionRequest request)
+    private static string? ReadDonorName(JsonElement? value)
     {
-        if (request.MachoODonante is not { } value)
+        if (value is not { } val)
             return null;
 
-        if (value.ValueKind == System.Text.Json.JsonValueKind.String)
-            return value.GetString();
+        if (val.ValueKind == JsonValueKind.String)
+            return val.GetString();
+
+        if (val.ValueKind == JsonValueKind.Number)
+            return val.GetInt64().ToString();
 
         throw new ArgumentException("machoODonante debe ser texto cuando machoExterno es true.");
     }

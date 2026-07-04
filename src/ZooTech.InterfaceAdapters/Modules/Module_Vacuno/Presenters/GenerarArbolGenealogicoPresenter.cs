@@ -1,6 +1,6 @@
-using Microsoft.AspNetCore.Mvc;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GenerarArbolGenealogico;
 using ZooTech.InterfaceAdapters.DTOs;
+using ZooTech.InterfaceAdapters.DTOs.Responses;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Presenters;
 
@@ -19,14 +19,14 @@ public class GenerarArbolGenealogicoPresenter : IGenerarArbolGenealogicoOutputPo
     public Task NotFound(string message)
     {
         StatusCode = 404;
-        Response = GeneralResponseDTO<object>.Fail(message);
+        Response = ErrorResponse.Create("NOT_FOUND", message);
         return Task.CompletedTask;
     }
 
     public Task Error(string code, string message)
     {
-        StatusCode = 400; // O un StatusCode más específico según el code
-        Response = GeneralResponseDTO<object>.Fail($"{code}: {message}");
+        StatusCode = 400;
+        Response = ErrorResponse.Create(code, message);
         return Task.CompletedTask;
     }
 }

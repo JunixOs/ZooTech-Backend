@@ -35,12 +35,6 @@ public sealed class AnimalReportRepository : IAnimalReportRepository
             join granja in context.granjas.AsNoTracking()
                 on animal.granja_id equals granja.id into granjaJoin
             from granja in granjaJoin.DefaultIfEmpty()
-            join estadoVigente in context.v_vacuno_estado_vigentes.AsNoTracking()
-                on animal.id equals estadoVigente.vacuno_id into estadoVigenteJoin
-            from estadoVigente in estadoVigenteJoin.DefaultIfEmpty()
-            join estado in context.cat_estado_vacunos.AsNoTracking()
-                on estadoVigente.estado_code equals estado.code into estadoJoin
-            from estado in estadoJoin.DefaultIfEmpty()
             where animal.deleted_at == null &&
                   animal.fecha_registro >= filter.FechaInicio &&
                   animal.fecha_registro <= filter.FechaFin
@@ -59,8 +53,18 @@ public sealed class AnimalReportRepository : IAnimalReportRepository
                 Sexo = sexo != null ? sexo.nombre : DefaultText,
                 GranjaId = animal.granja_id,
                 Granja = granja != null ? granja.nombre : DefaultText,
-                EstadoCode = estadoVigente != null ? estadoVigente.estado_code : null,
-                Estado = estado != null ? estado.nombre : DefaultText,
+                EstadoCode = context.vacuno_estado_historials.AsNoTracking()
+                    .Where(estado => estado.vacuno_id == animal.id)
+                    .OrderByDescending(estado => estado.fecha_estado)
+                    .ThenByDescending(estado => estado.id)
+                    .Select(estado => estado.estado_code)
+                    .FirstOrDefault(),
+                Estado = context.vacuno_estado_historials.AsNoTracking()
+                    .Where(historial => historial.vacuno_id == animal.id)
+                    .OrderByDescending(historial => historial.fecha_estado)
+                    .ThenByDescending(historial => historial.id)
+                    .Select(historial => historial.estado_codeNavigation.nombre)
+                    .FirstOrDefault() ?? DefaultText,
                 animal.fecha_registro
             };
 

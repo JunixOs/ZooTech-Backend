@@ -27,6 +27,12 @@ public interface IFecundacionRepository
         long id,
         FecundacionUpdateValues values,
         CancellationToken cancellationToken = default);
+
+    Task DeleteAsync(long id, string razon, CancellationToken cancellationToken = default);
+
+    Task<bool> HasCriaAsync(long id, CancellationToken cancellationToken = default);
+
+    Task<bool> HasActiveFecundacionAsync(long? fecundacionId, long receptorId, CancellationToken cancellationToken = default);
 }
 
 public sealed record FecundacionOptionData(string Code, string Nombre, string? Descripcion);

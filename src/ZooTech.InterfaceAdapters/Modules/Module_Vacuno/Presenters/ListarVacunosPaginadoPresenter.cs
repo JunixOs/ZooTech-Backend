@@ -1,4 +1,5 @@
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunosPaginado;
+using ZooTech.InterfaceAdapters.DTOs.Responses;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Presenters;
 
@@ -19,7 +20,7 @@ public class ListarVacunosPaginadoPresenter : IListarVacunosPaginadoOutputPort
                 nombre = v.Nombre,
                 raza = v.Raza,
                 procedencia = v.Procedencia,
-                estado = v.Estado.ToString().ToLower()
+                estado = v.Estado.ToString()
             }),
             pagination = new
             {
@@ -35,15 +36,7 @@ public class ListarVacunosPaginadoPresenter : IListarVacunosPaginadoOutputPort
 
     public Task Error(string code, string message)
     {
-        Response = new
-        {
-            error = new
-            {
-                code = code,
-                message = message,
-                details = new List<object>()
-            }
-        };
+        Response = ErrorResponse.Create(code, message);
         StatusCode = code == "FEATURE_DISABLED" ? 403 : 400;
         return Task.CompletedTask;
     }

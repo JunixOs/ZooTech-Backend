@@ -17,7 +17,6 @@ public static class DependencyInjection
         services.AddScoped<GenerarArbolGenealogicoPresenter>();
         services.AddScoped<IGenerarArbolGenealogicoOutputPort>(sp => sp.GetRequiredService<GenerarArbolGenealogicoPresenter>());
         services.AddScoped<IVacunoReferenceResolver, VacunoReferenceResolver>();
-        services.AddScoped<IVacunoResponseEnricher, VacunoResponseEnricher>();
         services.AddScoped<IVacunoMutationService, VacunoMutationService>();
 
         return services;

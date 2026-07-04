@@ -1,8 +1,14 @@
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using ZooTech.Application.Modules.Module_Vacuno.Common;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.CreateVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.UpdateVacuno;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Requests;
+using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Mappers;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Services;
@@ -13,20 +19,20 @@ public sealed class VacunoMutationService : IVacunoMutationService
     private readonly IVacunoReferenceResolver _referenceResolver;
     private readonly ICreateVacunoInputPort _createInputPort;
     private readonly IUpdateVacunoInputPort _updateInputPort;
-    private readonly IVacunoResponseEnricher _responseEnricher;
+    private readonly IVacunoQueryRepository _queryRepository;
 
     public VacunoMutationService(
         GanaderiaDbContext db,
         IVacunoReferenceResolver referenceResolver,
         ICreateVacunoInputPort createInputPort,
         IUpdateVacunoInputPort updateInputPort,
-        IVacunoResponseEnricher responseEnricher)
+        IVacunoQueryRepository queryRepository)
     {
         _db = db;
         _referenceResolver = referenceResolver;
         _createInputPort = createInputPort;
         _updateInputPort = updateInputPort;
-        _responseEnricher = responseEnricher;
+        _queryRepository = queryRepository;
     }
 
     public async Task<VacunoMutationResult> CreateAsync(
@@ -43,7 +49,8 @@ public sealed class VacunoMutationService : IVacunoMutationService
         var granjaId = await EnsureGranjaIdAsync(references, cancellationToken);
         var command = VacunoMapper.ToCommand(request, references.PadreId, references.MadreId, granjaId);
         var output = await _createInputPort.HandleAsync(command, cancellationToken);
-        var response = await _responseEnricher.EnrichAsync(output.Data, cancellationToken);
+        var detalle = await _queryRepository.GetDetalleByIdAsync(output.Data.Id, cancellationToken);
+        var response = VacunoMapper.ToResponse(detalle!);
         await transaction.CommitAsync(cancellationToken);
 
         return VacunoMutationResult.Ok(response);
@@ -64,7 +71,8 @@ public sealed class VacunoMutationService : IVacunoMutationService
         var granjaId = await EnsureGranjaIdAsync(references, cancellationToken);
         var command = VacunoMapper.ToCommand(request, references.PadreId, references.MadreId, granjaId);
         var output = await _updateInputPort.HandleAsync(id, command, cancellationToken);
-        var response = await _responseEnricher.EnrichAsync(output.Data, cancellationToken);
+        var detalle = await _queryRepository.GetDetalleByIdAsync(id, cancellationToken);
+        var response = VacunoMapper.ToResponse(detalle!);
         await transaction.CommitAsync(cancellationToken);
 
         return VacunoMutationResult.Ok(response);

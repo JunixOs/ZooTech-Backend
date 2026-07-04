@@ -80,7 +80,7 @@ public class AnimalReportRepositoryTests
         Seed(context);
         var repository = new AnimalReportRepository(context);
 
-        var items = await repository.GetAnimalListAsync(CreateFilter(estadoCode: "INACT"));
+        var items = await repository.GetAnimalListAsync(CreateFilter(estadoCode: "ENFERMO"));
 
         Assert.Single(items);
         Assert.Equal("V002", items.Single().Codigo);
@@ -100,7 +100,7 @@ public class AnimalReportRepositoryTests
             sexoCode: "H",
             tipoAdquisicionCode: "NAC",
             granjaId: 1,
-            estadoCode: "ACT"));
+            estadoCode: "SANO"));
 
         Assert.Single(items);
         var item = items.Single();
@@ -111,7 +111,7 @@ public class AnimalReportRepositoryTests
         Assert.Equal("Negro", item.Color);
         Assert.Equal("Hembra", item.Sexo);
         Assert.Equal("Granja Norte", item.Granja);
-        Assert.Equal("Activo", item.Estado);
+        Assert.Equal("Sano", item.Estado);
     }
 
     [Fact]
@@ -171,15 +171,13 @@ public class AnimalReportRepositoryTests
             new cat_color { code = "NEG", nombre = "Negro", activo = true },
             new cat_color { code = "CAF", nombre = "Cafe", activo = true });
         context.cat_estado_vacunos.AddRange(
-            new cat_estado_vacuno { code = "ACT", nombre = "Activo" },
-            new cat_estado_vacuno { code = "INACT", nombre = "Inactivo" });
+            new cat_estado_vacuno { code = "SANO", nombre = "Sano" },
+            new cat_estado_vacuno { code = "ENFERMO", nombre = "Enfermo" },
+            new cat_estado_vacuno { code = "CUARENTENA", nombre = "Cuarentena" },
+            new cat_estado_vacuno { code = "MUERTO", nombre = "Muerto" });
         context.granjas.AddRange(
             new granja { id = 1, nombre = "Granja Norte", distrito_codigo = "010101", activo = true },
             new granja { id = 2, nombre = "Granja Sur", distrito_codigo = "010102", activo = true });
-        context.v_vacuno_estado_vigentes.AddRange(
-            new v_vacuno_estado_vigente { vacuno_id = 1, estado_code = "ACT", fecha_estado = new DateOnly(2023, 1, 1), fecha_registro = new DateTime(2023, 1, 1) },
-            new v_vacuno_estado_vigente { vacuno_id = 2, estado_code = "INACT", fecha_estado = new DateOnly(2023, 1, 1), fecha_registro = new DateTime(2023, 1, 1) },
-            new v_vacuno_estado_vigente { vacuno_id = 3, estado_code = "ACT", fecha_estado = new DateOnly(2023, 1, 1), fecha_registro = new DateTime(2023, 1, 1) });
         context.vacunos.AddRange(
             new vacuno
             {
@@ -227,6 +225,10 @@ public class AnimalReportRepositoryTests
                 updated_at = new DateTime(2023, 1, 25),
                 deleted_at = new DateTime(2023, 2, 1)
             });
+        context.vacuno_estado_historials.AddRange(
+            new vacuno_estado_historial { id = 1, vacuno_id = 1, estado_code = "SANO", fecha_estado = new DateOnly(2023, 1, 1), created_at = new DateTime(2023, 1, 1) },
+            new vacuno_estado_historial { id = 2, vacuno_id = 2, estado_code = "ENFERMO", fecha_estado = new DateOnly(2023, 1, 1), created_at = new DateTime(2023, 1, 1) },
+            new vacuno_estado_historial { id = 3, vacuno_id = 3, estado_code = "SANO", fecha_estado = new DateOnly(2023, 1, 1), created_at = new DateTime(2023, 1, 1) });
         context.SaveChanges();
     }
 

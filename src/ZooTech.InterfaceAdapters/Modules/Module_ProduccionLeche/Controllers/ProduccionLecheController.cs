@@ -10,6 +10,7 @@ using ZooTech.InterfaceAdapters.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.DTOs.Responses;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Mappers;
+using ApiErrorResponse = ZooTech.InterfaceAdapters.DTOs.Responses.ErrorResponse;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
 
@@ -58,8 +59,8 @@ public sealed class ProduccionLecheController : ControllerBase
 
     [HttpPost]
     [ProducesResponseType(typeof(GeneralResponseDTO<OrdenioResponse>), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Create(
         [FromBody] CreateOrdenioRequest request,
         CancellationToken cancellationToken)
@@ -71,7 +72,7 @@ public sealed class ProduccionLecheController : ControllerBase
 
     [HttpGet("{id:long}")]
     [ProducesResponseType(typeof(GeneralResponseDTO<OrdenioResponse>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById([FromRoute] long id, CancellationToken cancellationToken)
     {
         var data = ProduccionLecheMapper.ToResponse(await _getByIdInputPort.HandleAsync(id, cancellationToken));
@@ -101,8 +102,8 @@ public sealed class ProduccionLecheController : ControllerBase
 
     [HttpPatch("{id:long}")]
     [ProducesResponseType(typeof(GeneralResponseDTO<OrdenioResponse>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Update(
         [FromRoute] long id,
         [FromBody] UpdateOrdenioRequest request,
@@ -115,8 +116,8 @@ public sealed class ProduccionLecheController : ControllerBase
 
     [HttpDelete("{id:long}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(
         [FromRoute] long id,
         [FromBody] DeleteOrdenioRequest request,

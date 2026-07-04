@@ -24,7 +24,7 @@ public interface IVacunoRepository
 
     Task<VacunoCatalogs> GetCatalogsAsync(CancellationToken cancellationToken = default);
 
-    Task<Vacuno> AddAsync(Vacuno vacuno, CancellationToken cancellationToken = default);
+    Task<Vacuno> AddAsync(Vacuno vacuno, decimal? precioCompra, string? aptoPara, CancellationToken cancellationToken = default);
 
-    Task<Vacuno> UpdateAsync(Vacuno vacuno, CancellationToken cancellationToken = default);
+    Task<Vacuno> UpdateAsync(Vacuno vacuno, decimal? precioCompra, string? aptoPara, CancellationToken cancellationToken = default);
 }

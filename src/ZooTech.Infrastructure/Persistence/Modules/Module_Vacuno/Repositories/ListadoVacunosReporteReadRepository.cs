@@ -6,7 +6,6 @@ namespace ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Repositories;
 
 public sealed class ListadoVacunosReporteReadRepository : IListadoVacunosReporteReadRepository
 {
-    private static readonly string[] DeadStateCodes = ["MUERTO", "FALLECIDO", "BAJA", "INACTIVO"];
     private readonly GanaderiaDbContext _context;
 
     public ListadoVacunosReporteReadRepository(GanaderiaDbContext context)
@@ -36,6 +35,11 @@ public sealed class ListadoVacunosReporteReadRepository : IListadoVacunosReporte
                     .OrderByDescending(h => h.fecha_estado)
                     .ThenByDescending(h => h.id)
                     .Select(h => h.estado_code)
+                    .FirstOrDefault(),
+                EstadoNombre = v.vacuno_estado_historials
+                    .OrderByDescending(h => h.fecha_estado)
+                    .ThenByDescending(h => h.id)
+                    .Select(h => h.estado_codeNavigation.nombre)
                     .FirstOrDefault(),
                 UtilizacionCode = v.vacuno_utilizacion_historials
                     .OrderByDescending(u => u.created_at)
@@ -104,9 +108,8 @@ public sealed class ListadoVacunosReporteReadRepository : IListadoVacunosReporte
 
         if (!string.IsNullOrWhiteSpace(query.Estado))
         {
-            source = query.Estado == "muerto"
-                ? source.Where(v => DeadStateCodes.Contains(v.EstadoCode ?? string.Empty))
-                : source.Where(v => !DeadStateCodes.Contains(v.EstadoCode ?? string.Empty));
+            var estado = query.Estado.Trim().ToUpperInvariant();
+            source = source.Where(v => v.EstadoCode == estado);
         }
 
         if (!string.IsNullOrWhiteSpace(query.EstadoRegistro))
@@ -143,15 +146,12 @@ public sealed class ListadoVacunosReporteReadRepository : IListadoVacunosReporte
                 v.Nombre,
                 v.RazaNombre ?? v.RazaCode,
                 BuildProcedencia(v.Granja, v.Distrito, v.Provincia, v.Departamento),
-                ToEstadoBiologico(v.EstadoCode),
+                v.EstadoCode ?? "SANO",
                 v.DeletedAt is null ? "activo" : "eliminado"))
             .ToList();
 
         return new ListadoVacunosReporteReadResult(items, total);
     }
-
-    private static string ToEstadoBiologico(string? estadoCode)
-        => DeadStateCodes.Contains((estadoCode ?? string.Empty).ToUpperInvariant()) ? "muerto" : "vivo";
 
     private static string? BuildProcedencia(params string?[] values)
     {
@@ -175,6 +175,7 @@ public sealed class ListadoVacunosReporteReadRepository : IListadoVacunosReporte
         public string? Provincia { get; init; }
         public string? Departamento { get; init; }
         public string? EstadoCode { get; init; }
+        public string? EstadoNombre { get; init; }
         public string? UtilizacionCode { get; init; }
         public string? UtilizacionNombre { get; init; }
         public DateTime? DeletedAt { get; init; }

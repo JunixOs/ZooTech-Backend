@@ -17,8 +17,7 @@ public static class VacunoMapper
     /// <param name="estadoCode">Código del estado vigente desde v_vacuno_estado_vigente.</param>
     public static Animal ToDomain(vacuno entity, string? estadoCode)
     {
-        // Mapear estado: si no hay historial, default VIVO
-        var estado = EstadoAnimal.VIVO;
+        var estado = EstadoAnimal.SANO;
         if (!string.IsNullOrWhiteSpace(estadoCode))
         {
             Enum.TryParse<EstadoAnimal>(estadoCode, ignoreCase: true, out estado);

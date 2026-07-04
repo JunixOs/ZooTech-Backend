@@ -39,7 +39,7 @@ public class Animal
             Nombre = nombre,
             FechaNacimiento = fechaNacimiento,
             FechaRegistro = fechaRegistro,
-            Estado = EstadoAnimal.VIVO, // Estado inicial
+            Estado = EstadoAnimal.SANO,
             Raza = raza,
             Procedencia = procedencia,
             CreatedAt = createdAt

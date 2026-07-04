@@ -8,7 +8,9 @@ using Xunit;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Persistence.Entities;
 using ZooTech.InterfaceAdapters.DTOs;
+using ZooTech.InterfaceAdapters.DTOs.Responses;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GenerarArbolGenealogico;
+using ApiErrorResponse = ZooTech.InterfaceAdapters.DTOs.Responses.ErrorResponse;
 
 namespace ZooTech.InterfaceAdapters.IntegrationTests.Controllers;
 
@@ -179,12 +181,11 @@ public class VacunosGenealogiaIntegrationTests : IClassFixture<WebApplicationFac
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
 
-        var content = await response.Content.ReadFromJsonAsync<GeneralResponseDTO<object>>();
+        var content = await response.Content.ReadFromJsonAsync<ApiErrorResponse>();
         
         Assert.NotNull(content);
-        Assert.False(content.Success);
-        Assert.NotNull(content.ErrorMessage);
-        Assert.Contains("9999", content.ErrorMessage); // Verifica que el mensaje contenga el ID
+        Assert.Equal("NOT_FOUND", content.Error.Code);
+        Assert.Contains("9999", content.Error.Message); // Verifica que el mensaje contenga el ID
     }
 
     [Fact]
