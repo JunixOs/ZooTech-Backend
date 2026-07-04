@@ -36,8 +36,7 @@ public sealed class UpdateVacunoInteractor : IUpdateVacunoInputPort
                 command.MadreId,
                 command.GranjaId,
                 command.Observaciones,
-                null, // numChip
-                null, // actorUsuarioId
+                null,
                 DateTime.UtcNow);
         }
         catch (ArgumentException ex)

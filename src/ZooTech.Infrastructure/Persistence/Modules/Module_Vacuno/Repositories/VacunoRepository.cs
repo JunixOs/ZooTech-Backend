@@ -2,13 +2,11 @@ using Microsoft.EntityFrameworkCore;
 using ZooTech.Domain.Module_Vacuno.Entities;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
 using ZooTech.Infrastructure.Persistence.Context;
-using ZooTech.Application.Modules.Module_Vacuno.Common;
-using ZooTech.Application.Modules.Module_Vacuno.UseCases.GenerarArbolGenealogico;
-using ZooTech.Infrastructure.Persistence.Models;
+using ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Mappers;
 
 namespace ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Repositories;
 
-public sealed class VacunoRepository : IVacunoRepository, IVacunoQueryRepository
+public sealed class VacunoRepository : IVacunoRepository
 {
     private readonly GanaderiaDbContext _context;
 
@@ -25,45 +23,7 @@ public sealed class VacunoRepository : IVacunoRepository, IVacunoQueryRepository
             .OrderBy(v => v.codigo)
             .ToListAsync(cancellationToken);
 
-        return entities.Select(ToDomain).ToList();
-    }
-
-    public async Task<List<Vacuno>> ListAllWithDeletedAsync(CancellationToken cancellationToken = default)
-    {
-        var entities = await _context.vacunos
-            .AsNoTracking()
-            .OrderBy(v => v.codigo)
-            .ToListAsync(cancellationToken);
-
-        return entities.Select(ToDomain).ToList();
-    }
-
-    public async Task<List<(Vacuno Vacuno, string? Procedencia)>> ListAllForDisplayAsync(CancellationToken cancellationToken = default)
-    {
-        var entities = await _context.vacunos
-            .AsNoTracking()
-            .Include(v => v.granja)
-                .ThenInclude(g => g.distrito_codigoNavigation)
-                    .ThenInclude(d => d.provincia_codigoNavigation)
-                        .ThenInclude(p => p.departamento_codigoNavigation)
-            .OrderBy(v => v.codigo)
-            .ToListAsync(cancellationToken);
-
-        return entities.Select(v =>
-        {
-            string? procedencia = null;
-            var g = v.granja;
-            if (g is not null)
-            {
-                var d = g.distrito_codigoNavigation;
-                var p = d?.provincia_codigoNavigation;
-                var dep = p?.departamento_codigoNavigation;
-                procedencia = string.Join(", ",
-                    new[] { g.nombre, d?.nombre, p?.nombre, dep?.nombre }
-                    .Where(s => !string.IsNullOrWhiteSpace(s)));
-            }
-            return (ToDomain(v), procedencia);
-        }).ToList();
+        return entities.Select(VacunoPersistenceMapper.ToDomain).ToList();
     }
 
     public async Task<Vacuno?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
@@ -72,7 +32,7 @@ public sealed class VacunoRepository : IVacunoRepository, IVacunoQueryRepository
             .AsNoTracking()
             .FirstOrDefaultAsync(v => v.id == id && v.deleted_at == null, cancellationToken);
 
-        return entity is null ? null : ToDomain(entity);
+        return entity is null ? null : VacunoPersistenceMapper.ToDomain(entity);
     }
 
     public async Task<Vacuno?> GetByCodigoAsync(string codigo, CancellationToken cancellationToken = default)
@@ -81,7 +41,7 @@ public sealed class VacunoRepository : IVacunoRepository, IVacunoQueryRepository
             .AsNoTracking()
             .FirstOrDefaultAsync(v => v.codigo == codigo.Trim() && v.deleted_at == null, cancellationToken);
 
-        return entity is null ? null : ToDomain(entity);
+        return entity is null ? null : VacunoPersistenceMapper.ToDomain(entity);
     }
 
     public async Task<bool> ExistsAsync(long id, CancellationToken cancellationToken = default)
@@ -95,10 +55,10 @@ public sealed class VacunoRepository : IVacunoRepository, IVacunoQueryRepository
 
     public async Task<Vacuno> AddAsync(Vacuno vacuno, CancellationToken cancellationToken = default)
     {
-        var entity = ToEntity(vacuno);
+        var entity = VacunoPersistenceMapper.ToEntity(vacuno);
         _context.vacunos.Add(entity);
         await _context.SaveChangesAsync(cancellationToken);
-        return ToDomain(entity);
+        return VacunoPersistenceMapper.ToDomain(entity);
     }
 
     public async Task<Vacuno> UpdateAsync(Vacuno vacuno, CancellationToken cancellationToken = default)
@@ -124,192 +84,6 @@ public sealed class VacunoRepository : IVacunoRepository, IVacunoQueryRepository
         entity.motivo_eliminacion = vacuno.MotivoEliminacion;
 
         await _context.SaveChangesAsync(cancellationToken);
-        return ToDomain(entity);
-    }
-
-    private static Entities.vacuno ToEntity(Vacuno domain)
-        => new()
-        {
-            codigo = domain.Codigo,
-            nombre = domain.Nombre,
-            fecha_nacimiento = domain.FechaNacimiento,
-            tipo_adquisicion_code = domain.TipoAdquisicionCode,
-            raza_code = domain.RazaCode,
-            color_code = domain.ColorCode,
-            sexo_code = domain.SexoCode,
-            padre_id = domain.PadreId,
-            madre_id = domain.MadreId,
-            granja_id = domain.GranjaId,
-            observaciones = domain.Observaciones,
-            fecha_registro = domain.FechaRegistro,
-            created_by = domain.CreatedBy,
-            updated_by = domain.UpdatedBy,
-            deleted_by = domain.DeletedBy,
-            created_at = domain.CreatedAt,
-            updated_at = domain.UpdatedAt,
-            deleted_at = domain.DeletedAt,
-            motivo_eliminacion = domain.MotivoEliminacion
-        };
-
-    private static Vacuno ToDomain(Entities.vacuno entity)
-    {
-        return Vacuno.Rehydrate(
-            id: entity.id,
-            codigo: entity.codigo,
-            nombre: entity.nombre,
-            fechaNacimiento: entity.fecha_nacimiento,
-            tipoAdquisicionCode: entity.tipo_adquisicion_code,
-            razaCode: entity.raza_code,
-            colorCode: entity.color_code,
-            sexoCode: entity.sexo_code,
-            padreId: entity.padre_id,
-            madreId: entity.madre_id,
-            granjaId: entity.granja_id,
-            observaciones: entity.observaciones,
-            numChip: null,
-            fechaRegistro: entity.fecha_registro,
-            createdAt: entity.created_at,
-            updatedAt: entity.updated_at,
-            deletedAt: entity.deleted_at,
-            motivoEliminacion: entity.motivo_eliminacion,
-            createdBy: entity.created_by,
-            updatedBy: entity.updated_by,
-            deletedBy: entity.deleted_by);
-    }
-
-    public async Task<VacunoNodoDto?> GetArbolGenealogicoAsync(long vacunoId, int niveles)
-    {
-        if (_context.Database.IsSqlServer())
-        {
-            return await GetArbolSqlAsync(vacunoId, niveles);
-        }
-        else
-        {
-            return await GetArbolInMemoryAsync(vacunoId, niveles);
-        }
-    }
-
-    private async Task<VacunoNodoDto?> GetArbolSqlAsync(long vacunoId, int niveles)
-    {
-        var sql = @"
-            WITH Ancestros AS (
-                -- Nivel 0: El vacuno raíz
-                SELECT 
-                    v.id, v.codigo, v.nombre, v.raza_code, v.sexo_code,
-                    v.padre_id, v.madre_id, 0 AS Nivel
-                FROM vacuno v
-                WHERE v.id = {0} AND v.deleted_at IS NULL
-
-                UNION ALL
-
-                -- Niveles > 0: Padres y Madres
-                SELECT 
-                    p.id, p.codigo, p.nombre, p.raza_code, p.sexo_code,
-                    p.padre_id, p.madre_id, a.Nivel + 1
-                FROM Ancestros a
-                JOIN vacuno p ON (a.padre_id = p.id OR a.madre_id = p.id)
-                WHERE p.deleted_at IS NULL AND a.Nivel < {1}
-            )
-            SELECT DISTINCT 
-                a.id as Id, 
-                a.codigo as Codigo, 
-                a.nombre as Nombre, 
-                ISNULL(r.nombre, a.raza_code) as Raza, 
-                a.sexo_code as Sexo, 
-                a.padre_id as PadreId, 
-                a.madre_id as MadreId, 
-                a.Nivel as Nivel
-            FROM Ancestros a
-            LEFT JOIN cat_raza r ON a.raza_code = r.code;
-        ";
-
-        var ancestrosPlano = await _context.Database.SqlQueryRaw<AncestroDbDto>(sql, vacunoId, niveles).ToListAsync();
-        var arbolDb = ConstruirArbol(ancestrosPlano, vacunoId, 0, niveles);
-        return MapearADtoApplication(arbolDb);
-    }
-
-    private async Task<VacunoNodoDto?> GetArbolInMemoryAsync(long vacunoId, int niveles)
-    {
-        var vacunosInMemory = await _context.vacunos
-            .Include(v => v.raza_codeNavigation)
-            .Where(v => v.deleted_at == null)
-            .ToListAsync();
-
-        var flatList = new List<AncestroDbDto>();
-        void RecorrerMemoria(long id, int nivelActual)
-        {
-            if (nivelActual > niveles) return;
-            var v = vacunosInMemory.FirstOrDefault(x => x.id == id);
-            if (v == null || flatList.Any(f => f.Id == id)) return;
-
-            flatList.Add(new AncestroDbDto
-            {
-                Id = v.id,
-                Codigo = v.codigo,
-                Nombre = v.nombre,
-                Raza = v.raza_codeNavigation?.nombre ?? v.raza_code,
-                Sexo = v.sexo_code,
-                PadreId = v.padre_id,
-                MadreId = v.madre_id,
-                Nivel = nivelActual
-            });
-
-            if (v.padre_id.HasValue) RecorrerMemoria(v.padre_id.Value, nivelActual + 1);
-            if (v.madre_id.HasValue) RecorrerMemoria(v.madre_id.Value, nivelActual + 1);
-        }
-
-        RecorrerMemoria(vacunoId, 0);
-        var arbolDb = ConstruirArbol(flatList, vacunoId, 0, niveles);
-        return MapearADtoApplication(arbolDb);
-    }
-
-    private AncestroDbDto? ConstruirArbol(List<AncestroDbDto> planos, long actualId, int nivelActual, int maxNiveles)
-    {
-        if (nivelActual > maxNiveles) return null;
-
-        var dict = planos.ToDictionary(p => p.Id);
-        return ConstruirNodo(dict, actualId, nivelActual, maxNiveles);
-    }
-
-    private AncestroDbDto? ConstruirNodo(Dictionary<long, AncestroDbDto> dict, long actualId, int nivelActual, int maxNiveles)
-    {
-        if (nivelActual > maxNiveles) return null;
-
-        if (!dict.TryGetValue(actualId, out var nodoDb)) return null;
-
-        var nodoCopia = new AncestroDbDto
-        {
-            Id = nodoDb.Id,
-            Codigo = nodoDb.Codigo,
-            Nombre = nodoDb.Nombre,
-            Raza = nodoDb.Raza,
-            Sexo = nodoDb.Sexo,
-            Nivel = nivelActual
-        };
-
-        if (nodoDb.PadreId.HasValue)
-            nodoCopia.Padre = ConstruirNodo(dict, nodoDb.PadreId.Value, nivelActual + 1, maxNiveles);
-
-        if (nodoDb.MadreId.HasValue)
-            nodoCopia.Madre = ConstruirNodo(dict, nodoDb.MadreId.Value, nivelActual + 1, maxNiveles);
-
-        return nodoCopia;
-    }
-
-    private VacunoNodoDto? MapearADtoApplication(AncestroDbDto? dbDto)
-    {
-        if (dbDto == null) return null;
-
-        return new VacunoNodoDto
-        {
-            Id = dbDto.Id,
-            Codigo = dbDto.Codigo,
-            Nombre = dbDto.Nombre,
-            Raza = dbDto.Raza,
-            Sexo = dbDto.Sexo,
-            Nivel = dbDto.Nivel,
-            Padre = MapearADtoApplication(dbDto.Padre),
-            Madre = MapearADtoApplication(dbDto.Madre)
-        };
+        return VacunoPersistenceMapper.ToDomain(entity);
     }
 }

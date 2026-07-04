@@ -4,6 +4,10 @@ using ZooTech.Application.Modules.Module_Celo.UseCases.CreateCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.DeleteCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetCelos;
 using ZooTech.Application.Modules.Module_Celo.UseCases.UpdateCelo;
+using ZooTech.Application.Modules.Module_Fecundacion.UseCases.GetFecundacionForEdit;
+using ZooTech.Application.Modules.Module_Fecundacion.UseCases.GetFecundacionOptions;
+using ZooTech.Application.Modules.Module_Fecundacion.UseCases.SearchFecundacionVacunos;
+using ZooTech.Application.Modules.Module_Fecundacion.UseCases.UpdateFecundacion;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.CreateTriaje;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.DeleteTriaje;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllTipoPesos;
@@ -16,6 +20,7 @@ using ZooTech.Application.Modules.Module_Vacuno.UseCases.CreateVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetVacunoById;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ListarVacunosReporte;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.UpdateVacuno;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.CreateOrdenio;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.DeleteOrdenio;
@@ -23,7 +28,7 @@ using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GetOr
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.ListOrdenios;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.UpdateOrdenio;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GenerarArbolGenealogico;
-using ZooTech.Application.Modules.Module_Fecundacion.UseCases.CreateFecundacion;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunosPaginado;
 
 namespace ZooTech.Application;
 
@@ -67,6 +72,14 @@ public static class DependencyInjection
         services.AddScoped<IDeleteCeloInputPort, DeleteCeloInteractor>();
 
         // ============================================
+        // Use Cases - Module_Fecundacion
+        // ============================================
+        services.AddScoped<IGetFecundacionForEditInputPort, GetFecundacionForEditInteractor>();
+        services.AddScoped<IGetFecundacionOptionsInputPort, GetFecundacionOptionsInteractor>();
+        services.AddScoped<ISearchFecundacionVacunosInputPort, SearchFecundacionVacunosInteractor>();
+        services.AddScoped<IUpdateFecundacionInputPort, UpdateFecundacionInteractor>();
+
+        // ============================================
         // Use Cases - Module_Vacuno
         // ============================================
         services.AddScoped<IListarVacunosInputPort, ListarVacunosInteractor>();
@@ -74,12 +87,14 @@ public static class DependencyInjection
         services.AddScoped<IGetVacunoByIdInputPort, GetVacunoByIdInteractor>();
         services.AddScoped<IUpdateVacunoInputPort, UpdateVacunoInteractor>();
         services.AddScoped<IDeleteVacunoInputPort, DeleteVacunoInteractor>();
-        services.AddScoped<IGenerarArbolGenealogicoInputPort, GenerarArbolGenealogicoInteractor>();
+        services.AddScoped<ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte.IObtenerRegistroVacunoReporteUseCase, ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte.ObtenerRegistroVacunoReporteUseCase>();
+        services.AddScoped<IListarVacunosReporteUseCase, ListarVacunosReporteUseCase>();
 
         // ============================================
-        // Use Cases - Module_Fecundacion
+        // Use Cases - Module_Vacuno (listado paginado/genealogia)
         // ============================================
-        services.AddScoped<ICreateFecundacionInputPort, CreateFecundacionInteractor>();
+        services.AddScoped<IListarVacunosPaginadoInputPort, ListarVacunosPaginadoInteractor>();
+        services.AddScoped<IGenerarArbolGenealogicoInputPort, GenerarArbolGenealogicoInteractor>();
 
         return services;
     }

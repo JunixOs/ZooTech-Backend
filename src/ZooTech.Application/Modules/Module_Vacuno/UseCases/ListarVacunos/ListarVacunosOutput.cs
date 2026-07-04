@@ -5,6 +5,7 @@ public sealed record VacunoItemDto(
     string Codigo,
     string Nombre,
     DateOnly FechaNacimiento,
+    DateOnly FechaRegistro,
     string RazaCode,
     string SexoCode,
     string? Procedencia,

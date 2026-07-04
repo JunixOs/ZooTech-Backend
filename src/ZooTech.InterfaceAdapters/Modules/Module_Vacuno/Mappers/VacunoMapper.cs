@@ -17,6 +17,7 @@ internal static class VacunoMapper
             Codigo: item.Codigo,
             Nombre: item.Nombre,
             FechaNacimiento: item.FechaNacimiento,
+            FechaRegistro: item.FechaRegistro,
             RazaCode: item.RazaCode,
             SexoCode: item.SexoCode,
             Procedencia: item.Procedencia,

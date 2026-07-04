@@ -4,27 +4,48 @@ namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
 
 public sealed class ListarVacunosInteractor : IListarVacunosInputPort
 {
-    private readonly IVacunoRepository _vacunoRepository;
+    private readonly IVacunoListadoReadRepository _repository;
 
-    public ListarVacunosInteractor(IVacunoRepository vacunoRepository)
+    public ListarVacunosInteractor(IVacunoListadoReadRepository repository)
     {
-        _vacunoRepository = vacunoRepository;
+        _repository = repository;
     }
 
-    public async Task<ListarVacunosOutput> HandleAsync(CancellationToken cancellationToken = default)
+    public async Task<ListarVacunosOutput> HandleAsync(
+        ListarVacunosQuery? query = null,
+        CancellationToken cancellationToken = default)
     {
-        var vacunos = await _vacunoRepository.ListAllForDisplayAsync(cancellationToken);
+        var vacunos = await _repository.ListarAsync(
+            new VacunoListadoReadQuery(
+                Normalize(query?.Q),
+                NormalizeEstado(query?.Estado),
+                query?.FechaDesde,
+                query?.FechaHasta),
+            cancellationToken);
 
         var items = vacunos.Select(x => new VacunoItemDto(
-            Id: x.Vacuno.Id,
-            Codigo: x.Vacuno.Codigo,
-            Nombre: x.Vacuno.Nombre,
-            FechaNacimiento: x.Vacuno.FechaNacimiento,
-            RazaCode: x.Vacuno.RazaCode,
-            SexoCode: x.Vacuno.SexoCode,
+            Id: x.Id,
+            Codigo: x.Codigo,
+            Nombre: x.Nombre,
+            FechaNacimiento: x.FechaNacimiento,
+            FechaRegistro: x.FechaRegistro,
+            RazaCode: x.RazaCode,
+            SexoCode: x.SexoCode,
             Procedencia: x.Procedencia,
-            IsDeleted: x.Vacuno.IsDeleted)).ToList();
+            IsDeleted: x.IsDeleted)).ToList();
 
         return new ListarVacunosOutput(items);
+    }
+
+    private static string? Normalize(string? value)
+    {
+        var normalized = value?.Trim();
+        return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
+    }
+
+    private static string? NormalizeEstado(string? value)
+    {
+        var normalized = Normalize(value)?.ToLowerInvariant();
+        return normalized is "activo" or "eliminado" ? normalized : null;
     }
 }

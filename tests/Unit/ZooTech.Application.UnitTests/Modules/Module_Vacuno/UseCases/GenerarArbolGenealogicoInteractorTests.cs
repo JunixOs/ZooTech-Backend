@@ -2,14 +2,14 @@ using Moq;
 using Xunit;
 using ZooTech.Application.Common.Gateway.Context;
 using ZooTech.Application.Common.Gateway.Features;
-using ZooTech.Application.Modules.Module_Vacuno.Common;
+using ZooTech.Application.Common.Gateway.Repositories;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GenerarArbolGenealogico;
 
 namespace ZooTech.Application.UnitTests.Modules.Module_Vacuno.UseCases;
 
 public class GenerarArbolGenealogicoInteractorTests
 {
-    private readonly Mock<IVacunoQueryRepository> _repositoryMock;
+    private readonly Mock<IVacunoRepository> _repositoryMock;
     private readonly Mock<IGenerarArbolGenealogicoOutputPort> _outputMock;
     private readonly Mock<IFeatureService> _featuresMock;
     private readonly Mock<ITenantContext> _tenantMock;
@@ -17,7 +17,7 @@ public class GenerarArbolGenealogicoInteractorTests
 
     public GenerarArbolGenealogicoInteractorTests()
     {
-        _repositoryMock = new Mock<IVacunoQueryRepository>();
+        _repositoryMock = new Mock<IVacunoRepository>();
         _outputMock = new Mock<IGenerarArbolGenealogicoOutputPort>();
         _featuresMock = new Mock<IFeatureService>();
         _tenantMock = new Mock<ITenantContext>();

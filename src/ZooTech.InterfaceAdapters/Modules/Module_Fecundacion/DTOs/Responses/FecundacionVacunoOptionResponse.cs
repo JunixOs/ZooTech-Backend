@@ -1,6 +1,7 @@
 namespace ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.DTOs.Responses;
 
-public sealed record CreateFecundacionResponse(
+public sealed record FecundacionVacunoOptionResponse(
     long Id,
     string Codigo,
-    DateTime FechaProcedimiento);
+    string Nombre,
+    string Sexo);

@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using ZooTech.Application;
 using ZooTech.Infrastructure;
 using ZooTech.InterfaceAdapters;
@@ -81,8 +82,20 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+var storagePath = Path.Combine(AppContext.BaseDirectory, "storage");
+if (!Directory.Exists(storagePath))
+{
+    Directory.CreateDirectory(storagePath);
+}
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(storagePath),
+    RequestPath = "/api/v1/storage"
+});
+
 app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 
@@ -108,5 +121,38 @@ app.Use(async (context, next) =>
 });
 app.UseAuthorization();
 app.MapControllers();
+
+// ==========================================
+// CÓDIGO DE CALENTAMIENTO (WARM-UP)
+// ==========================================
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILoggerFactory>().CreateLogger("WarmUp");
+    
+    try
+    {
+        logger.LogInformation("Iniciando calentamiento del modelo de Entity Framework Core...");
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        
+        var db = services.GetRequiredService<ZooTech.Infrastructure.Persistence.Context.GanaderiaDbContext>();
+        
+        if (await db.Database.CanConnectAsync())
+        {
+            await db.vacunos.AnyAsync();
+            sw.Stop();
+            logger.LogInformation("¡Calentamiento de Entity Framework completado con éxito en {ElapsedMs}ms!", sw.ElapsedMilliseconds);
+        }
+        else
+        {
+            sw.Stop();
+            logger.LogWarning("No se pudo establecer conexión con la base de datos durante el calentamiento. Duración: {ElapsedMs}ms.", sw.ElapsedMilliseconds);
+        }
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Ocurrió un error inesperado al calentar Entity Framework.");
+    }
+}
 
 app.Run();

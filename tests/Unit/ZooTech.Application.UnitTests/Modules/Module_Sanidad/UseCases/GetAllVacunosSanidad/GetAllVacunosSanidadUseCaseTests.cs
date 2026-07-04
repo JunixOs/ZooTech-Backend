@@ -69,7 +69,6 @@ public class GetAllVacunosSanidadUseCaseTests
             madreId: null,
             granjaId: 1,
             observaciones: null,
-            numChip: null,
             fechaRegistro: DateOnly.FromDateTime(now),
             createdAt: now,
             updatedAt: now,
