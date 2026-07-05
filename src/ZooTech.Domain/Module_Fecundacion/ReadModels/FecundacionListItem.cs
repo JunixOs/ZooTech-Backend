@@ -8,4 +8,5 @@ public sealed record FecundacionListItem(
     DateOnly FechaProcedimiento,
     string Responsable,
     string Resultado,
+    string? NombreDonante,
     string? Observaciones);

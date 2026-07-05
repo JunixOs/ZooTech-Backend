@@ -25,9 +25,9 @@ public sealed class CreateCeloInteractor : ICreateCeloInputPort
         if (!await _celoRepository.ExistsVacunoAsync(command.VacunoId, cancellationToken))
             throw new ConflictException($"El vacuno con ID {command.VacunoId} no existe.");
 
-        var codigo = $"CELO-{DateTime.UtcNow:yyyyMMddHHmmss}";
+        var codigo = $"C{DateTime.UtcNow:yyMMddHHmmss}";
         if (await _celoRepository.ExistsCodigoAsync(codigo, cancellationToken))
-            codigo = $"CELO-{DateTime.UtcNow:yyyyMMddHHmmssfff}";
+            codigo = $"C{DateTime.UtcNow:yyMMddHHmmssff}";
 
         var utcNow = DateTime.UtcNow;
 

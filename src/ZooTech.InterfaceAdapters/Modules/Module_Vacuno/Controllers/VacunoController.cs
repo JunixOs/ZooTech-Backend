@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 using System.Net;
 using System.Text;
+using ZooTech.Application.Modules.Animals.UseCases.ReportAnimalList;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.CreateVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetArbolGenealogico;
@@ -33,6 +34,8 @@ public sealed class VacunoController : ControllerBase
     private readonly IExportarArbolGenealogicoInputPort _exportarArbolInputPort;
     private readonly IVacunoRepository _vacunoRepository;
     private readonly IGetArbolGenealogicoInputPort _getArbolGenealogicoInputPort;
+    private readonly IAnimalReportExcelService _animalReportExcelService;
+    private readonly IAnimalReportPdfService _animalReportPdfService;
 
     public VacunoController(
         IListarVacunosInputPort listarInputPort,
@@ -42,7 +45,9 @@ public sealed class VacunoController : ControllerBase
         IDeleteVacunoInputPort deleteInputPort,
         IGetArbolGenealogicoInputPort getArbolGenealogicoInputPort,
         IExportarArbolGenealogicoInputPort exportarArbolInputPort,
-        IVacunoRepository vacunoRepository)
+        IVacunoRepository vacunoRepository,
+        IAnimalReportExcelService animalReportExcelService,
+        IAnimalReportPdfService animalReportPdfService)
     {
         _listarInputPort = listarInputPort;
         _createInputPort = createInputPort;
@@ -52,6 +57,8 @@ public sealed class VacunoController : ControllerBase
         _exportarArbolInputPort = exportarArbolInputPort;
         _vacunoRepository = vacunoRepository;
         _getArbolGenealogicoInputPort = getArbolGenealogicoInputPort;
+        _animalReportExcelService = animalReportExcelService;
+        _animalReportPdfService = animalReportPdfService;
     }
 
     [HttpGet]
@@ -145,7 +152,9 @@ public sealed class VacunoController : ControllerBase
         long? padreId = null;
         if (!string.IsNullOrWhiteSpace(request.CodigoPadre))
         {
-            var padre = await db.vacunos.FirstOrDefaultAsync(v => v.codigo == request.CodigoPadre.Trim() && v.deleted_at == null, cancellationToken);
+            var padre = await db.vacunos.FirstOrDefaultAsync(v => v.codigo == request.CodigoPadre.Trim()
+                && v.deleted_at == null
+                && !db.v_vacuno_estado_vigentes.Any(e => e.vacuno_id == v.id && e.estado_code == "MUERTO"), cancellationToken);
             if (padre == null)
             {
                 return BadRequest(new
@@ -161,13 +170,30 @@ public sealed class VacunoController : ControllerBase
                     }
                 });
             }
+            if (!IsMaleSexCode(padre.sexo_code))
+            {
+                return BadRequest(new
+                {
+                    error = new
+                    {
+                        code = "VALIDATION_ERROR",
+                        message = "Los datos enviados no son validos.",
+                        details = new[]
+                        {
+                            new { field = "codigoPadre", message = "El padre debe ser un vacuno macho activo." }
+                        }
+                    }
+                });
+            }
             padreId = padre.id;
         }
 
         long? madreId = null;
         if (!string.IsNullOrWhiteSpace(request.CodigoMadre))
         {
-            var madre = await db.vacunos.FirstOrDefaultAsync(v => v.codigo == request.CodigoMadre.Trim() && v.deleted_at == null, cancellationToken);
+            var madre = await db.vacunos.FirstOrDefaultAsync(v => v.codigo == request.CodigoMadre.Trim()
+                && v.deleted_at == null
+                && !db.v_vacuno_estado_vigentes.Any(e => e.vacuno_id == v.id && e.estado_code == "MUERTO"), cancellationToken);
             if (madre == null)
             {
                 return BadRequest(new
@@ -179,6 +205,21 @@ public sealed class VacunoController : ControllerBase
                         details = new[]
                         {
                             new { field = "codigoMadre", message = "El vacuno madre especificado no existe." }
+                        }
+                    }
+                });
+            }
+            if (!IsFemaleSexCode(madre.sexo_code))
+            {
+                return BadRequest(new
+                {
+                    error = new
+                    {
+                        code = "VALIDATION_ERROR",
+                        message = "Los datos enviados no son validos.",
+                        details = new[]
+                        {
+                            new { field = "codigoMadre", message = "La madre debe ser un vacuno hembra activo." }
                         }
                     }
                 });
@@ -338,7 +379,9 @@ public sealed class VacunoController : ControllerBase
         long? padreId = null;
         if (!string.IsNullOrWhiteSpace(request.CodigoPadre))
         {
-            var padre = await db.vacunos.FirstOrDefaultAsync(v => v.codigo == request.CodigoPadre.Trim() && v.deleted_at == null, cancellationToken);
+            var padre = await db.vacunos.FirstOrDefaultAsync(v => v.codigo == request.CodigoPadre.Trim()
+                && v.deleted_at == null
+                && !db.v_vacuno_estado_vigentes.Any(e => e.vacuno_id == v.id && e.estado_code == "MUERTO"), cancellationToken);
             if (padre == null)
             {
                 return BadRequest(new
@@ -354,13 +397,30 @@ public sealed class VacunoController : ControllerBase
                     }
                 });
             }
+            if (!IsMaleSexCode(padre.sexo_code))
+            {
+                return BadRequest(new
+                {
+                    error = new
+                    {
+                        code = "VALIDATION_ERROR",
+                        message = "Los datos enviados no son validos.",
+                        details = new[]
+                        {
+                            new { field = "codigoPadre", message = "El padre debe ser un vacuno macho activo." }
+                        }
+                    }
+                });
+            }
             padreId = padre.id;
         }
 
         long? madreId = null;
         if (!string.IsNullOrWhiteSpace(request.CodigoMadre))
         {
-            var madre = await db.vacunos.FirstOrDefaultAsync(v => v.codigo == request.CodigoMadre.Trim() && v.deleted_at == null, cancellationToken);
+            var madre = await db.vacunos.FirstOrDefaultAsync(v => v.codigo == request.CodigoMadre.Trim()
+                && v.deleted_at == null
+                && !db.v_vacuno_estado_vigentes.Any(e => e.vacuno_id == v.id && e.estado_code == "MUERTO"), cancellationToken);
             if (madre == null)
             {
                 return BadRequest(new
@@ -372,6 +432,21 @@ public sealed class VacunoController : ControllerBase
                         details = new[]
                         {
                             new { field = "codigoMadre", message = "El vacuno madre especificado no existe." }
+                        }
+                    }
+                });
+            }
+            if (!IsFemaleSexCode(madre.sexo_code))
+            {
+                return BadRequest(new
+                {
+                    error = new
+                    {
+                        code = "VALIDATION_ERROR",
+                        message = "Los datos enviados no son validos.",
+                        details = new[]
+                        {
+                            new { field = "codigoMadre", message = "La madre debe ser un vacuno hembra activo." }
                         }
                     }
                 });
@@ -524,6 +599,7 @@ public sealed class VacunoController : ControllerBase
         [FromQuery] string? formato,
         [FromQuery] int? page,
         [FromQuery] int? limit,
+        [FromServices] GanaderiaDbContext db,
         CancellationToken cancellationToken)
     {
         var desde = ParseDateOrNull(fechaDesde);
@@ -533,7 +609,7 @@ public sealed class VacunoController : ControllerBase
             return BadRequest(new { message = "fechaDesde no puede ser mayor que fechaHasta." });
         }
 
-        var rows = await BuildReporteListadoRowsAsync(cancellationToken);
+        var rows = await BuildReporteListadoRowsAsync(db, cancellationToken);
         rows = ApplyReporteListadoFilters(rows, desde, hasta, q, codigo, fechaRegistro, nombre, raza, procedencia, estado);
 
         var normalizedFormato = NormalizeFormat(formato);
@@ -548,7 +624,13 @@ public sealed class VacunoController : ControllerBase
         string? downloadUrl = null;
         if (normalizedFormato is "excel" or "pdf")
         {
-            downloadUrl = await GenerateListadoReportFileAsync(rows, normalizedFormato, cancellationToken);
+            downloadUrl = await GenerateListadoReportFileAsync(
+                rows,
+                normalizedFormato,
+                desde,
+                hasta,
+                q,
+                cancellationToken);
         }
 
         return Ok(new
@@ -616,7 +698,9 @@ public sealed class VacunoController : ControllerBase
 
         var contentType = safeFileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase)
             ? "application/pdf"
-            : "text/csv";
+            : safeFileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase)
+                ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                : "text/csv";
 
         return PhysicalFile(path, contentType, safeFileName);
     }
@@ -743,6 +827,13 @@ public sealed class VacunoController : ControllerBase
             departamentoNombre = granja.distrito_codigoNavigation?.provincia_codigoNavigation?.departamento_codigoNavigation?.nombre;
         }
 
+        var utilizacion = await db.vacuno_utilizacion_historials
+            .AsNoTracking()
+            .Where(u => u.vacuno_id == dto.Id)
+            .OrderByDescending(u => u.created_at)
+            .Select(u => new { u.tipo_utilizacion_code, u.created_at })
+            .FirstOrDefaultAsync(cancellationToken);
+
         return new VacunoResponse(
             dto.Id,
             dto.Codigo,
@@ -751,6 +842,7 @@ public sealed class VacunoController : ControllerBase
             dto.TipoAdquisicionCode,
             dto.RazaCode,
             dto.ColorCode,
+            dto.SexoCode,
             dto.PadreId,
             dto.MadreId,
             dto.GranjaId,
@@ -764,7 +856,9 @@ public sealed class VacunoController : ControllerBase
             distritoNombre,
             provinciaNombre,
             departamentoNombre,
-            codigoDistrito);
+            codigoDistrito,
+            utilizacion?.tipo_utilizacion_code,
+            utilizacion?.created_at);
     }
 
     private async Task<long> ResolveIdAsync(string identifier, CancellationToken cancellationToken)
@@ -783,20 +877,43 @@ public sealed class VacunoController : ControllerBase
         return -1;
     }
 
-    private async Task<List<object>> BuildReporteListadoRowsAsync(CancellationToken cancellationToken)
+    private static bool IsMaleSexCode(string? sexoCode)
+        => string.Equals(sexoCode, "macho", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(sexoCode, "M", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsFemaleSexCode(string? sexoCode)
+        => string.Equals(sexoCode, "hembra", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(sexoCode, "H", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(sexoCode, "F", StringComparison.OrdinalIgnoreCase);
+
+    private async Task<List<object>> BuildReporteListadoRowsAsync(
+        GanaderiaDbContext db,
+        CancellationToken cancellationToken)
     {
         var vacunos = await _vacunoRepository.ListAllForDisplayAsync(cancellationToken);
+        var ids = vacunos.Select(x => x.Vacuno.Id).ToList();
+        var muertos = (await db.v_vacuno_estado_vigentes
+                .AsNoTracking()
+                .Where(e => ids.Contains(e.vacuno_id) && e.estado_code == "MUERTO")
+                .Select(e => e.vacuno_id)
+                .ToListAsync(cancellationToken))
+            .ToHashSet();
 
         return vacunos
             .Select(x => new
             {
                 id = x.Vacuno.Id,
                 codigo = x.Vacuno.Codigo,
+                fechaNacimiento = x.Vacuno.FechaNacimiento.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                 fechaRegistro = x.Vacuno.FechaRegistro.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                 nombre = x.Vacuno.Nombre,
+                tipoAdquisicion = x.Vacuno.TipoAdquisicionCode,
                 raza = x.Vacuno.RazaCode,
+                color = x.Vacuno.ColorCode,
+                sexo = x.Vacuno.SexoCode,
+                granja = x.Procedencia,
                 procedencia = x.Procedencia,
-                estado = x.Vacuno.IsDeleted ? "muerto" : "vivo"
+                estado = x.Vacuno.IsDeleted || muertos.Contains(x.Vacuno.Id) ? "muerto" : "vivo"
             })
             .Cast<object>()
             .ToList();
@@ -898,22 +1015,31 @@ public sealed class VacunoController : ControllerBase
     private async Task<string> GenerateListadoReportFileAsync(
         IReadOnlyCollection<object> rows,
         string formato,
+        DateOnly? fechaDesde,
+        DateOnly? fechaHasta,
+        string? keyword,
         CancellationToken cancellationToken)
     {
-        var fileName = $"reporte_listado_vacunos_{DateTime.UtcNow:yyyyMMddHHmmss}.{(formato == "pdf" ? "pdf" : "csv")}";
+        var fileName = $"reporte_listado_vacunos_{DateTime.UtcNow:yyyyMMddHHmmss}.{(formato == "pdf" ? "pdf" : "xlsx")}";
         var path = Path.Combine(GetReportOutputDirectory(), fileName);
-        var content = BuildListadoReportContent(rows);
+        var output = BuildAnimalListReportOutput(rows, fechaDesde, fechaHasta, keyword);
 
         if (formato == "pdf")
         {
-            await System.IO.File.WriteAllBytesAsync(path, BuildSimplePdf("Reporte listado de vacunos", content), cancellationToken);
+            await System.IO.File.WriteAllBytesAsync(
+                path,
+                _animalReportPdfService.GenerateAnimalListPdf(output),
+                cancellationToken);
         }
         else
         {
-            await System.IO.File.WriteAllTextAsync(path, content, Encoding.UTF8, cancellationToken);
+            await System.IO.File.WriteAllBytesAsync(
+                path,
+                _animalReportExcelService.GenerateAnimalListExcel(output),
+                cancellationToken);
         }
 
-        return $"/api/v1/vacuno/reportes/descargas/{Uri.EscapeDataString(fileName)}";
+        return $"/api/v1/vacunos/reportes/descargas/{Uri.EscapeDataString(fileName)}";
     }
 
     private async Task<string> GenerateRegistroReportFileAsync(
@@ -935,26 +1061,51 @@ public sealed class VacunoController : ControllerBase
             await System.IO.File.WriteAllTextAsync(path, content, Encoding.UTF8, cancellationToken);
         }
 
-        return $"/api/v1/vacuno/reportes/descargas/{Uri.EscapeDataString(fileName)}";
+        return $"/api/v1/vacunos/reportes/descargas/{Uri.EscapeDataString(fileName)}";
     }
 
-    private static string BuildListadoReportContent(IEnumerable<object> rows)
+    private static ReportAnimalListOutput BuildAnimalListReportOutput(
+        IReadOnlyCollection<object> rows,
+        DateOnly? fechaDesde,
+        DateOnly? fechaHasta,
+        string? keyword)
     {
-        var sb = new StringBuilder();
-        sb.AppendLine("Codigo,Registro,Nombre,Raza,Procedencia,Estado");
-
-        foreach (dynamic item in rows)
+        var items = rows.Select(row =>
         {
-            sb.AppendLine(string.Join(",",
-                Csv(item.codigo),
-                Csv(item.fechaRegistro),
-                Csv(item.nombre),
-                Csv(item.raza),
-                Csv(item.procedencia),
-                Csv(item.estado)));
-        }
+            dynamic item = row;
+            var fechaNacimiento = ParseDateOrNull((string?)item.fechaNacimiento)
+                ?? ParseDateOrNull((string?)item.fechaRegistro)
+                ?? DateOnly.FromDateTime(DateTime.UtcNow);
+            var fechaRegistro = ParseDateOrNull((string?)item.fechaRegistro)
+                ?? DateOnly.FromDateTime(DateTime.UtcNow);
 
-        return sb.ToString();
+            return new ReportAnimalListItem(
+                Convert.ToString(item.codigo, CultureInfo.InvariantCulture) ?? string.Empty,
+                Convert.ToString(item.nombre, CultureInfo.InvariantCulture) ?? string.Empty,
+                fechaNacimiento,
+                Convert.ToString(item.tipoAdquisicion, CultureInfo.InvariantCulture) ?? string.Empty,
+                Convert.ToString(item.raza, CultureInfo.InvariantCulture) ?? string.Empty,
+                Convert.ToString(item.color, CultureInfo.InvariantCulture) ?? string.Empty,
+                Convert.ToString(item.sexo, CultureInfo.InvariantCulture) ?? string.Empty,
+                Convert.ToString(item.granja, CultureInfo.InvariantCulture) ?? string.Empty,
+                Convert.ToString(item.estado, CultureInfo.InvariantCulture) ?? string.Empty,
+                fechaRegistro);
+        }).ToList();
+
+        var dates = items.Select(item => item.FechaRegistro).ToList();
+        var fallbackDate = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        return new ReportAnimalListOutput(
+            fechaDesde ?? (dates.Count > 0 ? dates.Min() : fallbackDate),
+            fechaHasta ?? (dates.Count > 0 ? dates.Max() : fallbackDate),
+            string.IsNullOrWhiteSpace(keyword) ? null : keyword.Trim(),
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            items);
     }
 
     private static string BuildRegistroReportContent(object detalle)

@@ -5,6 +5,7 @@ using ZooTech.Domain.Module_Fecundacion.ReadModels;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Persistence.Entities;
 using ZooTech.Application.Modules.Module_Fecundacion.Common;
+using ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.Common;
 using ZooTech.Domain.Module_Fecundacion.Rules;
 
 namespace ZooTech.Infrastructure.Persistence.Modules.Module_Fecundacion.Repositories;
@@ -24,6 +25,8 @@ public sealed class FecundacionRepository : IFecundacionRepository
     {
         var q = _context.fecundacions
             .AsNoTracking()
+            .Where(f => f.observaciones_veterinarias == null ||
+                        !f.observaciones_veterinarias.StartsWith("ANULADO_FECUNDACION:"))
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(query))
@@ -86,8 +89,9 @@ public sealed class FecundacionRepository : IFecundacionRepository
             Tipo: r.tipo_fecundacion_code,
             VacunoReceptor: r.NombreVacunoReceptor,
             FechaProcedimiento: r.fecha_procedimiento,
-            Responsable: r.Responsable,
+            Responsable: r.Responsable ?? string.Empty,
             Resultado: r.resultado_code,
+            NombreDonante: r.NombreDonante,
             Observaciones: null
         )).ToList();
 
@@ -166,6 +170,7 @@ public sealed class FecundacionRepository : IFecundacionRepository
         }
 
         await _context.SaveChangesAsync(cancellationToken);
+        await AddInitialEstadoHistorialAsync(entity, fecundacion.ActorUsuarioId, cancellationToken);
 
         // Retornar entidad de dominio reconstruida con el ID asignado
         return Fecundacion.CreateNew(
@@ -598,6 +603,44 @@ public sealed class FecundacionRepository : IFecundacionRepository
             observaciones = values.ObservacionesVeterinarias?.Trim(),
             created_at = DateTime.UtcNow
         });
+    }
+
+    private async Task AddInitialEstadoHistorialAsync(
+        fecundacion entity,
+        long? actorUsuarioId,
+        CancellationToken cancellationToken)
+    {
+        var estadoInicialCode = await _context.cat_estado_fecundacion_vacunos
+            .AsNoTracking()
+            .Where(e =>
+                e.nombre == FecundacionEstadoConstants.EnEspera ||
+                e.code == "en_espera" ||
+                e.code == "EN_ESPERA" ||
+                e.nombre == FecundacionEstadoConstants.Pendiente ||
+                e.code == "PENDIENTE" ||
+                e.code == "PEND")
+            .OrderByDescending(e => e.nombre == FecundacionEstadoConstants.EnEspera || e.code == "en_espera")
+            .ThenByDescending(e => e.nombre == FecundacionEstadoConstants.Pendiente)
+            .ThenBy(e => e.code)
+            .Select(e => e.code)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (string.IsNullOrWhiteSpace(estadoInicialCode))
+            return;
+
+        var now = DateTime.UtcNow;
+        _context.vacuno_estado_fecundacion_historials.Add(new vacuno_estado_fecundacion_historial
+        {
+            vacuno_id = entity.vacuno_receptor_id,
+            fecundacion_id = entity.id,
+            estado_fecundacion_code = estadoInicialCode,
+            fecha_actualizacion = DateOnly.FromDateTime(now),
+            observaciones = entity.observaciones_veterinarias,
+            created_by = actorUsuarioId,
+            created_at = now
+        });
+
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
     private static bool IsSexo(string code, string nombre, string expected)

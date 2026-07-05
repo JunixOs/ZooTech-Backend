@@ -50,7 +50,7 @@ public static class FecundacionMapper
             Responsable: item.Responsable,
             TipoFecundacion: item.Tipo,
             CodigoResultado: item.Resultado,
-            NombreDonante: null);
+            NombreDonante: item.NombreDonante ?? "Sin Donante Registrado");
 
     // ===== DE ÉL — aditivo =====
     public static UpdateFecundacionCommand ToCommand(

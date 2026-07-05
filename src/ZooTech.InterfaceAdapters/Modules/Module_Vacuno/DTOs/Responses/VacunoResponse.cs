@@ -10,6 +10,7 @@ public sealed record VacunoResponse(
     string TipoAdquisicionCode,
     string RazaCode,
     string ColorCode,
+    string SexoCode,
     long? PadreId,
     long? MadreId,
     long GranjaId,
@@ -23,4 +24,6 @@ public sealed record VacunoResponse(
     string? Distrito,
     string? Departamento,
     string? Provincia,
-    string? CodigoDistrito);
+    string? CodigoDistrito,
+    string? AptoPara,
+    DateTime? FechaUtilizacion);

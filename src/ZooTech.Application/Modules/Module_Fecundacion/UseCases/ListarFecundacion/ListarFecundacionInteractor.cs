@@ -20,15 +20,9 @@ public sealed class ListarFecundacionInteractor : IListarFecundacionInputPort
     public async Task<ListarFecundacionOutput> HandleAsync(
         ListarFecundacionCommand command, CancellationToken cancellationToken = default)
     {
-        var fechaDesde = command.FechaDesde;
-        if (!fechaDesde.HasValue && !command.FechaHasta.HasValue)
-        {
-            fechaDesde = DateTime.UtcNow.AddDays(-_settings.DefaultFilterDays);
-        }
-
         var (items, totalCount) = await _fecundacionRepository.GetPagedAsync(
             command.Query,
-            fechaDesde,
+            command.FechaDesde,
             command.FechaHasta,
             command.Resultado,
             command.Page,

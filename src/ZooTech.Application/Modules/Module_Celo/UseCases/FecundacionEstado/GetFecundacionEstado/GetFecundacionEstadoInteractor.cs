@@ -35,6 +35,7 @@ public sealed class GetFecundacionEstadoInteractor : IGetFecundacionEstadoInputP
 
         return new GetFecundacionEstadoOutput(
             snapshot.VacunoId,
+            snapshot.FecundacionId,
             snapshot.CodigoVacuno,
             snapshot.NombreVacuno,
             snapshot.EstadoActual,
