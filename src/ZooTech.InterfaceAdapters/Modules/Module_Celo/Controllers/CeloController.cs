@@ -5,6 +5,7 @@ using ZooTech.Application.Modules.Module_Celo.UseCases.DeleteCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetCelos;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetComparacionCelosRealVsEstandar;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetReporteCelos;
+using ZooTech.Application.Modules.Module_Celo.UseCases.GetVacasEnCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.UpdateCelo;
 using ZooTech.InterfaceAdapters.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.DTOs.Requests;
@@ -24,6 +25,7 @@ public sealed class CeloController : ControllerBase
     private readonly IUpdateCeloInputPort _updateCeloInputPort;
     private readonly IDeleteCeloInputPort _deleteCeloInputPort;
     private readonly IGetComparacionCelosRealVsEstandarInputPort _getComparacionInputPort;
+    private readonly IGetVacasEnCeloInputPort _getVacasEnCeloInputPort;
 
     public CeloController(
         IGetCelosInputPort getCelosInputPort,
@@ -31,7 +33,8 @@ public sealed class CeloController : ControllerBase
         ICreateCeloInputPort createCeloInputPort,
         IUpdateCeloInputPort updateCeloInputPort,
         IDeleteCeloInputPort deleteCeloInputPort,
-        IGetComparacionCelosRealVsEstandarInputPort getComparacionInputPort)
+        IGetComparacionCelosRealVsEstandarInputPort getComparacionInputPort,
+        IGetVacasEnCeloInputPort getVacasEnCeloInputPort)
     {
         _getCelosInputPort = getCelosInputPort;
         _getReporteCelosInputPort = getReporteCelosInputPort;
@@ -39,6 +42,7 @@ public sealed class CeloController : ControllerBase
         _updateCeloInputPort = updateCeloInputPort;
         _deleteCeloInputPort = deleteCeloInputPort;
         _getComparacionInputPort = getComparacionInputPort;
+        _getVacasEnCeloInputPort = getVacasEnCeloInputPort;
     }
 
     [HttpGet]
@@ -105,23 +109,20 @@ public sealed class CeloController : ControllerBase
     }
 
     [HttpGet("vacas-en-celo")]
-    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetVacasEnCelo(CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(GeneralResponseDTO<List<VacaEnCeloResponse>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetVacasEnCelo(
+        [FromQuery] DateTime? fechaInicio,
+        [FromQuery] DateTime? fechaFin,
+        CancellationToken cancellationToken)
     {
-        var output = await _getCelosInputPort.HandleAsync(cancellationToken);
+        var output = await _getVacasEnCeloInputPort.HandleAsync(
+            fechaInicio,
+            fechaFin,
+            cancellationToken);
 
-        var response = output.Items.Select((item, index) => new
-        {
-            id = index + 1,
-            codigo = item.CodigoVacuno,
-            nombre = item.NombreVacuno,
-            diasRestante = 0,
-            estado = "En celo",
-            vecesEnCelo = item.VecesEnCelo,
-            crias = 0
-        }).ToList();
+        var response = output.Items.Select(item => CeloMapper.ToResponse(item)).ToList();
 
-        return Ok(GeneralResponseDTO<object>.Ok(response));
+        return Ok(GeneralResponseDTO<List<VacaEnCeloResponse>>.Ok(response));
     }
 
     [HttpGet("reportes/comparacion-real-vs-estandar")]

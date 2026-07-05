@@ -1,11 +1,12 @@
 using ZooTech.Application.Modules.Module_Celo.UseCases.CreateCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.DeleteCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetCelos;
+using ZooTech.Application.Modules.Module_Celo.UseCases.GetComparacionCelosRealVsEstandar;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetReporteCelos;
+using ZooTech.Application.Modules.Module_Celo.UseCases.GetVacasEnCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.UpdateCelo;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.DTOs.Responses;
-using ZooTech.Application.Modules.Module_Celo.UseCases.GetComparacionCelosRealVsEstandar;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_Celo.Mappers;
 
@@ -90,6 +91,20 @@ internal static class CeloMapper
             Fecha = item.Fecha,
             RegistrosReales = item.RegistrosReales,
             RegistrosEstandar = item.RegistrosEstandar
+        };
+    }
+
+    public static VacaEnCeloResponse ToResponse(VacaEnCeloDto item)
+    {
+        return new VacaEnCeloResponse
+        {
+            Id = item.VacunoId,
+            Codigo = item.Codigo,
+            Nombre = item.Nombre,
+            DiasRestante = item.DiasRestante,
+            Estado = item.Estado,
+            VecesEnCelo = item.VecesEnCelo,
+            Crias = item.Crias
         };
     }
 }

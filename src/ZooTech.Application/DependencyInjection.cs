@@ -5,6 +5,7 @@ using ZooTech.Application.Modules.Module_Celo.UseCases.DeleteCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetCelos;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetComparacionCelosRealVsEstandar;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetReporteCelos;
+using ZooTech.Application.Modules.Module_Celo.UseCases.GetVacasEnCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.UpdateCelo;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.CreateTriaje;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.DeleteTriaje;
@@ -65,6 +66,7 @@ public static class DependencyInjection
         services.AddScoped<IGetCelosInputPort, GetCelosInteractor>();
         services.AddScoped<IGetReporteCelosInputPort, GetReporteCelosInteractor>();
         services.AddScoped<IGetComparacionCelosRealVsEstandarInputPort, GetComparacionCelosRealVsEstandarInteractor>();
+        services.AddScoped<IGetVacasEnCeloInputPort, GetVacasEnCeloInteractor>();
         services.AddScoped<ICreateCeloInputPort, CreateCeloInteractor>();
         services.AddScoped<IUpdateCeloInputPort, UpdateCeloInteractor>();
         services.AddScoped<IDeleteCeloInputPort, DeleteCeloInteractor>();
