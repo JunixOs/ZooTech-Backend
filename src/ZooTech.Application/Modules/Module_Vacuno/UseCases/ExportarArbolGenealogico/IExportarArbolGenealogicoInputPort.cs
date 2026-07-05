@@ -1,6 +1,3 @@
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarArbolGenealogico;
 
 public interface IExportarArbolGenealogicoInputPort

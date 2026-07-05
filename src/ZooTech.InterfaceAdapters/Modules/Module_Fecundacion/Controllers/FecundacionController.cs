@@ -1,15 +1,10 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.CreateFecundacion;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.DeleteFecundacion;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.GetFecundacionForEdit;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.GetFecundacionOptions;
-using ZooTech.Application.Modules.Module_Fecundacion.UseCases.ListarFecundacionesPaginado;
+using ZooTech.Application.Modules.Module_Fecundacion.UseCases.ListarFecundacion;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.SearchFecundacionVacunos;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.UpdateFecundacion;
 using ZooTech.InterfaceAdapters.DTOs;
@@ -22,111 +17,74 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.Controllers;
 
 [ApiController]
 [Route("api/v1/fecundaciones")]
-[Route("api/v1/fecundacion")]
 [ApiExplorerSettings(GroupName = "public")]
 public sealed class FecundacionController : ControllerBase
 {
     private readonly ICreateFecundacionInputPort _createInputPort;
+    private readonly IListarFecundacionInputPort _listarFecundacionInputPort;
     private readonly IGetFecundacionForEditInputPort _getForEditInputPort;
     private readonly IGetFecundacionOptionsInputPort _getOptionsInputPort;
     private readonly ISearchFecundacionVacunosInputPort _searchVacunosInputPort;
     private readonly IUpdateFecundacionInputPort _updateInputPort;
-    private readonly IListarFecundacionesPaginadoInputPort _listarPaginadoInputPort;
     private readonly IDeleteFecundacionInputPort _deleteInputPort;
 
     public FecundacionController(
         ICreateFecundacionInputPort createInputPort,
+        IListarFecundacionInputPort listarFecundacionInputPort,
         IGetFecundacionForEditInputPort getForEditInputPort,
         IGetFecundacionOptionsInputPort getOptionsInputPort,
         ISearchFecundacionVacunosInputPort searchVacunosInputPort,
         IUpdateFecundacionInputPort updateInputPort,
-        IListarFecundacionesPaginadoInputPort listarPaginadoInputPort,
         IDeleteFecundacionInputPort deleteInputPort)
     {
         _createInputPort = createInputPort;
+        _listarFecundacionInputPort = listarFecundacionInputPort;
         _getForEditInputPort = getForEditInputPort;
         _getOptionsInputPort = getOptionsInputPort;
         _searchVacunosInputPort = searchVacunosInputPort;
         _updateInputPort = updateInputPort;
-        _listarPaginadoInputPort = listarPaginadoInputPort;
         _deleteInputPort = deleteInputPort;
     }
 
+    // ===== TUYO — sin cambios =====
     [HttpGet]
-    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Listar(
+    [ProducesResponseType(typeof(PagedResponse<List<FecundacionItemResponse>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ListarFecundacion(
+        [FromQuery] string? query,
+        [FromQuery] DateTime? fechaDesde,
+        [FromQuery] DateTime? fechaHasta,
+        [FromQuery] string? resultado,
         [FromQuery] int page = 1,
         [FromQuery] int limit = 20,
-        [FromQuery] DateOnly? fechaDesde = null,
-        [FromQuery] DateOnly? fechaHasta = null,
-        [FromQuery] string? q = null,
-        [FromQuery] string? tipoFecundacion = null,
-        [FromQuery] string? estado = null,
-        [FromQuery] string? responsable = null,
         CancellationToken cancellationToken = default)
     {
-        var command = new ListarFecundacionesPaginadoCommand(
-            page,
-            limit,
-            fechaDesde,
-            fechaHasta,
-            q,
-            tipoFecundacion,
-            estado,
-            responsable);
+        var command = new ListarFecundacionCommand(
+            Query: query,
+            FechaDesde: fechaDesde,
+            FechaHasta: fechaHasta,
+            Resultado: resultado,
+            Page: page,
+            Limit: limit);
 
-        var output = await _listarPaginadoInputPort.HandleAsync(command, cancellationToken);
-
-        var responseData = output.Data.Select(x => new FecundacionResponse(
-            x.Id,
-            x.Codigo,
-            x.Fecha,
-            x.Vacuno,
-            FecundacionMapper.ToContractTipo(x.TipoFecundacion),
-            x.ToroODonante,
-            x.Responsable,
-            FecundacionMapper.ToContractResultado(x.Estado)
-        )).ToList();
-
-        return Ok(GeneralResponseDTO<object>.Ok(new
-        {
-            data = responseData,
-            pagination = new
-            {
-                page = output.Page,
-                limit = output.Limit,
-                total = output.Total,
-                totalPages = output.TotalPages
-            }
-        }));
+        var output = await _listarFecundacionInputPort.HandleAsync(command, cancellationToken);
+        var response = output.Items.Select(FecundacionMapper.ToListItemResponse).ToList();
+        return Ok(PagedResponse<List<FecundacionItemResponse>>.OkPaged(response, page, limit, output.TotalCount));
     }
 
+    // ===== DE ÉL — Create =====
     [HttpPost]
-    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(GeneralResponseDTO<CreateFecundacionResponse>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> Registrar(
+    public async Task<IActionResult> CreateFecundacion(
         [FromBody] CreateFecundacionRequest request,
         CancellationToken cancellationToken)
     {
         var command = FecundacionMapper.ToCommand(request, GetUserIdFromHeader());
         var output = await _createInputPort.HandleAsync(command, cancellationToken);
+        var response = FecundacionMapper.ToResponse(output);
 
-        var detail = await _getForEditInputPort.HandleAsync(output.Id, cancellationToken);
-
-        return Created(
-            $"/api/v1/fecundaciones/{output.Id}",
-            GeneralResponseDTO<object>.Ok(new
-            {
-                id = detail.Id,
-                codigo = detail.Codigo,
-                tipoFecundacion = FecundacionMapper.ToContractTipo(detail.TipoFecundacionCode),
-                vacunoReceptorId = detail.VacunoReceptorId,
-                fechaProcedimiento = detail.FechaProcedimiento,
-                resultado = FecundacionMapper.ToContractResultado(detail.ResultadoCode),
-                creadoEn = detail.CreadoEn
-            }));
+        return StatusCode(StatusCodes.Status201Created, GeneralResponseDTO<CreateFecundacionResponse>.Ok(response));
     }
 
     [HttpGet("{fecundacionId:long}")]

@@ -39,12 +39,12 @@ public sealed class DeleteVacunoInteractor : IDeleteVacunoInputPort
             ?? throw new VacunoNotFoundException($"No existe el vacuno con el ID {id}.");
 
         // Validar dependencias (PDF pág 10: "Solo se elimina si no tiene registros dependientes activos: triajes, incidentes, ordeños, etc.")
-        if (await _celoRepository.ExistsVacunoAsync(id, cancellationToken))
+        if (await _celoRepository.HasActiveRecordsByVacunoAsync(id, cancellationToken))
         {
             throw new VacunoHasDependenciesException("El vacuno tiene registros de celo activos.");
         }
 
-        if (await _ordenioRepository.ExistsVacunoAsync(id, cancellationToken))
+        if (await _ordenioRepository.HasActiveRecordsByVacunoAsync(id, cancellationToken))
         {
             throw new VacunoHasDependenciesException("El vacuno tiene registros de ordeño activos.");
         }

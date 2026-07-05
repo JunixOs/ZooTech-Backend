@@ -62,17 +62,26 @@ public static class DependencyInjection
         services.AddScoped<ITenantContext, TenantContext>();
         services.AddScoped<IFeatureService, DevFeatureService>();
 
+        // ============================================
+        // Transversal
+        // ============================================
+
+        services.AddScoped<IDateTimeProvider, DateTimeProvider>();
+        services.AddSingleton<ZooTech.Application.Common.Configuration.IVacunosConfiguration, ZooTech.Infrastructure.Configuration.VacunosConfiguration>();
+
+        // ============================================
+        // Repositories
+        // ============================================
+
         services.AddScoped<IAnimalRepository, AnimalRepository>();
         services.AddScoped<IAnimalReportRepository, AnimalReportRepository>();
         services.AddScoped<IAnimalReportExcelService, AnimalReportExcelService>();
         services.AddScoped<IAnimalReportPdfService, AnimalReportPdfService>();
         services.AddScoped<ICeloRepository, CeloRepository>();
         services.AddScoped<IFecundacionRepository, FecundacionRepository>();
-        services.AddScoped<IFecundacionQueryRepository, FecundacionRepository>();
         services.AddScoped<IFecundacionEstadoRepository, FecundacionEstadoRepository>();
         services.AddScoped<IOrdenioRepository, OrdenioRepository>();
         services.AddScoped<IVacunoRepository, VacunoRepository>();
-        services.AddScoped<IVacunoQueryRepository, VacunoRepository>();
         services.AddScoped<
             ZooTech.Application.Common.Gateway.Repositories.IVacunoRepository,
             ZooTech.Infrastructure.Persistence.Repositories.VacunoRepository>();
@@ -88,6 +97,12 @@ public static class DependencyInjection
         services.AddScoped<IRegistroVacunoReadRepository, RegistroVacunoReadRepository>();
         services.AddScoped<ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte.IRegistroVacunoExcelReportService, RegistroVacunoExcelReportService>();
         services.AddScoped<ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte.IRegistroVacunoPdfReportService, RegistroVacunoPdfReportService>();
+        services.AddScoped<ZooTech.Application.Common.Gateway.Services.IArbolGenealogicoExportService, ZooTech.Infrastructure.Reports.Vacunos.ArbolGenealogicoExcelExportService>();
+
+        // ============================================
+        // Reports
+        // ============================================
+
         services.AddScoped<ZooTech.Application.Common.Gateway.Services.IArbolGenealogicoExportService, ZooTech.Infrastructure.Reports.Vacunos.ArbolGenealogicoExcelExportService>();
 
         return services;

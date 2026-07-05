@@ -8,6 +8,7 @@ using ZooTech.Application.Modules.Module_Vacuno.Exceptions;
 using ZooTech.Application.Modules.Module_Fecundacion.Exceptions;
 using ZooTech.InterfaceAdapters.DTOs.Responses;
 
+
 namespace ZooTech.InterfaceAdapters.Middleware;
 
 public sealed class ExceptionHandlingMiddleware

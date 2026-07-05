@@ -1,9 +1,4 @@
 using ClosedXML.Excel;
-using System.IO;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using ZooTech.Application.Common.Gateway.Services;
 using ZooTech.Domain.Module_Vacuno.Entities;
 using ZooTech.Domain.Module_Vacuno.ReadModels.GetArbolGenealogico;

@@ -4,4 +4,5 @@ public sealed record VacunoReferenceItem(
     long Id,
     string Codigo,
     string Nombre,
-    string SexoCode);
+    string SexoCode,
+    string? EstadoCode);
