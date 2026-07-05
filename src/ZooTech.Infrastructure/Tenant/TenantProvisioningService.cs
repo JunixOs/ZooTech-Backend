@@ -71,20 +71,36 @@ namespace ZooTech.Infrastructure.Tenant
 
             var tenantCatalogDb = await _tenantDbContextFactory.CreateDbContextByTenantContext();
 
+            bool tenantSaved = false;
+            bool databaseCreated = false;
+
             try
             {
-                tenantCatalogDb.tenants.Add(tenant);
+                await tenantCatalogDb.tenants.AddAsync(tenant);
 
                 await AssociateParametersInDbToTenant(tenantCatalogDb , tenant);
 
                 await tenantCatalogDb.SaveChangesAsync();
+                tenantSaved = true;
 
                 await _tenantDatabaseCreator.CreateAsync(tenantDatabaseConnectionEntity.database_name);
+                databaseCreated = true;
 
                 await _tenantDatabaseMigrator.MigrateAsync(tenantDatabaseConnectionEntity.database_name);
             }
-            catch (Exception)
+            catch
             {
+                if (databaseCreated)
+                {
+                    await _tenantDatabaseCreator.DeleteAsync(tenantDatabaseConnectionEntity.database_name);
+                }
+
+                if (tenantSaved)
+                {
+                    tenantCatalogDb.tenants.Remove(tenant);
+                    await tenantCatalogDb.SaveChangesAsync();
+                }
+
                 throw new TenantProvisioningException();
             }
         }
