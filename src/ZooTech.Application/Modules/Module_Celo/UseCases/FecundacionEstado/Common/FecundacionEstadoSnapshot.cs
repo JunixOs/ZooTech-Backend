@@ -2,6 +2,7 @@ namespace ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.Com
 
 public sealed record FecundacionEstadoSnapshot(
     long VacunoId,
+    long? FecundacionId,
     string CodigoVacuno,
     string NombreVacuno,
     string EstadoActual,

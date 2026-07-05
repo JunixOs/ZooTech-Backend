@@ -1,5 +1,6 @@
 using FluentValidation;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.CreateFecundacion;
+using ZooTech.Domain.Module_Fecundacion.Rules;
 
 namespace ZooTech.Application.Modules.Module_Fecundacion.Validators;
 
@@ -36,5 +37,23 @@ public sealed class CreateFecundacionValidator : AbstractValidator<CreateFecunda
             .WithMessage("Debe seleccionar un vacuno donante si no es macho externo.")
             .GreaterThan(0).When(x => !x.MachoExterno && x.VacunoDonanteId.HasValue)
             .WithMessage("El ID del vacuno donante debe ser mayor que cero.");
+
+        When(x => FecundacionRules.EsInseminacionArtificial(x.TipoFecundacionCode), () =>
+        {
+            RuleFor(x => x.CodigoSemen)
+                .NotEmpty()
+                .WithMessage("El codigo de semen es obligatorio para inseminacion artificial.")
+                .MaximumLength(30)
+                .WithMessage("El codigo de semen no puede superar los 30 caracteres.");
+        });
+
+        When(x => FecundacionRules.EsTransferenciaEmbriones(x.TipoFecundacionCode), () =>
+        {
+            RuleFor(x => x.CodigoEmbrion)
+                .NotEmpty()
+                .WithMessage("El codigo de embrion es obligatorio para transferencia de embriones.")
+                .MaximumLength(30)
+                .WithMessage("El codigo de embrion no puede superar los 30 caracteres.");
+        });
     }
 }

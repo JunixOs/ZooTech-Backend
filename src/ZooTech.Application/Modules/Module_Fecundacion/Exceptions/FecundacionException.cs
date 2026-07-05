@@ -17,7 +17,7 @@ public class FecundacionException : Exception
 
 public sealed class FecundacionNotFoundException : FecundacionException
 {
-    public FecundacionNotFoundException(string message = "El registro de fecundación no existe.")
+    public FecundacionNotFoundException(string message = "El registro de fecundacion no existe.")
         : base(message, "FECUNDACION_NOT_FOUND", 404)
     {
     }
@@ -25,7 +25,8 @@ public sealed class FecundacionNotFoundException : FecundacionException
 
 public sealed class FecundacionPendingActiveException : FecundacionException
 {
-    public FecundacionPendingActiveException(string message = "El vacuno receptor ya tiene una fecundación con estado 'Pendiente de confirmación' activa.")
+    public FecundacionPendingActiveException(
+        string message = "La hembra seleccionada ya tiene una fecundacion activa. Cambie su estado a Vacia o registre el cierre antes de crear otra fecundacion.")
         : base(message, "FECUNDACION_PENDIENTE_ACTIVA", 409)
     {
     }

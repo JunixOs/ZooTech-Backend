@@ -15,7 +15,12 @@ public sealed class SearchFecundacionVacunosInteractor : ISearchFecundacionVacun
         SearchFecundacionVacunosQuery query,
         CancellationToken cancellationToken = default)
     {
-        var data = await _repository.SearchVacunosAsync(query.Sexo, query.Query, cancellationToken);
+        var data = await _repository.SearchVacunosAsync(
+            query.Sexo,
+            query.Query,
+            query.SoloDisponibles,
+            query.ExcluirFecundacionId,
+            cancellationToken);
 
         return data
             .Select(item => new SearchFecundacionVacunoOutput(item.Id, item.Codigo, item.Nombre, item.Sexo))

@@ -154,5 +154,7 @@ public sealed class ExceptionHandlingMiddleware
         var body = JsonSerializer.Serialize(
             ErrorResponse.Create(code, message, details),
             new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+
+        await context.Response.WriteAsync(body);
     }
 }

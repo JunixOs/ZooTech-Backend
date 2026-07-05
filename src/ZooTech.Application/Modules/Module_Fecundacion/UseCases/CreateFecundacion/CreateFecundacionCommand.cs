@@ -11,4 +11,6 @@ public sealed record CreateFecundacionCommand(
     bool MachoExterno,
     string? MachoExternoNombre,
     long? VacunoDonanteId,
-    long? CreatedById);
+    long? CreatedById,
+    string? CodigoSemen = null,
+    string? CodigoEmbrion = null);

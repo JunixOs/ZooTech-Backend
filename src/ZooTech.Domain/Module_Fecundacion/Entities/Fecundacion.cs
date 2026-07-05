@@ -15,7 +15,9 @@ public sealed class Fecundacion
         long? actorUsuarioId = null,
         bool machoExterno = false,
         string? machoExternoNombre = null,
-        long? vacunoDonanteId = null)
+        long? vacunoDonanteId = null,
+        string? codigoSemen = null,
+        string? codigoEmbrion = null)
     {
         Id = id;
         Codigo = codigo;
@@ -30,6 +32,8 @@ public sealed class Fecundacion
         MachoExterno = machoExterno;
         MachoExternoNombre = machoExternoNombre;
         VacunoDonanteId = vacunoDonanteId;
+        CodigoSemen = codigoSemen;
+        CodigoEmbrion = codigoEmbrion;
     }
 
     public static Fecundacion CreateNew(
@@ -45,7 +49,9 @@ public sealed class Fecundacion
         DateTime utcNow,
         bool machoExterno,
         string? machoExternoNombre,
-        long? vacunoDonanteId)
+        long? vacunoDonanteId,
+        string? codigoSemen = null,
+        string? codigoEmbrion = null)
     {
         return new Fecundacion(
             id: 0,
@@ -60,7 +66,9 @@ public sealed class Fecundacion
             actorUsuarioId: actorUsuarioId,
             machoExterno: machoExterno,
             machoExternoNombre: machoExternoNombre,
-            vacunoDonanteId: vacunoDonanteId);
+            vacunoDonanteId: vacunoDonanteId,
+            codigoSemen: codigoSemen,
+            codigoEmbrion: codigoEmbrion);
     }
 
     public long Id { get; }
@@ -76,4 +84,6 @@ public sealed class Fecundacion
     public bool MachoExterno { get; }
     public string? MachoExternoNombre { get; }
     public long? VacunoDonanteId { get; }
+    public string? CodigoSemen { get; }
+    public string? CodigoEmbrion { get; }
 }

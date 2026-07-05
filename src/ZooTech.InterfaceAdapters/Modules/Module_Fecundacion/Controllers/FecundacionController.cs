@@ -17,7 +17,6 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.Controllers;
 
 [ApiController]
 [Route("api/v1/fecundaciones")]
-[Route("api/v1/fecundacion")]
 [ApiExplorerSettings(GroupName = "public")]
 public sealed class FecundacionController : ControllerBase
 {
@@ -110,10 +109,12 @@ public sealed class FecundacionController : ControllerBase
     public async Task<IActionResult> SearchVacunos(
         [FromQuery] string? sexo,
         [FromQuery(Name = "q")] string? query,
-        CancellationToken cancellationToken)
+        [FromQuery] bool soloDisponibles = false,
+        [FromQuery] long? excluirFecundacionId = null,
+        CancellationToken cancellationToken = default)
     {
         var output = await _searchVacunosInputPort.HandleAsync(
-            new SearchFecundacionVacunosQuery(sexo, query),
+            new SearchFecundacionVacunosQuery(sexo, query, soloDisponibles, excluirFecundacionId),
             cancellationToken);
 
         var response = output.Select(FecundacionMapper.ToResponse).ToList();

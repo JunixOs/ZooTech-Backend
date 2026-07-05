@@ -2,6 +2,7 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Celo.DTOs.Responses;
 
 public sealed record FecundacionEstadoResponse(
     long VacunoId,
+    long? FecundacionId,
     string CodigoVacuno,
     string NombreVacuno,
     string EstadoActual,

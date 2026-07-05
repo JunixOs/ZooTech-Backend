@@ -47,10 +47,10 @@ public sealed class CreateFecundacionInteractor : ICreateFecundacionInputPort
         // Obtener o crear responsable
         var responsableId = await _fecundacionRepository.GetOrCreateResponsableByNameAsync(command.ResponsableName, cancellationToken);
 
-        // Generar código único para la fecundación
-        var codigo = $"FEC-{DateTime.UtcNow:yyyyMMddHHmmss}";
+        // Generar código único para la fecundación (Límite de la base de datos: 15 caracteres)
+        var codigo = $"F{DateTime.UtcNow:yyMMddHHmmss}";
         if (await _fecundacionRepository.ExistsCodigoAsync(codigo, cancellationToken))
-            codigo = $"FEC-{DateTime.UtcNow:yyyyMMddHHmmssfff}";
+            codigo = $"F{DateTime.UtcNow:yyMMddHHmmssff}";
 
         var utcNow = DateTime.UtcNow;
 
@@ -68,7 +68,9 @@ public sealed class CreateFecundacionInteractor : ICreateFecundacionInputPort
             utcNow: utcNow,
             machoExterno: command.MachoExterno,
             machoExternoNombre: command.MachoExternoNombre,
-            vacunoDonanteId: command.VacunoDonanteId);
+            vacunoDonanteId: command.VacunoDonanteId,
+            codigoSemen: command.CodigoSemen,
+            codigoEmbrion: command.CodigoEmbrion);
 
         // Persistir en base de datos
         var saved = await _fecundacionRepository.AddAsync(fecundacion, cancellationToken);

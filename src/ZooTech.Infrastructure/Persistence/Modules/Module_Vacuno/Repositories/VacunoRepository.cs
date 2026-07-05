@@ -97,14 +97,16 @@ public sealed class VacunoRepository : IVacunoRepository
     }
 
     public Task<bool> ExistsCodigoAsync(string codigo, CancellationToken cancellationToken = default)
-        => _context.vacunos.AnyAsync(v => v.deleted_at == null && v.codigo == codigo.Trim(), cancellationToken);
+        => _context.vacunos.AnyAsync(v => v.codigo == codigo.Trim(), cancellationToken);
 
     public async Task<Vacuno> AddAsync(Vacuno vacuno, decimal? precioCompra, string? aptoPara, CancellationToken cancellationToken = default)
     {
+        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
         var entity = ToEntity(vacuno);
         _context.vacunos.Add(entity);
 
         var now = DateTime.UtcNow;
+        await _context.SaveChangesAsync(cancellationToken);
 
         if (precioCompra.HasValue)
         {
@@ -140,6 +142,7 @@ public sealed class VacunoRepository : IVacunoRepository
         _context.vacuno_estado_historials.Add(est);
 
         await _context.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
         return ToDomain(entity);
     }
 
@@ -362,9 +365,19 @@ public sealed class VacunoRepository : IVacunoRepository
     {
         return await _context.vacunos
             .AsNoTracking()
-            .Where(v => v.deleted_at == null)
+            .Where(v => v.deleted_at == null
+                && !_context.v_vacuno_estado_vigentes
+                    .Any(e => e.vacuno_id == v.id && e.estado_code == "MUERTO"))
             .OrderBy(v => v.codigo)
-            .Select(v => new VacunoReferenceItem(v.id, v.codigo, v.nombre, v.sexo_code))
+            .Select(v => new VacunoReferenceItem(
+                v.id,
+                v.codigo,
+                v.nombre,
+                v.sexo_code,
+                _context.v_vacuno_estado_vigentes
+                    .Where(e => e.vacuno_id == v.id)
+                    .Select(e => e.estado_code)
+                    .FirstOrDefault()))
             .ToListAsync(cancellationToken);
     }
 

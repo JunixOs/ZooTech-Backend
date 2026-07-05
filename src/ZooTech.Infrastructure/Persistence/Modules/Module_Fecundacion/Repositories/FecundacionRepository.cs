@@ -5,6 +5,7 @@ using ZooTech.Domain.Module_Fecundacion.ReadModels;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Persistence.Entities;
 using ZooTech.Application.Modules.Module_Fecundacion.Common;
+using ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.Common;
 using ZooTech.Domain.Module_Fecundacion.Rules;
 
 namespace ZooTech.Infrastructure.Persistence.Modules.Module_Fecundacion.Repositories;
@@ -24,6 +25,8 @@ public sealed class FecundacionRepository : IFecundacionRepository
     {
         var q = _context.fecundacions
             .AsNoTracking()
+            .Where(f => f.observaciones_veterinarias == null ||
+                        !f.observaciones_veterinarias.StartsWith("ANULADO_FECUNDACION:"))
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(query))
@@ -86,8 +89,9 @@ public sealed class FecundacionRepository : IFecundacionRepository
             Tipo: r.tipo_fecundacion_code,
             VacunoReceptor: r.NombreVacunoReceptor,
             FechaProcedimiento: r.fecha_procedimiento,
-            Responsable: r.Responsable,
+            Responsable: r.Responsable ?? string.Empty,
             Resultado: r.resultado_code,
+            NombreDonante: r.NombreDonante,
             Observaciones: null
         )).ToList();
 
@@ -165,7 +169,28 @@ public sealed class FecundacionRepository : IFecundacionRepository
             await _context.fecundacion_donantes.AddAsync(donante, cancellationToken);
         }
 
+        // Guardar técnica (Inseminación/Transferencia de embrión)
+        if (FecundacionRules.EsInseminacionArtificial(fecundacion.TipoFecundacionCode) && !string.IsNullOrWhiteSpace(fecundacion.CodigoSemen))
+        {
+            var inseminacion = new fecundacion_inseminacion
+            {
+                fecundacion_id = entity.id,
+                codigo_semen = fecundacion.CodigoSemen.Trim()
+            };
+            await _context.fecundacion_inseminacions.AddAsync(inseminacion, cancellationToken);
+        }
+        else if (FecundacionRules.EsTransferenciaEmbriones(fecundacion.TipoFecundacionCode) && !string.IsNullOrWhiteSpace(fecundacion.CodigoEmbrion))
+        {
+            var embrion = new fecundacion_embrion
+            {
+                fecundacion_id = entity.id,
+                codigo_embrion = fecundacion.CodigoEmbrion.Trim()
+            };
+            await _context.fecundacion_embrions.AddAsync(embrion, cancellationToken);
+        }
+
         await _context.SaveChangesAsync(cancellationToken);
+        await AddInitialEstadoHistorialAsync(entity, fecundacion.ActorUsuarioId, cancellationToken);
 
         // Retornar entidad de dominio reconstruida con el ID asignado
         return Fecundacion.CreateNew(
@@ -181,7 +206,9 @@ public sealed class FecundacionRepository : IFecundacionRepository
             utcNow: entity.created_at,
             machoExterno: fecundacion.MachoExterno,
             machoExternoNombre: fecundacion.MachoExternoNombre,
-            vacunoDonanteId: fecundacion.VacunoDonanteId);
+            vacunoDonanteId: fecundacion.VacunoDonanteId,
+            codigoSemen: fecundacion.CodigoSemen,
+            codigoEmbrion: fecundacion.CodigoEmbrion);
     }
 
     public async Task<bool> ExistsVacunoAsync(long vacunoId, CancellationToken cancellationToken = default)
@@ -292,6 +319,8 @@ public sealed class FecundacionRepository : IFecundacionRepository
     public async Task<IReadOnlyList<FecundacionVacunoOptionData>> SearchVacunosAsync(
         string? sexo,
         string? query,
+        bool soloDisponibles = false,
+        long? excluirFecundacionId = null,
         CancellationToken cancellationToken = default)
     {
         var sexoFilter = Normalize(sexo);
@@ -306,6 +335,12 @@ public sealed class FecundacionRepository : IFecundacionRepository
             vacunos = vacunos.Where(v =>
                 v.sexo_code.ToLower() == sexoFilter ||
                 v.sexo_codeNavigation.nombre.ToLower() == sexoFilter);
+        }
+
+        if (soloDisponibles && IsSexoFilterHembra(sexoFilter))
+        {
+            var activeReceptorIds = await GetActiveFecundacionReceptorIdsAsync(excluirFecundacionId, cancellationToken);
+            vacunos = vacunos.Where(v => !activeReceptorIds.Contains(v.id));
         }
 
         if (!string.IsNullOrWhiteSpace(text))
@@ -426,29 +461,8 @@ public sealed class FecundacionRepository : IFecundacionRepository
         long receptorId,
         CancellationToken cancellationToken = default)
     {
-        var query = _context.fecundacions
-            .AsNoTracking()
-            .Where(f => f.vacuno_receptor_id == receptorId && 
-                       (f.observaciones_veterinarias == null || !f.observaciones_veterinarias.StartsWith("ANULADO_FECUNDACION:")));
-
-        if (fecundacionId.HasValue)
-        {
-            query = query.Where(f => f.id != fecundacionId.Value);
-        }
-
-        var otherIds = await query.Select(f => f.id).ToListAsync(cancellationToken);
-
-        if (otherIds.Count == 0)
-            return false;
-
-        var latestStates = await _context.vacuno_estado_fecundacion_historials
-            .AsNoTracking()
-            .Where(h => h.fecundacion_id != null && otherIds.Contains(h.fecundacion_id.Value) && h.deleted_at == null)
-            .GroupBy(h => h.fecundacion_id!.Value)
-            .Select(g => g.OrderByDescending(h => h.fecha_actualizacion).ThenByDescending(h => h.id).First().estado_fecundacion_code)
-            .ToListAsync(cancellationToken);
-
-        return latestStates.Any(FecundacionRules.EsEstadoPendienteOConfirmacion);
+        var activeReceptorIds = await GetActiveFecundacionReceptorIdsAsync(fecundacionId, cancellationToken);
+        return activeReceptorIds.Contains(receptorId);
     }
 
     private async Task<responsable> GetOrCreateResponsableAsync(string nombre, CancellationToken cancellationToken)
@@ -600,13 +614,111 @@ public sealed class FecundacionRepository : IFecundacionRepository
         });
     }
 
+    private async Task AddInitialEstadoHistorialAsync(
+        fecundacion entity,
+        long? actorUsuarioId,
+        CancellationToken cancellationToken)
+    {
+        var estadoInicialCode = await _context.cat_estado_fecundacion_vacunos
+            .AsNoTracking()
+            .Where(e =>
+                e.nombre == FecundacionEstadoConstants.EnEspera ||
+                e.code == "en_espera" ||
+                e.code == "EN_ESPERA" ||
+                e.nombre == FecundacionEstadoConstants.Pendiente ||
+                e.code == "PENDIENTE" ||
+                e.code == "PEND")
+            .OrderByDescending(e => e.nombre == FecundacionEstadoConstants.EnEspera || e.code == "en_espera")
+            .ThenByDescending(e => e.nombre == FecundacionEstadoConstants.Pendiente)
+            .ThenBy(e => e.code)
+            .Select(e => e.code)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (string.IsNullOrWhiteSpace(estadoInicialCode))
+            return;
+
+        var now = DateTime.UtcNow;
+        _context.vacuno_estado_fecundacion_historials.Add(new vacuno_estado_fecundacion_historial
+        {
+            vacuno_id = entity.vacuno_receptor_id,
+            fecundacion_id = entity.id,
+            estado_fecundacion_code = estadoInicialCode,
+            fecha_actualizacion = DateOnly.FromDateTime(now),
+            observaciones = entity.observaciones_veterinarias,
+            created_by = actorUsuarioId,
+            created_at = now
+        });
+
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
     private static bool IsSexo(string code, string nombre, string expected)
         => Normalize(code) == expected || Normalize(nombre) == expected;
 
     private static string Normalize(string? value)
         => value?.Trim().ToLowerInvariant() ?? string.Empty;
 
+    private static bool IsSexoFilterHembra(string sexoFilter)
+        => sexoFilter is "hembra" or "h";
 
+    private async Task<HashSet<long>> GetActiveFecundacionReceptorIdsAsync(
+        long? excludedFecundacionId,
+        CancellationToken cancellationToken)
+    {
+        var fecundaciones = _context.fecundacions
+            .AsNoTracking()
+            .Where(f => f.observaciones_veterinarias == null ||
+                        !f.observaciones_veterinarias.StartsWith("ANULADO_FECUNDACION:"));
+
+        if (excludedFecundacionId.HasValue)
+        {
+            fecundaciones = fecundaciones.Where(f => f.id != excludedFecundacionId.Value);
+        }
+
+        var candidates = await fecundaciones
+            .Select(f => new
+            {
+                f.id,
+                f.vacuno_receptor_id,
+                f.resultado_code
+            })
+            .ToListAsync(cancellationToken);
+
+        if (candidates.Count == 0)
+        {
+            return [];
+        }
+
+        var candidateIds = candidates.Select(item => item.id).ToArray();
+
+        var latestStates = await _context.vacuno_estado_fecundacion_historials
+            .AsNoTracking()
+            .Where(h => h.fecundacion_id != null &&
+                        candidateIds.Contains(h.fecundacion_id.Value) &&
+                        h.deleted_at == null)
+            .GroupBy(h => h.fecundacion_id!.Value)
+            .Select(g => new
+            {
+                FecundacionId = g.Key,
+                EstadoCode = g.OrderByDescending(h => h.fecha_actualizacion)
+                    .ThenByDescending(h => h.id)
+                    .First()
+                    .estado_fecundacion_code
+            })
+            .ToListAsync(cancellationToken);
+
+        var latestStateByFecundacionId = latestStates.ToDictionary(
+            item => item.FecundacionId,
+            item => item.EstadoCode);
+
+        return candidates
+            .Where(item =>
+                latestStateByFecundacionId.TryGetValue(item.id, out var estadoCode)
+                    ? FecundacionRules.EsEstadoPendienteOConfirmacion(estadoCode)
+                    : FecundacionRules.EsEstadoPendienteOConfirmacion(item.resultado_code))
+            .Select(item => item.vacuno_receptor_id)
+            .ToHashSet();
+    }
 
     public async Task DeleteAsync(long id, string razon, CancellationToken cancellationToken = default)
     {
