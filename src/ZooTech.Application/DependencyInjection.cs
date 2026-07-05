@@ -22,6 +22,7 @@ using ZooTech.Application.Modules.Module_Vacuno.UseCases.UpdateVacuno;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.CreateOrdenio;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.DeleteOrdenio;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GenerateOrdeniosPdf;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GenerateOrdeniosExcel;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GetOrdenioById;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.ListOrdenios;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.UpdateOrdenio;
@@ -57,6 +58,7 @@ public static class DependencyInjection
         // ============================================
         services.AddScoped<ICreateOrdenioInputPort, CreateOrdenioInteractor>();
         services.AddScoped<IGetOrdeniosPdfInputPort, GenerateOrdeniosPdfInteractor>();
+        services.AddScoped<IGetOrdeniosExcelInputPort, GenerateOrdeniosExcelInteractor>();
         services.AddScoped<IGetOrdenioByIdInputPort, GetOrdenioByIdInteractor>();
         services.AddScoped<IListOrdeniosInputPort, ListOrdeniosInteractor>();
         services.AddScoped<IUpdateOrdenioInputPort, UpdateOrdenioInteractor>();
