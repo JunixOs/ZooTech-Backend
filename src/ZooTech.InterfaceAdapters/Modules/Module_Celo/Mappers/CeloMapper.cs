@@ -58,7 +58,6 @@ internal static class CeloMapper
             Hora = item.Hora,
             CodigoVacuno = item.CodigoVacuno,
             NombreVacuno = item.NombreVacuno,
-            RazaVacuno = item.RazaVacuno,
             VecesEnCelo = item.VecesEnCelo,
         };
     }

@@ -68,8 +68,7 @@ public sealed class GetCelosInteractorTests
         long vacunoId,
         string codigo,
         string codigoVacuno,
-        string nombreVacuno,
-        string razaVacuno = "Holstein")
+        string nombreVacuno)
     {
         var fechaHora = DateTime.UtcNow.AddMinutes(-1);
 
@@ -79,8 +78,7 @@ public sealed class GetCelosInteractorTests
             fechaHora: fechaHora,
             vacunoId: vacunoId,
             vacunoCodigo: codigoVacuno,
-            nombreVacuno: nombreVacuno,
-            razaVacuno: razaVacuno);
+            nombreVacuno: nombreVacuno);
     }
 
     [Fact]
@@ -106,8 +104,7 @@ public sealed class GetCelosInteractorTests
             vacunoId: vacunoId,
             codigo: "CELO-001",
             codigoVacuno: "V-001",
-            nombreVacuno: "Blanca",
-            razaVacuno: "Holstein");
+            nombreVacuno: "Blanca");
 
         var repo = new FakeCeloRepository
         {
@@ -140,8 +137,7 @@ public sealed class GetCelosInteractorTests
             vacunoId: 99,
             codigo: "CELO-001",
             codigoVacuno: "V-099",
-            nombreVacuno: "Rosa",
-            razaVacuno: "Jersey");
+            nombreVacuno: "Rosa");
 
         var repo = new FakeCeloRepository
         {

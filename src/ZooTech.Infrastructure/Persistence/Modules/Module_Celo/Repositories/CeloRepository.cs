@@ -157,9 +157,8 @@ public sealed class CeloRepository : ICeloRepository
             fechaHora: entity.fecha_hora,
             vacunoId: entity.vacuno_id,
             vacunoCodigo: entity.vacuno?.codigo ?? string.Empty,
-            nombreVacuno: entity.vacuno?.nombre ?? string.Empty,
-            razaVacuno: entity.vacuno?.raza_code ?? string.Empty);
-           
+            nombreVacuno: entity.vacuno?.nombre ?? string.Empty);
+
 
     } 
 

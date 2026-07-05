@@ -23,7 +23,6 @@ public sealed class GetCelosInteractor : IGetCelosInputPort
             Hora = TimeOnly.FromDateTime(c.FechaHora),
             CodigoVacuno = c.VacunoCodigo,
             NombreVacuno = c.NombreVacuno,
-            RazaVacuno = c.RazaVacuno,
             VecesEnCelo = counts.GetValueOrDefault(c.VacunoId, 1),
         }).ToList();
 
