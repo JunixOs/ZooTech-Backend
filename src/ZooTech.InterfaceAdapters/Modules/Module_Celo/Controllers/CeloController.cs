@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using ZooTech.Application.Modules.Module_Celo.UseCases.CreateCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.DeleteCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetCelos;
+using ZooTech.Application.Modules.Module_Celo.UseCases.GetReporteCelos;
 using ZooTech.Application.Modules.Module_Celo.UseCases.UpdateCelo;
 using ZooTech.InterfaceAdapters.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.DTOs.Requests;
@@ -17,17 +18,20 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Celo.Controllers;
 public sealed class CeloController : ControllerBase
 {
     private readonly IGetCelosInputPort _getCelosInputPort;
+    private readonly IGetReporteCelosInputPort _getReporteCelosInputPort;
     private readonly ICreateCeloInputPort _createCeloInputPort;
     private readonly IUpdateCeloInputPort _updateCeloInputPort;
     private readonly IDeleteCeloInputPort _deleteCeloInputPort;
 
     public CeloController(
         IGetCelosInputPort getCelosInputPort,
+        IGetReporteCelosInputPort getReporteCelosInputPort,
         ICreateCeloInputPort createCeloInputPort,
         IUpdateCeloInputPort updateCeloInputPort,
         IDeleteCeloInputPort deleteCeloInputPort)
     {
         _getCelosInputPort = getCelosInputPort;
+        _getReporteCelosInputPort = getReporteCelosInputPort;
         _createCeloInputPort = createCeloInputPort;
         _updateCeloInputPort = updateCeloInputPort;
         _deleteCeloInputPort = deleteCeloInputPort;
@@ -40,6 +44,59 @@ public sealed class CeloController : ControllerBase
         var output = await _getCelosInputPort.HandleAsync(cancellationToken);
         var response = output.Items.Select(CeloMapper.ToResponse).ToList();
         return Ok(GeneralResponseDTO<List<CeloItemResponse>>.Ok(response));
+    }
+
+    [HttpGet("reportes/general")]
+    [ProducesResponseType(typeof(GeneralResponseDTO<List<CeloReporteItemResponse>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetReporteCeloGeneral(CancellationToken cancellationToken)
+    {
+        var output = await _getReporteCelosInputPort.HandleAsync(cancellationToken);
+        var response = output.Items.Select(item => CeloMapper.ToResponse(item)).ToList();
+
+        return Ok(GeneralResponseDTO<List<CeloReporteItemResponse>>.Ok(response));
+    }
+
+    [HttpGet("reportes/por-vacuno")]
+    [ProducesResponseType(typeof(GeneralResponseDTO<List<ReporteCeloPorVacunoResponse>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetReporteCeloPorVacuno(CancellationToken cancellationToken)
+    {
+        var output = await _getCelosInputPort.HandleAsync(cancellationToken);
+
+        var response = output.Items
+            .GroupBy(item => new
+            {
+                item.CodigoVacuno,
+                item.NombreVacuno
+            })
+            .Select(group => new ReporteCeloPorVacunoResponse
+            {
+                CodigoVacuno = group.Key.CodigoVacuno,
+                Nombre = group.Key.NombreVacuno,
+                UltimoCelo = group.Max(item => item.Fecha),
+                VecesEnCelo = group.Count()
+            })
+            .OrderByDescending(item => item.UltimoCelo)
+            .ToList();
+
+        return Ok(GeneralResponseDTO<List<ReporteCeloPorVacunoResponse>>.Ok(response));
+    }
+
+    [HttpGet("reportes/por-vacuno/{codigoVacuno}")]
+    [ProducesResponseType(typeof(GeneralResponseDTO<List<CeloReporteItemResponse>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetDetalleCeloPorVacuno(
+    string codigoVacuno,
+    CancellationToken cancellationToken)
+    {
+        var output = await _getReporteCelosInputPort.HandleAsync(cancellationToken);
+
+        var response = output.Items
+            .Where(item => item.CodigoVacuno == codigoVacuno)
+            .OrderByDescending(item => item.Fecha)
+            .ThenByDescending(item => item.Hora)
+            .Select(item => CeloMapper.ToResponse(item))
+            .ToList();
+
+        return Ok(GeneralResponseDTO<List<CeloReporteItemResponse>>.Ok(response));
     }
 
     [HttpGet("vacas-en-celo")]

@@ -1,6 +1,7 @@
 using ZooTech.Application.Modules.Module_Celo.UseCases.CreateCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.DeleteCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetCelos;
+using ZooTech.Application.Modules.Module_Celo.UseCases.GetReporteCelos;
 using ZooTech.Application.Modules.Module_Celo.UseCases.UpdateCelo;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.DTOs.Responses;
@@ -59,6 +60,23 @@ internal static class CeloMapper
             CodigoVacuno = item.CodigoVacuno,
             NombreVacuno = item.NombreVacuno,
             VecesEnCelo = item.VecesEnCelo,
+        };
+    }
+
+    public static CeloReporteItemResponse ToResponse(CeloReporteItemDto item)
+    {
+        return new CeloReporteItemResponse
+        {
+            CodigoRegistro = item.CodigoRegistro,
+            Fecha = item.Fecha,
+            Hora = item.Hora,
+            CodigoVacuno = item.CodigoVacuno,
+            NombreVacuno = item.NombreVacuno,
+            VecesEnCelo = item.VecesEnCelo,
+            Caracteristicas = item.Caracteristicas,
+            ListaCaracteristicas = item.ListaCaracteristicas,
+            Observaciones = item.Observaciones,
+            Crias = item.Crias
         };
     }
 }

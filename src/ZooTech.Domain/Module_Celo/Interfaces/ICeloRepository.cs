@@ -7,7 +7,13 @@ public interface ICeloRepository
     Task<List<CeloListItem>> GetAllAsync(
         CancellationToken cancellationToken = default);
 
+    Task<List<CeloReporteItem>> GetAllForReporteAsync(
+        CancellationToken cancellationToken = default);
+
     Task<Dictionary<long, int>> GetVecesEnCeloCountsAsync(
+        CancellationToken cancellationToken = default);
+
+    Task<Dictionary<long, int>> GetCriasCountsAsync(
         CancellationToken cancellationToken = default);
 
     Task<Celo?> GetByIdAsync(

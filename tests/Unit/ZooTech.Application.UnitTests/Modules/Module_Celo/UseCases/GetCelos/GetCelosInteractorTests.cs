@@ -24,6 +24,20 @@ public sealed class FakeCeloRepository : ICeloRepository
     }
 
     // No se usa en estos tests, pero se implementa porque ICeloRepository lo exige.
+    public Task<List<CeloReporteItem>> GetAllForReporteAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(new List<CeloReporteItem>());
+    }
+
+    // No se usa en estos tests, pero se implementa porque ICeloRepository lo exige.
+    public Task<Dictionary<long, int>> GetCriasCountsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(new Dictionary<long, int>());
+    }
+
+    // No se usa en estos tests, pero se implementa porque ICeloRepository lo exige.
     public Task<Celo?> GetByIdAsync(
         long id,
         CancellationToken cancellationToken = default)

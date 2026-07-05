@@ -44,6 +44,34 @@ public sealed class CeloRepository : ICeloRepository
         return entities.Select(ListAllCeloToDomain).ToList();
     }
 
+    public async Task<List<CeloReporteItem>> GetAllForReporteAsync(CancellationToken cancellationToken = default)
+    {
+        var entities = await _context.celo_registros
+            .AsNoTracking()
+            .Include(c => c.caracteristica_codes)
+            .Where(c => c.deleted_at == null)
+            .Select(c => new celo_registro
+            {
+                id = c.id,
+                codigo = c.codigo,
+                fecha_hora = c.fecha_hora,
+                vacuno_id = c.vacuno_id,
+                observaciones = c.observaciones,
+                caracteristica_codes = c.caracteristica_codes,
+
+                vacuno = new vacuno
+                {
+                    id = c.vacuno.id,
+                    codigo = c.vacuno.codigo,
+                    nombre = c.vacuno.nombre,
+                },
+            })
+            .OrderByDescending(c => c.fecha_hora)
+            .ToListAsync(cancellationToken);
+
+        return entities.Select(ReporteCeloToDomain).ToList();
+    }
+
     public async Task<Dictionary<long, int>> GetVecesEnCeloCountsAsync(CancellationToken cancellationToken = default)
     {
         return await _context.celo_registros
@@ -52,6 +80,16 @@ public sealed class CeloRepository : ICeloRepository
             .GroupBy(c => c.vacuno_id)
             .Select(g => new { VacunoId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.VacunoId, x => x.Count, cancellationToken);
+    }
+
+    public async Task<Dictionary<long, int>> GetCriasCountsAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.vacunos
+            .AsNoTracking()
+            .Where(v => v.deleted_at == null && v.madre_id != null)
+            .GroupBy(v => v.madre_id!.Value)
+            .Select(g => new { MadreId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.MadreId, x => x.Count, cancellationToken);
     }
 
     public async Task<Celo?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
@@ -68,11 +106,28 @@ public sealed class CeloRepository : ICeloRepository
     public async Task<Celo> AddAsync(Celo celo, CancellationToken cancellationToken = default)
     {
         var entity = ToEntity(celo);
+
+        if (celo.CaracteristicaCodes.Count > 0)
+        {
+            var caracteristicas = await _context.cat_caracteristica_celos
+                .Where(c => celo.CaracteristicaCodes.Contains(c.code))
+                .ToListAsync(cancellationToken);
+
+            foreach (var caracteristica in caracteristicas)
+            {
+                entity.caracteristica_codes.Add(caracteristica);
+            }
+        }
+
         await _context.celo_registros.AddAsync(entity, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
 
         await _context.Entry(entity)
             .Reference(e => e.vacuno)
+            .LoadAsync(cancellationToken);
+
+        await _context.Entry(entity)
+            .Collection(e => e.caracteristica_codes)
             .LoadAsync(cancellationToken);
 
         return ToDomain(entity);
@@ -161,6 +216,21 @@ public sealed class CeloRepository : ICeloRepository
 
 
     } 
+
+    private static CeloReporteItem ReporteCeloToDomain(Entities.celo_registro entity)
+    {
+        return CeloReporteItem.Rehydrate(
+            id: entity.id,
+            codigo: entity.codigo,
+            fechaHora: entity.fecha_hora,
+            vacunoId: entity.vacuno_id,
+            vacunoCodigo: entity.vacuno?.codigo ?? string.Empty,
+            nombreVacuno: entity.vacuno?.nombre ?? string.Empty,
+            observaciones: entity.observaciones ?? string.Empty,
+            caracteristicaCodes: entity.caracteristica_codes
+                .Select(c => c.code)
+                .ToList());
+    }
 
     private static Entities.celo_registro ToEntity(Celo celo)
     {
