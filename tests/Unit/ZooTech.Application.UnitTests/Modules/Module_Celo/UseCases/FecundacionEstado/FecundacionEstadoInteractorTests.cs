@@ -140,7 +140,6 @@ public class FecundacionEstadoInteractorTests
     {
         return new FecundacionEstadoSnapshot(
             1,
-            codigoFecundacion is null ? null : 10,
             "V001",
             "Lola",
             estadoActual,

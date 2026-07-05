@@ -21,15 +21,7 @@ public static class FecundacionRules
         => MatchesAny(resultadoCode, "FALLIDA", "FALLIDO", "FALLA");
 
     public static bool EsEstadoPendienteOConfirmacion(string estadoCode)
-        => MatchesAny(
-            estadoCode,
-            "PENDIENTE",
-            "EN_PROCESO",
-            "CONFIRMADA",
-            "GESTACION",
-            "EN_GESTACION",
-            "EN_ESPERA",
-            "GESTANTE");
+        => MatchesAny(estadoCode, "PENDIENTE", "EN_PROCESO", "CONFIRMADA", "GESTACION", "EN_GESTACION");
 
     private static bool MatchesAny(string value, params string[] candidates)
     {

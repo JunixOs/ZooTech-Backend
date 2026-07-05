@@ -44,7 +44,7 @@ public sealed class UpdateFecundacionEstadoInteractor : IUpdateFecundacionEstado
 
         transitionValidator.ValidateTransition(current.EstadoActual, nextEstado);
 
-        if (FecundacionEstadoConstants.IsActive(nextEstado) &&
+        if (nextEstado == FecundacionEstadoConstants.EnProceso &&
             await repository.HasOtherActiveFecundacionAsync(
                 current.VacunoId,
                 command.FecundacionId,
@@ -71,7 +71,6 @@ public sealed class UpdateFecundacionEstadoInteractor : IUpdateFecundacionEstado
 
         return new UpdateFecundacionEstadoOutput(
             updated.VacunoId,
-            updated.FecundacionId,
             updated.CodigoVacuno,
             updated.NombreVacuno,
             updated.EstadoActual,

@@ -18,25 +18,13 @@ public sealed class FecundacionEstadoTransitionValidator
             [FecundacionEstadoConstants.Confirmada] =
             [
                 FecundacionEstadoConstants.EnGestacion
-            ],
-            [FecundacionEstadoConstants.EnEspera] =
-            [
-                FecundacionEstadoConstants.Gestante,
-                FecundacionEstadoConstants.Vacia
-            ],
-            [FecundacionEstadoConstants.Gestante] =
-            [
-                FecundacionEstadoConstants.Vacia
             ]
         };
 
     public void ValidateTransition(string currentEstado, string nextEstado)
     {
-        var current = FecundacionEstadoConstants.ToTransitionState(currentEstado);
-        var next = FecundacionEstadoConstants.ToTransitionState(nextEstado);
-
-        if (!AllowedTransitions.TryGetValue(current, out var nextStates) ||
-            !nextStates.Contains(next))
+        if (!AllowedTransitions.TryGetValue(currentEstado, out var nextStates) ||
+            !nextStates.Contains(nextEstado))
         {
             throw new FecundacionEstadoValidationException(
                 new Dictionary<string, string>

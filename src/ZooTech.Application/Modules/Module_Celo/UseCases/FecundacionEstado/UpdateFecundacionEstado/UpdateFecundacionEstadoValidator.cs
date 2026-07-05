@@ -4,6 +4,15 @@ namespace ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.Upd
 
 public sealed class UpdateFecundacionEstadoValidator
 {
+    private static readonly HashSet<string> AllowedStates =
+    [
+        FecundacionEstadoConstants.Pendiente,
+        FecundacionEstadoConstants.EnProceso,
+        FecundacionEstadoConstants.Confirmada,
+        FecundacionEstadoConstants.EnGestacion,
+        FecundacionEstadoConstants.Fallida
+    ];
+
     public string ValidateAndNormalize(UpdateFecundacionEstadoCommand command)
     {
         Dictionary<string, string> errors = [];
@@ -24,7 +33,7 @@ public sealed class UpdateFecundacionEstadoValidator
         }
 
         var estado = command.EstadoFecundacion?.Trim() ?? string.Empty;
-        if (!string.IsNullOrWhiteSpace(estado) && !FecundacionEstadoConstants.IsKnownEstado(estado))
+        if (!string.IsNullOrWhiteSpace(estado) && !AllowedStates.Contains(estado))
         {
             errors["estadoFecundacion"] = "El estado de fecundacion indicado no esta permitido.";
         }

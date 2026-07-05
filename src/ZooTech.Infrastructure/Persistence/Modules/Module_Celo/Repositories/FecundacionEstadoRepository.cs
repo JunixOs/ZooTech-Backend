@@ -35,9 +35,7 @@ public sealed class FecundacionEstadoRepository : IFecundacionEstadoRepository
         }
 
         var fecundacionId = await context.fecundacions.AsNoTracking()
-            .Where(item => item.vacuno_receptor_id == vacunoId &&
-                (item.observaciones_veterinarias == null ||
-                 !item.observaciones_veterinarias.StartsWith("ANULADO_FECUNDACION:")))
+            .Where(item => item.vacuno_receptor_id == vacunoId)
             .OrderByDescending(item => item.fecha_procedimiento)
             .ThenByDescending(item => item.created_at)
             .ThenByDescending(item => item.id)
@@ -55,8 +53,6 @@ public sealed class FecundacionEstadoRepository : IFecundacionEstadoRepository
     {
         var fecundacionInfo = await context.fecundacions.AsNoTracking()
             .Where(item => item.id == fecundacionId)
-            .Where(item => item.observaciones_veterinarias == null ||
-                !item.observaciones_veterinarias.StartsWith("ANULADO_FECUNDACION:"))
             .Select(item => new
             {
                 item.vacuno_receptor_id
@@ -81,10 +77,8 @@ public sealed class FecundacionEstadoRepository : IFecundacionEstadoRepository
         string estado,
         CancellationToken cancellationToken = default)
     {
-        var lookupValues = FecundacionEstadoConstants.GetLookupValues(estado);
-
         return await context.cat_estado_fecundacion_vacunos.AsNoTracking()
-            .Where(item => lookupValues.Contains(item.nombre) || lookupValues.Contains(item.code))
+            .Where(item => item.nombre == estado)
             .Select(item => item.code)
             .FirstOrDefaultAsync(cancellationToken);
     }
@@ -96,8 +90,6 @@ public sealed class FecundacionEstadoRepository : IFecundacionEstadoRepository
     {
         var fecundacionIds = await context.fecundacions.AsNoTracking()
             .Where(item => item.vacuno_receptor_id == vacunoId && item.id != fecundacionId)
-            .Where(item => item.observaciones_veterinarias == null ||
-                !item.observaciones_veterinarias.StartsWith("ANULADO_FECUNDACION:"))
             .Select(item => item.id)
             .ToArrayAsync(cancellationToken);
 
@@ -107,7 +99,7 @@ public sealed class FecundacionEstadoRepository : IFecundacionEstadoRepository
                 otherFecundacionId,
                 cancellationToken);
 
-            if (FecundacionEstadoConstants.IsActive(estado))
+            if (estado is FecundacionEstadoConstants.Pendiente or FecundacionEstadoConstants.EnProceso)
             {
                 return true;
             }
@@ -204,7 +196,6 @@ public sealed class FecundacionEstadoRepository : IFecundacionEstadoRepository
 
         return new FecundacionEstadoSnapshot(
             animal.Id,
-            fecundacion.id,
             animal.Codigo,
             animal.Nombre,
             estadoActual,
@@ -224,7 +215,6 @@ public sealed class FecundacionEstadoRepository : IFecundacionEstadoRepository
     {
         return new FecundacionEstadoSnapshot(
             animal.Id,
-            null,
             animal.Codigo,
             animal.Nombre,
             SinEstado,
@@ -339,7 +329,7 @@ public sealed class FecundacionEstadoRepository : IFecundacionEstadoRepository
 
     private static bool IsDisponible(string estado)
     {
-        return FecundacionEstadoConstants.IsDisponible(estado);
+        return estado == SinEstado || estado == Fallida;
     }
 
     private sealed record AnimalInfo(

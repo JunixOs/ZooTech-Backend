@@ -2,7 +2,6 @@ namespace ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.Get
 
 public sealed record GetFecundacionEstadoOutput(
     long VacunoId,
-    long? FecundacionId,
     string CodigoVacuno,
     string NombreVacuno,
     string EstadoActual,
