@@ -34,6 +34,7 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers
 
         // TODO: Aplicar Guia de Paginacion
         [ServiceFilter(typeof(TenantHeaderFilter))]
+        [RestrictTenantType(TenantType.Admin)]
         [Authorize(Roles = AuthorizationRoles.Admin)]
         [HttpGet("users")]
         public async Task<IActionResult> ListAdminUsers()
@@ -48,6 +49,7 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers
         }
 
         [ServiceFilter(typeof(TenantHeaderFilter))]
+        [RestrictTenantType(TenantType.Admin)]
         [Authorize(Roles = AuthorizationRoles.Admin)]
         [HttpGet("delete")]
         public async Task<IActionResult> DeleteAdminUser(
@@ -67,6 +69,7 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers
         }
 
         [ServiceFilter(typeof(TenantHeaderFilter))]
+        [RestrictTenantType(TenantType.Admin)]
         [Authorize(Roles = AuthorizationRoles.Admin)]
         [HttpPost]
         public async Task<IActionResult> CreateAdminUser(

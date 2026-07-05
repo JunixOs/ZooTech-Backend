@@ -30,6 +30,7 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers
         }
 
         [ServiceFilter(typeof(TenantHeaderFilter))]
+        [RestrictTenantType(TenantType.Admin)]
         [Authorize(Roles = AuthorizationRoles.Admin)]
         [HttpPost("create")]
         public async Task<IActionResult> CreateTenant([FromBody] CreateTenantRequestDto requestDto)
