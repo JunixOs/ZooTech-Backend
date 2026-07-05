@@ -1,3 +1,5 @@
+using System;
+
 namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses;
 
 public sealed record VacunoResponse(
@@ -19,7 +21,6 @@ public sealed record VacunoResponse(
     string? CodigoMadre,
     string? Granja,
     string? Distrito,
-    string? Provincia,
     string? Departamento,
+    string? Provincia,
     string? CodigoDistrito);
-

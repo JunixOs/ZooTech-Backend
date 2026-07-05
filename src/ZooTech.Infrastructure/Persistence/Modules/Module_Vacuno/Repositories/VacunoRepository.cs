@@ -7,6 +7,8 @@ using ZooTech.Domain.Module_Vacuno.ReadModels.GetArbolGenealogico;
 using ZooTech.Domain.Module_Vacuno.ReadModels.ListarVacuno;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Persistence.Mappers;
+using ZooTech.Domain.Module_Vacuno.Models;
+using ZooTech.Domain.Module_Vacuno.ReadModels;
 using ZooTech.Infrastructure.Persistence.Models;
 
 namespace ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Repositories;
@@ -97,15 +99,51 @@ public sealed class VacunoRepository : IVacunoRepository
     public Task<bool> ExistsCodigoAsync(string codigo, CancellationToken cancellationToken = default)
         => _context.vacunos.AnyAsync(v => v.deleted_at == null && v.codigo == codigo.Trim(), cancellationToken);
 
-    public async Task<Vacuno> AddAsync(Vacuno vacuno, CancellationToken cancellationToken = default)
+    public async Task<Vacuno> AddAsync(Vacuno vacuno, decimal? precioCompra, string? aptoPara, CancellationToken cancellationToken = default)
     {
         var entity = ToEntity(vacuno);
         _context.vacunos.Add(entity);
+
+        var now = DateTime.UtcNow;
+
+        if (precioCompra.HasValue)
+        {
+            var adq = new ZooTech.Infrastructure.Persistence.Entities.vacuno_adquisicion
+            {
+                vacuno_id = entity.id,
+                tipo_adquisicion_code = entity.tipo_adquisicion_code,
+                fecha_adquisicion = DateOnly.FromDateTime(now),
+                precio_compra = precioCompra.Value,
+                created_at = now
+            };
+            _context.vacuno_adquisicions.Add(adq);
+        }
+
+        if (!string.IsNullOrEmpty(aptoPara))
+        {
+            var util = new ZooTech.Infrastructure.Persistence.Entities.vacuno_utilizacion_historial
+            {
+                vacuno_id = entity.id,
+                tipo_utilizacion_code = aptoPara,
+                created_at = now
+            };
+            _context.vacuno_utilizacion_historials.Add(util);
+        }
+
+        var est = new ZooTech.Infrastructure.Persistence.Entities.vacuno_estado_historial
+        {
+            vacuno_id = entity.id,
+            estado_code = "SANO",
+            fecha_estado = DateOnly.FromDateTime(now),
+            created_at = now
+        };
+        _context.vacuno_estado_historials.Add(est);
+
         await _context.SaveChangesAsync(cancellationToken);
         return ToDomain(entity);
     }
 
-    public async Task<Vacuno> UpdateAsync(Vacuno vacuno, CancellationToken cancellationToken = default)
+    public async Task<Vacuno> UpdateAsync(Vacuno vacuno, decimal? precioCompra, string? aptoPara, CancellationToken cancellationToken = default)
     {
         var entity = await _context.vacunos
             .FirstOrDefaultAsync(v => v.id == vacuno.Id, cancellationToken)
@@ -126,6 +164,64 @@ public sealed class VacunoRepository : IVacunoRepository
         entity.deleted_at = vacuno.DeletedAt;
         entity.deleted_by = vacuno.DeletedBy;
         entity.motivo_eliminacion = vacuno.MotivoEliminacion;
+
+        var now = DateTime.UtcNow;
+
+        var existingAdq = await _context.vacuno_adquisicions.FirstOrDefaultAsync(a => a.vacuno_id == entity.id, cancellationToken);
+        if (existingAdq != null)
+        {
+            existingAdq.precio_compra = precioCompra;
+            existingAdq.tipo_adquisicion_code = entity.tipo_adquisicion_code;
+        }
+        else if (precioCompra.HasValue)
+        {
+            var adq = new ZooTech.Infrastructure.Persistence.Entities.vacuno_adquisicion
+            {
+                vacuno_id = entity.id,
+                tipo_adquisicion_code = entity.tipo_adquisicion_code,
+                fecha_adquisicion = DateOnly.FromDateTime(now),
+                precio_compra = precioCompra.Value,
+                created_at = now
+            };
+            _context.vacuno_adquisicions.Add(adq);
+        }
+
+        var currentUtil = await _context.vacuno_utilizacion_historials
+            .Where(u => u.vacuno_id == entity.id)
+            .OrderByDescending(u => u.created_at)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (currentUtil == null || currentUtil.tipo_utilizacion_code != aptoPara)
+        {
+            if (!string.IsNullOrEmpty(aptoPara))
+            {
+                var util = new ZooTech.Infrastructure.Persistence.Entities.vacuno_utilizacion_historial
+                {
+                    vacuno_id = entity.id,
+                    tipo_utilizacion_code = aptoPara,
+                    created_at = now
+                };
+                _context.vacuno_utilizacion_historials.Add(util);
+            }
+        }
+
+        if (vacuno.IsDeleted)
+        {
+            var existingDeletedState = await _context.vacuno_estado_historials
+                .AnyAsync(eh => eh.vacuno_id == entity.id && eh.estado_code == "MUERTO", cancellationToken);
+
+            if (!existingDeletedState)
+            {
+                var est = new ZooTech.Infrastructure.Persistence.Entities.vacuno_estado_historial
+                {
+                    vacuno_id = entity.id,
+                    estado_code = "MUERTO",
+                    fecha_estado = DateOnly.FromDateTime(now),
+                    created_at = now
+                };
+                _context.vacuno_estado_historials.Add(est);
+            }
+        }
 
         await _context.SaveChangesAsync(cancellationToken);
         return ToDomain(entity);
@@ -262,6 +358,49 @@ public sealed class VacunoRepository : IVacunoRepository
         return resultado.OrderBy(n => n.Nivel).ThenBy(n => n.Vacuno.Id).ToList();
     }
 
+    public async Task<List<VacunoReferenceItem>> ListReferencesAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.vacunos
+            .AsNoTracking()
+            .Where(v => v.deleted_at == null)
+            .OrderBy(v => v.codigo)
+            .Select(v => new VacunoReferenceItem(v.id, v.codigo, v.nombre, v.sexo_code))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<VacunoCatalogs> GetCatalogsAsync(CancellationToken cancellationToken = default)
+    {
+        var tiposAdquisicion = await _context.cat_tipo_adquisicions
+            .AsNoTracking().Where(item => item.activo).OrderBy(item => item.nombre)
+            .Select(item => new VacunoCatalogOption(item.code, item.nombre)).ToListAsync(cancellationToken);
+
+        var razas = await _context.cat_razas
+            .AsNoTracking().Where(item => item.activo).OrderBy(item => item.nombre)
+            .Select(item => new VacunoCatalogOption(item.code, item.nombre)).ToListAsync(cancellationToken);
+
+        var colores = await _context.cat_colors
+            .AsNoTracking().Where(item => item.activo).OrderBy(item => item.nombre)
+            .Select(item => new VacunoCatalogOption(item.code, item.nombre)).ToListAsync(cancellationToken);
+
+        var sexos = await _context.cat_sexos
+            .AsNoTracking().OrderBy(item => item.nombre)
+            .Select(item => new VacunoCatalogOption(item.code, item.nombre)).ToListAsync(cancellationToken);
+
+        var estados = await _context.cat_estado_vacunos
+            .AsNoTracking().OrderBy(item => item.nombre)
+            .Select(item => new VacunoCatalogOption(item.code, item.nombre)).ToListAsync(cancellationToken);
+
+        var utilizaciones = await _context.cat_tipo_utilizacions
+            .AsNoTracking().Where(item => item.activo).OrderBy(item => item.nombre)
+            .Select(item => new VacunoCatalogOption(item.code, item.nombre)).ToListAsync(cancellationToken);
+
+        var granjas = await _context.granjas
+            .AsNoTracking().Where(item => item.activo).OrderBy(item => item.nombre)
+            .Select(item => new GranjaCatalogOption(item.id, item.nombre)).ToListAsync(cancellationToken);
+
+        return new VacunoCatalogs(tiposAdquisicion, razas, colores, sexos, estados, utilizaciones, granjas);
+    }
+
     private static Entities.vacuno ToEntity(Vacuno domain)
         => new()
         {
@@ -301,7 +440,6 @@ public sealed class VacunoRepository : IVacunoRepository
             madreId: entity.madre_id,
             granjaId: entity.granja_id,
             observaciones: entity.observaciones,
-            numChip: null,
             fechaRegistro: entity.fecha_registro,
             createdAt: entity.created_at,
             updatedAt: entity.updated_at,

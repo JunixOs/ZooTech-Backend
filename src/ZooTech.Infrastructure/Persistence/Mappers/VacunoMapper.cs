@@ -1,4 +1,4 @@
-﻿using ZooTech.Domain.Module_Vacuno.ReadModels.ListarVacuno;
+using ZooTech.Domain.Module_Vacuno.ReadModels.ListarVacuno;
 using ZooTech.Infrastructure.Persistence.Models;
 
 namespace ZooTech.Infrastructure.Persistence.Mappers;

@@ -21,7 +21,7 @@ using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Mappers;
 namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Controllers;
 
 [ApiController]
-[Route("api/v1/vacuno")]
+[Route("api/v1/vacunos")]
 [ApiExplorerSettings(GroupName = "public")]
 public sealed class VacunoController : ControllerBase
 {
@@ -1064,5 +1064,21 @@ public sealed class VacunoController : ControllerBase
             .Replace("\\", "\\\\", StringComparison.Ordinal)
             .Replace("(", "\\(", StringComparison.Ordinal)
             .Replace(")", "\\)", StringComparison.Ordinal);
+    }
+
+    [HttpGet("catalogos")]
+    [ProducesResponseType(typeof(GeneralResponseDTO<VacunoCatalogsResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetCatalogos(CancellationToken cancellationToken)
+    {
+        var catalogs = await _vacunoRepository.GetCatalogsAsync(cancellationToken);
+        return Ok(GeneralResponseDTO<VacunoCatalogsResponse>.Ok(VacunoMapper.ToResponse(catalogs)));
+    }
+
+    [HttpGet("referencias")]
+    [ProducesResponseType(typeof(GeneralResponseDTO<List<VacunoReferenceResponse>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ListarReferencias(CancellationToken cancellationToken)
+    {
+        var items = await _vacunoRepository.ListReferencesAsync(cancellationToken);
+        return Ok(GeneralResponseDTO<List<VacunoReferenceResponse>>.Ok(items.Select(VacunoMapper.ToResponse).ToList()));
     }
 }

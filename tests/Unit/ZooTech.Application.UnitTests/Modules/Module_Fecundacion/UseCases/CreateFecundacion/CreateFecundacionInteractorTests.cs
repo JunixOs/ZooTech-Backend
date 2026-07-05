@@ -2,6 +2,7 @@ using FluentValidation;
 using Moq;
 using Xunit;
 using ZooTech.Application.Common.Exceptions;
+using ZooTech.Application.Modules.Module_Fecundacion.Exceptions;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.CreateFecundacion;
 using ZooTech.Application.Modules.Module_Fecundacion.Validators;
 using ZooTech.Domain.Module_Fecundacion.Entities;
@@ -121,6 +122,6 @@ public sealed class CreateFecundacionInteractorTests
             .ReturnsAsync(false);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ConflictException>(() => _interactor.HandleAsync(command));
+        await Assert.ThrowsAsync<FecundacionVacunoNotFoundException>(() => _interactor.HandleAsync(command));
     }
 }

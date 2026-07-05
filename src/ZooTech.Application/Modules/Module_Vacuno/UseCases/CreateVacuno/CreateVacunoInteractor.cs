@@ -1,5 +1,5 @@
 using FluentValidation;
-using ZooTech.Application.Common.Exceptions;
+using ZooTech.Application.Modules.Module_Vacuno.Exceptions;
 using ZooTech.Application.Modules.Module_Vacuno.Common;
 using ZooTech.Domain.Module_Vacuno.Entities;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
@@ -22,7 +22,7 @@ public sealed class CreateVacunoInteractor : ICreateVacunoInputPort
         await _validator.ValidateAndThrowAsync(command, cancellationToken);
 
         if (await _repository.ExistsCodigoAsync(command.Codigo, cancellationToken))
-            throw new ConflictException("Ya existe un vacuno con el mismo código.");
+            throw new VacunoAlreadyExistsException("Ya existe un vacuno con ese código o datos repetidos.");
 
         Vacuno vacuno;
         try
@@ -39,16 +39,15 @@ public sealed class CreateVacunoInteractor : ICreateVacunoInputPort
                 command.MadreId,
                 command.GranjaId,
                 command.Observaciones,
-                null, // numChip
-                null, // actorUsuarioId
+                null,
                 DateTime.UtcNow);
         }
         catch (ArgumentException ex)
         {
-            throw new ConflictException(ex.Message);
+            throw new VacunoException(ex.Message, "BAD_REQUEST", 400);
         }
 
-        var saved = await _repository.AddAsync(vacuno, cancellationToken);
+        var saved = await _repository.AddAsync(vacuno, command.PrecioCompra, command.AptoPara, cancellationToken);
         return new CreateVacunoOutput(VacunoAppMapper.ToOutput(saved));
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using FluentValidation;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.UpdateVacuno;
 
@@ -9,7 +10,7 @@ internal sealed class UpdateVacunoValidator : AbstractValidator<UpdateVacunoComm
     {
         RuleFor(x => x.Nombre)
             .NotEmpty().WithMessage("El nombre del vacuno es obligatorio.")
-            .MaximumLength(100).WithMessage("El nombre no puede superar los 100 caracteres.");
+            .MaximumLength(15).WithMessage("El nombre no puede superar los 15 caracteres.");
 
         RuleFor(x => x.FechaNacimiento)
             .NotEmpty().WithMessage("La fecha de nacimiento es obligatoria.");
@@ -34,7 +35,11 @@ internal sealed class UpdateVacunoValidator : AbstractValidator<UpdateVacunoComm
             .GreaterThan(0).WithMessage("El ID de la granja debe ser mayor que cero.");
 
         RuleFor(x => x.Observaciones)
-            .MaximumLength(150).When(x => x.Observaciones is not null)
-            .WithMessage("Las observaciones no pueden superar los 150 caracteres.");
+            .MaximumLength(150).When(x => x.Observaciones is not null).WithMessage("Las observaciones no pueden superar los 150 caracteres.")
+            .Must(obs => obs == null || obs.Split(new[] { ' ', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).Length <= 30)
+            .WithMessage("Las observaciones no pueden superar las 30 palabras.");
+
+        RuleFor(x => x.PrecioCompra)
+            .NotEmpty().When(x => x.TipoAdquisicionCode == "COMPRA").WithMessage("El precio de compra es obligatorio si la adquisición es por compra.");
     }
 }

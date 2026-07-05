@@ -1,5 +1,5 @@
 using FluentValidation;
-using ZooTech.Application.Common.Exceptions;
+using ZooTech.Application.Modules.Module_Vacuno.Exceptions;
 using ZooTech.Application.Modules.Module_Vacuno.Common;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
 
@@ -21,7 +21,18 @@ public sealed class UpdateVacunoInteractor : IUpdateVacunoInputPort
         await _validator.ValidateAndThrowAsync(command, cancellationToken);
 
         var existing = await _repository.GetByIdAsync(id, cancellationToken)
-            ?? throw new NotFoundException("No se encontró el vacuno solicitado.");
+            ?? throw new VacunoNotFoundException($"No existe el vacuno con el ID {id}.");
+
+        // Validaciones de inmutabilidad (PDF pág 8: "No se permite editar: codigo, fechaNacimiento, adquisicionPor")
+        if (existing.FechaNacimiento != command.FechaNacimiento)
+        {
+            throw new ImmutableFieldException("No se permite editar la fecha de nacimiento.");
+        }
+
+        if (existing.TipoAdquisicionCode != command.TipoAdquisicionCode)
+        {
+            throw new ImmutableFieldException("No se permite editar el tipo de adquisición.");
+        }
 
         try
         {
@@ -36,16 +47,15 @@ public sealed class UpdateVacunoInteractor : IUpdateVacunoInputPort
                 command.MadreId,
                 command.GranjaId,
                 command.Observaciones,
-                null, // numChip
-                null, // actorUsuarioId
+                null,
                 DateTime.UtcNow);
         }
         catch (ArgumentException ex)
         {
-            throw new ConflictException(ex.Message);
+            throw new VacunoException(ex.Message, "BAD_REQUEST", 400);
         }
 
-        var updated = await _repository.UpdateAsync(existing, cancellationToken);
+        var updated = await _repository.UpdateAsync(existing, command.PrecioCompra, command.AptoPara, cancellationToken);
         return new UpdateVacunoOutput(VacunoAppMapper.ToOutput(updated));
     }
 }

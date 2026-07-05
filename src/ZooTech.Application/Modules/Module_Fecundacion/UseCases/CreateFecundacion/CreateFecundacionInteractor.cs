@@ -1,5 +1,6 @@
 using FluentValidation;
 using ZooTech.Application.Common.Exceptions;
+using ZooTech.Application.Modules.Module_Fecundacion.Exceptions;
 using ZooTech.Domain.Module_Fecundacion.Entities;
 using ZooTech.Domain.Module_Fecundacion.Interfaces;
 
@@ -26,7 +27,11 @@ public sealed class CreateFecundacionInteractor : ICreateFecundacionInputPort
 
         // Validar que el vacuno receptor exista
         if (!await _fecundacionRepository.ExistsVacunoAsync(command.VacunoReceptorId, cancellationToken))
-            throw new ConflictException($"El vacuno receptor con ID {command.VacunoReceptorId} no existe.");
+            throw new FecundacionVacunoNotFoundException();
+
+        // Validar que no tenga otra fecundación activa con resultado 'Pendiente de confirmación'
+        if (await _fecundacionRepository.HasActiveFecundacionAsync(null, command.VacunoReceptorId, cancellationToken))
+            throw new FecundacionPendingActiveException();
 
         // Validar que el celo exista (si se proporcionó)
         if (command.CeloRegistroId.HasValue && !await _fecundacionRepository.ExistsCeloAsync(command.CeloRegistroId.Value, cancellationToken))

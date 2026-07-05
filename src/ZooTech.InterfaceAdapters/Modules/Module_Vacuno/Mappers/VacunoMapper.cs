@@ -6,6 +6,8 @@ using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.UpdateVacuno;
 using ZooTech.Domain.Module_Vacuno.ReadModels.ListarVacuno;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Requests;
+using ZooTech.Domain.Module_Vacuno.Models;
+using ZooTech.Domain.Module_Vacuno.ReadModels;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Mappers;
@@ -35,7 +37,9 @@ internal static class VacunoMapper
             padreId,
             madreId,
             granjaId,
-            request.Observaciones);
+            request.Observaciones,
+            request.PrecioCompra,
+            request.AptoPara);
 
     internal static UpdateVacunoCommand ToCommand(UpdateVacunoRequest request, long? padreId, long? madreId, long granjaId)
         => new(
@@ -48,7 +52,9 @@ internal static class VacunoMapper
             padreId,
             madreId,
             granjaId,
-            request.Observaciones);
+            request.Observaciones,
+            request.PrecioCompra,
+            request.AptoPara);
 
     internal static DeleteVacunoCommand ToCommand(DeleteVacunoRequest request)
         => new(request.MotivoEliminacion);
@@ -85,4 +91,20 @@ internal static class VacunoMapper
             null,
             null,
             null);
+
+    internal static VacunoReferenceResponse ToResponse(VacunoReferenceItem item)
+        => new(item.Id, item.Codigo, item.Nombre, item.SexoCode);
+
+    internal static VacunoCatalogsResponse ToResponse(VacunoCatalogs catalogs)
+        => new(
+            catalogs.TiposAdquisicion.Select(ToResponse).ToList(),
+            catalogs.Razas.Select(ToResponse).ToList(),
+            catalogs.Colores.Select(ToResponse).ToList(),
+            catalogs.Sexos.Select(ToResponse).ToList(),
+            catalogs.Estados.Select(ToResponse).ToList(),
+            catalogs.Utilizaciones.Select(ToResponse).ToList(),
+            catalogs.Granjas.Select(item => new GranjaCatalogOptionResponse(item.Id, item.Nombre)).ToList());
+
+    private static VacunoCatalogOptionResponse ToResponse(VacunoCatalogOption option)
+        => new(option.Code, option.Nombre);
 }
