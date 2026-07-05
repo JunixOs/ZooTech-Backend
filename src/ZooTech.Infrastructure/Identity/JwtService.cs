@@ -17,7 +17,7 @@ namespace ZooTech.Infrastructure.Identity
             _settings = settings.Value;
         }
 
-        public string GenerateToken(
+        public (string token, string jti) GenerateToken(
             int userId, 
             string userName,
             string email, 
@@ -33,6 +33,8 @@ namespace ZooTech.Infrastructure.Identity
                 SecurityAlgorithms.HmacSha256
             );
 
+            var jti = Guid.NewGuid().ToString();
+
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
@@ -40,7 +42,7 @@ namespace ZooTech.Infrastructure.Identity
                 new Claim(ClaimTypes.Email, email),
                 new Claim(ClaimTypes.Name, userName),
                 new Claim(ClaimTypes.Role, userRole.ToString()),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+                new Claim(JwtRegisteredClaimNames.Jti, jti)
             };
 
             var token = new JwtSecurityToken(
@@ -53,7 +55,7 @@ namespace ZooTech.Infrastructure.Identity
                 signingCredentials: credentials
             );
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            return (new JwtSecurityTokenHandler().WriteToken(token), jti);
         }
 
         public bool IsTokenValid(string token)

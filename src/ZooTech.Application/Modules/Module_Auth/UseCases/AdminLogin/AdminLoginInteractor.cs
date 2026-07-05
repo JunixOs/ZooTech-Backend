@@ -13,7 +13,7 @@ namespace ZooTech.Application.Modules.Module_Auth.UseCases.AdminLogin
         private readonly IJwtService _jwtService;
 
         private readonly IAdminUserRepository _adminUserRepository;
-        
+        private readonly IRefreshTokenRepository _refreshTokenRepository;
 
         public AuditEventType EventType => AuditEventType.Login;
         public string Action => "A user is login into the application.";
@@ -22,13 +22,15 @@ namespace ZooTech.Application.Modules.Module_Auth.UseCases.AdminLogin
             IPasswordHasher passwordHasher,
             IJwtService jwtService,
             
-            IAdminUserRepository adminUserRepository
+            IAdminUserRepository adminUserRepository,
+            IRefreshTokenRepository refreshTokenRepository
         )
         {
             _passwordHasher = passwordHasher;
             _jwtService = jwtService;
 
             _adminUserRepository = adminUserRepository;
+            _refreshTokenRepository = refreshTokenRepository;
         }
 
         public async Task<string> Handle(AdminLoginCommand cmd)
@@ -45,7 +47,7 @@ namespace ZooTech.Application.Modules.Module_Auth.UseCases.AdminLogin
                 throw new InvalidCredentialsException(ScopeName.Application , ModuleName.Auth);
             }
 
-            var token = _jwtService.GenerateToken(
+            (var token, var jti) = _jwtService.GenerateToken(
                 domainEntity.Id,
                 domainEntity.UserName ?? string.Empty,
                 domainEntity.Email.Value,
