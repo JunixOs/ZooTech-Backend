@@ -5,6 +5,10 @@ namespace ZooTech.Domain.Configuration;
 
 public static class Features
 {
+    public static readonly FeatureCode ModuleProduccionLeche = new("MODULE_PRODUCCION_LECHE");
+    public static readonly FeatureCode ModuleProduccionLecheReports = new("MODULE_PRODUCCION_LECHE_REPORTS");
+    public static readonly FeatureCode ModuleSanidad = new("MODULE_SANIDAD");
+    public static readonly FeatureCode ModuleSanidadReport = new("MODULE_SANIDAD_REPORT");
     public static readonly FeatureCode ModuleVacunos = new("MODULE_VACUNOS");
     public static readonly FeatureCode ModuleVacunosReportes = new("MODULE_VACUNOS_REPORTES");
     public static readonly FeatureCode ModuleVacunosReproduccion = new("MODULE_VACUNOS_REPRODUCCION");

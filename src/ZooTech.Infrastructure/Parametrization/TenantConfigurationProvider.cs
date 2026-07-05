@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.Extensions.Caching.Memory;
 using ZooTech.Application.Common.Gateway.Caching;
+using ZooTech.Application.Common.Gateway.Context;
 using ZooTech.Application.Common.Gateway.Parametrization;
 using ZooTech.Application.Common.Gateway.Repositories.Parametrization;
 using ZooTech.Domain.Configuration;
@@ -15,20 +16,26 @@ public sealed class TenantConfigurationProvider : ITenantConfigurationProvider
     private readonly IAppCacheService _cache;
     private readonly ITenantConfigurationRepository _repository;
 
+    private readonly int CurrentTenantId;
+
     public TenantConfigurationProvider(
         IMemoryCache memoryCache,
         IAppCacheService cache,
-        ITenantConfigurationRepository repository)
+        ITenantConfigurationRepository repository,
+
+        ITenantContext tenantContext
+    )
     {
         _memoryCache = memoryCache;
         _cache = cache;
         _repository = repository;
+
+        CurrentTenantId = tenantContext.TenantId;
     }
 
-    public async Task<T> GetSettingAsync<T>(
-        int tenantId, SettingDefinition<T> setting)
+    public async Task<T> GetSettingAsync<T>(SettingDefinition<T> setting)
     {
-        var config = await GetConfigAsync(tenantId);
+        var config = await GetConfigAsync();
 
         if (config.Settings.TryGetValue(setting.Code, out var raw) && raw is not null)
         {
@@ -40,30 +47,28 @@ public sealed class TenantConfigurationProvider : ITenantConfigurationProvider
         return default!;
     }
 
-    public async Task<bool> IsFeatureEnabledAsync(
-        int tenantId, FeatureCode feature)
+    public async Task<bool> IsFeatureEnabledAsync(FeatureCode feature)
     {
-        var config = await GetConfigAsync(tenantId);
+        var config = await GetConfigAsync();
         return config.EnabledFeatures.Contains(feature.Value);
     }
 
-    public async Task<bool> IsRuleEnabledAsync(
-        int tenantId, RuleCode rule)
+    public async Task<bool> IsRuleEnabledAsync(RuleCode rule)
     {
-        var config = await GetConfigAsync(tenantId);
+        var config = await GetConfigAsync();
         return config.EnabledRules.Contains(rule.Value);
     }
 
-    public async Task InvalidateTenantAsync(int tenantId)
+    public async Task InvalidateTenantAsync()
     {
-        var key = BuildKey(tenantId);
+        var key = BuildKey(CurrentTenantId);
         _memoryCache.Remove(key);
         await _cache.RemoveByKeyAsync(key);
     }
 
-    private async Task<TenantConfiguration> GetConfigAsync(int tenantId)
+    private async Task<TenantConfiguration> GetConfigAsync()
     {
-        var key = BuildKey(tenantId);
+        var key = BuildKey(CurrentTenantId);
 
         if (_memoryCache.TryGetValue(key, out TenantConfiguration? cached))
             return cached!;
@@ -75,7 +80,7 @@ public sealed class TenantConfigurationProvider : ITenantConfigurationProvider
             return distributed!;
         }
 
-        var config = await _repository.LoadTenantConfigAsync(tenantId);
+        var config = await _repository.LoadTenantConfigAsync(CurrentTenantId);
 
         _memoryCache.Set(key, config, CacheTtl);
         await _cache.GetOrCreateAsync(key, () => Task.FromResult(config), CacheTtl);

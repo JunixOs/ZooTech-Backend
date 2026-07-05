@@ -2,7 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using ZooTech.Application.Common.Behaviors;
 using ZooTech.Application.Common.Behaviors.Module_Auth.AdminLogin;
 using ZooTech.Application.Common.Behaviors.Module_Auth.RegularLogin;
-using ZooTech.Application.Common.Behaviors.Module_Tenancing;
+using ZooTech.Application.Common.Behaviors.Module_Tenancing.CreateTenant;
 using ZooTech.Application.Common.Validator;
 using ZooTech.Application.Modules.Module_Auth.UseCases.AdminLogin;
 using ZooTech.Application.Modules.Module_Auth.UseCases.RegularLogin;
