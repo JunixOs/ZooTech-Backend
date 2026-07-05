@@ -24,8 +24,6 @@ public sealed class GetAllTriajesInteractor : IGetAllTriajesInputPort
             t.TipoPesoCode, t.PesoKg, t.Observaciones, t.EstadoRegistroCode,
             t.EncargadoUsuarioId, t.CreatedAt)).ToList();
 
-        var totalPaginas = (int)Math.Ceiling((double)total / tamano);
-
-        return new GetAllTriajesOutput(items, total, pagina, tamano, totalPaginas);
+        return new GetAllTriajesOutput(items, total);
     }
 }

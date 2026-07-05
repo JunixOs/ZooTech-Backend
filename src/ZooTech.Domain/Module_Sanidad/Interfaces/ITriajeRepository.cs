@@ -15,10 +15,14 @@ public interface ITriajeRepository
      decimal? pesoKg = null,
      CancellationToken cancellationToken = default);
     Task<Triaje> AddAsync(Triaje triaje, CancellationToken cancellationToken = default);
-    Task UpdateAsync(Triaje triaje, CancellationToken cancellationToken = default);
+    Task<Triaje> UpdateAsync(Triaje triaje, CancellationToken cancellationToken = default);
     Task DeleteAsync(long id, CancellationToken cancellationToken = default);
     Task<string> GenerateCodigoAsync(CancellationToken cancellationToken = default);
 
     Task<IEnumerable<TriajeHistorialItem>> GetHistorialByVacunoIdAsync(long vacunoId, CancellationToken cancellationToken = default);
     Task<IEnumerable<TriajeDetallePorVacunoItem>> GetDetallesByVacunoIdAsync(long vacunoId, CancellationToken cancellationToken = default);
+
+    Task<bool> ExistsVacunoAsync(long vacunoId, CancellationToken cancellationToken = default);
+    Task<bool> ExistsUsuarioAsync(long usuarioId, CancellationToken cancellationToken = default);
+    Task<bool> ExistsTipoPesoAsync(string tipoPesoCode, CancellationToken cancellationToken = default);
 }

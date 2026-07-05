@@ -15,4 +15,10 @@ namespace ZooTech.InterfaceAdapters.DTOs
         public static GeneralResponseDTO<T> Ok(T data) => new GeneralResponseDTO<T> { Success = true, Data = data };
         public static GeneralResponseDTO<T> Fail(string errorMessage) => new GeneralResponseDTO<T> { Success = false, ErrorMessage = errorMessage };
     }
+
+    public sealed record PaginationResponse(
+        int Page,
+        int Limit,
+        int Total,
+        int TotalPages);
 }

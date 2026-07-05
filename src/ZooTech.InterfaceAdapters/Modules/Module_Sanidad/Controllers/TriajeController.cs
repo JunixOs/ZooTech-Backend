@@ -61,9 +61,11 @@ public sealed class TriajeController : ControllerBase
         [FromQuery] decimal? pesoKg = null,
         CancellationToken cancellationToken = default)
     {
-        var query = new GetAllTriajesQuery(pagina, tamano, fecha, codigo, nombre, tipoPeso, pesoKg);
+        var currentPage = pagina <= 0 ? 1 : pagina;
+        var currentTamano = tamano <= 0 ? 10 : Math.Min(tamano, 100);
+        var query = new GetAllTriajesQuery(currentPage, currentTamano, fecha, codigo, nombre, tipoPeso, pesoKg);
         var output = await _getAllInputPort.HandleAsync(query, cancellationToken);
-        return Ok(GeneralResponseDTO<PagedTriajeResponse>.Ok(TriajeMapper.ToPagedResponse(output)));
+        return Ok(GeneralResponseDTO<PagedTriajeResponse>.Ok(TriajeMapper.ToPagedResponse(output, currentPage, currentTamano)));
     }
 
     [HttpGet("{id:long}")]
@@ -87,14 +89,14 @@ public sealed class TriajeController : ControllerBase
     }
 
     [HttpPatch("{id:long}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(GeneralResponseDTO<TriajeResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Update(long id, [FromBody] UpdateTriajeRequest request, CancellationToken cancellationToken = default)
     {
         var command = TriajeMapper.ToUpdateCommand(request);
-        await _updateInputPort.HandleAsync(id, command, cancellationToken);
-        return NoContent();
+        var output = await _updateInputPort.HandleAsync(id, command, cancellationToken);
+        return Ok(GeneralResponseDTO<TriajeResponse>.Ok(TriajeMapper.ToResponse(output)));
     }
 
     [HttpDelete("{id:long}")]
