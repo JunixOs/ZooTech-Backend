@@ -5,6 +5,8 @@ using ZooTech.Application.Common.Gateway.Services;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarArbolGenealogico;
 using ZooTech.Domain.Module_Vacuno.Entities;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
+using ZooTech.Domain.Module_Vacuno.ReadModels.GetArbolGenealogico;
+using ZooTech.Application.Common.Exceptions;
 
 namespace ZooTech.Application.UnitTests.Modules.Module_Vacuno.UseCases;
 
@@ -28,7 +30,7 @@ public class ExportarArbolGenealogicoInteractorTests
         var vacunoId = 1L;
         var command = new ExportarArbolGenealogicoCommand(4);
         var raiz = Vacuno.Rehydrate(vacunoId, "V1", "Estrella", new DateOnly(2020, 1, 1), "COMPRA", "HOLSTEIN", "BLANCO_NEGRO", "HEMBRA", null, null, 1, null, null, new DateOnly(2020, 1, 1), DateTime.UtcNow, DateTime.UtcNow, null, null, null, null, null);
-        var arbol = new List<Vacuno> { raiz };
+        var arbol = new List<VacunoGenealogiaNode> { new VacunoGenealogiaNode(raiz, 1, null) };
         var expectedBytes = new byte[] { 0x01, 0x02 };
 
         _vacunoRepositoryMock.GetByIdAsync(vacunoId, Arg.Any<CancellationToken>()).Returns(raiz);
@@ -45,7 +47,7 @@ public class ExportarArbolGenealogicoInteractorTests
     }
 
     [Fact]
-    public async Task HandleAsync_WhenVacunoDoesNotExist_ShouldThrowArgumentException()
+    public async Task HandleAsync_WhenVacunoDoesNotExist_ShouldThrowNotFoundException()
     {
         // Arrange
         var vacunoId = 99L;
@@ -54,10 +56,10 @@ public class ExportarArbolGenealogicoInteractorTests
         _vacunoRepositoryMock.GetByIdAsync(vacunoId, Arg.Any<CancellationToken>()).Returns((Vacuno?)null);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<ArgumentException>(() => _interactor.HandleAsync(vacunoId, command));
+        var exception = await Assert.ThrowsAsync<NotFoundException>(() => _interactor.HandleAsync(vacunoId, command));
         exception.Message.Should().Contain(vacunoId.ToString());
 
         await _vacunoRepositoryMock.DidNotReceive().GetArbolGenealogicoAsync(Arg.Any<long>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
-        await _exportServiceMock.DidNotReceive().GenerateExcelAsync(Arg.Any<List<Vacuno>>(), Arg.Any<Vacuno>(), Arg.Any<CancellationToken>());
+        await _exportServiceMock.DidNotReceive().GenerateExcelAsync(Arg.Any<List<VacunoGenealogiaNode>>(), Arg.Any<Vacuno>(), Arg.Any<CancellationToken>());
     }
 }

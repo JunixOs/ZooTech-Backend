@@ -1,4 +1,5 @@
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.CreateFecundacion;
+using ZooTech.Domain.Module_Fecundacion.ReadModels;
 using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.DTOs.Responses;
 
@@ -28,5 +29,18 @@ internal static class FecundacionMapper
             Id: output.Id,
             Codigo: output.Codigo,
             FechaProcedimiento: output.FechaProcedimiento);
+    }
+
+    public static FecundacionItemResponse ToListItemResponse(FecundacionListItem item)
+    {
+        return new FecundacionItemResponse(
+            Id: item.Id,
+            CodigoFecundacion: item.CodigoFecundacion,
+            FechaProcedimiento: item.FechaProcedimiento,
+            NombreVacunoReceptor: item.NombreVacunoReceptor,
+            Responsable: item.Responsable,
+            TipoFecundacion: item.TipoFecundacion,
+            CodigoResultado: item.CodigoResultado,
+            NombreDonante: item.NombreDonante);
     }
 }

@@ -4,6 +4,13 @@ using ZooTech.Application.Modules.Module_Celo.UseCases.CreateCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.DeleteCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetCelos;
 using ZooTech.Application.Modules.Module_Celo.UseCases.UpdateCelo;
+using ZooTech.Application.Modules.Module_Fecundacion.UseCases.CreateFecundacion;
+using ZooTech.Application.Modules.Module_Fecundacion.UseCases.ListarFecundacion;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.CreateOrdenio;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.DeleteOrdenio;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GetOrdenioById;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.ListOrdenios;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.UpdateOrdenio;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.CreateTriaje;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.DeleteTriaje;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllTipoPesos;
@@ -14,17 +21,11 @@ using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetTriajeById;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.UpdateTriaje;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.CreateVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarArbolGenealogico;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetArbolGenealogico;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetVacunoById;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.UpdateVacuno;
-using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.CreateOrdenio;
-using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.DeleteOrdenio;
-using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GetOrdenioById;
-using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.ListOrdenios;
-using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.UpdateOrdenio;
-using ZooTech.Application.Modules.Module_Fecundacion.UseCases.CreateFecundacion;
-using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetArbolGenealogico;
-using ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarArbolGenealogico;
 
 namespace ZooTech.Application;
 
@@ -82,6 +83,7 @@ public static class DependencyInjection
         // Use Cases - Module_Fecundacion
         // ============================================
         services.AddScoped<ICreateFecundacionInputPort, CreateFecundacionInteractor>();
+        services.AddScoped<IListarFecundacionInputPort, ListarFecundacionInteractor>();
 
         return services;
     }

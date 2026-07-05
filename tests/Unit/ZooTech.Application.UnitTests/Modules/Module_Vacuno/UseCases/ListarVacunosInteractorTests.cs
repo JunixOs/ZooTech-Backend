@@ -33,7 +33,7 @@ public class ListarVacunosInteractorTests
         };
 
         _vacunoRepositoryMock.Setup(x => x.GetPagedAsync(
-                It.IsAny<string?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                It.IsAny<string?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((fakeItems, 1));
 
         var command = new ListarVacunosCommand(Page: 1, Limit: 10);
@@ -50,7 +50,7 @@ public class ListarVacunosInteractorTests
     public async Task HandleAsync_WhenRepositoryThrowsException_ThrowsException()
     {
         _vacunoRepositoryMock.Setup(x => x.GetPagedAsync(
-                It.IsAny<string?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                It.IsAny<string?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Database error"));
 
         var command = new ListarVacunosCommand();

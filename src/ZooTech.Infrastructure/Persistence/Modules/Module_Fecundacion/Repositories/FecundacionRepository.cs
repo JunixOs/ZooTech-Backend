@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using ZooTech.Domain.Module_Fecundacion.Entities;
 using ZooTech.Domain.Module_Fecundacion.Interfaces;
+using ZooTech.Domain.Module_Fecundacion.ReadModels;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Persistence.Entities;
 
@@ -15,6 +16,81 @@ public sealed class FecundacionRepository : IFecundacionRepository
         _context = context;
     }
 
+    public async Task<(List<FecundacionListItem> Items, int TotalCount)> GetPagedAsync(
+    string? query, DateTime? fechaDesde, DateTime? fechaHasta, string? resultado,
+    int page, int limit, CancellationToken cancellationToken = default)
+    {
+        var q = _context.fecundacions
+            .AsNoTracking()
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(query))
+        {
+            var pattern = $"%{query}%";
+            q = q.Where(f =>
+                EF.Functions.Like(f.codigo, pattern)
+                || EF.Functions.Like(f.vacuno_receptor.nombre, pattern)
+                || EF.Functions.Like(f.tipo_fecundacion_code, pattern)
+                || EF.Functions.Like(f.resultado_code, pattern)
+                || (f.responsable != null && EF.Functions.Like(f.responsable.nombre_completo, pattern))
+                || (f.fecundacion_donante != null && (
+                       (f.fecundacion_donante.vacuno_donante != null && EF.Functions.Like(f.fecundacion_donante.vacuno_donante.nombre, pattern))
+                    || (f.fecundacion_donante.externo_donante != null && EF.Functions.Like(f.fecundacion_donante.externo_donante.nombre, pattern))
+                   ))
+            );
+        }
+
+        if (!string.IsNullOrWhiteSpace(resultado))
+        {
+            var resultadoNormalizado = resultado.Trim().ToUpperInvariant();
+            q = q.Where(f => f.resultado_code == resultadoNormalizado);
+        }
+
+        if (fechaDesde.HasValue)
+            q = q.Where(f => f.fecha_procedimiento >= DateOnly.FromDateTime(fechaDesde.Value));
+
+        if (fechaHasta.HasValue)
+            q = q.Where(f => f.fecha_procedimiento <= DateOnly.FromDateTime(fechaHasta.Value));
+
+        var totalCount = await q.CountAsync(cancellationToken);
+
+        var rows = await q
+            .OrderByDescending(f => f.fecha_procedimiento)
+            .ThenByDescending(f => f.id)
+            .Skip((page - 1) * limit)
+            .Take(limit)
+            .Select(f => new
+            {
+                f.id,
+                f.codigo,
+                f.fecha_procedimiento,
+                NombreVacunoReceptor = f.vacuno_receptor.nombre,
+                Responsable = f.responsable != null ? f.responsable.nombre_completo : null,
+                f.tipo_fecundacion_code,
+                f.resultado_code,
+                NombreDonante = f.fecundacion_donante != null
+                    ? (f.fecundacion_donante.vacuno_donante != null
+                        ? f.fecundacion_donante.vacuno_donante.nombre
+                        : (f.fecundacion_donante.externo_donante != null
+                            ? f.fecundacion_donante.externo_donante.nombre
+                            : "Sin Donante Registrado"))
+                    : "Sin Donante Registrado"
+            })
+            .ToListAsync(cancellationToken);
+
+        var items = rows.Select(r => new FecundacionListItem(
+            Id: r.id,
+            CodigoFecundacion: r.codigo,
+            FechaProcedimiento: r.fecha_procedimiento,
+            NombreVacunoReceptor: r.NombreVacunoReceptor,
+            Responsable: r.Responsable,
+            TipoFecundacion: r.tipo_fecundacion_code,
+            CodigoResultado: r.resultado_code,
+            NombreDonante: r.NombreDonante
+        )).ToList();
+
+        return (items, totalCount);
+    }
     public async Task<Fecundacion> AddAsync(Fecundacion fecundacion, CancellationToken cancellationToken = default)
     {
         // Crear entidad de persistencia para Fecundación
