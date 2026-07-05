@@ -1,34 +1,15 @@
+namespace ZooTech.Application.Modules.Module_Sanidad.UseCases.DownloadReporte;
+
 using ZooTech.Application.Modules.Module_Sanidad.DTOs.Responses;
 using ZooTech.Application.Modules.Module_Sanidad.Services;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
 
-namespace ZooTech.Application.Modules.Module_Sanidad.UseCases;
-
-public interface IDownloadReporteTriajesInputPort
-{
-    Task<DownloadReporteTriajesOutput> HandleAsync(DownloadReporteTriajesCommand command, CancellationToken cancellationToken = default);
-}
-
-public sealed record DownloadReporteTriajesCommand(
-    string Formato,
-    string? Fecha = null,
-    string? Codigo = null,
-    string? Nombre = null,
-    string? TipoPeso = null,
-    decimal? PesoKg = null);
-
-public sealed record DownloadReporteTriajesOutput(
-    byte[] Content,
-    string ContentType,
-    string FileName,
-    string Message);
-
-public sealed class DownloadReporteTriajesInteractor : IDownloadReporteTriajesInputPort
+public sealed class DownloadReporteInteractor : IDownloadReporteInputPort
 {
     private readonly ITriajeRepository _repository;
     private readonly TriajeReporteFileService _fileService;
 
-    public DownloadReporteTriajesInteractor(
+    public DownloadReporteInteractor(
         ITriajeRepository repository,
         TriajeReporteFileService fileService)
     {
@@ -36,7 +17,7 @@ public sealed class DownloadReporteTriajesInteractor : IDownloadReporteTriajesIn
         _fileService = fileService;
     }
 
-    public async Task<DownloadReporteTriajesOutput> HandleAsync(DownloadReporteTriajesCommand command, CancellationToken cancellationToken = default)
+    public async Task<DownloadReporteOutput> HandleAsync(DownloadReporteCommand command, CancellationToken cancellationToken = default)
     {
         var (triajes, _) = await _repository.GetAllAsync(
             pagina: 1,
@@ -64,6 +45,6 @@ public sealed class DownloadReporteTriajesInteractor : IDownloadReporteTriajesIn
         });
 
         var fileResult = _fileService.Generate(response, command.Formato);
-        return new DownloadReporteTriajesOutput(fileResult.Content, fileResult.ContentType, fileResult.FileName, fileResult.Message);
+        return new DownloadReporteOutput(fileResult.Content, fileResult.ContentType, fileResult.FileName, fileResult.Message);
     }
 }

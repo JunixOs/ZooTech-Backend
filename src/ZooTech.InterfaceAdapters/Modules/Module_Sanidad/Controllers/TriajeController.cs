@@ -8,6 +8,7 @@ using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllVacunosSanidad;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetHistorialByVacunoId;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetTriajeById;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.UpdateTriaje;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.DownloadReporte;
 using ZooTech.InterfaceAdapters.DTOs;
 
 using ZooTech.InterfaceAdapters.Modules.Module_Sanidad.DTOs.Requests;

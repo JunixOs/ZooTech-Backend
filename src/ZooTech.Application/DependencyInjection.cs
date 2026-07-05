@@ -12,6 +12,7 @@ using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllVacunosSanidad;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetHistorialByVacunoId;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetTriajeById;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.UpdateTriaje;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.DownloadReporte;
 using ZooTech.Application.Modules.Module_Sanidad.Services;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.CreateVacuno;
@@ -45,7 +46,7 @@ public static class DependencyInjection
         services.AddScoped<IGetAllVacunosSanidadInputPort, GetAllVacunosSanidadInteractor>();
         services.AddScoped<IGetHistorialByVacunoIdInputPort, GetHistorialByVacunoIdInteractor>();
         services.AddScoped<IGetDetallesTriajeByVacunoIdInputPort, GetDetallesTriajeByVacunoIdInteractor>();
-        services.AddScoped<IDownloadReporteTriajesInputPort, DownloadReporteTriajesInteractor>();
+        services.AddScoped<IDownloadReporteInputPort, DownloadReporteInteractor>();
 
         // ============================================
         // Services - Module_Sanidad
