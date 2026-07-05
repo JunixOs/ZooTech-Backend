@@ -178,15 +178,13 @@ public sealed class CeloRepository : ICeloRepository
             .AnyAsync(c => c.codigo == codigo && c.deleted_at == null, cancellationToken);
     }
 
-    public async Task<List<Celo>> GetByDateRangeAsync(
+    public async Task<List<DateTime>> GetByDateRangeAsync(
         DateTime? fechaInicio,
         DateTime? fechaFin,
         CancellationToken cancellationToken = default)
     {
         var query = _context.celo_registros
             .AsNoTracking()
-            .Include(c => c.vacuno)
-            .Include(c => c.caracteristica_codes)
             .Where(c => c.deleted_at == null);
 
         if (fechaInicio.HasValue)
@@ -199,11 +197,10 @@ public sealed class CeloRepository : ICeloRepository
             query = query.Where(c => c.fecha_hora <= fechaFin.Value);
         }
 
-        var entities = await query
+        return await query
             .OrderBy(c => c.fecha_hora)
+            .Select(c => c.fecha_hora)
             .ToListAsync(cancellationToken);
-
-        return entities.Select(ToDomain).ToList();
     }
 
     private static Celo ToDomain(Entities.celo_registro entity)

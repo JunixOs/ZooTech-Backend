@@ -25,12 +25,12 @@ public sealed class GetComparacionCelosRealVsEstandarInteractor
 
         var promedio = registros.Any()
             ? (int)Math.Round(registros.Count / (double)registros
-                .GroupBy(x => DateOnly.FromDateTime(x.FechaHora))
+                .GroupBy(x => DateOnly.FromDateTime(x))
                 .Count())
             : 0;
 
         var items = registros
-            .GroupBy(x => DateOnly.FromDateTime(x.FechaHora))
+            .GroupBy(x => DateOnly.FromDateTime(x))
             .OrderBy(x => x.Key)
             .Select(x => new ComparacionCelosItemDto
             {
