@@ -11,9 +11,9 @@ public sealed class GetHistorialByVacunoIdInteractor : IGetHistorialByVacunoIdIn
         _repository = repository;
     }
 
-    public async Task<GetHistorialByVacunoIdOutput> HandleAsync(long vacunoId, string? desde = null, string? hasta = null, CancellationToken cancellationToken = default)
+    public async Task<GetHistorialByVacunoIdOutput> HandleAsync(long vacunoId, CancellationToken cancellationToken = default)
     {
-        var items = await _repository.GetHistorialByVacunoIdAsync(vacunoId, desde, hasta, cancellationToken);
+        var items = await _repository.GetHistorialByVacunoIdAsync(vacunoId, cancellationToken);
         var output = items.Select(t => new HistorialTriajeItemOutput(t.Id, t.FechaHora, t.TipoPesoCode, t.PesoKg)).ToList();
         return new GetHistorialByVacunoIdOutput(output);
     }

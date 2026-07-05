@@ -12,6 +12,8 @@ using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllVacunosSanidad;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetHistorialByVacunoId;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetTriajeById;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.UpdateTriaje;
+using ZooTech.Application.Modules.Module_Sanidad.Services;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.CreateVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetVacunoById;
@@ -19,6 +21,7 @@ using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.UpdateVacuno;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.CreateOrdenio;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.DeleteOrdenio;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GenerateOrdeniosPdf;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GetOrdenioById;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.ListOrdenios;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.UpdateOrdenio;
@@ -41,12 +44,19 @@ public static class DependencyInjection
         services.AddScoped<IGetAllTipoPesosInputPort, GetAllTipoPesosInteractor>();
         services.AddScoped<IGetAllVacunosSanidadInputPort, GetAllVacunosSanidadInteractor>();
         services.AddScoped<IGetHistorialByVacunoIdInputPort, GetHistorialByVacunoIdInteractor>();
-        services.AddScoped<ZooTech.Application.Modules.Module_Sanidad.UseCases.GetHistorialGeneral.IGetHistorialGeneralInputPort, ZooTech.Application.Modules.Module_Sanidad.UseCases.GetHistorialGeneral.GetHistorialGeneralInteractor>();
+        services.AddScoped<IGetDetallesTriajeByVacunoIdInputPort, GetDetallesTriajeByVacunoIdInteractor>();
+        services.AddScoped<IDownloadReporteTriajesInputPort, DownloadReporteTriajesInteractor>();
+
+        // ============================================
+        // Services - Module_Sanidad
+        // ============================================
+        services.AddScoped<TriajeReporteFileService>();
 
         // ============================================
         // Use Cases - Module_ProduccionLeche
         // ============================================
         services.AddScoped<ICreateOrdenioInputPort, CreateOrdenioInteractor>();
+        services.AddScoped<IGetOrdeniosPdfInputPort, GenerateOrdeniosPdfInteractor>();
         services.AddScoped<IGetOrdenioByIdInputPort, GetOrdenioByIdInteractor>();
         services.AddScoped<IListOrdeniosInputPort, ListOrdeniosInteractor>();
         services.AddScoped<IUpdateOrdenioInputPort, UpdateOrdenioInteractor>();

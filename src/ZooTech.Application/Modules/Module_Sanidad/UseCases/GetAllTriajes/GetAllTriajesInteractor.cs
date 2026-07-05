@@ -17,15 +17,13 @@ public sealed class GetAllTriajesInteractor : IGetAllTriajesInputPort
         var tamano = query.Tamano <= 0 ? 10 : Math.Min(query.Tamano, 100);
 
         var (triajes, total) = await _repository.GetAllAsync(
-            pagina, tamano, query.FechaInicio, query.FechaFin, query.Codigo, query.Nombre, query.TipoPeso, query.PesoKg, cancellationToken);
+            pagina, tamano, query.Fecha, query.Codigo, query.Nombre, query.TipoPeso, query.PesoKg, cancellationToken);
 
         var items = triajes.Select(t => new TriajeItemOutput(
             t.Id, t.Codigo, t.FechaHora, t.VacunoId, t.VacunoNombre,
             t.TipoPesoCode, t.PesoKg, t.Observaciones, t.EstadoRegistroCode,
             t.EncargadoUsuarioId, t.CreatedAt)).ToList();
 
-        var totalPaginas = (int)Math.Ceiling((double)total / tamano);
-
-        return new GetAllTriajesOutput(items, total, pagina, tamano, totalPaginas);
+        return new GetAllTriajesOutput(items, total);
     }
 }

@@ -41,9 +41,9 @@ public class GetAllTriajesUseCaseTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(2, result.Items.Count);
-        Assert.Equal("TRI001", result.Items.First().Codigo);
-        Assert.Equal("Estrella", result.Items.First().VacunoNombre);
+        Assert.Equal(2, result.Data.Count);
+        Assert.Equal("TRI001", result.Data.First().Codigo);
+        Assert.Equal("Estrella", result.Data.First().VacunoNombre);
     }
 
     [Fact]
@@ -68,7 +68,7 @@ public class GetAllTriajesUseCaseTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Empty(result.Items);
+        Assert.Empty(result.Data);
     }
 
     private static Triaje CreateTriaje(long id, string codigo, long vacunoId, string vacunoNombre, string tipoPesoCode, decimal pesoKg)

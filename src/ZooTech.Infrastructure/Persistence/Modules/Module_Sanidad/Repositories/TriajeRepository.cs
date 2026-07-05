@@ -31,8 +31,7 @@ public class TriajeRepository : ITriajeRepository
     public async Task<(IEnumerable<Triaje> Items, int Total)> GetAllAsync(
         int pagina,
         int tamano,
-        string? fechaInicio = null,
-        string? fechaFin = null,
+        string? fecha = null,
         string? codigo = null,
         string? nombre = null,
         string? tipoPeso = null,
@@ -51,17 +50,21 @@ public class TriajeRepository : ITriajeRepository
         if (!string.IsNullOrEmpty(nombre))
             query = query.Where(t => t.vacuno.nombre.Contains(nombre));
 
+        if (!string.IsNullOrEmpty(fecha) && DateTime.TryParse(fecha, out var fechaFiltro))
+        {
+            var desde = fechaFiltro.Date;
+            var hasta = desde.AddDays(1);
+            query = query.Where(t => t.fecha_hora >= desde && t.fecha_hora < hasta);
+        }
+
         if (!string.IsNullOrEmpty(tipoPeso))
             query = query.Where(t => t.tipo_peso_code == tipoPeso);
 
         if (pesoKg.HasValue)
             query = query.Where(t => t.peso_kg == pesoKg);
 
-        if (!string.IsNullOrEmpty(fechaInicio) && DateTime.TryParse(fechaInicio, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var parsedInicio))
-            query = query.Where(t => t.fecha_hora >= parsedInicio.Date);
-
-        if (!string.IsNullOrEmpty(fechaFin) && DateTime.TryParse(fechaFin, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var parsedFin))
-            query = query.Where(t => t.fecha_hora <= parsedFin.Date.AddDays(1).AddTicks(-1));
+        if (!string.IsNullOrEmpty(fecha) && DateTime.TryParse(fecha, out var fechaParsed))
+            query = query.Where(t => t.fecha_hora.Date == fechaParsed.Date);
 
         query = query.OrderByDescending(t => t.fecha_hora);
 
@@ -90,11 +93,12 @@ public class TriajeRepository : ITriajeRepository
         }
     }
 
-    public async Task UpdateAsync(Triaje triaje, CancellationToken cancellationToken = default)
+    public async Task<Triaje> UpdateAsync(Triaje triaje, CancellationToken cancellationToken = default)
     {
         var entity = ToEntity(triaje);
         _context.triajes.Update(entity);
         await _context.SaveChangesAsync(cancellationToken);
+        return ToTriaje(entity);
     }
 
     public async Task DeleteAsync(long id, CancellationToken cancellationToken = default)
@@ -127,24 +131,11 @@ public class TriajeRepository : ITriajeRepository
         return $"TRI{maxNumber + 1:D3}";
     }
 
-    public async Task<IEnumerable<TriajeHistorialItem>> GetHistorialByVacunoIdAsync(long vacunoId, string? desde = null, string? hasta = null, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<TriajeHistorialItem>> GetHistorialByVacunoIdAsync(long vacunoId, CancellationToken cancellationToken = default)
     {
-        var query = _context.triajes
+        return await _context.triajes
             .AsNoTracking()
-            .Where(t => t.vacuno_id == vacunoId && t.deleted_at == null);
-
-        if (!string.IsNullOrEmpty(desde) && DateTime.TryParse(desde, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var fechaDesde))
-        {
-            query = query.Where(t => t.fecha_hora >= fechaDesde.Date);
-        }
-
-        if (!string.IsNullOrEmpty(hasta) && DateTime.TryParse(hasta, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var fechaHasta))
-        {
-            // Set to end of day to include all records on the 'hasta' date
-            query = query.Where(t => t.fecha_hora <= fechaHasta.Date.AddDays(1).AddTicks(-1));
-        }
-
-        return await query
+            .Where(t => t.vacuno_id == vacunoId && t.deleted_at == null)
             .OrderByDescending(t => t.fecha_hora)
             .Select(t => new TriajeHistorialItem
             {
@@ -156,34 +147,39 @@ public class TriajeRepository : ITriajeRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<IEnumerable<TriajeHistorialItem>> GetHistorialGeneralAsync(string? desde = null, string? hasta = null, CancellationToken cancellationToken = default)
+    public async Task<bool> ExistsVacunoAsync(long vacunoId, CancellationToken cancellationToken = default)
     {
-        var query = _context.triajes
+        return await _context.vacunos.AnyAsync(v => v.id == vacunoId, cancellationToken);
+    }
+
+    public async Task<bool> ExistsUsuarioAsync(long usuarioId, CancellationToken cancellationToken = default)
+    {
+        return await _context.usuarios.AnyAsync(u => u.id == usuarioId, cancellationToken);
+    }
+
+    public async Task<bool> ExistsTipoPesoAsync(string tipoPesoCode, CancellationToken cancellationToken = default)
+    {
+        return await _context.cat_tipo_pesos.AnyAsync(tp => tp.code == tipoPesoCode, cancellationToken);
+    }
+
+    public async Task<IEnumerable<TriajeDetallePorVacunoItem>> GetDetallesByVacunoIdAsync(long vacunoId, CancellationToken cancellationToken = default)
+    {
+        return await _context.triajes
             .AsNoTracking()
-            .Where(t => t.deleted_at == null);
-
-        if (!string.IsNullOrEmpty(desde) && DateTime.TryParse(desde, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var fechaDesde))
-        {
-            query = query.Where(t => t.fecha_hora >= fechaDesde.Date);
-        }
-
-        if (!string.IsNullOrEmpty(hasta) && DateTime.TryParse(hasta, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var fechaHasta))
-        {
-            // Set to end of day to include all records on the 'hasta' date
-            query = query.Where(t => t.fecha_hora <= fechaHasta.Date.AddDays(1).AddTicks(-1));
-        }
-
-        return await query
+            .Include(t => t.tipo_peso_codeNavigation)
+            .Where(t => t.vacuno_id == vacunoId && t.deleted_at == null)
             .OrderByDescending(t => t.fecha_hora)
-            .Select(t => new TriajeHistorialItem
+            .Select(t => new TriajeDetallePorVacunoItem
             {
-                Id = t.id,
+                CodigoRegistro = t.codigo,
                 FechaHora = t.fecha_hora,
-                TipoPesoCode = t.tipo_peso_code,
-                PesoKg = t.peso_kg
+                TipoPesoMedido = t.tipo_peso_codeNavigation.nombre,
+                PesoKg = t.peso_kg,
+                Observaciones = t.observaciones
             })
             .ToListAsync(cancellationToken);
     }
+
 
     // Mappers
     private static Triaje ToTriaje(triaje e) => Triaje.Rehydrate(

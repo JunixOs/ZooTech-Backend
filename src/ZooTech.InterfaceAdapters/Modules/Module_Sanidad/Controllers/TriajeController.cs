@@ -9,6 +9,7 @@ using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetHistorialByVacunoId
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetTriajeById;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.UpdateTriaje;
 using ZooTech.InterfaceAdapters.DTOs;
+
 using ZooTech.InterfaceAdapters.Modules.Module_Sanidad.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_Sanidad.DTOs.Responses;
 using ZooTech.InterfaceAdapters.Modules.Module_Sanidad.Mappers;
@@ -53,17 +54,18 @@ public sealed class TriajeController : ControllerBase
     public async Task<IActionResult> GetAll(
         [FromQuery] int pagina = 1,
         [FromQuery] int tamano = 10,
-        [FromQuery] string? fechaInicio = null,
-        [FromQuery] string? fechaFin = null,
+        [FromQuery] string? fecha = null,
         [FromQuery] string? codigo = null,
         [FromQuery] string? nombre = null,
         [FromQuery] string? tipoPeso = null,
         [FromQuery] decimal? pesoKg = null,
         CancellationToken cancellationToken = default)
     {
-        var query = new GetAllTriajesQuery(pagina, tamano, fechaInicio, fechaFin, codigo, nombre, tipoPeso, pesoKg);
+        var currentPage = pagina <= 0 ? 1 : pagina;
+        var currentTamano = tamano <= 0 ? 10 : Math.Min(tamano, 100);
+        var query = new GetAllTriajesQuery(currentPage, currentTamano, fecha, codigo, nombre, tipoPeso, pesoKg);
         var output = await _getAllInputPort.HandleAsync(query, cancellationToken);
-        return Ok(GeneralResponseDTO<PagedTriajeResponse>.Ok(TriajeMapper.ToPagedResponse(output)));
+        return Ok(GeneralResponseDTO<PagedTriajeResponse>.Ok(TriajeMapper.ToPagedResponse(output, currentPage, currentTamano)));
     }
 
     [HttpGet("{id:long}")]
@@ -86,11 +88,11 @@ public sealed class TriajeController : ControllerBase
             GeneralResponseDTO<TriajeResponse>.Ok(TriajeMapper.ToResponse(output)));
     }
 
-    [HttpPut("{id:long}")]
+    [HttpPatch("{id:long}")]
     [ProducesResponseType(typeof(GeneralResponseDTO<TriajeResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Update(long id, [FromBody] TriajeRequest request, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Update(long id, [FromBody] UpdateTriajeRequest request, CancellationToken cancellationToken = default)
     {
         var command = TriajeMapper.ToUpdateCommand(request);
         var output = await _updateInputPort.HandleAsync(id, command, cancellationToken);
@@ -125,24 +127,9 @@ public sealed class TriajeController : ControllerBase
 
     [HttpGet("historial/{vacunoId:long}")]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetHistorial(
-        long vacunoId,
-        [FromQuery] string? desde = null,
-        [FromQuery] string? hasta = null,
-        CancellationToken cancellationToken = default)
+    public async Task<IActionResult> GetHistorial(long vacunoId, CancellationToken cancellationToken = default)
     {
-        var output = await _getHistorialInputPort.HandleAsync(vacunoId, desde, hasta, cancellationToken);
-        return Ok(GeneralResponseDTO<object>.Ok(output.Items.Select(t => new { id = t.Id, fechaHora = t.FechaHora, tipoPesoCode = t.TipoPesoCode, pesoKg = t.PesoKg })));
-    }
-    [HttpGet("historial-general")]
-    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetHistorialGeneral(
-        [FromServices] ZooTech.Application.Modules.Module_Sanidad.UseCases.GetHistorialGeneral.IGetHistorialGeneralInputPort getHistorialGeneralInputPort,
-        [FromQuery] string? desde = null,
-        [FromQuery] string? hasta = null,
-        CancellationToken cancellationToken = default)
-    {
-        var output = await getHistorialGeneralInputPort.HandleAsync(desde, hasta, cancellationToken);
+        var output = await _getHistorialInputPort.HandleAsync(vacunoId, cancellationToken);
         return Ok(GeneralResponseDTO<object>.Ok(output.Items.Select(t => new { id = t.Id, fechaHora = t.FechaHora, tipoPesoCode = t.TipoPesoCode, pesoKg = t.PesoKg })));
     }
 }

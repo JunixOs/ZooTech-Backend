@@ -18,6 +18,12 @@ public interface IOrdenioRepository
         int page,
         int pageSize,
         CancellationToken cancellationToken);
+    Task<IReadOnlyList<Ordenio>> ListReportAsync(
+        long? vacunoId,
+        string? estadoOrdenioCode,
+        DateTime? fechaDesde,
+        DateTime? fechaHasta,
+        CancellationToken cancellationToken);
     Task<Ordenio> AddAsync(Ordenio ordenio, CancellationToken cancellationToken);
     Task<Ordenio> UpdateAsync(Ordenio ordenio, CancellationToken cancellationToken);
 }

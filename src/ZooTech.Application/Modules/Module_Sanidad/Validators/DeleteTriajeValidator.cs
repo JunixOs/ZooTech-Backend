@@ -9,6 +9,6 @@ internal sealed class DeleteTriajeValidator : AbstractValidator<DeleteTriajeComm
     {
         RuleFor(x => x.MotivoEliminacion)
             .NotEmpty().WithMessage("El motivo de eliminación es obligatorio.")
-            .MaximumLength(500).WithMessage("El motivo no puede superar los 500 caracteres.");
+            .MaximumLength(250).WithMessage("El motivo no puede superar los 250 caracteres.");
     }
 }
