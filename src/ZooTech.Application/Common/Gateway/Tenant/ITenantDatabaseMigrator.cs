@@ -1,4 +1,4 @@
-namespace ZooTech.Infrastructure.Tenant
+namespace ZooTech.Application.Common.Gateway.Tenant
 {
     public interface ITenantDatabaseMigrator
     {

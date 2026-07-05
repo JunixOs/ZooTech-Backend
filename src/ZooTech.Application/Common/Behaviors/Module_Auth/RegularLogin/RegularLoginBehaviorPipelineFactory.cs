@@ -2,7 +2,7 @@ using ZooTech.Application.Modules.Module_Auth.UseCases.RegularLogin;
 
 namespace ZooTech.Application.Common.Behaviors.Module_Auth.RegularLogin
 {
-    public class RegularLoginBehaviorPipeline : IRegularLoginBehaviorPipeline
+    public class RegularLoginBehaviorPipelineFactory : IRegularLoginBehaviorPipelineFactory
     {
         private readonly ValidationBehavior<RegularLoginCommand , string> _validation;
         private readonly LoggingBehavior<RegularLoginCommand, string> _logging;
@@ -10,7 +10,7 @@ namespace ZooTech.Application.Common.Behaviors.Module_Auth.RegularLogin
 
         private readonly IRegularLoginInputPort _handler;
 
-        public RegularLoginBehaviorPipeline(
+        public RegularLoginBehaviorPipelineFactory(
             ValidationBehavior<RegularLoginCommand , string> validation,
             LoggingBehavior<RegularLoginCommand, string> logging,
             AuditBehavior<RegularLoginCommand, string> audit,

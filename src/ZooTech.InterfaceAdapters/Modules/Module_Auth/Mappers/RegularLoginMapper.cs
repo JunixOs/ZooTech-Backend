@@ -5,7 +5,7 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Auth.Mappers
 {
     public class RegularLoginMapper
     {
-        public static RegularLoginCommand ToCommand(RegularLoginRequest request)
+        public static RegularLoginCommand ToCommand(RegularLoginRequestDTO request)
         {
             return new RegularLoginCommand
             {

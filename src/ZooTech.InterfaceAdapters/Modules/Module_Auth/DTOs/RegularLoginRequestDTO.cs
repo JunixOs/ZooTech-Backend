@@ -1,8 +1,7 @@
 namespace ZooTech.InterfaceAdapters.Modules.Module_Auth.DTOs
 {
-    public class AdminLoginRequest
+    public class RegularLoginRequestDTO
     {
         public string? Email { get; set; }
-        public string? Password { get; set; }
     }
 }

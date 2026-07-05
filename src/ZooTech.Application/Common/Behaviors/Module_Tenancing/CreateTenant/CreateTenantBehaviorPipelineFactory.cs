@@ -2,8 +2,8 @@ using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant;
 
 namespace ZooTech.Application.Common.Behaviors.Module_Tenancing.CreateTenant
 {
-    public class CreateTenantPipelineFactory
-        : ICreateTenantPipelineFactory
+    public class CreateTenantBehaviorPipelineFactory
+        : ICreateTenantBehaviorPipelineFactory
     {
         private readonly ValidationBehavior<CreateTenantCommand , CreateTenantOutput> _validation;
         private readonly LoggingBehavior<CreateTenantCommand, CreateTenantOutput> _logging;
@@ -11,7 +11,7 @@ namespace ZooTech.Application.Common.Behaviors.Module_Tenancing.CreateTenant
 
         private readonly ICreateTenantInputPort _handler;
 
-        public CreateTenantPipelineFactory(
+        public CreateTenantBehaviorPipelineFactory(
             ValidationBehavior<CreateTenantCommand , CreateTenantOutput> validation,
             LoggingBehavior<CreateTenantCommand, CreateTenantOutput> logging,
             AuditBehavior<CreateTenantCommand, CreateTenantOutput> audit,

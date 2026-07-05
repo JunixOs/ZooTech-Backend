@@ -2,7 +2,7 @@ using ZooTech.Application.Modules.Module_Auth.UseCases.AdminLogin;
 
 namespace ZooTech.Application.Common.Behaviors.Module_Auth.AdminLogin
 {
-    public class AdminLoginBehaviorPipeline : IAdminLoginBehaviorPipeline
+    public class AdminLoginBehaviorPipelineFactory : IAdminLoginBehaviorPipelineFactory
     {
         private readonly ValidationBehavior<AdminLoginCommand , string> _validation;
         private readonly LoggingBehavior<AdminLoginCommand, string> _logging;
@@ -10,7 +10,7 @@ namespace ZooTech.Application.Common.Behaviors.Module_Auth.AdminLogin
 
         private readonly IAdminLoginInputPort _handler;
 
-        public AdminLoginBehaviorPipeline(
+        public AdminLoginBehaviorPipelineFactory(
             ValidationBehavior<AdminLoginCommand , string> validation,
             LoggingBehavior<AdminLoginCommand, string> logging,
             AuditBehavior<AdminLoginCommand, string> audit,

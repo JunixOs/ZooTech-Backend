@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ZooTech.Application.Common.Behaviors.Module_Tenancing;
-using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant;
+using ZooTech.Application.Common.Behaviors.Module_Tenancing.CreateTenant;
+using ZooTech.Application.Modules.Module_Tenancing.UseCases;
 using ZooTech.Domain.Shared.Enums;
 using ZooTech.InterfaceAdapters.Filters;
 using ZooTech.InterfaceAdapters.Modules.Module_Tenancing.DTOs.Requests;
@@ -14,13 +14,12 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers
     [ApiExplorerSettings(GroupName = "tenancing")]
     public class TenancingController : ControllerBase
     {
-        private readonly ICreateTenantPipelineFactory _pipeline;
+        private readonly ICreateTenantBehaviorPipelineFactory _createTenantBehaviorPipelineFactory;
 
         public TenancingController(
-            ICreateTenantPipelineFactory pipeline
-        )
+            ICreateTenantBehaviorPipelineFactory createTenantBehaviorPipelineFactory        )
         {
-            _pipeline = pipeline;
+            _createTenantBehaviorPipelineFactory = createTenantBehaviorPipelineFactory;
         }
 
         [ServiceFilter(typeof(TenantHeaderFilter))]
@@ -35,7 +34,7 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers
         [HttpPost("create")]
         public async Task<IActionResult> CreateTenant([FromBody] CreateTenantRequestDto requestDto)
         {
-            var behaviorPipeline = _pipeline.Create();
+            var behaviorPipeline = _createTenantBehaviorPipelineFactory.Create();
 
             var command = CreateTenantMapper.ToCommand(requestDto);
             var result = await behaviorPipeline.Execute(command);

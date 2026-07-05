@@ -51,6 +51,36 @@ namespace ZooTech.Domain.Admin.Entities
             };
         }
 
+        public static AdminUserDomainEntity CreateFromCreationRequest(
+            Email email,
+            string? userName,
+            string passwordHash,
+            string? firstName,
+            string? lastName,
+            bool isActive,
+            DateTime? lastLoginAt,
+            string? metadata,
+            DateTime? updatedAt,
+            DateTime? createdAt,
+            DateTime? deletedAt
+        )
+        {
+            return new AdminUserDomainEntity
+            {
+                Email = email,
+                UserName = userName,
+                PasswordHash = passwordHash,
+                FirstName = firstName,
+                LastName = lastName,
+                IsActive = isActive,
+                LastLoginAt = lastLoginAt,
+                Metadata = metadata,
+                UpdatedAt = updatedAt,
+                CreatedAt = createdAt.GetValueOrDefault(DateTime.UtcNow),
+                DeletedAt = deletedAt
+            };
+        }
+
         public void UpdateContactInfo(Email email)
         {
             Email = email;

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using ZooTech.Application.Common.Gateway.Tenant;
 using ZooTech.Infrastructure.Persistence.Context;
 
 namespace ZooTech.Infrastructure.Tenant
@@ -14,7 +15,7 @@ namespace ZooTech.Infrastructure.Tenant
 
         public async Task MigrateAsync(string tenantDatabaseName)
         {
-            var context = await _ganaderiaDbContextFactory.CreateDbContextBySpecificDatabaseName(tenantDatabaseName);
+            var context = await _ganaderiaDbContextFactory.CreateDbContextBySpecificDatabaseName(tenantDatabaseName , true);
 
             if (context.Database.IsRelational())
             {

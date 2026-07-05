@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using ZooTech.Application.Common.Behaviors;
 using ZooTech.Application.Common.Behaviors.Module_Auth.AdminLogin;
 using ZooTech.Application.Common.Behaviors.Module_Auth.RegularLogin;
 using ZooTech.InterfaceAdapters.Filters;
@@ -12,26 +13,26 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Auth
     [ApiExplorerSettings(GroupName = "auth")]
     public class AuthController : ControllerBase
     {
-        private readonly IAdminLoginBehaviorPipeline _adminLoginBehaviorPipeline;
-        private readonly IRegularLoginBehaviorPipeline _regularLoginBehaviorPipeline;
+        private readonly IAdminLoginBehaviorPipelineFactory _adminLoginBehaviorPipelineFactory;
+        private readonly IRegularLoginBehaviorPipelineFactory _regularLoginBehaviorPipelineFactory;
 
         public AuthController(
-            IAdminLoginBehaviorPipeline adminLoginBehaviorPipeline,
-            IRegularLoginBehaviorPipeline regularLoginBehaviorPipeline
+            IAdminLoginBehaviorPipelineFactory adminLoginBehaviorPipelineFactory,
+            IRegularLoginBehaviorPipelineFactory regularLoginBehaviorPipelineFactory
         )
         {
-            _adminLoginBehaviorPipeline = adminLoginBehaviorPipeline;
-            _regularLoginBehaviorPipeline = regularLoginBehaviorPipeline;
+            _adminLoginBehaviorPipelineFactory = adminLoginBehaviorPipelineFactory;
+            _regularLoginBehaviorPipelineFactory = regularLoginBehaviorPipelineFactory;
         }
 
         [ServiceFilter(typeof(TenantHeaderFilter))]
         [RestrictTenantType(Domain.Shared.Enums.TenantType.Tenant)]
         [HttpPost("user/login")]
         public async Task<IActionResult> LoginRegularUsers(
-            [FromBody] RegularLoginRequest request
+            [FromBody] RegularLoginRequestDTO request
         )
         {
-            var behaviorPipeline = _regularLoginBehaviorPipeline.Create();
+            var behaviorPipeline = _regularLoginBehaviorPipelineFactory.Create();
 
             var result = await behaviorPipeline.Execute(
                 RegularLoginMapper.ToCommand(request)
@@ -44,10 +45,10 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Auth
         [RestrictTenantType(Domain.Shared.Enums.TenantType.Admin)]
         [HttpPost("admin/login")]
         public async Task<IActionResult> LoginAdminUsers(
-            [FromBody] AdminLoginRequest requestDto
+            [FromBody] AdminLoginRequestDTO requestDto
         )
         {
-            var behaviorPipeline = _adminLoginBehaviorPipeline.Create();
+            var behaviorPipeline = _adminLoginBehaviorPipelineFactory.Create();
 
             var result = await behaviorPipeline.Execute(
                 AdminLoginMapper.ToCommand(requestDto)

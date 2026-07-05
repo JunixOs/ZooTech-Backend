@@ -1,5 +1,4 @@
 using ZooTech.Domain.Shared.Enums;
-using ZooTech.Domain.Shared.Exceptions;
 
 namespace ZooTech.Infrastructure.Exceptions
 {

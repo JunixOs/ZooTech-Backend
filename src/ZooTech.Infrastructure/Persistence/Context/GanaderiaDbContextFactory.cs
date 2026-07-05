@@ -19,13 +19,17 @@ namespace ZooTech.Infrastructure.Persistence.Context
             _config = config;
         }
 
-        private DbContextOptions<GanaderiaDbContext> GetConnectionOptions(string databaseName)
+        private DbContextOptions<GanaderiaDbContext> GetConnectionOptions(string databaseName, bool useAdminLogin = false)
         {
-            var template = _config.GetConnectionString("TenantTemplate");
+            var connectionName = useAdminLogin
+                ? "AdminTenantTemplate"
+                : "TenantTemplate";
+
+            var template = _config.GetConnectionString(connectionName);
 
             if (string.IsNullOrWhiteSpace(template))
                 throw new UndefinedConfigurationValue(
-                    message: "Missing configuration: ConnectionStrings:TenantTemplate"
+                    message: $"Missing configuration: ConnectionStrings:{connectionName}"
                 );
 
             var builder = new SqlConnectionStringBuilder(template);
@@ -66,14 +70,14 @@ namespace ZooTech.Infrastructure.Persistence.Context
             return ganaderiaDbContext;
         }
 
-        public async Task<GanaderiaDbContext> CreateDbContextBySpecificDatabaseName(string databaseName)
+        public async Task<GanaderiaDbContext> CreateDbContextBySpecificDatabaseName(string databaseName, bool useAdminLogin = false)
         {
             if(_tenantContext.Type != TenantType.Admin)
             {
                 throw new InvalidDbContextAccess();
             }
 
-            var options = GetConnectionOptions(databaseName);
+            var options = GetConnectionOptions(databaseName, useAdminLogin);
 
             var ganaderiaDbContext = new GanaderiaDbContext(options);
 

@@ -6,7 +6,7 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Auth.Mappers
 {
     public class AdminLoginMapper
     {
-        public static AdminLoginCommand ToCommand(AdminLoginRequest request)
+        public static AdminLoginCommand ToCommand(AdminLoginRequestDTO request)
         {
             return new AdminLoginCommand
             {

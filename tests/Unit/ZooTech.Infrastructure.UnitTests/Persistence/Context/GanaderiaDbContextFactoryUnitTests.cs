@@ -40,14 +40,14 @@ public class GanaderiaDbContextFactoryUnitTests
             "TestDb"
         ));
 
-        factoryMock.Setup(f => f.CreateDbContext()).ReturnsAsync(context);
+        factoryMock.Setup(f => f.CreateDbContextByTenantContext()).ReturnsAsync(context);
 
         var migrator = new TenantDatabaseMigrator(factoryMock.Object);
         
         // Act
-        await migrator.MigrateAsync();
+        await migrator.MigrateAsync("TestDb");
 
         // Assert - InMemory provider skips migration (IsRelational() = false)
-        factoryMock.Verify(f => f.CreateDbContext(), Times.Once);
+        factoryMock.Verify(f => f.CreateDbContextByTenantContext(), Times.Once);
     }
 }
