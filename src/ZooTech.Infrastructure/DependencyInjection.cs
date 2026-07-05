@@ -9,6 +9,7 @@ using ZooTech.Domain.Module_Sanidad.Interfaces;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
 using ZooTech.Infrastructure.Common.Time;
 using ZooTech.Infrastructure.Common.Services.PdfGenerator;
+using ZooTech.Infrastructure.Common.Services.ExcelGenerator;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Persistence.Modules.Module_Celo.Repositories;
 using ZooTech.Infrastructure.Persistence.Modules.Module_ProduccionLeche.Repositories;
@@ -37,6 +38,7 @@ public static class DependencyInjection
         services.AddScoped<IPdfGeneratorService, PdfGeneratorService>();
         services.AddScoped<IOrdeniosComparationPdfGeneratorService, PdfGenerateComparationService>();
 
+        services.AddScoped<IExcelGeneratorService, ExcelGeneratorService>();
         // ============================================
         // Repositories
         // ============================================
