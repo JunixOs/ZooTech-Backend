@@ -44,5 +44,16 @@ namespace ZooTech.Infrastructure.Persistence.Repositories.GanaderiaDb
 
             return UsuarioMapper.toDomain(usuarioOrm);
         }
+
+        public async Task CreateInTenant(UsuarioDomainEntity usuarioDomainEntity , string tenantDatabaseName)
+        {
+            var ganaderiaDbContext = await _ganaderiaDbContextFactory.CreateDbContextBySpecificDatabaseName(tenantDatabaseName);
+
+            await ganaderiaDbContext.usuarios.AddAsync(
+                UsuarioMapper.toOrm(usuarioDomainEntity)
+            );
+
+            await ganaderiaDbContext.SaveChangesAsync();
+        }
     }
 }

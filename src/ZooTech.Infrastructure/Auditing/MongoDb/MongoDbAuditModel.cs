@@ -18,11 +18,11 @@ using MongoDB.Bson.Serialization.Attributes;
 //     "name": "admin"
 //   },
 // 
-//   "old_values": {
+//   "request": {
 //     "name": "Old Name"
 //   },
 // 
-//   "new_values": {
+//   "response": {
 //     "name": "New Name"
 //   },
 // 
@@ -51,11 +51,11 @@ namespace ZooTech.Infrastructure.Auditing.MongoDb
         [BsonElement("user")]
         public AuditUser User { get; set; } = default!;
 
-        [BsonElement("old_values")]
-        public Dictionary<string, object>? OldValues { get; set; }
+        [BsonElement("request_values")]
+        public BsonValue? RequestValues { get; set; }
 
-        [BsonElement("new_values")]
-        public Dictionary<string, object>? NewValues { get; set; }
+        [BsonElement("response_values")]
+        public BsonValue? ResponseValues { get; set; }
 
         [BsonElement("created_at")]
         public DateTime CreatedAt { get; set; }

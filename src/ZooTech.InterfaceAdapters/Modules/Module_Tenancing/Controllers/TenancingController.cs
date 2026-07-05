@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ZooTech.Application.Common.Behaviors.Module_Tenancing.CreateTenant;
+using ZooTech.Application.Common.Behaviors.Module_Tenancing.CreateUserInTenant;
 using ZooTech.Application.Modules.Module_Tenancing.UseCases;
 using ZooTech.Domain.Shared.Enums;
 using ZooTech.InterfaceAdapters.Filters;
@@ -15,12 +16,15 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers
     public class TenancingController : ControllerBase
     {
         private readonly ICreateTenantBehaviorPipelineFactory _createTenantBehaviorPipelineFactory;
+        private readonly ICreateUserInTenantBehaviorPipelineFactory _createUserInTenantBehaviorPipelineFactory;
 
         public TenancingController(
-            ICreateTenantBehaviorPipelineFactory createTenantBehaviorPipelineFactory
+            ICreateTenantBehaviorPipelineFactory createTenantBehaviorPipelineFactory,
+            ICreateUserInTenantBehaviorPipelineFactory createUserInTenantBehaviorPipelineFactory
         )
         {
             _createTenantBehaviorPipelineFactory = createTenantBehaviorPipelineFactory;
+            _createUserInTenantBehaviorPipelineFactory = createUserInTenantBehaviorPipelineFactory;
         }
 
         [ServiceFilter(typeof(TenantHeaderFilter))]
@@ -49,6 +53,23 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers
         public async Task GetTenantInfo()
         {
             return;
+        }
+
+        [ServiceFilter(typeof(TenantHeaderFilter))]
+        [RestrictTenantType(TenantType.Admin)]
+        [Authorize(Roles = AuthorizationRoles.Admin)]
+        [HttpPost("create-tenant-user")]
+        public async Task<IActionResult> CreateUserInTenant(
+            [FromBody] CreateUserInTenantRequestDTO requestDto
+        )
+        {
+            var behaviorPipeline = _createUserInTenantBehaviorPipelineFactory.Create();
+
+            var result = await behaviorPipeline.Execute(
+                CreateUserInTenantMapper.ToCommand(requestDto)
+            );
+
+            return Ok(CreateUserInTenantMapper.ToResponse(result));
         }
     }
 }

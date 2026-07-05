@@ -1,5 +1,4 @@
 using ZooTech.Application.Common.Exceptions;
-using ZooTech.Application.Common.Gateway.Auditing;
 using ZooTech.Application.Common.Gateway.Identity;
 using ZooTech.Application.Common.Gateway.Repositories.MainTenantsDb;
 using ZooTech.Domain.Admin.Entities;
@@ -7,16 +6,13 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Auth.UseCases.AdminLogin
 {
-    public class AdminLoginInteractor : IAdminLoginInputPort, IAuditableRequest
+    public class AdminLoginInteractor : IAdminLoginInputPort
     {
         private readonly IPasswordHasher _passwordHasher;
         private readonly IJwtService _jwtService;
 
         private readonly IAdminUserRepository _adminUserRepository;
         private readonly IRefreshTokenRepository _refreshTokenRepository;
-
-        public AuditEventType EventType => AuditEventType.Login;
-        public string Action => "A user is login into the application.";
 
         public AdminLoginInteractor(
             IPasswordHasher passwordHasher,
@@ -40,6 +36,11 @@ namespace ZooTech.Application.Modules.Module_Auth.UseCases.AdminLogin
             if(domainEntity is null)
             {
                 throw new NotFoundException(ScopeName.Application , ModuleName.Auth);
+            }
+
+            if (!domainEntity.IsActive)
+            {
+                throw new InactiveUserException(ScopeName.Application, ModuleName.Auth);
             }
 
             if(!_passwordHasher.Compare(cmd.Password, domainEntity.PasswordHash))

@@ -86,5 +86,12 @@ namespace ZooTech.Infrastructure.Identity
                 return false;
             }
         }
+
+        public bool IsJwt(string token)
+        {
+            var handler = new JwtSecurityTokenHandler();
+
+            return handler.CanReadToken(token);
+        }
     }
 }

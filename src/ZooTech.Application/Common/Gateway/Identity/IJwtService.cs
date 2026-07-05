@@ -6,5 +6,7 @@ namespace ZooTech.Application.Common.Gateway.Identity
     {
         (string token, string jti) GenerateToken(int userId, string userName, string email, UserRole userRole);
         bool IsTokenValid(string token);
+
+        bool IsJwt(string token);
     }
 }

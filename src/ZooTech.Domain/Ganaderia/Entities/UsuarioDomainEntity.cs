@@ -39,6 +39,26 @@ namespace ZooTech.Domain.Ganaderia.Entities
             };
         }
 
+        public static UsuarioDomainEntity CreateFromRequest(
+            string? code,
+            string? username,
+            string fullName,
+            Email email,
+            bool isActive
+        )
+        {
+            return new UsuarioDomainEntity
+            {
+                Code = code,
+                UserName = username,
+                FullName = fullName,
+                Email = email,
+                IsActive = isActive,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = null
+            };
+        }
+
         public void UpdateContactInfo(Email email)
         {
             Email = email;

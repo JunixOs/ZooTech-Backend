@@ -42,7 +42,10 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers
             var behaviorPipeline = _listAdminUsersBehaviorPipelineFactory.Create();
 
             var result = await behaviorPipeline.Execute(
-                EmptyCommand.Value
+                EmptyCommand.Value(
+                    AuditEventType.Read,
+                    "List all admin users"
+                )
             );
 
             return Ok(ListAdminUsersMapper.ToResponse(result));

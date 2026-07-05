@@ -1,16 +1,13 @@
-using ZooTech.Application.Common.Gateway.Auditing;
 using ZooTech.Application.Common.Gateway.Identity;
 using ZooTech.Application.Common.Gateway.Repositories.MainTenantsDb;
 using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateAdminUser.Ports;
 using ZooTech.Domain.Admin.Entities;
-using ZooTech.Domain.Shared.Enums;
 using ZooTech.Domain.Shared.ValueObjects;
 
 namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateAdminUser
 {
-    public class CreateAdminUserInteractor : ICreateAdminUserInputPort, IAuditableRequest
+    public class CreateAdminUserInteractor : ICreateAdminUserInputPort
     {
-        public AuditEventType EventType => AuditEventType.Create;
 
         public IAdminUserRepository _adminUserRepository;
         public IPasswordHasher _passwordHasher;
@@ -24,7 +21,6 @@ namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateAdminUser
             _passwordHasher = passwordHasher;
         }
 
-        public string Action => "Create admin user";
 
         public async Task<CreateAdminUserOutput> Handle(CreateAdminUserCommand cmd)
         {

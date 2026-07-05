@@ -8,15 +8,11 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Auth.UseCases.RegularLogin
 {
-    public class RegularLoginInteractor : IRegularLoginInputPort, IAuditableRequest
+    public class RegularLoginInteractor : IRegularLoginInputPort
     {
         private readonly IAppCacheService _appCacheService;
         private readonly IUsuarioRepository _usuarioRepository;
         private readonly IJwtService _jwtService;
-
-        public AuditEventType EventType => AuditEventType.Login;
-
-        public string Action => "A user is login into the application.";
 
         public RegularLoginInteractor(
             IAppCacheService appCacheService,
@@ -36,6 +32,11 @@ namespace ZooTech.Application.Modules.Module_Auth.UseCases.RegularLogin
             if(domainEntity is null)
             {
                 throw new NotFoundException(ScopeName.Application , ModuleName.Auth);
+            }
+
+            if (!domainEntity.IsActive)
+            {
+                throw new InactiveUserException(ScopeName.Application, ModuleName.Auth);
             }
 
             (var token, var jti) = _jwtService.GenerateToken(
