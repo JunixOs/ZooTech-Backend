@@ -5,6 +5,7 @@ using ZooTech.Application.Modules.Module_Celo.UseCases.GetReporteCelos;
 using ZooTech.Application.Modules.Module_Celo.UseCases.UpdateCelo;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.DTOs.Responses;
+using ZooTech.Application.Modules.Module_Celo.UseCases.GetComparacionCelosRealVsEstandar;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_Celo.Mappers;
 
@@ -54,6 +55,7 @@ internal static class CeloMapper
     {
         return new CeloItemResponse
         {
+            Id = item.Id,
             CodigoRegistro = item.CodigoRegistro,
             Fecha = item.Fecha,
             Hora = item.Hora,
@@ -77,6 +79,17 @@ internal static class CeloMapper
             ListaCaracteristicas = item.ListaCaracteristicas,
             Observaciones = item.Observaciones,
             Crias = item.Crias
+        };
+    }
+
+    public static ComparacionCelosResponse ToResponse(
+    ComparacionCelosItemDto item)
+    {
+        return new ComparacionCelosResponse
+        {
+            Fecha = item.Fecha,
+            RegistrosReales = item.RegistrosReales,
+            RegistrosEstandar = item.RegistrosEstandar
         };
     }
 }

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using ZooTech.Application.Modules.Module_Celo.UseCases.CreateCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.DeleteCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetCelos;
+using ZooTech.Application.Modules.Module_Celo.UseCases.GetComparacionCelosRealVsEstandar;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetReporteCelos;
 using ZooTech.Application.Modules.Module_Celo.UseCases.UpdateCelo;
 using ZooTech.InterfaceAdapters.DTOs;
@@ -22,19 +23,22 @@ public sealed class CeloController : ControllerBase
     private readonly ICreateCeloInputPort _createCeloInputPort;
     private readonly IUpdateCeloInputPort _updateCeloInputPort;
     private readonly IDeleteCeloInputPort _deleteCeloInputPort;
+    private readonly IGetComparacionCelosRealVsEstandarInputPort _getComparacionInputPort;
 
     public CeloController(
         IGetCelosInputPort getCelosInputPort,
         IGetReporteCelosInputPort getReporteCelosInputPort,
         ICreateCeloInputPort createCeloInputPort,
         IUpdateCeloInputPort updateCeloInputPort,
-        IDeleteCeloInputPort deleteCeloInputPort)
+        IDeleteCeloInputPort deleteCeloInputPort,
+        IGetComparacionCelosRealVsEstandarInputPort getComparacionInputPort)
     {
         _getCelosInputPort = getCelosInputPort;
         _getReporteCelosInputPort = getReporteCelosInputPort;
         _createCeloInputPort = createCeloInputPort;
         _updateCeloInputPort = updateCeloInputPort;
         _deleteCeloInputPort = deleteCeloInputPort;
+        _getComparacionInputPort = getComparacionInputPort;
     }
 
     [HttpGet]
@@ -43,6 +47,7 @@ public sealed class CeloController : ControllerBase
     {
         var output = await _getCelosInputPort.HandleAsync(cancellationToken);
         var response = output.Items.Select(CeloMapper.ToResponse).ToList();
+
         return Ok(GeneralResponseDTO<List<CeloItemResponse>>.Ok(response));
     }
 
@@ -119,6 +124,26 @@ public sealed class CeloController : ControllerBase
         return Ok(GeneralResponseDTO<object>.Ok(response));
     }
 
+    [HttpGet("reportes/comparacion-real-vs-estandar")]
+    [ProducesResponseType(typeof(GeneralResponseDTO<List<ComparacionCelosResponse>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetComparacionRealVsEstandar(
+        [FromQuery] DateTime? fechaInicio,
+        [FromQuery] DateTime? fechaFin,
+        CancellationToken cancellationToken)
+    {
+        var output = await _getComparacionInputPort.HandleAsync(
+            fechaInicio,
+            fechaFin,
+            cancellationToken);
+
+        var response = output.Items
+            .Select(CeloMapper.ToResponse)
+            .ToList();
+
+        return Ok(
+            GeneralResponseDTO<List<ComparacionCelosResponse>>.Ok(response));
+    }
+
     [HttpPost]
     [ProducesResponseType(typeof(GeneralResponseDTO<CreateCeloResponse>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
@@ -165,6 +190,9 @@ public sealed class CeloController : ControllerBase
         var command = CeloMapper.ToCommand(request, id);
         await _deleteCeloInputPort.HandleAsync(command, cancellationToken);
 
-        return Ok(GeneralResponseDTO<object>.Ok(new { mensaje = "Celo eliminado con éxito" }));
+        return Ok(GeneralResponseDTO<object>.Ok(new
+        {
+            mensaje = "Celo eliminado con éxito"
+        }));
     }
 }

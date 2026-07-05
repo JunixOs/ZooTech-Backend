@@ -4,6 +4,8 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Celo.DTOs.Responses;
 
 public class CeloItemResponse
 {
+    public long Id { get; set; }
+
     public string CodigoRegistro { get; set; } = null!;
     public DateOnly Fecha { get; set; }
     public TimeOnly Hora { get; set; }

@@ -73,6 +73,15 @@ public sealed class FakeCeloRepository : ICeloRepository
     {
         return Task.FromResult(false);
     }
+
+    // No se usa en estos tests, pero se implementa porque ICeloRepository lo exige.
+    public Task<List<Celo>> GetByDateRangeAsync(
+        DateTime? fechaInicio,
+        DateTime? fechaFin,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(new List<Celo>());
+    }
 }
 
 public sealed class GetCelosInteractorTests

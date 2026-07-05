@@ -35,4 +35,9 @@ public interface ICeloRepository
     Task<bool> ExistsCodigoAsync(
         string codigo,
         CancellationToken cancellationToken = default);
+
+    Task<List<Celo>> GetByDateRangeAsync(
+        DateTime? fechaInicio,
+        DateTime? fechaFin,
+        CancellationToken cancellationToken = default);
 }
