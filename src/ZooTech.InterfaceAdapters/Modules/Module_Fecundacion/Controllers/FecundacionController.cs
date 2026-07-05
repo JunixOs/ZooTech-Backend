@@ -22,7 +22,6 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.Controllers;
 
 [ApiController]
 [Route("api/v1/fecundaciones")]
-[Route("api/v1/fecundacion")]
 [ApiExplorerSettings(GroupName = "public")]
 public sealed class FecundacionController : ControllerBase
 {

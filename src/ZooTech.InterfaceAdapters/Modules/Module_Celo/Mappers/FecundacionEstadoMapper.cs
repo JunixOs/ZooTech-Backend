@@ -10,6 +10,7 @@ public static class FecundacionEstadoMapper
     {
         return new FecundacionEstadoResponse(
             output.VacunoId,
+            output.FecundacionId,
             output.CodigoVacuno,
             output.NombreVacuno,
             output.EstadoActual,
@@ -28,6 +29,7 @@ public static class FecundacionEstadoMapper
     {
         return new FecundacionEstadoResponse(
             output.VacunoId,
+            output.FecundacionId,
             output.CodigoVacuno,
             output.NombreVacuno,
             output.EstadoActual,
