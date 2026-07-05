@@ -1,7 +1,9 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ZooTech.Application.Common.Behaviors;
 using ZooTech.Application.Common.Behaviors.Module_Auth.AdminLogin;
 using ZooTech.Application.Common.Behaviors.Module_Auth.RegularLogin;
+using ZooTech.Domain.Shared.Enums;
 using ZooTech.InterfaceAdapters.Filters;
 using ZooTech.InterfaceAdapters.Modules.Module_Auth.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Auth.Mappers;
@@ -25,6 +27,8 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Auth
             _regularLoginBehaviorPipelineFactory = regularLoginBehaviorPipelineFactory;
         }
 
+        [AllowAnonymous]
+        [ServiceFilter(typeof(AnonymousOnlyFilter))]
         [ServiceFilter(typeof(TenantHeaderFilter))]
         [RestrictTenantType(Domain.Shared.Enums.TenantType.Tenant)]
         [HttpPost("user/login")]
@@ -41,6 +45,8 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Auth
             return Ok(result);
         }
 
+        [AllowAnonymous]
+        [ServiceFilter(typeof(AnonymousOnlyFilter))]
         [ServiceFilter(typeof(TenantHeaderFilter))]
         [RestrictTenantType(Domain.Shared.Enums.TenantType.Admin)]
         [HttpPost("admin/login")]

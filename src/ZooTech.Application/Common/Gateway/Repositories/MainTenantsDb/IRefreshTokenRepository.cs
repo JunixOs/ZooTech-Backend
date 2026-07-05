@@ -7,8 +7,8 @@ namespace ZooTech.Application.Common.Gateway.Repositories.MainTenantsDb
         Task<RefreshTokenDomainEntity> GetById(string id);
 
         // El usuario debe enviar su refreshToken
-        Task<RefreshTokenDomainEntity> GetByAdminUserIdAndToken(string adminUserId, string token);
+        Task<RefreshTokenDomainEntity> GetByAdminUserIdAndToken(int adminUserId, string unhashedToken);
         Task Update(RefreshTokenDomainEntity refreshTokenDomainEntity);
-        Task DeleteByAdminUserIdAndToken(string adminUserId, string token);
+        Task DeleteByAdminUserIdAndToken(int adminUserId, string unhashedToken);
     }
 }

@@ -5,6 +5,7 @@ using ZooTech.Application.Common.Behaviors.Module_Auth.RegularLogin;
 using ZooTech.Application.Common.Behaviors.Module_Tenancing.CreateAdminUser;
 using ZooTech.Application.Common.Behaviors.Module_Tenancing.CreateTenant;
 using ZooTech.Application.Common.Behaviors.Module_Tenancing.DeleteAdminUser;
+using ZooTech.Application.Common.Behaviors.Module_Tenancing.ListAdminUsers;
 using ZooTech.Application.Common.Validator;
 using ZooTech.Application.Modules.Module_Auth.UseCases.AdminLogin;
 using ZooTech.Application.Modules.Module_Auth.UseCases.RegularLogin;
@@ -30,20 +31,27 @@ public static class DependencyInjection
 
         services.AddScoped<IAdminLoginBehaviorPipelineFactory, AdminLoginBehaviorPipelineFactory>();
         services.AddScoped<IRegularLoginBehaviorPipelineFactory, RegularLoginBehaviorPipelineFactory>();
+
         services.AddScoped<ICreateTenantBehaviorPipelineFactory, CreateTenantBehaviorPipelineFactory>();
+        
         services.AddScoped<IDeleteAdminUserBehaviorPipelineFactory, DeleteAdminUserBehaviorPipelineFactory>();
         services.AddScoped<ICreateAdminUserBehaviorPipelineFactory, CreateAdminUserBehaviorPipelineFactory>();
+        services.AddScoped<IListAdminUsersBehaviorPipelineFactory, ListAdminUsersBehaviorPipelineFactory>();
 
         services.AddScoped<IAdminLoginInputPort, AdminLoginInteractor>();
         services.AddScoped<IRegularLoginInputPort, RegularLoginInteractor>();
+        
         services.AddScoped<ICreateTenantInputPort, CreateTenantInteractor>();
-        services.AddScoped<IListAdminUsersInputPort, ListAdminUsersInteractor>();
+        
         services.AddScoped<IDeleteAdminUserInputPort, DeleteAdminUserInteractor>();
         services.AddScoped<ICreateAdminUserInputPort , CreateAdminUserInteractor>();
+        services.AddScoped<IListAdminUsersInputPort, ListAdminUsersInteractor>();
         
         services.AddScoped<ICommandValidator<AdminLoginCommand>, AdminLoginValidator>();
         services.AddScoped<ICommandValidator<RegularLoginCommand>, RegularLoginValidator>();
+        
         services.AddScoped<ICommandValidator<CreateTenantCommand>, CreateTenantValidation>();
+        
         services.AddScoped<ICommandValidator<DeleteAdminUserCommand>, DeleteAdminUserValidator>();
         services.AddScoped<ICommandValidator<CreateAdminUserCommand> , CreateAdminUserValidator>();
 

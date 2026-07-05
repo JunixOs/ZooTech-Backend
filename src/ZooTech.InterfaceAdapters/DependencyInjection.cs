@@ -11,6 +11,7 @@ public static class DependencyInjection
     {
         // services.AddAutoMapper(typeof(DependencyInjection).Assembly);
         services.AddScoped<TenantHeaderFilter>();
+        services.AddScoped<AnonymousOnlyFilter>();
 
         // Desactivar los mensajes automaticos de validacion de
         // ASP.NET Core

@@ -17,7 +17,8 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers
         private readonly ICreateTenantBehaviorPipelineFactory _createTenantBehaviorPipelineFactory;
 
         public TenancingController(
-            ICreateTenantBehaviorPipelineFactory createTenantBehaviorPipelineFactory        )
+            ICreateTenantBehaviorPipelineFactory createTenantBehaviorPipelineFactory
+        )
         {
             _createTenantBehaviorPipelineFactory = createTenantBehaviorPipelineFactory;
         }
@@ -32,7 +33,7 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers
         [ServiceFilter(typeof(TenantHeaderFilter))]
         [RestrictTenantType(TenantType.Admin)]
         [Authorize(Roles = AuthorizationRoles.Admin)]
-        [HttpPost("create")]
+        [HttpPost]
         public async Task<IActionResult> CreateTenant([FromBody] CreateTenantRequestDto requestDto)
         {
             var behaviorPipeline = _createTenantBehaviorPipelineFactory.Create();

@@ -69,6 +69,7 @@ public static class DependencyInjection
         services.AddScoped<ITenantRepository, TenantRepository>();
         services.AddScoped<IAdminUserRepository, AdminUserRepository>();
         services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+        services.AddScoped<IRefreshTokenRepository , RefreshTokenRepository>();
 
         // Unified Tenant Configuration (Phase 1-2)
         services.AddScoped<ITenantConfigurationRepository, TenantConfigurationRepository>();

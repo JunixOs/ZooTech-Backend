@@ -38,7 +38,7 @@ namespace ZooTech.Application.Modules.Module_Auth.UseCases.RegularLogin
                 throw new NotFoundException(ScopeName.Application , ModuleName.Auth);
             }
 
-            var token = _jwtService.GenerateToken(
+            (var token, var jti) = _jwtService.GenerateToken(
                 domainEntity.Id,
                 domainEntity.UserName ?? string.Empty,
                 domainEntity.Email.Value,
