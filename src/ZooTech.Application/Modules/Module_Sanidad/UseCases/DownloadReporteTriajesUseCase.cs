@@ -39,14 +39,14 @@ public sealed class DownloadReporteTriajesInteractor : IDownloadReporteTriajesIn
     public async Task<DownloadReporteTriajesOutput> HandleAsync(DownloadReporteTriajesCommand command, CancellationToken cancellationToken = default)
     {
         var (triajes, _) = await _repository.GetAllAsync(
-            pagina: 1,
-            tamano: int.MaxValue,
-            command.Fecha,
-            command.Codigo,
-            command.Nombre,
-            command.TipoPeso,
-            command.PesoKg,
-            cancellationToken);
+     pagina: 1,
+     tamano: int.MaxValue,
+     fecha: command.Fecha,
+     codigo: command.Codigo,
+     nombre: command.Nombre,
+     tipoPeso: command.TipoPeso,
+     pesoKg: command.PesoKg,
+     cancellationToken: cancellationToken);
 
         var response = triajes.Select(t => new TriajeReporteResponse
         {

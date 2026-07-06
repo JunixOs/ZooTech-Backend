@@ -4,6 +4,8 @@ public sealed record GetAllTriajesQuery(
     int Pagina,
     int Tamano,
     string? Fecha = null,
+    string? FechaDesde = null,
+    string? FechaHasta = null,
     string? Codigo = null,
     string? Nombre = null,
     string? TipoPeso = null,
