@@ -23,7 +23,9 @@ public sealed class ListReporteCeloGeneralInteractor : IListReporteCeloGeneralIn
         CancellationToken cancellationToken = default)
     {
         var currentPage = page <= 0 ? 1 : page;
-        var currentPageSize = pageSize <= 0 ? 20 : Math.Min(pageSize, 100);
+        var currentPageSize = pageSize <= 0
+            ? CeloPaginationDefaults.DefaultPageSize
+            : Math.Min(pageSize, CeloPaginationDefaults.MaxPageSize);
 
         var (celos, totalCount) = await _celoRepository.GetPagedForReporteAsync(
             search,
