@@ -4,7 +4,10 @@ public sealed record ListadoVacunosReporteResponse(
     IReadOnlyCollection<VacunoListadoItemResponse> Data,
     ReporteVacunoResumenResponse Resumen,
     ReporteVacunoFiltrosResponse Filtros,
-    string? DownloadUrl);
+    string? DownloadUrl,
+    int TotalCount,
+    int Page,
+    int PageSize);
 
 public sealed record VacunoListadoItemResponse(
     long Id,

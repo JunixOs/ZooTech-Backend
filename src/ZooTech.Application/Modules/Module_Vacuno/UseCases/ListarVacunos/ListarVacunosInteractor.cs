@@ -6,6 +6,10 @@ namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
 
 public sealed class ListarVacunosInteractor : IListarVacunosInputPort
 {
+    private const int DefaultPage = 1;
+    private const int DefaultPageSize = 20;
+    private const int MaxPageSize = 100;
+
     private readonly IVacunoRepository _vacunoRepository;
     private readonly IVacunosConfiguration _settings;
 
@@ -23,13 +27,16 @@ public sealed class ListarVacunosInteractor : IListarVacunosInputPort
             fechaDesde = DateTime.UtcNow.AddDays(-_settings.DefaultFilterDays);
         }
 
+        var page = command.Page <= 0 ? DefaultPage : command.Page;
+        var pageSize = command.Limit <= 0 ? DefaultPageSize : Math.Min(command.Limit, MaxPageSize);
+
         var (items, totalCount) = await _vacunoRepository.GetPagedAsync(
             command.Query,
             fechaDesde,
             command.FechaHasta,
             command.Estado,
-            command.Page,
-            command.Limit,
+            page,
+            pageSize,
             cancellationToken);
 
         return new ListarVacunosOutput(items, totalCount);

@@ -10,6 +10,7 @@ using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetArbolGenealogico;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetVacunoById;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ListarVacunosReporte;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.UpdateVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarArbolGenealogico;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
@@ -18,6 +19,7 @@ using ZooTech.InterfaceAdapters.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Mappers;
+using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Mappers.ReporteVacuno;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Controllers;
 
@@ -32,6 +34,7 @@ public sealed class VacunoController : ControllerBase
     private readonly IUpdateVacunoInputPort _updateInputPort;
     private readonly IDeleteVacunoInputPort _deleteInputPort;
     private readonly IExportarArbolGenealogicoInputPort _exportarArbolInputPort;
+    private readonly IListarVacunosReporteUseCase _listarVacunosReporteUseCase;
     private readonly IVacunoRepository _vacunoRepository;
     private readonly IGetArbolGenealogicoInputPort _getArbolGenealogicoInputPort;
     private readonly IAnimalReportExcelService _animalReportExcelService;
@@ -45,6 +48,7 @@ public sealed class VacunoController : ControllerBase
         IDeleteVacunoInputPort deleteInputPort,
         IGetArbolGenealogicoInputPort getArbolGenealogicoInputPort,
         IExportarArbolGenealogicoInputPort exportarArbolInputPort,
+        IListarVacunosReporteUseCase listarVacunosReporteUseCase,
         IVacunoRepository vacunoRepository,
         IAnimalReportExcelService animalReportExcelService,
         IAnimalReportPdfService animalReportPdfService)
@@ -55,6 +59,7 @@ public sealed class VacunoController : ControllerBase
         _updateInputPort = updateInputPort;
         _deleteInputPort = deleteInputPort;
         _exportarArbolInputPort = exportarArbolInputPort;
+        _listarVacunosReporteUseCase = listarVacunosReporteUseCase;
         _vacunoRepository = vacunoRepository;
         _getArbolGenealogicoInputPort = getArbolGenealogicoInputPort;
         _animalReportExcelService = animalReportExcelService;
@@ -64,25 +69,32 @@ public sealed class VacunoController : ControllerBase
     [HttpGet]
     [ProducesResponseType(typeof(PagedResponse<List<VacunoItemResponse>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ListarVacunos(
+    [FromQuery] string? search,
     [FromQuery] string? query,
+    [FromQuery(Name = "q")] string? q,
     [FromQuery] DateTime? fechaDesde,
     [FromQuery] DateTime? fechaHasta,
     [FromQuery] string? estado,
     [FromQuery] int page = 1,
-    [FromQuery] int limit = 20,
+    [FromQuery] int? pageSize = null,
+    [FromQuery] int? limit = null,
     CancellationToken cancellationToken = default)
     {
+        var currentPage = NormalizePage(page);
+        var currentPageSize = NormalizePageSize(pageSize ?? limit);
+        var searchTerm = FirstNonBlank(search, query, q);
+
         var command = new ListarVacunosCommand(
-            Query: query,
+            Query: searchTerm,
             FechaDesde: fechaDesde,
             FechaHasta: fechaHasta,
             Estado: estado,
-            Page: page,
-            Limit: limit);
+            Page: currentPage,
+            Limit: currentPageSize);
 
         var output = await _listarInputPort.HandleAsync(command, cancellationToken);
         var response = output.Items.Select(VacunoMapper.ToResponse).ToList();
-        return Ok(PagedResponse<List<VacunoItemResponse>>.OkPaged(response, page, limit, output.TotalCount));
+        return Ok(PagedResponse<List<VacunoItemResponse>>.OkPaged(response, currentPage, currentPageSize, output.TotalCount));
     }
 
     [HttpGet("{id:long}/genealogia")]
@@ -586,73 +598,29 @@ public sealed class VacunoController : ControllerBase
     [HttpGet("reportes/listado")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> ReportesListado(
-        [FromQuery] string? fechaDesde,
-        [FromQuery] string? fechaHasta,
-        [FromQuery] string? q,
-        [FromQuery] string? codigo,
-        [FromQuery] string? fechaRegistro,
-        [FromQuery] string? nombre,
-        [FromQuery] string? raza,
-        [FromQuery] string? procedencia,
-        [FromQuery] string? estado,
-        [FromQuery] string? aptoPara,
-        [FromQuery] string? formato,
-        [FromQuery] int? page,
-        [FromQuery] int? limit,
-        [FromServices] GanaderiaDbContext db,
+        [FromQuery] ListadoVacunosRequest request,
         CancellationToken cancellationToken)
     {
-        var desde = ParseDateOrNull(fechaDesde);
-        var hasta = ParseDateOrNull(fechaHasta);
-        if (desde.HasValue && hasta.HasValue && desde.Value > hasta.Value)
-        {
-            return BadRequest(new { message = "fechaDesde no puede ser mayor que fechaHasta." });
-        }
+        var response = await _listarVacunosReporteUseCase.HandleAsync(
+            RegistroVacunoReporteMapper.ToApplicationQuery(request),
+            cancellationToken);
 
-        var rows = await BuildReporteListadoRowsAsync(db, cancellationToken);
-        rows = ApplyReporteListadoFilters(rows, desde, hasta, q, codigo, fechaRegistro, nombre, raza, procedencia, estado);
-
-        var normalizedFormato = NormalizeFormat(formato);
-        var total = rows.Count;
-        var pageNumber = Math.Max(1, page ?? 1);
-        var pageSize = Math.Clamp(limit ?? 10, 1, 100);
-        var pagedRows = rows
-            .Skip((pageNumber - 1) * pageSize)
-            .Take(pageSize)
-            .ToList();
-
-        string? downloadUrl = null;
+        var normalizedFormato = NormalizeFormat(request.Formato);
         if (normalizedFormato is "excel" or "pdf")
         {
-            downloadUrl = await GenerateListadoReportFileAsync(
+            var rows = await LoadAllListadoReporteItemsAsync(request, response.TotalCount, cancellationToken);
+            var downloadUrl = await GenerateListadoReportFileAsync(
                 rows,
                 normalizedFormato,
-                desde,
-                hasta,
-                q,
+                response.Filtros.FechaDesde,
+                response.Filtros.FechaHasta,
+                response.Filtros.Q,
                 cancellationToken);
+
+            response = response with { DownloadUrl = downloadUrl };
         }
 
-        return Ok(new
-        {
-            data = pagedRows,
-            resumen = new { totalVacunos = total },
-            filtros = new
-            {
-                fechaDesde = desde,
-                fechaHasta = hasta,
-                q,
-                codigo,
-                fechaRegistro,
-                nombre,
-                raza,
-                procedencia,
-                estado,
-                aptoPara,
-                formato = normalizedFormato
-            },
-            downloadUrl
-        });
+        return Ok(RegistroVacunoReporteMapper.ToResponse(response));
     }
 
     [HttpGet("{vacunoId:long}/reporte")]
@@ -886,70 +854,6 @@ public sealed class VacunoController : ControllerBase
             || string.Equals(sexoCode, "H", StringComparison.OrdinalIgnoreCase)
             || string.Equals(sexoCode, "F", StringComparison.OrdinalIgnoreCase);
 
-    private async Task<List<object>> BuildReporteListadoRowsAsync(
-        GanaderiaDbContext db,
-        CancellationToken cancellationToken)
-    {
-        var vacunos = await _vacunoRepository.ListAllForDisplayAsync(cancellationToken);
-        var ids = vacunos.Select(x => x.Vacuno.Id).ToList();
-        var muertos = (await db.v_vacuno_estado_vigentes
-                .AsNoTracking()
-                .Where(e => ids.Contains(e.vacuno_id) && e.estado_code == "MUERTO")
-                .Select(e => e.vacuno_id)
-                .ToListAsync(cancellationToken))
-            .ToHashSet();
-
-        return vacunos
-            .Select(x => new
-            {
-                id = x.Vacuno.Id,
-                codigo = x.Vacuno.Codigo,
-                fechaNacimiento = x.Vacuno.FechaNacimiento.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                fechaRegistro = x.Vacuno.FechaRegistro.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                nombre = x.Vacuno.Nombre,
-                tipoAdquisicion = x.Vacuno.TipoAdquisicionCode,
-                raza = x.Vacuno.RazaCode,
-                color = x.Vacuno.ColorCode,
-                sexo = x.Vacuno.SexoCode,
-                granja = x.Procedencia,
-                procedencia = x.Procedencia,
-                estado = x.Vacuno.IsDeleted || muertos.Contains(x.Vacuno.Id) ? "muerto" : "vivo"
-            })
-            .Cast<object>()
-            .ToList();
-    }
-
-    private static List<object> ApplyReporteListadoFilters(
-        IEnumerable<object> rows,
-        DateOnly? fechaDesde,
-        DateOnly? fechaHasta,
-        string? q,
-        string? codigo,
-        string? fechaRegistro,
-        string? nombre,
-        string? raza,
-        string? procedencia,
-        string? estado)
-    {
-        return rows
-            .Where(row =>
-            {
-                dynamic item = row;
-                var itemFecha = ParseDateOrNull((string)item.fechaRegistro);
-                if (fechaDesde.HasValue && itemFecha.HasValue && itemFecha.Value < fechaDesde.Value) return false;
-                if (fechaHasta.HasValue && itemFecha.HasValue && itemFecha.Value > fechaHasta.Value) return false;
-                if (!Contains(item.codigo, q) && !Contains(item.nombre, q)) return false;
-                if (!Contains(item.codigo, codigo)) return false;
-                if (!Contains(item.fechaRegistro, fechaRegistro)) return false;
-                if (!Contains(item.nombre, nombre)) return false;
-                if (!Contains(item.raza, raza)) return false;
-                if (!Contains(item.procedencia, procedencia)) return false;
-                if (!Contains(item.estado, estado)) return false;
-                return true;
-            })
-            .ToList();
-    }
-
     private async Task<object> BuildRegistroVacunoDetalleAsync(
         VacunoResponse response,
         GanaderiaDbContext db,
@@ -1012,8 +916,61 @@ public sealed class VacunoController : ControllerBase
         };
     }
 
+    private async Task<IReadOnlyCollection<VacunoListadoReporteItem>> LoadAllListadoReporteItemsAsync(
+        ListadoVacunosRequest request,
+        int totalCount,
+        CancellationToken cancellationToken)
+    {
+        const int exportPageSize = 100;
+
+        if (totalCount <= 0)
+        {
+            return [];
+        }
+
+        var rows = new List<VacunoListadoReporteItem>(totalCount);
+        var totalPages = (int)Math.Ceiling((double)totalCount / exportPageSize);
+
+        for (var page = 1; page <= totalPages; page++)
+        {
+            var pageRequest = CloneListadoRequest(request, page, exportPageSize);
+            var pageResponse = await _listarVacunosReporteUseCase.HandleAsync(
+                RegistroVacunoReporteMapper.ToApplicationQuery(pageRequest),
+                cancellationToken);
+
+            rows.AddRange(pageResponse.Data);
+        }
+
+        return rows;
+    }
+
+    private static ListadoVacunosRequest CloneListadoRequest(
+        ListadoVacunosRequest request,
+        int page,
+        int pageSize)
+    {
+        return new ListadoVacunosRequest
+        {
+            FechaDesde = request.FechaDesde,
+            FechaHasta = request.FechaHasta,
+            Search = request.Search,
+            Q = request.Q,
+            Codigo = request.Codigo,
+            FechaRegistro = request.FechaRegistro,
+            Nombre = request.Nombre,
+            Raza = request.Raza,
+            Procedencia = request.Procedencia,
+            Estado = request.Estado,
+            EstadoRegistro = request.EstadoRegistro,
+            AptoPara = request.AptoPara,
+            Formato = "json",
+            Page = page.ToString(CultureInfo.InvariantCulture),
+            PageSize = pageSize.ToString(CultureInfo.InvariantCulture)
+        };
+    }
+
     private async Task<string> GenerateListadoReportFileAsync(
-        IReadOnlyCollection<object> rows,
+        IReadOnlyCollection<VacunoListadoReporteItem> rows,
         string formato,
         DateOnly? fechaDesde,
         DateOnly? fechaHasta,
@@ -1065,32 +1022,24 @@ public sealed class VacunoController : ControllerBase
     }
 
     private static ReportAnimalListOutput BuildAnimalListReportOutput(
-        IReadOnlyCollection<object> rows,
+        IReadOnlyCollection<VacunoListadoReporteItem> rows,
         DateOnly? fechaDesde,
         DateOnly? fechaHasta,
         string? keyword)
     {
-        var items = rows.Select(row =>
-        {
-            dynamic item = row;
-            var fechaNacimiento = ParseDateOrNull((string?)item.fechaNacimiento)
-                ?? ParseDateOrNull((string?)item.fechaRegistro)
-                ?? DateOnly.FromDateTime(DateTime.UtcNow);
-            var fechaRegistro = ParseDateOrNull((string?)item.fechaRegistro)
-                ?? DateOnly.FromDateTime(DateTime.UtcNow);
-
-            return new ReportAnimalListItem(
-                Convert.ToString(item.codigo, CultureInfo.InvariantCulture) ?? string.Empty,
-                Convert.ToString(item.nombre, CultureInfo.InvariantCulture) ?? string.Empty,
-                fechaNacimiento,
-                Convert.ToString(item.tipoAdquisicion, CultureInfo.InvariantCulture) ?? string.Empty,
-                Convert.ToString(item.raza, CultureInfo.InvariantCulture) ?? string.Empty,
-                Convert.ToString(item.color, CultureInfo.InvariantCulture) ?? string.Empty,
-                Convert.ToString(item.sexo, CultureInfo.InvariantCulture) ?? string.Empty,
-                Convert.ToString(item.granja, CultureInfo.InvariantCulture) ?? string.Empty,
-                Convert.ToString(item.estado, CultureInfo.InvariantCulture) ?? string.Empty,
-                fechaRegistro);
-        }).ToList();
+        var items = rows
+            .Select(item => new ReportAnimalListItem(
+                item.Codigo,
+                item.Nombre,
+                item.FechaNacimiento,
+                item.TipoAdquisicion ?? string.Empty,
+                item.Raza ?? string.Empty,
+                item.Color ?? string.Empty,
+                item.Sexo ?? string.Empty,
+                item.Granja ?? item.Procedencia ?? string.Empty,
+                item.Estado,
+                item.FechaRegistro))
+            .ToList();
 
         var dates = items.Select(item => item.FechaRegistro).ToList();
         var fallbackDate = DateOnly.FromDateTime(DateTime.UtcNow);
@@ -1190,17 +1139,21 @@ public sealed class VacunoController : ControllerBase
             : null;
     }
 
+    private static int NormalizePage(int page)
+        => page <= 0 ? 1 : page;
+
+    private static int NormalizePageSize(int? pageSize)
+        => !pageSize.HasValue || pageSize.Value <= 0
+            ? 20
+            : Math.Min(pageSize.Value, 100);
+
+    private static string? FirstNonBlank(params string?[] values)
+        => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value))?.Trim();
+
     private static string NormalizeFormat(string? formato)
     {
         var normalized = formato?.Trim().ToLowerInvariant();
         return normalized is "excel" or "pdf" ? normalized : "json";
-    }
-
-    private static bool Contains(string? value, string? filter)
-    {
-        return string.IsNullOrWhiteSpace(filter)
-            || (!string.IsNullOrWhiteSpace(value)
-                && value.Contains(filter.Trim(), StringComparison.OrdinalIgnoreCase));
     }
 
     private static string Csv(object? value)
