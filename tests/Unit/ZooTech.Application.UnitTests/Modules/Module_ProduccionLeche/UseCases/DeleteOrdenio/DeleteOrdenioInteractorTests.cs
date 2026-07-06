@@ -1,0 +1,84 @@
+using FluentValidation;
+using ZooTech.Application.Common.Exceptions;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.DeleteOrdenio;
+using ZooTech.Domain.Module_ProduccionLeche.Entities;
+using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
+
+namespace ZooTech.Application.UnitTests.Modules.Module_ProduccionLeche.UseCases.DeleteOrdenio;
+
+public class DeleteOrdenioInteractorTests
+{
+    [Fact]
+    public async Task HandleAsync_WhenOrdenioExists_SoftDeletesOrdenio()
+    {
+        var fecha = new DateTime(2026, 6, 18, 8, 0, 0, DateTimeKind.Utc);
+        var existing = CreateOrdenio(fecha);
+        var repository = new FakeOrdenioRepository(existing);
+        var validator = new InlineValidator<DeleteOrdenioCommand>();
+        var interactor = new DeleteOrdenioInteractor(repository, validator);
+
+        await interactor.HandleAsync(10, new DeleteOrdenioCommand("Registro duplicado"), CancellationToken.None);
+
+        Assert.True(repository.UpdateWasCalled);
+        Assert.True(existing.IsDeleted);
+        Assert.Equal("Registro duplicado", existing.MotivoEliminacion);
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenOrdenioDoesNotExist_ThrowsNotFoundException()
+    {
+        var repository = new FakeOrdenioRepository(null);
+        var validator = new InlineValidator<DeleteOrdenioCommand>();
+        var interactor = new DeleteOrdenioInteractor(repository, validator);
+
+        await Assert.ThrowsAsync<NotFoundException>(() => interactor.HandleAsync(99, new DeleteOrdenioCommand("Motivo"), CancellationToken.None));
+    }
+
+    private static Ordenio CreateOrdenio(DateTime fecha)
+        => Ordenio.Rehydrate(
+            id: 10,
+            codigo: "ORD-010",
+            fechaHora: fecha,
+            vacunoId: 1,
+            nombreVacuno: "Luna",
+            encargadoUsuarioId: 2,
+            nombreCompleto: "Juan Perez",
+            litros: 12,
+            estadoOrdenioCode: "ACTIVO",
+            observaciones: "Inicial",
+            createdAt: fecha,
+            updatedAt: fecha,
+            deletedAt: null,
+            motivoEliminacion: null,
+            createdBy: 2,
+            updatedBy: 2,
+            deletedBy: null);
+
+    private sealed class FakeOrdenioRepository : IOrdenioRepository
+    {
+        private readonly Ordenio? _ordenio;
+
+        public FakeOrdenioRepository(Ordenio? ordenio)
+        {
+            _ordenio = ordenio;
+        }
+
+        public bool UpdateWasCalled { get; private set; }
+
+        public Task<bool> ExistsCodigoAsync(string codigo, CancellationToken cancellationToken) => Task.FromResult(false);
+        public Task<bool> ExistsVacunoFechaAsync(long vacunoId, DateTime fechaHora, long? excludeOrdenioId, CancellationToken cancellationToken) => Task.FromResult(false);
+        public Task<bool> ExistsVacunoAsync(long vacunoId, CancellationToken cancellationToken) => Task.FromResult(true);
+        public Task<bool> ExistsUsuarioAsync(long usuarioId, CancellationToken cancellationToken) => Task.FromResult(true);
+        public Task<bool> ExistsEstadoAsync(string estadoOrdenioCode, CancellationToken cancellationToken) => Task.FromResult(true);
+        public Task<Ordenio?> GetByIdAsync(long id, CancellationToken cancellationToken) => Task.FromResult(_ordenio);
+        public Task<(IReadOnlyList<Ordenio> Items, int TotalCount)> ListAsync(long? vacunoId, string? estadoOrdenioCode, DateTime? fechaDesde, DateTime? fechaHasta, int page, int pageSize, CancellationToken cancellationToken) => Task.FromResult<(IReadOnlyList<Ordenio> Items, int TotalCount)>((Array.Empty<Ordenio>(), 0));
+        public Task<IReadOnlyList<Ordenio>> ListReportAsync(long? vacunoId, string? estadoOrdenioCode, DateTime? fechaDesde, DateTime? fechaHasta, CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<Ordenio>>(Array.Empty<Ordenio>());
+        public Task<Ordenio> AddAsync(Ordenio ordenio, CancellationToken cancellationToken) => Task.FromResult(ordenio);
+
+        public Task<Ordenio> UpdateAsync(Ordenio ordenio, CancellationToken cancellationToken)
+        {
+            UpdateWasCalled = true;
+            return Task.FromResult(ordenio);
+        }
+    }
+}

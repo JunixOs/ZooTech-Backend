@@ -1,4 +1,5 @@
 using ZooTech.Application;
+using ZooTech.Application.Common.Gateway.Services;
 using ZooTech.Infrastructure;
 using ZooTech.InterfaceAdapters;
 using ZooTech.InterfaceAdapters.Controllers;
