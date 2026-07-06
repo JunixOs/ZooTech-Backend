@@ -19,5 +19,20 @@ internal static class OrdenioMapper
             ordenio.CreatedAt,
             ordenio.UpdatedAt);
 
+    public static OrdenioOutput ToOutput(OrdenioList ordenio)
+        => new (
+            ordenio.Id,
+            ordenio.Codigo,
+            ordenio.FechaHora,
+            ordenio.VacunoId,
+            ordenio.NombreVacuno,
+            ordenio.EncargadoUsuarioId,
+            ordenio.NombreCompleto,
+            ordenio.Litros,
+            ordenio.EstadoOrdenioCode,
+            ordenio.Observaciones,
+            ordenio.CreatedAt,
+            ordenio.UpdatedAt);
+
 
 }
