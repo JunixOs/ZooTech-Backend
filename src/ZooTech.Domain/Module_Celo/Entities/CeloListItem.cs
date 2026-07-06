@@ -10,8 +10,7 @@ namespace ZooTech.Domain.Module_Celo.Entities
         DateTime fechaHora,
         long vacunoId,
         string vacunoCodigo,
-        string nombreVacuno,
-        string razaVacuno
+        string nombreVacuno
             ) {
 
             Id = id;
@@ -20,7 +19,6 @@ namespace ZooTech.Domain.Module_Celo.Entities
             VacunoId = vacunoId;
             VacunoCodigo = vacunoCodigo;
             NombreVacuno = nombreVacuno;
-            RazaVacuno = razaVacuno;
         }
 
 
@@ -30,7 +28,6 @@ namespace ZooTech.Domain.Module_Celo.Entities
         public long VacunoId { get; private set; }
         public string VacunoCodigo { get; private set; }
         public string NombreVacuno { get; private set; }
-        public string RazaVacuno { get; private set; }
 
 
 
@@ -40,8 +37,7 @@ namespace ZooTech.Domain.Module_Celo.Entities
         DateTime fechaHora,
         long vacunoId,
         string vacunoCodigo,
-        string nombreVacuno,
-        string razaVacuno
+        string nombreVacuno
 
         )
         {
@@ -51,8 +47,7 @@ namespace ZooTech.Domain.Module_Celo.Entities
             fechaHora,
             vacunoId,
             vacunoCodigo,
-            nombreVacuno,
-            razaVacuno
+            nombreVacuno
             );
 
 

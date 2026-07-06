@@ -210,3 +210,7 @@ BenchmarkDotNet.Artifacts/
 copilot/
 .ai/
 .zed/
+
+# Local Pi runtime state
+.atl/
+.pi/
