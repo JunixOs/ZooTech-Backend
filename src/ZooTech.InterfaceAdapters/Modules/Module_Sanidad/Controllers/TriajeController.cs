@@ -77,7 +77,7 @@ public sealed class TriajeController : ControllerBase
     {
         var currentPage = pagina <= 0 ? 1 : pagina;
         var currentTamano = tamano <= 0 ? 10 : Math.Min(tamano, 100);
-        var query = new GetAllTriajesQuery(currentPage, currentTamano, fecha, fechaDesde, fechaHasta, codigo, nombre, tipoPeso, pesoKg); 
+        var query = new GetAllTriajesQuery(currentPage, currentTamano, fecha, fechaDesde, fechaHasta, codigo, nombre, tipoPeso, pesoKg);
         var output = await _getAllInputPort.HandleAsync(query, cancellationToken);
         return Ok(GeneralResponseDTO<PagedTriajeResponse>.Ok(TriajeMapper.ToPagedResponse(output, currentPage, currentTamano)));
     }
