@@ -4,6 +4,7 @@ using ZooTech.Application.Modules.Module_Celo.UseCases.CreateCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.DeleteCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetCelos;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetComparacionCelosRealVsEstandar;
+using ZooTech.Application.Modules.Module_Celo.UseCases.GetComparacionCelosRealVsEstandarPorVacuno;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetReporteCelos;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetVacasEnCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.UpdateCelo;
@@ -25,6 +26,7 @@ public sealed class CeloController : ControllerBase
     private readonly IUpdateCeloInputPort _updateCeloInputPort;
     private readonly IDeleteCeloInputPort _deleteCeloInputPort;
     private readonly IGetComparacionCelosRealVsEstandarInputPort _getComparacionInputPort;
+    private readonly IGetComparacionCelosRealVsEstandarPorVacunoInputPort _getComparacionPorVacunoInputPort;
     private readonly IGetVacasEnCeloInputPort _getVacasEnCeloInputPort;
 
     public CeloController(
@@ -34,6 +36,7 @@ public sealed class CeloController : ControllerBase
         IUpdateCeloInputPort updateCeloInputPort,
         IDeleteCeloInputPort deleteCeloInputPort,
         IGetComparacionCelosRealVsEstandarInputPort getComparacionInputPort,
+        IGetComparacionCelosRealVsEstandarPorVacunoInputPort getComparacionPorVacunoInputPort,
         IGetVacasEnCeloInputPort getVacasEnCeloInputPort)
     {
         _getCelosInputPort = getCelosInputPort;
@@ -42,6 +45,7 @@ public sealed class CeloController : ControllerBase
         _updateCeloInputPort = updateCeloInputPort;
         _deleteCeloInputPort = deleteCeloInputPort;
         _getComparacionInputPort = getComparacionInputPort;
+        _getComparacionPorVacunoInputPort = getComparacionPorVacunoInputPort;
         _getVacasEnCeloInputPort = getVacasEnCeloInputPort;
     }
 
@@ -143,6 +147,28 @@ public sealed class CeloController : ControllerBase
 
         return Ok(
             GeneralResponseDTO<List<ComparacionCelosResponse>>.Ok(response));
+    }
+
+    [HttpGet("reportes/comparacion-por-vacuno/{codigoVacuno}")]
+    [ProducesResponseType(typeof(GeneralResponseDTO<List<ComparacionCelosPorVacunoResponse>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetComparacionPorVacuno(
+        string codigoVacuno,
+        [FromQuery] DateTime? fechaInicio,
+        [FromQuery] DateTime? fechaFin,
+        CancellationToken cancellationToken)
+    {
+        var output = await _getComparacionPorVacunoInputPort.HandleAsync(
+            codigoVacuno,
+            fechaInicio,
+            fechaFin,
+            cancellationToken);
+
+        var response = output.Items
+            .Select(CeloMapper.ToResponse)
+            .ToList();
+
+        return Ok(
+            GeneralResponseDTO<List<ComparacionCelosPorVacunoResponse>>.Ok(response));
     }
 
     [HttpPost]

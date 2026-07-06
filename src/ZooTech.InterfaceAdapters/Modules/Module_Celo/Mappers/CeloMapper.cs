@@ -2,6 +2,7 @@ using ZooTech.Application.Modules.Module_Celo.UseCases.CreateCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.DeleteCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetCelos;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetComparacionCelosRealVsEstandar;
+using ZooTech.Application.Modules.Module_Celo.UseCases.GetComparacionCelosRealVsEstandarPorVacuno;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetReporteCelos;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetVacasEnCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.UpdateCelo;
@@ -89,6 +90,17 @@ internal static class CeloMapper
         return new ComparacionCelosResponse
         {
             Fecha = item.Fecha,
+            RegistrosReales = item.RegistrosReales,
+            RegistrosEstandar = item.RegistrosEstandar
+        };
+    }
+
+    public static ComparacionCelosPorVacunoResponse ToResponse(
+        ComparacionCelosPorVacunoItemDto item)
+    {
+        return new ComparacionCelosPorVacunoResponse
+        {
+            Periodo = item.Periodo,
             RegistrosReales = item.RegistrosReales,
             RegistrosEstandar = item.RegistrosEstandar
         };
