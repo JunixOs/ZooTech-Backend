@@ -65,10 +65,11 @@ public sealed class CeloController : ControllerBase
         [FromQuery] int pageSize = 20,
         [FromQuery] DateTime? fechaInicio = null,
         [FromQuery] DateTime? fechaFin = null,
+        [FromQuery] Dictionary<string, string>? columnFilters = null,
         CancellationToken cancellationToken = default)
     {
         var output = await _listCelosInputPort.HandleAsync(
-            search, page, pageSize, fechaInicio, fechaFin, cancellationToken);
+            search, page, pageSize, fechaInicio, fechaFin, columnFilters, cancellationToken);
         var response = CeloMapper.ToResponse(output);
 
         return Ok(GeneralResponseDTO<ListCelosResponse>.Ok(response));
@@ -82,10 +83,11 @@ public sealed class CeloController : ControllerBase
         [FromQuery] int pageSize = 20,
         [FromQuery] DateTime? fechaInicio = null,
         [FromQuery] DateTime? fechaFin = null,
+        [FromQuery] Dictionary<string, string>? columnFilters = null,
         CancellationToken cancellationToken = default)
     {
         var output = await _listReporteCeloGeneralInputPort.HandleAsync(
-            search, page, pageSize, fechaInicio, fechaFin, cancellationToken);
+            search, page, pageSize, fechaInicio, fechaFin, columnFilters, cancellationToken);
         var response = CeloMapper.ToResponse(output);
 
         return Ok(GeneralResponseDTO<ListReporteCeloGeneralResponse>.Ok(response));
@@ -93,11 +95,21 @@ public sealed class CeloController : ControllerBase
 
     [HttpGet("reportes/por-vacuno")]
     [ProducesResponseType(typeof(GeneralResponseDTO<List<ReporteCeloPorVacunoResponse>>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetReporteCeloPorVacuno(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetReporteCeloPorVacuno(
+        [FromQuery] DateTime? fechaInicio,
+        [FromQuery] DateTime? fechaFin,
+        CancellationToken cancellationToken)
     {
         var output = await _getCelosInputPort.HandleAsync(cancellationToken);
 
-        var response = output.Items
+        var inicio = fechaInicio.HasValue ? DateOnly.FromDateTime(fechaInicio.Value) : (DateOnly?)null;
+        var fin = fechaFin.HasValue ? DateOnly.FromDateTime(fechaFin.Value) : (DateOnly?)null;
+
+        var items = output.Items.Where(item =>
+            (!inicio.HasValue || item.Fecha >= inicio.Value) &&
+            (!fin.HasValue || item.Fecha <= fin.Value));
+
+        var response = items
             .GroupBy(item => new
             {
                 item.CodigoVacuno,

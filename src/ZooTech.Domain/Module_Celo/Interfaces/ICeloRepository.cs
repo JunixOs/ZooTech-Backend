@@ -16,6 +16,7 @@ public interface ICeloRepository
         int pageSize,
         DateTime? fechaInicio = null,
         DateTime? fechaFin = null,
+        IReadOnlyDictionary<string, string>? columnFilters = null,
         CancellationToken cancellationToken = default);
 
     Task<(IReadOnlyList<CeloReporteItem> Items, int TotalCount)> GetPagedForReporteAsync(
@@ -24,6 +25,7 @@ public interface ICeloRepository
         int pageSize,
         DateTime? fechaInicio = null,
         DateTime? fechaFin = null,
+        IReadOnlyDictionary<string, string>? columnFilters = null,
         CancellationToken cancellationToken = default);
 
     Task<Dictionary<long, int>> GetVecesEnCeloCountsAsync(

@@ -37,6 +37,7 @@ public sealed class FakeCeloRepository : ICeloRepository
         int pageSize,
         DateTime? fechaInicio = null,
         DateTime? fechaFin = null,
+        IReadOnlyDictionary<string, string>? columnFilters = null,
         CancellationToken cancellationToken = default)
     {
         return Task.FromResult<(IReadOnlyList<CeloListItem> Items, int TotalCount)>((Celos, Celos.Count));
@@ -49,6 +50,7 @@ public sealed class FakeCeloRepository : ICeloRepository
         int pageSize,
         DateTime? fechaInicio = null,
         DateTime? fechaFin = null,
+        IReadOnlyDictionary<string, string>? columnFilters = null,
         CancellationToken cancellationToken = default)
     {
         return Task.FromResult<(IReadOnlyList<CeloReporteItem> Items, int TotalCount)>((new List<CeloReporteItem>(), 0));

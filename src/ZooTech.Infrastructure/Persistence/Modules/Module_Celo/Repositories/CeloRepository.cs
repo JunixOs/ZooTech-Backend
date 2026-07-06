@@ -78,6 +78,7 @@ public sealed class CeloRepository : ICeloRepository
         int pageSize,
         DateTime? fechaInicio = null,
         DateTime? fechaFin = null,
+        IReadOnlyDictionary<string, string>? columnFilters = null,
         CancellationToken cancellationToken = default)
     {
         var queryable = _context.celo_registros
@@ -101,6 +102,99 @@ public sealed class CeloRepository : ICeloRepository
         {
             var fechaFinInclusive = fechaFin.Value.Date.AddDays(1).AddTicks(-1);
             queryable = queryable.Where(c => c.fecha_hora <= fechaFinInclusive);
+        }
+
+        // Tier 1: direct SQL-translatable column filters (row-level columns).
+        if (columnFilters is not null)
+        {
+            if (columnFilters.TryGetValue("codigoRegistro", out var codigoRegistroFilter) &&
+                !string.IsNullOrWhiteSpace(codigoRegistroFilter))
+            {
+                queryable = queryable.Where(c => c.codigo.Contains(codigoRegistroFilter));
+            }
+
+            if (columnFilters.TryGetValue("codigoVacuno", out var codigoVacunoFilter) &&
+                !string.IsNullOrWhiteSpace(codigoVacunoFilter))
+            {
+                queryable = queryable.Where(c => c.vacuno.codigo.Contains(codigoVacunoFilter));
+            }
+
+            if (columnFilters.TryGetValue("nombreVacuno", out var nombreVacunoFilter) &&
+                !string.IsNullOrWhiteSpace(nombreVacunoFilter))
+            {
+                queryable = queryable.Where(c => c.vacuno.nombre.Contains(nombreVacunoFilter));
+            }
+
+            // Tier 2: "vecesEnCelo" is not a row column — it's a historical count per
+            // vacuno computed over the whole table (GetVecesEnCeloCountsAsync) and
+            // attached after pagination by the interactor. To filter by it we first
+            // resolve which VacunoId's count text matches the search value, then
+            // narrow the queryable with `vacuno_id IN (...)` before paginating.
+            if (columnFilters.TryGetValue("vecesEnCelo", out var vecesEnCeloFilter) &&
+                !string.IsNullOrWhiteSpace(vecesEnCeloFilter))
+            {
+                var counts = await GetVecesEnCeloCountsAsync(cancellationToken);
+                var matchingVacunoIds = counts
+                    .Where(kvp => kvp.Value.ToString().Contains(vecesEnCeloFilter))
+                    .Select(kvp => kvp.Key)
+                    .ToHashSet();
+
+                queryable = queryable.Where(c => matchingVacunoIds.Contains(c.vacuno_id));
+            }
+        }
+
+        // Tier 3: "fecha"/"hora" match on the formatted text of `fecha_hora`.
+        // DateTime.ToString() isn't reliably translatable to SQL across EF Core/
+        // provider versions, so once either key is present we bring the already
+        // narrowed candidate set (search + date range + tiers 1-2 above) into
+        // memory, format + filter it there, and paginate in-memory — instead of
+        // risking a fragile SQL translation. This path is only taken when the
+        // fecha/hora column filter is actually used; the default path below stays
+        // 100% SQL with Skip/Take.
+        var fechaFilterProvided = columnFilters is not null &&
+            columnFilters.TryGetValue("fecha", out var fechaFilterRaw) &&
+            !string.IsNullOrWhiteSpace(fechaFilterRaw);
+        var horaFilterProvided = columnFilters is not null &&
+            columnFilters.TryGetValue("hora", out var horaFilterRaw) &&
+            !string.IsNullOrWhiteSpace(horaFilterRaw);
+
+        if (fechaFilterProvided || horaFilterProvided)
+        {
+            var fechaFilter = fechaFilterProvided ? columnFilters!["fecha"] : null;
+            var horaFilter = horaFilterProvided ? columnFilters!["hora"] : null;
+
+            var candidates = await queryable
+                .Select(c => new celo_registro
+                {
+                    id = c.id,
+                    codigo = c.codigo,
+                    fecha_hora = c.fecha_hora,
+                    vacuno_id = c.vacuno_id,
+
+                    vacuno = new vacuno
+                    {
+                        id = c.vacuno.id,
+                        codigo = c.vacuno.codigo,
+                        nombre = c.vacuno.nombre,
+                        raza_code = c.vacuno.raza_code,
+                    },
+                })
+                .OrderByDescending(c => c.fecha_hora)
+                .ToListAsync(cancellationToken);
+
+            var filteredCandidates = candidates
+                .Where(c =>
+                    (string.IsNullOrWhiteSpace(fechaFilter) || c.fecha_hora.ToString("yyyy-MM-dd").Contains(fechaFilter)) &&
+                    (string.IsNullOrWhiteSpace(horaFilter) || c.fecha_hora.ToString("HH:mm:ss").Contains(horaFilter)))
+                .ToList();
+
+            var totalCountInMemory = filteredCandidates.Count;
+            var pagedInMemory = filteredCandidates
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            return (pagedInMemory.Select(ListAllCeloToDomain).ToList(), totalCountInMemory);
         }
 
         var totalCount = await queryable.CountAsync(cancellationToken);
@@ -136,6 +230,7 @@ public sealed class CeloRepository : ICeloRepository
         int pageSize,
         DateTime? fechaInicio = null,
         DateTime? fechaFin = null,
+        IReadOnlyDictionary<string, string>? columnFilters = null,
         CancellationToken cancellationToken = default)
     {
         var queryable = _context.celo_registros
@@ -160,6 +255,125 @@ public sealed class CeloRepository : ICeloRepository
         {
             var fechaFinInclusive = fechaFin.Value.Date.AddDays(1).AddTicks(-1);
             queryable = queryable.Where(c => c.fecha_hora <= fechaFinInclusive);
+        }
+
+        // Tier 1: direct SQL-translatable column filters (row-level columns +
+        // the `caracteristica_codes` navigation, which EF Core translates fine
+        // via `.Any(...)` without needing an explicit `Include` for filtering).
+        if (columnFilters is not null)
+        {
+            if (columnFilters.TryGetValue("codigoRegistro", out var codigoRegistroFilter) &&
+                !string.IsNullOrWhiteSpace(codigoRegistroFilter))
+            {
+                queryable = queryable.Where(c => c.codigo.Contains(codigoRegistroFilter));
+            }
+
+            if (columnFilters.TryGetValue("codigoVacuno", out var codigoVacunoFilter) &&
+                !string.IsNullOrWhiteSpace(codigoVacunoFilter))
+            {
+                queryable = queryable.Where(c => c.vacuno.codigo.Contains(codigoVacunoFilter));
+            }
+
+            if (columnFilters.TryGetValue("nombreVacuno", out var nombreVacunoFilter) &&
+                !string.IsNullOrWhiteSpace(nombreVacunoFilter))
+            {
+                queryable = queryable.Where(c => c.vacuno.nombre.Contains(nombreVacunoFilter));
+            }
+
+            if (columnFilters.TryGetValue("caracteristicas", out var caracteristicasFilter) &&
+                !string.IsNullOrWhiteSpace(caracteristicasFilter))
+            {
+                queryable = queryable.Where(c => c.caracteristica_codes.Any(cc =>
+                    cc.code.Contains(caracteristicasFilter) || cc.nombre.Contains(caracteristicasFilter)));
+            }
+
+            // Tier 2: "vecesEnCelo"/"crias" are not row columns — they're historical
+            // counts per vacuno computed over the whole table
+            // (GetVecesEnCeloCountsAsync/GetCriasCountsAsync) and attached after
+            // pagination by the interactor. To filter by either, we first resolve
+            // which VacunoId's count text matches the search value, then narrow the
+            // queryable with `vacuno_id IN (...)` before paginating. Each counts
+            // query only runs when its matching filter key is present, to avoid an
+            // unconditional extra round-trip.
+            if (columnFilters.TryGetValue("vecesEnCelo", out var vecesEnCeloFilter) &&
+                !string.IsNullOrWhiteSpace(vecesEnCeloFilter))
+            {
+                var counts = await GetVecesEnCeloCountsAsync(cancellationToken);
+                var matchingVacunoIds = counts
+                    .Where(kvp => kvp.Value.ToString().Contains(vecesEnCeloFilter))
+                    .Select(kvp => kvp.Key)
+                    .ToHashSet();
+
+                queryable = queryable.Where(c => matchingVacunoIds.Contains(c.vacuno_id));
+            }
+
+            if (columnFilters.TryGetValue("crias", out var criasFilter) &&
+                !string.IsNullOrWhiteSpace(criasFilter))
+            {
+                var criasCounts = await GetCriasCountsAsync(cancellationToken);
+                var matchingVacunoIds = criasCounts
+                    .Where(kvp => kvp.Value.ToString().Contains(criasFilter))
+                    .Select(kvp => kvp.Key)
+                    .ToHashSet();
+
+                queryable = queryable.Where(c => matchingVacunoIds.Contains(c.vacuno_id));
+            }
+        }
+
+        // Tier 3: "fecha"/"hora" match on the formatted text of `fecha_hora`.
+        // DateTime.ToString() isn't reliably translatable to SQL across EF Core/
+        // provider versions, so once either key is present we bring the already
+        // narrowed candidate set (search + date range + tiers 1-2 above) into
+        // memory, format + filter it there, and paginate in-memory — instead of
+        // risking a fragile SQL translation. This path is only taken when the
+        // fecha/hora column filter is actually used; the default path below stays
+        // 100% SQL with Skip/Take.
+        var fechaFilterProvided = columnFilters is not null &&
+            columnFilters.TryGetValue("fecha", out var fechaFilterRaw) &&
+            !string.IsNullOrWhiteSpace(fechaFilterRaw);
+        var horaFilterProvided = columnFilters is not null &&
+            columnFilters.TryGetValue("hora", out var horaFilterRaw) &&
+            !string.IsNullOrWhiteSpace(horaFilterRaw);
+
+        if (fechaFilterProvided || horaFilterProvided)
+        {
+            var fechaFilter = fechaFilterProvided ? columnFilters!["fecha"] : null;
+            var horaFilter = horaFilterProvided ? columnFilters!["hora"] : null;
+
+            var candidates = await queryable
+                .Include(c => c.caracteristica_codes)
+                .Select(c => new celo_registro
+                {
+                    id = c.id,
+                    codigo = c.codigo,
+                    fecha_hora = c.fecha_hora,
+                    vacuno_id = c.vacuno_id,
+                    observaciones = c.observaciones,
+                    caracteristica_codes = c.caracteristica_codes,
+
+                    vacuno = new vacuno
+                    {
+                        id = c.vacuno.id,
+                        codigo = c.vacuno.codigo,
+                        nombre = c.vacuno.nombre,
+                    },
+                })
+                .OrderByDescending(c => c.fecha_hora)
+                .ToListAsync(cancellationToken);
+
+            var filteredCandidates = candidates
+                .Where(c =>
+                    (string.IsNullOrWhiteSpace(fechaFilter) || c.fecha_hora.ToString("yyyy-MM-dd").Contains(fechaFilter)) &&
+                    (string.IsNullOrWhiteSpace(horaFilter) || c.fecha_hora.ToString("HH:mm:ss").Contains(horaFilter)))
+                .ToList();
+
+            var totalCountInMemory = filteredCandidates.Count;
+            var pagedInMemory = filteredCandidates
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            return (pagedInMemory.Select(ReporteCeloToDomain).ToList(), totalCountInMemory);
         }
 
         var totalCount = await queryable.CountAsync(cancellationToken);

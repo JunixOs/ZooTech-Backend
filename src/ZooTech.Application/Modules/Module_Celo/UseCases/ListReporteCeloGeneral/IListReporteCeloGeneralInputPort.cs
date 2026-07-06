@@ -8,5 +8,6 @@ public interface IListReporteCeloGeneralInputPort
         int pageSize,
         DateTime? fechaInicio = null,
         DateTime? fechaFin = null,
+        IReadOnlyDictionary<string, string>? columnFilters = null,
         CancellationToken cancellationToken = default);
 }

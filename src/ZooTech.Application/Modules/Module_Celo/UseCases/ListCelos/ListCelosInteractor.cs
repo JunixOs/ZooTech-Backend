@@ -19,6 +19,7 @@ public sealed class ListCelosInteractor : IListCelosInputPort
         int pageSize,
         DateTime? fechaInicio = null,
         DateTime? fechaFin = null,
+        IReadOnlyDictionary<string, string>? columnFilters = null,
         CancellationToken cancellationToken = default)
     {
         var currentPage = page <= 0 ? 1 : page;
@@ -30,6 +31,7 @@ public sealed class ListCelosInteractor : IListCelosInputPort
             currentPageSize,
             fechaInicio,
             fechaFin,
+            columnFilters,
             cancellationToken);
 
         var counts = await _celoRepository.GetVecesEnCeloCountsAsync(cancellationToken);
