@@ -1,33 +1,58 @@
-using FluentValidation;
+using ZooTech.Application.Common.Validator;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.CreateOrdenio;
+using ZooTech.Domain.Shared.Enums;
 
-namespace ZooTech.Application.Modules.Module_ProduccionLeche.Validators;
-
-internal sealed class CreateOrdenioValidator : AbstractValidator<CreateOrdenioCommand>
+namespace ZooTech.Application.Modules.Module_ProduccionLeche.Validators
 {
-    public CreateOrdenioValidator()
+    public class CreateOrdenioValidator : ICommandValidator<CreateOrdenioCommand>
     {
-        RuleFor(x => x.Codigo)
-            .NotEmpty().WithMessage("El código del ordeño es obligatorio.")
-            .MaximumLength(50).WithMessage("El código no puede superar los 50 caracteres.");
+        public ModuleName ModuleName => ModuleName.Produccion_Leche;
 
-        RuleFor(x => x.FechaHora)
-            .NotEmpty().WithMessage("La fecha y hora del ordeño es obligatoria.");
+        public List<string> Validate(CreateOrdenioCommand request)
+        {
+            var errors = new List<string>();
 
-        RuleFor(x => x.VacunoId)
-            .GreaterThan(0).WithMessage("El ID del vacuno debe ser mayor que cero.");
+            if (string.IsNullOrWhiteSpace(request.Codigo))
+            {
+                errors.Add("PRODUCCION_LECHE-ORDENIO-CREATE-CODIGO-NULL");
+            }
+            else if (request.Codigo.Length > 50)
+            {
+                errors.Add("PRODUCCION_LECHE-ORDENIO-CREATE-CODIGO-INVALID");
+            }
 
-        RuleFor(x => x.EncargadoUsuarioId)
-            .GreaterThan(0).WithMessage("El ID del encargado debe ser mayor que cero.");
+            if (request.FechaHora == default)
+            {
+                errors.Add("PRODUCCION_LECHE-ORDENIO-CREATE-FECHA_HORA-NULL");
+            }
 
-        RuleFor(x => x.Litros)
-            .GreaterThan(0).WithMessage("Los litros deben ser mayor que cero.");
+            if (request.VacunoId <= 0)
+            {
+                errors.Add("PRODUCCION_LECHE-ORDENIO-CREATE-VACUNO_ID-INVALID");
+            }
 
-        RuleFor(x => x.EstadoOrdenioCode)
-            .NotEmpty().WithMessage("El estado del ordeño es obligatorio.");
+            if (request.EncargadoUsuarioId <= 0)
+            {
+                errors.Add("PRODUCCION_LECHE-ORDENIO-CREATE-ENCARGADO_USUARIO_ID-INVALID");
+            }
 
-        RuleFor(x => x.Observaciones)
-            .MaximumLength(150).When(x => x.Observaciones is not null)
-            .WithMessage("Las observaciones no pueden superar los 150 caracteres.");
+            if (request.Litros <= 0)
+            {
+                errors.Add("PRODUCCION_LECHE-ORDENIO-CREATE-LITROS-INVALID");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.EstadoOrdenioCode))
+            {
+                errors.Add("PRODUCCION_LECHE-ORDENIO-CREATE-ESTADO_ORDENIO_CODE-NULL");
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Observaciones) &&
+                request.Observaciones.Length > 150)
+            {
+                errors.Add("PRODUCCION_LECHE-ORDENIO-CREATE-OBSERVACIONES-INVALID");
+            }
+
+            return errors;
+        }
     }
 }

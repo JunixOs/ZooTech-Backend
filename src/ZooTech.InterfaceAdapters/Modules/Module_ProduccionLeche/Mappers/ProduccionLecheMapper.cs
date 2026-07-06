@@ -1,4 +1,3 @@
-using QuestPDF.Helpers;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Common;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.CreateOrdenio;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.DeleteOrdenio;
@@ -7,21 +6,22 @@ using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.ListO
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.UpdateOrdenio;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.DTOs.Responses;
-using static QuestPDF.Helpers.Colors;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Mappers;
 
 public static class ProduccionLecheMapper
 {
     public static CreateOrdenioCommand ToCommand(CreateOrdenioRequest request)
-        => new(
-            request.Codigo,
-            request.FechaHora,
-            request.VacunoId,
-            request.EncargadoUsuarioId,
-            request.Litros,
-            request.EstadoOrdenioCode,
-            request.Observaciones);
+        => new CreateOrdenioCommand
+        {
+            Codigo = request.Codigo,
+            FechaHora = request.FechaHora,
+            VacunoId = request.VacunoId,
+            EncargadoUsuarioId = request.EncargadoUsuarioId,
+            Litros = request.Litros,
+            EstadoOrdenioCode = request.EstadoOrdenioCode,
+            Observaciones = request.Observaciones
+        };
 
 
     public static ListOrdenioCommand ToCommand(ListOrdeniosRequest request)
@@ -37,16 +37,19 @@ public static class ProduccionLecheMapper
        );
 
     public static UpdateOrdenioCommand ToCommand(UpdateOrdenioRequest request)
-        => new(
-            request.FechaHora,
-            request.EncargadoUsuarioId,
-            request.Litros,
-            request.EstadoOrdenioCode,
-            request.Observaciones);
-
+        => new UpdateOrdenioCommand{
+            FechaHora = request.FechaHora,
+            EncargadoUsuarioId = request.EncargadoUsuarioId,
+            Litros = request.Litros,
+            EstadoOrdenioCode = request.EstadoOrdenioCode,
+            Observaciones = request.Observaciones
+        };
 
     public static DeleteOrdenioCommand ToCommand(DeleteOrdenioRequest request)
-        => new(request.MotivoEliminacion);
+        => new DeleteOrdenioCommand
+        {
+            MotivoEliminacion = request.MotivoEliminacion
+        };
 
 
     public static OrdenioResponse ToResponse(OrdenioOutput output)

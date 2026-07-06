@@ -2,5 +2,5 @@ namespace ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.L
 
 public interface IListOrdeniosInputPort
 {
-    Task<ListOrdeniosOutput> HandleAsync(ListOrdeniosQuery query, CancellationToken cancellationToken);
+    Task<ListOrdeniosOutput> Handle(ListOrdeniosQuery query, CancellationToken cancellationToken);
 }

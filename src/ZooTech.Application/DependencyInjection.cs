@@ -24,7 +24,6 @@ using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Gener
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GetOrdenioById;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.ListOrdenios;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.UpdateOrdenio;
-using Microsoft.Extensions.DependencyInjection;
 using ZooTech.Application.Common.Behaviors;
 using ZooTech.Application.Common.Behaviors.Module_Auth.AdminLogin;
 using ZooTech.Application.Common.Behaviors.Module_Auth.RegularLogin;
@@ -36,7 +35,6 @@ using ZooTech.Application.Common.Behaviors.Module_Tenancing.ListAdminUsers;
 using ZooTech.Application.Common.Validator;
 using ZooTech.Application.Modules.Module_Auth.UseCases.AdminLogin;
 using ZooTech.Application.Modules.Module_Auth.UseCases.RegularLogin;
-using ZooTech.Application.Modules.Module_Tenancing.UseCases;
 using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateAdminUser;
 using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateAdminUser.Ports;
 using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant;
@@ -51,6 +49,14 @@ using ZooTech.Application.Common.Behaviors.Module_Celo.DeleteCelo;
 using ZooTech.Application.Common.Behaviors.Module_Celo.UpdateCelo;
 using ZooTech.Application.Common.Behaviors.Module_Celo.GetCelos;
 using ZooTech.Application.Modules.Module_Celo.Validators;
+using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.CreateOrdenio;
+using ZooTech.Application.Modules.Module_ProduccionLeche.Validators;
+using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.DeleteOrdenio;
+using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.GenerateOrdeniosExcel;
+using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.GenerateOrdeniosPdf;
+using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.GetOrdenioById;
+using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.ListOrdenios;
+using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.UpdateOrdenio;
 
 namespace ZooTech.Application;
 
@@ -75,12 +81,28 @@ public static class DependencyInjection
         // Use Cases - Module_ProduccionLeche
         // ============================================
         services.AddScoped<ICreateOrdenioInputPort, CreateOrdenioInteractor>();
-        services.AddScoped<IGetOrdeniosPdfInputPort, GenerateOrdeniosPdfInteractor>();
-        services.AddScoped<IGetOrdeniosExcelInputPort, GenerateOrdeniosExcelInteractor>();
-        services.AddScoped<IGetOrdenioByIdInputPort, GetOrdenioByIdInteractor>();
-        services.AddScoped<IListOrdeniosInputPort, ListOrdeniosInteractor>();
-        services.AddScoped<IUpdateOrdenioInputPort, UpdateOrdenioInteractor>();
+        services.AddScoped<ICreateOrdenioBehaviorPipelineFactory, CreateOrdenioBehaviorPipelineFactory>();
+        services.AddScoped<ICommandValidator<CreateOrdenioCommand>, CreateOrdenioValidator>();
+        
         services.AddScoped<IDeleteOrdenioInputPort, DeleteOrdenioInteractor>();
+        services.AddScoped<IDeleteOrdenioBehaviorPipelineFactory, DeleteOrdenioBehaviorPipelineFactory>();
+        services.AddScoped<ICommandValidator<DeleteOrdenioCommand>, DeleteOrdenioValidator>();
+
+        services.AddScoped<IGetOrdeniosExcelInputPort, GenerateOrdeniosExcelInteractor>();
+        services.AddScoped<IGenerateOrdeniosExcelBehaviorPipelineFactory, GenerateOrdeniosExcelBehaviorPipelineFactory>();
+        
+        services.AddScoped<IGetOrdeniosPdfInputPort, GenerateOrdeniosPdfInteractor>();
+        services.AddScoped<IGenerateOrdeniosPdfBehaviorPipelineFactory, GenerateOrdeniosPdfBehaviorPipelineFactory>();
+        
+        services.AddScoped<IGetOrdenioByIdInputPort, GetOrdenioByIdInteractor>();
+        services.AddScoped<IGetOrdenioByIdBehaviorPipelineFactory, GetOrdenioByIdBehaviorPipelineFactory>();
+        
+        services.AddScoped<IListOrdeniosInputPort, ListOrdeniosInteractor>();
+        services.AddScoped<IListOrdeniosBehaviorPipelineFactory, ListOrdeniosBehaviorPipelineFactory>();
+
+        services.AddScoped<IUpdateOrdenioInputPort, UpdateOrdenioInteractor>();
+        services.AddScoped<IUpdateOrdenioBehaviorPipelineFactory, UpdateOrdenioBehaviorPipelineFactory>();
+        services.AddScoped<ICommandValidator<UpdateOrdenioCommand>, UpdateOrdenioValidator>();
 
         // ============================================
         // FluentValidation — all assemblies

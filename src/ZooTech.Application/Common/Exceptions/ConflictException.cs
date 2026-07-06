@@ -1,9 +1,22 @@
+using ZooTech.Domain.Shared.Enums;
+
 namespace ZooTech.Application.Common.Exceptions;
 
-public sealed class ConflictException : Exception
+public class ConflictException : AppApplicationException
 {
-    public ConflictException(string message)
-        : base(message)
-    {
-    }
+        public ConflictException(
+            ScopeName scopeName,
+            ModuleName? moduleName = null,
+            List<string>? details = null,
+            string? message = null
+        ) : base(
+            "FORBIDDEN_ERROR",
+            ErrorType.Forbidden,
+            scopeName,
+            message ?? "A conflict occurred while attempting to enter the data",
+            moduleName,
+            details
+        )
+        {
+        }
 }
