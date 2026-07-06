@@ -3,20 +3,25 @@ namespace ZooTech.Application.Common.Behaviors
     public class BehaviorPipeline<TRequest , TResponse>
     {
         private readonly IEnumerable<IBehavior<TRequest , TResponse>> _behaviors;
-        private readonly Func<TRequest, Task<TResponse>> _handler;
+        
+        // NOTA: Aqui modifique para que tambien reciba el CancelationToken, asi es mas seguro creo :)
+        private readonly Func<TRequest, CancellationToken, Task<TResponse>> _handler;
 
         public BehaviorPipeline(
             IEnumerable<IBehavior<TRequest , TResponse>> behaviors,
-            Func<TRequest, Task<TResponse>> handler
+            Func<TRequest, CancellationToken, Task<TResponse>> handler
         )
         {
             _behaviors = behaviors;
             _handler = handler;
         }
 
-        public Task<TResponse> Execute(TRequest request)
+        public Task<TResponse> Execute(
+            TRequest request,
+            CancellationToken cancellationToken
+        )
         {
-            Func<Task<TResponse>> next = () => _handler(request);
+            Func<Task<TResponse>> next = () => _handler(request, cancellationToken);
 
             foreach (var behavior in _behaviors.Reverse())
             {

@@ -46,6 +46,10 @@ using ZooTech.Application.Modules.Module_Tenancing.UseCases.DeleteAdminUser;
 using ZooTech.Application.Modules.Module_Tenancing.UseCases.DeleteAdminUser.Ports;
 using ZooTech.Application.Modules.Module_Tenancing.UseCases.ListAdminUsers;
 using ZooTech.Application.Modules.Module_Tenancing.UseCases.ListAdminUsers.Ports;
+using ZooTech.Application.Common.Behaviors.Module_Celo.CreateCelo;
+using ZooTech.Application.Common.Behaviors.Module_Celo.DeleteCelo;
+using ZooTech.Application.Common.Behaviors.Module_Celo.UpdateCelo;
+using ZooTech.Application.Common.Behaviors.Module_Celo.GetCelos;
 
 namespace ZooTech.Application;
 
@@ -86,9 +90,19 @@ public static class DependencyInjection
         // Use Cases - Module_Celo
         // ============================================
         services.AddScoped<IGetCelosInputPort, GetCelosInteractor>();
+        services.AddScoped<IGetCelosBehaviorPipelineFactory, GetCelosBehaviorPipelineFactory>();
+
         services.AddScoped<ICreateCeloInputPort, CreateCeloInteractor>();
-        services.AddScoped<IUpdateCeloInputPort, UpdateCeloInteractor>();
+        services.AddScoped<ICreateCeloBehaviorPipelineFactory, CreateCeloBehaviorPipelineFactory>();
+        services.AddScoped<ICommandValidator<CreateCeloCommand>, CreateCeloValidator>();
+
         services.AddScoped<IDeleteCeloInputPort, DeleteCeloInteractor>();
+        services.AddScoped<IDeleteCeloBehaviorPipelineFactory, DeleteCeloBehaviorPipelineFactory>();
+        services.AddScoped<ICommandValidator<DeleteCeloCommand>, DeleteCeloValidator>();
+
+        services.AddScoped<IUpdateCeloInputPort, UpdateCeloInteractor>();
+        services.AddScoped<IUpdateCeloBehaviorPipelineFactory, UpdateCeloBehaviorPipelineFactory>();
+        services.AddScoped<ICommandValidator<UpdateCeloCommand>, UpdateCeloValidator>();
 
         // ============================================
         // Use Cases - Module_Vacuno
@@ -102,9 +116,23 @@ public static class DependencyInjection
         services.AddTransient(typeof(LoggingBehavior<,>));
         services.AddTransient(typeof(AuditBehavior<,>));
 
+
+        // ============================================
+        // Use Cases - Module_Auth
+        // ============================================
         services.AddScoped<IAdminLoginBehaviorPipelineFactory, AdminLoginBehaviorPipelineFactory>();
         services.AddScoped<IRegularLoginBehaviorPipelineFactory, RegularLoginBehaviorPipelineFactory>();
 
+        services.AddScoped<IAdminLoginInputPort, AdminLoginInteractor>();
+        services.AddScoped<IRegularLoginInputPort, RegularLoginInteractor>();
+
+        services.AddScoped<ICommandValidator<AdminLoginCommand>, AdminLoginValidator>();
+        services.AddScoped<ICommandValidator<RegularLoginCommand>, RegularLoginValidator>();
+
+
+        // ============================================
+        // Use Cases - Module_Tenancing
+        // ============================================
         services.AddScoped<ICreateTenantBehaviorPipelineFactory, CreateTenantBehaviorPipelineFactory>();
         services.AddScoped<ICreateUserInTenantBehaviorPipelineFactory, CreateUserInTenantBehaviorPipelineFactory>();
 
@@ -112,18 +140,12 @@ public static class DependencyInjection
         services.AddScoped<ICreateAdminUserBehaviorPipelineFactory, CreateAdminUserBehaviorPipelineFactory>();
         services.AddScoped<IListAdminUsersBehaviorPipelineFactory, ListAdminUsersBehaviorPipelineFactory>();
 
-        services.AddScoped<IAdminLoginInputPort, AdminLoginInteractor>();
-        services.AddScoped<IRegularLoginInputPort, RegularLoginInteractor>();
-        
         services.AddScoped<ICreateTenantInputPort, CreateTenantInteractor>();
         services.AddScoped<ICreateUserInTenantInputPort, CreateUserInTenantInteractor>();
         
         services.AddScoped<IDeleteAdminUserInputPort, DeleteAdminUserInteractor>();
         services.AddScoped<ICreateAdminUserInputPort , CreateAdminUserInteractor>();
         services.AddScoped<IListAdminUsersInputPort, ListAdminUsersInteractor>();
-        
-        services.AddScoped<ICommandValidator<AdminLoginCommand>, AdminLoginValidator>();
-        services.AddScoped<ICommandValidator<RegularLoginCommand>, RegularLoginValidator>();
         
         services.AddScoped<ICommandValidator<CreateTenantCommand>, CreateTenantValidation>();
         services.AddScoped<ICommandValidator<CreateUserInTenantCommand>, CreateUserInTenantValidator>();

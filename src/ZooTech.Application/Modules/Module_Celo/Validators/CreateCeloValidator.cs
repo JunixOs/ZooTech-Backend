@@ -1,26 +1,44 @@
-using FluentValidation;
-using ZooTech.Application.Modules.Module_Celo.UseCases.CreateCelo;
+using ZooTech.Application.Common.Validator;
+using ZooTech.Domain.Shared.Enums;
 
-namespace ZooTech.Application.Modules.Module_Celo.Validators;
-
-internal sealed class CreateCeloValidator : AbstractValidator<CreateCeloCommand>
+namespace ZooTech.Application.Modules.Module_Celo.UseCases.CreateCelo
 {
-    public CreateCeloValidator()
+    public class CreateCeloValidator : ICommandValidator<CreateCeloCommand>
     {
-        RuleFor(x => x.VacunoId)
-            .GreaterThan(0).WithMessage("El ID del vacuno debe ser mayor que cero.");
+        public ModuleName ModuleName => ModuleName.Celo;
 
-        RuleFor(x => x.EncargadoUsuarioId)
-            .GreaterThan(0).WithMessage("El ID del encargado debe ser mayor que cero.");
+        public List<string> Validate(CreateCeloCommand request)
+        {
+            var errors = new List<string>();
 
-        RuleFor(x => x.FechaHora)
-            .NotEmpty().WithMessage("La fecha y hora del celo es obligatoria.");
+            if (request.VacunoId <= 0)
+            {
+                errors.Add("CELO-CELO-CREATE-VACUNO_ID-INVALID");
+            }
 
-        RuleFor(x => x.Observaciones)
-            .MaximumLength(500).When(x => x.Observaciones is not null)
-            .WithMessage("Las observaciones no pueden superar los 500 caracteres.");
+            if (request.EncargadoUsuarioId <= 0)
+            {
+                errors.Add("CELO-CELO-CREATE-ENCARGADO_USUARIO_ID-INVALID");
+            }
 
-        RuleFor(x => x.CaracteristicaCodes)
-            .NotEmpty().WithMessage("Debe indicar al menos una característica.");
+            if (request.FechaHora == default || request.FechaHora is null)
+            {
+                errors.Add("CELO-CELO-CREATE-FECHA_HORA-NULL");
+            }
+
+            if (!string.IsNullOrEmpty(request.Observaciones) &&
+                request.Observaciones.Length > 500)
+            {
+                errors.Add("CELO-CELO-CREATE-OBSERVACIONES-INVALID");
+            }
+
+            if (request.CaracteristicaCodes is null ||
+                request.CaracteristicaCodes.Count == 0)
+            {
+                errors.Add("CELO-CELO-CREATE-CARACTERISTICAS-NULL");
+            }
+
+            return errors;
+        }
     }
 }

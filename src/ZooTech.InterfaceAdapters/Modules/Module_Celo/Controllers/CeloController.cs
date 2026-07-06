@@ -1,9 +1,15 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using ZooTech.Application.Common.Behaviors.Module_Celo.CreateCelo;
+using ZooTech.Application.Common.Behaviors.Module_Celo.DeleteCelo;
+using ZooTech.Application.Common.Behaviors.Module_Celo.GetCelos;
+using ZooTech.Application.Common.Behaviors.Module_Celo.UpdateCelo;
+using ZooTech.Application.Common.Models;
 using ZooTech.Application.Modules.Module_Celo.UseCases.CreateCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.DeleteCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetCelos;
 using ZooTech.Application.Modules.Module_Celo.UseCases.UpdateCelo;
+using ZooTech.Domain.Shared.Enums;
 using ZooTech.InterfaceAdapters.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.DTOs.Responses;
@@ -16,29 +22,36 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Celo.Controllers;
 [ApiExplorerSettings(GroupName = "public")]
 public sealed class CeloController : ControllerBase
 {
-    private readonly IGetCelosInputPort _getCelosInputPort;
-    private readonly ICreateCeloInputPort _createCeloInputPort;
-    private readonly IUpdateCeloInputPort _updateCeloInputPort;
-    private readonly IDeleteCeloInputPort _deleteCeloInputPort;
+    private readonly IGetCelosBehaviorPipelineFactory _getCelosBehaviorPipelineFactory;
+    private readonly ICreateCeloBehaviorPipelineFactory _createCeloBehaviorPipelineFactory;
+    private readonly IUpdateCeloBehaviorPipelineFactory _updateCeloBehaviorPipelineFactory;
+    private readonly IDeleteCeloBehaviorPipelineFactory _deleteCeloBehaviorPipelineFactory;
 
     public CeloController(
-        IGetCelosInputPort getCelosInputPort,
-        ICreateCeloInputPort createCeloInputPort,
-        IUpdateCeloInputPort updateCeloInputPort,
-        IDeleteCeloInputPort deleteCeloInputPort)
+        IGetCelosBehaviorPipelineFactory getCelosBehaviorPipelineFactory,
+        ICreateCeloBehaviorPipelineFactory createCeloBehaviorPipelineFactory,
+        IUpdateCeloBehaviorPipelineFactory updateCeloBehaviorPipelineFactory,
+        IDeleteCeloBehaviorPipelineFactory deleteCeloBehaviorPipelineFactory
+    )
     {
-        _getCelosInputPort = getCelosInputPort;
-        _createCeloInputPort = createCeloInputPort;
-        _updateCeloInputPort = updateCeloInputPort;
-        _deleteCeloInputPort = deleteCeloInputPort;
+        _getCelosBehaviorPipelineFactory = getCelosBehaviorPipelineFactory;
+        _createCeloBehaviorPipelineFactory = createCeloBehaviorPipelineFactory;;
+        _updateCeloBehaviorPipelineFactory = updateCeloBehaviorPipelineFactory;
+        _deleteCeloBehaviorPipelineFactory = deleteCeloBehaviorPipelineFactory;
     }
 
     [HttpGet]
     [ProducesResponseType(typeof(GeneralResponseDTO<List<CeloItemResponse>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCelos(CancellationToken cancellationToken)
     {
-        var output = await _getCelosInputPort.HandleAsync(cancellationToken);
-        var response = output.Items.Select(CeloMapper.ToResponse).ToList();
+        var behaviorPipeline = _getCelosBehaviorPipelineFactory.Create();
+
+        var result = await behaviorPipeline.Execute(
+            EmptyCommand.Value(AuditEventType.Read , "Get celos"),
+            cancellationToken
+        );
+
+        var response = result.Items.Select(CeloMapper.ToResponse).ToList();
         return Ok(GeneralResponseDTO<List<CeloItemResponse>>.Ok(response));
     }
 
@@ -46,7 +59,15 @@ public sealed class CeloController : ControllerBase
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetVacasEnCelo(CancellationToken cancellationToken)
     {
-        var output = await _getCelosInputPort.HandleAsync(cancellationToken);
+        var behaviorPipeline = _getCelosBehaviorPipelineFactory.Create();
+
+        var output = await behaviorPipeline.Execute(
+            EmptyCommand.Value(
+                AuditEventType.Read,
+                "Get celos"
+            ),
+            cancellationToken
+        );
 
         var response = output.Items.Select((item, index) => new
         {
@@ -70,8 +91,10 @@ public sealed class CeloController : ControllerBase
         [FromBody] CreateCeloRequest request,
         CancellationToken cancellationToken)
     {
+        var behaviorPipeline = _createCeloBehaviorPipelineFactory.Create();
+
         var command = CeloMapper.ToCommand(request);
-        var output = await _createCeloInputPort.HandleAsync(command, cancellationToken);
+        var output = await behaviorPipeline.Execute(command, cancellationToken);
         var response = CeloMapper.ToResponse(output);
 
         return CreatedAtAction(
@@ -89,8 +112,10 @@ public sealed class CeloController : ControllerBase
         [FromBody] UpdateCeloRequest request,
         CancellationToken cancellationToken)
     {
-        var command = CeloMapper.ToCommand(request) with { Id = id };
-        var output = await _updateCeloInputPort.HandleAsync(command, cancellationToken);
+        var behaviorPipeline = _updateCeloBehaviorPipelineFactory.Create();
+
+        var command = CeloMapper.ToCommand(request);
+        var output = await behaviorPipeline.Execute(command, cancellationToken);
         var response = CeloMapper.ToResponse(output);
 
         return Ok(GeneralResponseDTO<UpdateCeloResponse>.Ok(response));
@@ -105,8 +130,10 @@ public sealed class CeloController : ControllerBase
         [FromBody] DeleteCeloRequest request,
         CancellationToken cancellationToken)
     {
+        var behaviorPipeline = _deleteCeloBehaviorPipelineFactory.Create();
+
         var command = CeloMapper.ToCommand(request, id);
-        await _deleteCeloInputPort.HandleAsync(command, cancellationToken);
+        await behaviorPipeline.Execute(command, cancellationToken);
 
         return Ok(GeneralResponseDTO<object>.Ok(new { mensaje = "Celo eliminado con éxito" }));
     }
