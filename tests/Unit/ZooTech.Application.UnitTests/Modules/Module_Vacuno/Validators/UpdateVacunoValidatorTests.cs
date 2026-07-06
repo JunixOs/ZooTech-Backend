@@ -12,7 +12,8 @@ public class UpdateVacunoValidatorTests
         string colorCode = "NEGRO",
         string sexoCode = "H",
         long granjaId = 1,
-        string? observaciones = null)
+        string? observaciones = null,
+        decimal? precioCompra = 100m)
     {
         return new UpdateVacunoCommand(
             Nombre: nombre,
@@ -24,7 +25,9 @@ public class UpdateVacunoValidatorTests
             PadreId: null,
             MadreId: null,
             GranjaId: granjaId,
-            Observaciones: observaciones);
+            Observaciones: observaciones,
+            PrecioCompra: precioCompra,
+            AptoPara: null);
     }
 
     [Fact]

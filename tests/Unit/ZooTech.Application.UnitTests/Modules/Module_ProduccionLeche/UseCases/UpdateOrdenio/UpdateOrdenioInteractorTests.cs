@@ -89,7 +89,7 @@ public class UpdateOrdenioInteractorTests
         public Task<Ordenio?> GetByIdAsync(long id, CancellationToken cancellationToken)
             => Task.FromResult<Ordenio?>(_existing);
 
-        public Task<(IReadOnlyList<Ordenio> Items, int TotalCount)> ListAsync(
+        public Task<(IReadOnlyList<OrdenioList> Items, int TotalCount)> ListAsync(
             long? vacunoId,
             string? estadoOrdenioCode,
             DateTime? fechaDesde,
@@ -97,20 +97,23 @@ public class UpdateOrdenioInteractorTests
             int page,
             int pageSize,
             CancellationToken cancellationToken)
-            => Task.FromResult<(IReadOnlyList<Ordenio> Items, int TotalCount)>((Array.Empty<Ordenio>(), 0));
+            => Task.FromResult<(IReadOnlyList<OrdenioList> Items, int TotalCount)>((Array.Empty<OrdenioList>(), 0));
 
-        public Task<IReadOnlyList<Ordenio>> ListReportAsync(
+        public Task<IReadOnlyList<OrdenioList>> ListReportAsync(
             long? vacunoId,
             string? estadoOrdenioCode,
             DateTime? fechaDesde,
             DateTime? fechaHasta,
             CancellationToken cancellationToken)
-            => Task.FromResult<IReadOnlyList<Ordenio>>(Array.Empty<Ordenio>());
+            => Task.FromResult<IReadOnlyList<OrdenioList>>(Array.Empty<OrdenioList>());
 
         public Task<Ordenio> AddAsync(Ordenio ordenio, CancellationToken cancellationToken)
             => Task.FromResult(ordenio);
 
         public Task<Ordenio> UpdateAsync(Ordenio ordenio, CancellationToken cancellationToken)
             => Task.FromResult(ordenio);
+
+        public Task<bool> HasActiveRecordsByVacunoAsync(long vacunoId, CancellationToken cancellationToken)
+            => Task.FromResult(false);
     }
 }

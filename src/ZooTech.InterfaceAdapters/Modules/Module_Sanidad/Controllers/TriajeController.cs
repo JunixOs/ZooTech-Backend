@@ -16,6 +16,7 @@ using ZooTech.InterfaceAdapters.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Sanidad.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_Sanidad.DTOs.Responses;
 using ZooTech.InterfaceAdapters.Modules.Module_Sanidad.Mappers;
+using ApiErrorResponse = ZooTech.InterfaceAdapters.DTOs.Responses.ErrorResponse;
 
 namespace ZooTech.InterfaceAdapters.Module_Sanidad.Controllers;
 
@@ -84,7 +85,7 @@ public sealed class TriajeController : ControllerBase
 
     [HttpGet("{id:long}")]
     [ProducesResponseType(typeof(GeneralResponseDTO<TriajeResponse>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(long id, CancellationToken cancellationToken = default)
     {
         var output = await _getByIdInputPort.HandleAsync(id, cancellationToken);
@@ -93,7 +94,7 @@ public sealed class TriajeController : ControllerBase
 
     [HttpPost]
     [ProducesResponseType(typeof(GeneralResponseDTO<TriajeResponse>), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create([FromBody] TriajeRequest request, CancellationToken cancellationToken = default)
     {
         var command = TriajeMapper.ToCreateCommand(request);
@@ -104,8 +105,8 @@ public sealed class TriajeController : ControllerBase
 
     [HttpPatch("{id:long}")]
     [ProducesResponseType(typeof(GeneralResponseDTO<TriajeResponse>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Update(long id, [FromBody] UpdateTriajeRequest request, CancellationToken cancellationToken = default)
     {
         var command = TriajeMapper.ToUpdateCommand(request);
@@ -115,8 +116,8 @@ public sealed class TriajeController : ControllerBase
 
     [HttpDelete("{id:long}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(long id, [FromBody] DeleteTriajeRequest request, CancellationToken cancellationToken = default)
     {
         await _deleteInputPort.HandleAsync(id, new DeleteTriajeCommand(request.MotivoEliminacion), cancellationToken);

@@ -29,6 +29,9 @@ public sealed class OrdenioRepository : IOrdenioRepository
     public Task<bool> ExistsVacunoAsync(long vacunoId, CancellationToken cancellationToken)
         => _dbContext.vacunos.AnyAsync(x => x.id == vacunoId, cancellationToken);
 
+    public Task<bool> HasActiveRecordsByVacunoAsync(long vacunoId, CancellationToken cancellationToken)
+        => _dbContext.ordenios.AnyAsync(x => x.vacuno_id == vacunoId && x.deleted_at == null, cancellationToken);
+
     public Task<bool> ExistsUsuarioAsync(long usuarioId, CancellationToken cancellationToken)
         => _dbContext.usuarios.AnyAsync(x => x.id == usuarioId, cancellationToken);
 
@@ -46,7 +49,7 @@ public sealed class OrdenioRepository : IOrdenioRepository
         return entity is null ? null : ToDomain(entity);
     }
 
-    public async Task<(IReadOnlyList<Ordenio> Items, int TotalCount)> ListAsync(
+    public async Task<(IReadOnlyList<OrdenioList> Items, int TotalCount)> ListAsync(
         long? vacunoId,
         string? estadoOrdenioCode,
         DateTime? fechaDesde,
@@ -62,15 +65,13 @@ public sealed class OrdenioRepository : IOrdenioRepository
 
 
         var entities = await queryable
-            .Include(x => x.vacuno)
-            .Include(x => x.encargado_usuario)
             .OrderByDescending(x => x.fecha_hora)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .AsNoTracking()
+            .Select(ToListProjection())
             .ToListAsync(cancellationToken);
 
-        return (entities.Select(ToDomain).ToList(), totalCount);
+        return (entities.Select(ListOrdenioToDomain).ToList(), totalCount);
     }
 
     public async Task<Ordenio> AddAsync(Ordenio ordenio, CancellationToken cancellationToken)
@@ -102,7 +103,7 @@ public sealed class OrdenioRepository : IOrdenioRepository
         return ToDomain(entity);
     }
 
-    public async Task<IReadOnlyList<Ordenio>> ListReportAsync(
+    public async Task<IReadOnlyList<OrdenioList>> ListReportAsync(
         long? vacunoId,
         string? estadoOrdenioCode,
         DateTime? fechaDesde,
@@ -110,11 +111,11 @@ public sealed class OrdenioRepository : IOrdenioRepository
         CancellationToken cancellationToken)
     {
         var entities = await BuildListQuery(vacunoId, estadoOrdenioCode, fechaDesde, fechaHasta)
-            .Include(x => x.vacuno)
             .OrderByDescending(x => x.fecha_hora)
+            .Select(ToListProjection())
             .ToListAsync(cancellationToken);
 
-        return entities.Select(ToDomain).ToList();
+        return entities.Select(ListOrdenioToDomain).ToList();
     }
 
     private IQueryable<ordenio> BuildListQuery(
@@ -142,6 +143,52 @@ public sealed class OrdenioRepository : IOrdenioRepository
 
         return queryable;
     }
+
+    private static System.Linq.Expressions.Expression<Func<ordenio, ordenio>> ToListProjection()
+        => entity => new ordenio
+        {
+            id = entity.id,
+            codigo = entity.codigo,
+            fecha_hora = entity.fecha_hora,
+            vacuno_id = entity.vacuno_id,
+            encargado_usuario_id = entity.encargado_usuario_id,
+            litros = entity.litros,
+            estado_ordenio_code = entity.estado_ordenio_code,
+            observaciones = entity.observaciones,
+            created_at = entity.created_at,
+            updated_at = entity.updated_at,
+            deleted_at = entity.deleted_at,
+            motivo_eliminacion = entity.motivo_eliminacion,
+            vacuno = new vacuno
+            {
+                id = entity.vacuno.id,
+                nombre = entity.vacuno.nombre
+            },
+            encargado_usuario = new usuario
+            {
+                id = entity.encargado_usuario.id,
+                nombre_completo = entity.encargado_usuario.nombre_completo
+            }
+        };
+
+
+    public static OrdenioList ListOrdenioToDomain(ordenio entity) 
+        => OrdenioList.Rehydrate(
+
+            entity.id,
+            entity.codigo,
+            entity.fecha_hora,
+            entity.vacuno_id,
+            entity.vacuno?.nombre ?? string.Empty,
+            entity.encargado_usuario_id,
+            entity.encargado_usuario?.nombre_completo ?? string.Empty,
+            entity.litros,
+            entity.estado_ordenio_code,
+            entity.observaciones,
+            entity.created_at,
+            entity.updated_at,
+            entity.deleted_at,
+            entity.motivo_eliminacion);
 
     private static Ordenio ToDomain(ordenio entity)
         => Ordenio.Rehydrate(
