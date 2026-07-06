@@ -1,6 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using ZooTech.Application.Modules.Module_Vacuno.Exceptions;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
 using ZooTech.Domain.Module_Vacuno.ReadModels.GetArbolGenealogico;
 
@@ -17,6 +19,12 @@ public sealed class GetArbolGenealogicoInteractor : IGetArbolGenealogicoInputPor
     public async Task<GetArbolGenealogicoOutput> HandleAsync(
     GetArbolGenealogicoCommand command, CancellationToken cancellationToken = default)
     {
+        var vacuno = await _vacunoRepository.GetByIdAsync(command.Id, cancellationToken);
+        if (vacuno == null)
+        {
+            throw new VacunoNotFoundException($"No existe el vacuno con el ID {command.Id}.");
+        }
+
         var nodos = await _vacunoRepository.GetArbolGenealogicoAsync(
             command.Id, command.Niveles, cancellationToken);
 

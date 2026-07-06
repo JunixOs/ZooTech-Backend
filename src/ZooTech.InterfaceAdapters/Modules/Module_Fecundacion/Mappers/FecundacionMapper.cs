@@ -7,7 +7,6 @@ using ZooTech.Application.Modules.Module_Fecundacion.UseCases.UpdateFecundacion;
 using ZooTech.Domain.Module_Fecundacion.ReadModels;
 using ZooTech.Domain.Module_Fecundacion.Rules;
 using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.DTOs;
-using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.DTOs.Responses;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.Mappers;
@@ -126,7 +125,7 @@ public static class FecundacionMapper
         {
             "INSEMINACION_ARTIFICIAL" or "IA" => "inseminacion_artificial",
             "MONTA_NATURAL" or "MN" => "monta_natural",
-            "TRANSFERENCIA_EMBRIONES" or "TE" => "transferencia_embriones",
+            "TRANSFERENCIA_EMBRION" or "TRANSFERENCIA_EMBRIONES" or "TE" => "transferencia_embrion",
             _ => code.Trim().ToLowerInvariant()
         };
 
@@ -137,7 +136,7 @@ public static class FecundacionMapper
             {
                 "INSEMINACION_ARTIFICIAL" or "IA" => "INSEMINACION_ARTIFICIAL",
                 "MONTA_NATURAL" or "MN" => "MONTA_NATURAL",
-                "TRANSFERENCIA_EMBRIONES" or "TE" => "TRANSFERENCIA_EMBRIONES",
+                "TRANSFERENCIA_EMBRION" or "TRANSFERENCIA_EMBRIONES" or "TE" => "TRANSFERENCIA_EMBRION",
                 _ => code.Trim().ToUpperInvariant()
             };
 
@@ -165,9 +164,11 @@ public static class FecundacionMapper
         => Normalize(code) switch
         {
             "EN_PROCESO" or "PENDIENTE" => "en_proceso",
+            "EN_ESPERA" => "en_espera",
             "CONFIRMADA" or "FECUNDADO" => "fecundado",
-            "EN_GESTACION" or "GESTACION" => "en_gestacion",
+            "EN_GESTACION" or "GESTACION" or "GESTANTE" => "gestante",
             "FALLIDA" or "NO_FECUNDADO" => "no_fecundado",
+            "VACIA" => "vacia",
             _ => code.Trim().ToLowerInvariant()
         };
 
@@ -177,9 +178,12 @@ public static class FecundacionMapper
             : Normalize(code) switch
             {
                 "EN_PROCESO" => "EN_PROCESO",
+                "EN_ESPERA" => "EN_ESPERA",
                 "FECUNDADO" => "CONFIRMADA",
                 "EN_GESTACION" => "EN_GESTACION",
+                "GESTANTE" => "GESTANTE",
                 "NO_FECUNDADO" => "FALLIDA",
+                "VACIA" => "VACIA",
                 _ => code.Trim().ToUpperInvariant()
             };
 

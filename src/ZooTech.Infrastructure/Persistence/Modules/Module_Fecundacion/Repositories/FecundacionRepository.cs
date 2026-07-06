@@ -183,17 +183,17 @@ public sealed class FecundacionRepository : IFecundacionRepository
         await AddInitialEstadoHistorialAsync(entity, fecundacion.ActorUsuarioId, cancellationToken);
 
         // Retornar entidad de dominio reconstruida con el ID asignado
-        return Fecundacion.CreateNew(
+        return new Fecundacion(
+            id: entity.id,
             codigo: entity.codigo,
             tipoFecundacionCode: entity.tipo_fecundacion_code,
             vacunoReceptorId: entity.vacuno_receptor_id,
-            celoRegistroId: entity.celo_registro_id,
             fechaProcedimiento: entity.fecha_procedimiento.ToDateTime(TimeOnly.MinValue),
             responsableId: entity.responsable_id,
             resultadoCode: entity.resultado_code,
             observacionesVeterinarias: entity.observaciones_veterinarias,
+            celoRegistroId: entity.celo_registro_id,
             actorUsuarioId: entity.created_by,
-            utcNow: entity.created_at,
             machoExterno: fecundacion.MachoExterno,
             machoExternoNombre: fecundacion.MachoExternoNombre,
             vacunoDonanteId: fecundacion.VacunoDonanteId,
@@ -390,7 +390,7 @@ public sealed class FecundacionRepository : IFecundacionRepository
         if (entity is null)
             return null;
 
-        await ValidateCatalogsAsync(values, cancellationToken);
+        values = await ResolveCatalogsAsync(values, cancellationToken);
         await ValidateVacunosAsync(id, values, cancellationToken);
 
         var previousResult = entity.resultado_code;
@@ -425,23 +425,64 @@ public sealed class FecundacionRepository : IFecundacionRepository
             warning);
     }
 
-    private async Task ValidateCatalogsAsync(FecundacionUpdateValues values, CancellationToken cancellationToken)
+    private async Task<FecundacionUpdateValues> ResolveCatalogsAsync(
+        FecundacionUpdateValues values,
+        CancellationToken cancellationToken)
     {
-        var tipoExists = await _context.cat_tipo_fecundacions
-            .AnyAsync(t => t.code == values.TipoFecundacionCode, cancellationToken);
-        if (!tipoExists)
-            throw new ArgumentException("El tipo de fecundación indicado no existe.");
+        var tipoCode = await ResolveTipoFecundacionCodeAsync(values.TipoFecundacionCode, cancellationToken);
+        if (tipoCode is null)
+            throw new ArgumentException("El tipo de fecundacion indicado no existe.");
 
-        var resultadoExists = await _context.cat_resultado_fecundacions
-            .AnyAsync(r => r.code == values.ResultadoCode, cancellationToken);
-        if (!resultadoExists)
-            throw new ArgumentException("El resultado de fecundación indicado no existe.");
+        var resultadoCode = await ResolveResultadoFecundacionCodeAsync(values.ResultadoCode, cancellationToken);
+        if (resultadoCode is null)
+            throw new ArgumentException("El resultado de fecundacion indicado no existe.");
 
-        var estadoExists = await _context.cat_estado_fecundacion_vacunos
-            .AnyAsync(e => e.code == values.EstadoFecundacionCode, cancellationToken);
-        if (!estadoExists)
-            throw new ArgumentException("El estado de fecundación indicado no existe.");
+        var estadoCode = await ResolveEstadoFecundacionCodeAsync(values.EstadoFecundacionCode, cancellationToken);
+        if (estadoCode is null)
+            throw new ArgumentException("El estado de fecundacion indicado no existe.");
+
+        return values with
+        {
+            TipoFecundacionCode = tipoCode,
+            ResultadoCode = resultadoCode,
+            EstadoFecundacionCode = estadoCode
+        };
     }
+
+
+    private async Task<string?> ResolveTipoFecundacionCodeAsync(string code, CancellationToken cancellationToken)
+        => await ResolveCatalogCodeAsync(
+            await _context.cat_tipo_fecundacions
+                .AsNoTracking()
+                .Select(item => item.code)
+                .ToListAsync(cancellationToken),
+            code);
+
+    private async Task<string?> ResolveResultadoFecundacionCodeAsync(string code, CancellationToken cancellationToken)
+        => await ResolveCatalogCodeAsync(
+            await _context.cat_resultado_fecundacions
+                .AsNoTracking()
+                .Select(item => item.code)
+                .ToListAsync(cancellationToken),
+            code);
+
+    private async Task<string?> ResolveEstadoFecundacionCodeAsync(string code, CancellationToken cancellationToken)
+        => await ResolveCatalogCodeAsync(
+            await _context.cat_estado_fecundacion_vacunos
+                .AsNoTracking()
+                .Select(item => item.code)
+                .ToListAsync(cancellationToken),
+            code);
+
+    private static Task<string?> ResolveCatalogCodeAsync(IReadOnlyList<string> catalogCodes, string requestedCode)
+    {
+        var normalized = NormalizeCatalogCode(requestedCode);
+        var resolved = catalogCodes.FirstOrDefault(code => NormalizeCatalogCode(code) == normalized);
+        return Task.FromResult(resolved);
+    }
+
+    private static string NormalizeCatalogCode(string value)
+        => value.Trim().Replace(" ", "_").Replace("-", "_").ToUpperInvariant();
 
     private async Task ValidateVacunosAsync(
         long fecundacionId,
@@ -507,6 +548,8 @@ public sealed class FecundacionRepository : IFecundacionRepository
         };
 
         _context.responsables.Add(responsable);
+        await _context.SaveChangesAsync(cancellationToken);
+
         return responsable;
     }
 

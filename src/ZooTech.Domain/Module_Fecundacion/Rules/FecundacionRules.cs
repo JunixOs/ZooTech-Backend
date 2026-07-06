@@ -9,7 +9,7 @@ public static class FecundacionRules
         => MatchesAny(tipoCode, "IA", "INSEMINACION", "INSEMINACION_ARTIFICIAL");
 
     public static bool EsTransferenciaEmbriones(string tipoCode)
-        => MatchesAny(tipoCode, "TE", "TRANSFERENCIA", "TRANSFERENCIA_EMBRIONES");
+        => MatchesAny(tipoCode, "TE", "TRANSFERENCIA", "TRANSFERENCIA_EMBRION", "TRANSFERENCIA_EMBRIONES");
 
     public static bool EsMontaNatural(string tipoCode)
         => MatchesAny(tipoCode, "MN", "MONTA", "MONTA_NATURAL");
@@ -34,7 +34,7 @@ public static class FecundacionRules
     private static bool MatchesAny(string value, params string[] candidates)
     {
         var normalized = Normalize(value);
-        return candidates.Any(candidate => normalized.Contains(Normalize(candidate), StringComparison.OrdinalIgnoreCase));
+        return candidates.Any(candidate => normalized == Normalize(candidate));
     }
 
     private static string Normalize(string value)
