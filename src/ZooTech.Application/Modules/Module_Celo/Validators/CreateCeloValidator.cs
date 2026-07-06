@@ -1,7 +1,8 @@
 using ZooTech.Application.Common.Validator;
+using ZooTech.Application.Modules.Module_Celo.UseCases.CreateCelo;
 using ZooTech.Domain.Shared.Enums;
 
-namespace ZooTech.Application.Modules.Module_Celo.UseCases.CreateCelo
+namespace ZooTech.Application.Modules.Module_Celo.Validators
 {
     public class CreateCeloValidator : ICommandValidator<CreateCeloCommand>
     {

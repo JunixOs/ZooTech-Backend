@@ -50,6 +50,7 @@ using ZooTech.Application.Common.Behaviors.Module_Celo.CreateCelo;
 using ZooTech.Application.Common.Behaviors.Module_Celo.DeleteCelo;
 using ZooTech.Application.Common.Behaviors.Module_Celo.UpdateCelo;
 using ZooTech.Application.Common.Behaviors.Module_Celo.GetCelos;
+using ZooTech.Application.Modules.Module_Celo.Validators;
 
 namespace ZooTech.Application;
 
