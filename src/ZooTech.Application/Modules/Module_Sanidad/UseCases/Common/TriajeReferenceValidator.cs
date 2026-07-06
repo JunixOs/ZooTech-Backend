@@ -8,7 +8,7 @@ internal static class TriajeReferenceValidator
     public static async Task EnsureReferencesExistAsync(
         ITriajeRepository repository,
         long vacunoId,
-        long encargadoUsuarioId,
+        long? encargadoUsuarioId,
         string tipoPesoCode,
         CancellationToken cancellationToken)
     {
@@ -17,7 +17,7 @@ internal static class TriajeReferenceValidator
             throw new ConflictException("El vacuno indicado no existe.");
         }
 
-        if (!await repository.ExistsUsuarioAsync(encargadoUsuarioId, cancellationToken))
+        if (encargadoUsuarioId.HasValue && !await repository.ExistsUsuarioAsync(encargadoUsuarioId.Value, cancellationToken))
         {
             throw new ConflictException("El usuario encargado indicado no existe.");
         }

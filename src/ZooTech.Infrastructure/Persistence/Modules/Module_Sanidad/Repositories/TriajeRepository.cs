@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 using ZooTech.Application.Common.Gateway.Time;
 using ZooTech.Domain.Module_Sanidad.Entities;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
@@ -32,6 +33,8 @@ public class TriajeRepository : ITriajeRepository
         int pagina,
         int tamano,
         string? fecha = null,
+        string? fechaDesde = null,
+        string? fechaHasta = null,
         string? codigo = null,
         string? nombre = null,
         string? tipoPeso = null,
@@ -49,12 +52,27 @@ public class TriajeRepository : ITriajeRepository
 
         if (!string.IsNullOrEmpty(nombre))
             query = query.Where(t => t.vacuno.nombre.Contains(nombre));
-
-        if (!string.IsNullOrEmpty(fecha) && DateTime.TryParse(fecha, out var fechaFiltro))
+        
+        if (!string.IsNullOrEmpty(fecha) &&
+            DateTime.TryParseExact(fecha, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var fechaExacta))
         {
-            var desde = fechaFiltro.Date;
-            var hasta = desde.AddDays(1);
-            query = query.Where(t => t.fecha_hora >= desde && t.fecha_hora < hasta);
+            var desdeExacta = fechaExacta.Date;
+            var hastaExacta = desdeExacta.AddDays(1);
+            query = query.Where(t => t.fecha_hora >= desdeExacta && t.fecha_hora < hastaExacta);
+        }
+        else
+        {
+            if (!string.IsNullOrEmpty(fechaDesde) &&
+                DateTime.TryParseExact(fechaDesde, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var desde))
+            {
+                query = query.Where(t => t.fecha_hora >= desde.Date);
+            }
+
+            if (!string.IsNullOrEmpty(fechaHasta) &&
+                DateTime.TryParseExact(fechaHasta, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var hasta))
+            {
+                query = query.Where(t => t.fecha_hora < hasta.Date.AddDays(1));
+            }
         }
 
         if (!string.IsNullOrEmpty(tipoPeso))
@@ -63,8 +81,7 @@ public class TriajeRepository : ITriajeRepository
         if (pesoKg.HasValue)
             query = query.Where(t => t.peso_kg == pesoKg);
 
-        if (!string.IsNullOrEmpty(fecha) && DateTime.TryParse(fecha, out var fechaParsed))
-            query = query.Where(t => t.fecha_hora.Date == fechaParsed.Date);
+
 
         query = query.OrderByDescending(t => t.fecha_hora);
 

@@ -29,6 +29,8 @@ internal sealed class GenerateTriajesExcelInteractor : IGenerateTriajesExcelInpu
             pagina: 1,
             tamano: int.MaxValue,
             query.Fecha,
+            query.FechaDesde,
+            query.FechaHasta,
             query.Codigo,
             query.Nombre,
             query.TipoPeso,

@@ -63,6 +63,8 @@ public sealed class TriajeController : ControllerBase
         [FromQuery] int pagina = 1,
         [FromQuery] int tamano = 10,
         [FromQuery] string? fecha = null,
+        [FromQuery] string? fechaDesde = null,
+        [FromQuery] string? fechaHasta = null,
         [FromQuery] string? codigo = null,
         [FromQuery] string? nombre = null,
         [FromQuery] string? tipoPeso = null,
@@ -71,7 +73,7 @@ public sealed class TriajeController : ControllerBase
     {
         var currentPage = pagina <= 0 ? 1 : pagina;
         var currentTamano = tamano <= 0 ? 10 : Math.Min(tamano, 100);
-        var query = new GetAllTriajesQuery(currentPage, currentTamano, fecha, codigo, nombre, tipoPeso, pesoKg);
+        var query = new GetAllTriajesQuery(currentPage, currentTamano, fecha, fechaDesde, fechaHasta, codigo, nombre, tipoPeso, pesoKg); 
         var output = await _getAllInputPort.HandleAsync(query, cancellationToken);
         return Ok(GeneralResponseDTO<PagedTriajeResponse>.Ok(TriajeMapper.ToPagedResponse(output, currentPage, currentTamano)));
     }
@@ -122,6 +124,8 @@ public sealed class TriajeController : ControllerBase
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GeneratePdf(
         [FromQuery] string? fecha,
+        [FromQuery] string? fechaDesde,
+        [FromQuery] string? fechaHasta,
         [FromQuery] string? codigo,
         [FromQuery] string? nombre,
         [FromQuery] string? tipoPeso,
@@ -129,7 +133,7 @@ public sealed class TriajeController : ControllerBase
         CancellationToken cancellationToken)
     {
         var report = await _generatePdfInputPort.HandleAsync(
-            new GenerateTriajesPdfQuery(fecha, codigo, nombre, tipoPeso, pesoKg),
+            new GenerateTriajesPdfQuery(fecha, fechaDesde, fechaHasta, codigo, nombre, tipoPeso, pesoKg),
             cancellationToken);
 
         return File(report.Content, report.ContentType, report.FileName);
@@ -140,6 +144,8 @@ public sealed class TriajeController : ControllerBase
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GenerateExcel(
         [FromQuery] string? fecha,
+        [FromQuery] string? fechaDesde,
+        [FromQuery] string? fechaHasta,
         [FromQuery] string? codigo,
         [FromQuery] string? nombre,
         [FromQuery] string? tipoPeso,
@@ -147,7 +153,7 @@ public sealed class TriajeController : ControllerBase
         CancellationToken cancellationToken)
     {
         var report = await _generateExcelInputPort.HandleAsync(
-            new GenerateTriajesExcelQuery(fecha, codigo, nombre, tipoPeso, pesoKg),
+            new GenerateTriajesExcelQuery(fecha, fechaDesde, fechaHasta, codigo, nombre, tipoPeso, pesoKg),
             cancellationToken);
 
         return File(report.Content, report.ContentType, report.FileName);

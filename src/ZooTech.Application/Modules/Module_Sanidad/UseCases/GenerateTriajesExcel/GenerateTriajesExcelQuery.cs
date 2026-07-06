@@ -2,6 +2,8 @@ namespace ZooTech.Application.Modules.Module_Sanidad.UseCases.GenerateTriajesExc
 
 public sealed record GenerateTriajesExcelQuery(
     string? Fecha,
+    string? FechaDesde,
+    string? FechaHasta,
     string? Codigo,
     string? Nombre,
     string? TipoPeso,
