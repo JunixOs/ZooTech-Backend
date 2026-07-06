@@ -31,6 +31,30 @@ public sealed class FakeCeloRepository : ICeloRepository
     }
 
     // No se usa en estos tests, pero se implementa porque ICeloRepository lo exige.
+    public Task<(IReadOnlyList<CeloListItem> Items, int TotalCount)> GetPagedAsync(
+        string? search,
+        int page,
+        int pageSize,
+        DateTime? fechaInicio = null,
+        DateTime? fechaFin = null,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<(IReadOnlyList<CeloListItem> Items, int TotalCount)>((Celos, Celos.Count));
+    }
+
+    // No se usa en estos tests, pero se implementa porque ICeloRepository lo exige.
+    public Task<(IReadOnlyList<CeloReporteItem> Items, int TotalCount)> GetPagedForReporteAsync(
+        string? search,
+        int page,
+        int pageSize,
+        DateTime? fechaInicio = null,
+        DateTime? fechaFin = null,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<(IReadOnlyList<CeloReporteItem> Items, int TotalCount)>((new List<CeloReporteItem>(), 0));
+    }
+
+    // No se usa en estos tests, pero se implementa porque ICeloRepository lo exige.
     public Task<Dictionary<long, int>> GetCriasCountsAsync(
         CancellationToken cancellationToken = default)
     {

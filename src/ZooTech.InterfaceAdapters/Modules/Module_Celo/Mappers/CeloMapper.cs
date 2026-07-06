@@ -5,9 +5,12 @@ using ZooTech.Application.Modules.Module_Celo.UseCases.GetComparacionCelosRealVs
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetComparacionCelosRealVsEstandarPorVacuno;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetReporteCelos;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetVacasEnCelo;
+using ZooTech.Application.Modules.Module_Celo.UseCases.ListCelos;
+using ZooTech.Application.Modules.Module_Celo.UseCases.ListReporteCeloGeneral;
 using ZooTech.Application.Modules.Module_Celo.UseCases.UpdateCelo;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.DTOs.Responses;
+using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.DTOs.Responses;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_Celo.Mappers;
 
@@ -104,6 +107,30 @@ internal static class CeloMapper
             RegistrosReales = item.RegistrosReales,
             RegistrosEstandar = item.RegistrosEstandar
         };
+    }
+
+    public static ListCelosResponse ToResponse(ListCelosOutput output)
+    {
+        var data = output.Result.Data.Select(ToResponse).ToList();
+        var totalPages = output.Result.PageSize == 0
+            ? 0
+            : (int)Math.Ceiling(output.Result.TotalCount / (double)output.Result.PageSize);
+
+        return new ListCelosResponse(
+            data,
+            new PaginationResponse(output.Result.Page, output.Result.PageSize, output.Result.TotalCount, totalPages));
+    }
+
+    public static ListReporteCeloGeneralResponse ToResponse(ListReporteCeloGeneralOutput output)
+    {
+        var data = output.Result.Data.Select(ToResponse).ToList();
+        var totalPages = output.Result.PageSize == 0
+            ? 0
+            : (int)Math.Ceiling(output.Result.TotalCount / (double)output.Result.PageSize);
+
+        return new ListReporteCeloGeneralResponse(
+            data,
+            new PaginationResponse(output.Result.Page, output.Result.PageSize, output.Result.TotalCount, totalPages));
     }
 
     public static VacaEnCeloResponse ToResponse(VacaEnCeloDto item)

@@ -10,6 +10,22 @@ public interface ICeloRepository
     Task<List<CeloReporteItem>> GetAllForReporteAsync(
         CancellationToken cancellationToken = default);
 
+    Task<(IReadOnlyList<CeloListItem> Items, int TotalCount)> GetPagedAsync(
+        string? search,
+        int page,
+        int pageSize,
+        DateTime? fechaInicio = null,
+        DateTime? fechaFin = null,
+        CancellationToken cancellationToken = default);
+
+    Task<(IReadOnlyList<CeloReporteItem> Items, int TotalCount)> GetPagedForReporteAsync(
+        string? search,
+        int page,
+        int pageSize,
+        DateTime? fechaInicio = null,
+        DateTime? fechaFin = null,
+        CancellationToken cancellationToken = default);
+
     Task<Dictionary<long, int>> GetVecesEnCeloCountsAsync(
         CancellationToken cancellationToken = default);
 

@@ -7,6 +7,8 @@ using ZooTech.Application.Modules.Module_Celo.UseCases.GetComparacionCelosRealVs
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetComparacionCelosRealVsEstandarPorVacuno;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetReporteCelos;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetVacasEnCelo;
+using ZooTech.Application.Modules.Module_Celo.UseCases.ListCelos;
+using ZooTech.Application.Modules.Module_Celo.UseCases.ListReporteCeloGeneral;
 using ZooTech.Application.Modules.Module_Celo.UseCases.UpdateCelo;
 using ZooTech.InterfaceAdapters.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.DTOs.Requests;
@@ -28,6 +30,8 @@ public sealed class CeloController : ControllerBase
     private readonly IGetComparacionCelosRealVsEstandarInputPort _getComparacionInputPort;
     private readonly IGetComparacionCelosRealVsEstandarPorVacunoInputPort _getComparacionPorVacunoInputPort;
     private readonly IGetVacasEnCeloInputPort _getVacasEnCeloInputPort;
+    private readonly IListCelosInputPort _listCelosInputPort;
+    private readonly IListReporteCeloGeneralInputPort _listReporteCeloGeneralInputPort;
 
     public CeloController(
         IGetCelosInputPort getCelosInputPort,
@@ -37,7 +41,9 @@ public sealed class CeloController : ControllerBase
         IDeleteCeloInputPort deleteCeloInputPort,
         IGetComparacionCelosRealVsEstandarInputPort getComparacionInputPort,
         IGetComparacionCelosRealVsEstandarPorVacunoInputPort getComparacionPorVacunoInputPort,
-        IGetVacasEnCeloInputPort getVacasEnCeloInputPort)
+        IGetVacasEnCeloInputPort getVacasEnCeloInputPort,
+        IListCelosInputPort listCelosInputPort,
+        IListReporteCeloGeneralInputPort listReporteCeloGeneralInputPort)
     {
         _getCelosInputPort = getCelosInputPort;
         _getReporteCelosInputPort = getReporteCelosInputPort;
@@ -47,26 +53,42 @@ public sealed class CeloController : ControllerBase
         _getComparacionInputPort = getComparacionInputPort;
         _getComparacionPorVacunoInputPort = getComparacionPorVacunoInputPort;
         _getVacasEnCeloInputPort = getVacasEnCeloInputPort;
+        _listCelosInputPort = listCelosInputPort;
+        _listReporteCeloGeneralInputPort = listReporteCeloGeneralInputPort;
     }
 
     [HttpGet]
-    [ProducesResponseType(typeof(GeneralResponseDTO<List<CeloItemResponse>>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetCelos(CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(GeneralResponseDTO<ListCelosResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetCelos(
+        [FromQuery] string? search,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] DateTime? fechaInicio = null,
+        [FromQuery] DateTime? fechaFin = null,
+        CancellationToken cancellationToken = default)
     {
-        var output = await _getCelosInputPort.HandleAsync(cancellationToken);
-        var response = output.Items.Select(CeloMapper.ToResponse).ToList();
+        var output = await _listCelosInputPort.HandleAsync(
+            search, page, pageSize, fechaInicio, fechaFin, cancellationToken);
+        var response = CeloMapper.ToResponse(output);
 
-        return Ok(GeneralResponseDTO<List<CeloItemResponse>>.Ok(response));
+        return Ok(GeneralResponseDTO<ListCelosResponse>.Ok(response));
     }
 
     [HttpGet("reportes/general")]
-    [ProducesResponseType(typeof(GeneralResponseDTO<List<CeloReporteItemResponse>>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetReporteCeloGeneral(CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(GeneralResponseDTO<ListReporteCeloGeneralResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetReporteCeloGeneral(
+        [FromQuery] string? search,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] DateTime? fechaInicio = null,
+        [FromQuery] DateTime? fechaFin = null,
+        CancellationToken cancellationToken = default)
     {
-        var output = await _getReporteCelosInputPort.HandleAsync(cancellationToken);
-        var response = output.Items.Select(item => CeloMapper.ToResponse(item)).ToList();
+        var output = await _listReporteCeloGeneralInputPort.HandleAsync(
+            search, page, pageSize, fechaInicio, fechaFin, cancellationToken);
+        var response = CeloMapper.ToResponse(output);
 
-        return Ok(GeneralResponseDTO<List<CeloReporteItemResponse>>.Ok(response));
+        return Ok(GeneralResponseDTO<ListReporteCeloGeneralResponse>.Ok(response));
     }
 
     [HttpGet("reportes/por-vacuno")]

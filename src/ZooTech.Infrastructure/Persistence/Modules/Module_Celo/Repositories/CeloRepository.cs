@@ -72,6 +72,125 @@ public sealed class CeloRepository : ICeloRepository
         return entities.Select(ReporteCeloToDomain).ToList();
     }
 
+    public async Task<(IReadOnlyList<CeloListItem> Items, int TotalCount)> GetPagedAsync(
+        string? search,
+        int page,
+        int pageSize,
+        DateTime? fechaInicio = null,
+        DateTime? fechaFin = null,
+        CancellationToken cancellationToken = default)
+    {
+        var queryable = _context.celo_registros
+            .AsNoTracking()
+            .Where(c => c.deleted_at == null);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            queryable = queryable.Where(c =>
+                c.codigo.Contains(search) ||
+                c.vacuno.codigo.Contains(search) ||
+                c.vacuno.nombre.Contains(search));
+        }
+
+        if (fechaInicio.HasValue)
+        {
+            queryable = queryable.Where(c => c.fecha_hora >= fechaInicio.Value);
+        }
+
+        if (fechaFin.HasValue)
+        {
+            var fechaFinInclusive = fechaFin.Value.Date.AddDays(1).AddTicks(-1);
+            queryable = queryable.Where(c => c.fecha_hora <= fechaFinInclusive);
+        }
+
+        var totalCount = await queryable.CountAsync(cancellationToken);
+
+        var entities = await queryable
+            .Select(c => new celo_registro
+            {
+                id = c.id,
+                codigo = c.codigo,
+                fecha_hora = c.fecha_hora,
+                vacuno_id = c.vacuno_id,
+
+                vacuno = new vacuno
+                {
+                    id = c.vacuno.id,
+                    codigo = c.vacuno.codigo,
+                    nombre = c.vacuno.nombre,
+                    raza_code = c.vacuno.raza_code,
+                },
+            })
+            .OrderByDescending(c => c.fecha_hora)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        var items = entities.Select(ListAllCeloToDomain).ToList();
+        return (items, totalCount);
+    }
+
+    public async Task<(IReadOnlyList<CeloReporteItem> Items, int TotalCount)> GetPagedForReporteAsync(
+        string? search,
+        int page,
+        int pageSize,
+        DateTime? fechaInicio = null,
+        DateTime? fechaFin = null,
+        CancellationToken cancellationToken = default)
+    {
+        var queryable = _context.celo_registros
+            .AsNoTracking()
+            .Where(c => c.deleted_at == null);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            queryable = queryable.Where(c =>
+                c.codigo.Contains(search) ||
+                c.vacuno.codigo.Contains(search) ||
+                c.vacuno.nombre.Contains(search) ||
+                (c.observaciones != null && c.observaciones.Contains(search)));
+        }
+
+        if (fechaInicio.HasValue)
+        {
+            queryable = queryable.Where(c => c.fecha_hora >= fechaInicio.Value);
+        }
+
+        if (fechaFin.HasValue)
+        {
+            var fechaFinInclusive = fechaFin.Value.Date.AddDays(1).AddTicks(-1);
+            queryable = queryable.Where(c => c.fecha_hora <= fechaFinInclusive);
+        }
+
+        var totalCount = await queryable.CountAsync(cancellationToken);
+
+        var entities = await queryable
+            .Include(c => c.caracteristica_codes)
+            .Select(c => new celo_registro
+            {
+                id = c.id,
+                codigo = c.codigo,
+                fecha_hora = c.fecha_hora,
+                vacuno_id = c.vacuno_id,
+                observaciones = c.observaciones,
+                caracteristica_codes = c.caracteristica_codes,
+
+                vacuno = new vacuno
+                {
+                    id = c.vacuno.id,
+                    codigo = c.vacuno.codigo,
+                    nombre = c.vacuno.nombre,
+                },
+            })
+            .OrderByDescending(c => c.fecha_hora)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        var items = entities.Select(ReporteCeloToDomain).ToList();
+        return (items, totalCount);
+    }
+
     public async Task<Dictionary<long, int>> GetVecesEnCeloCountsAsync(CancellationToken cancellationToken = default)
     {
         return await _context.celo_registros
@@ -194,7 +313,8 @@ public sealed class CeloRepository : ICeloRepository
 
         if (fechaFin.HasValue)
         {
-            query = query.Where(c => c.fecha_hora <= fechaFin.Value);
+            var fechaFinInclusive = fechaFin.Value.Date.AddDays(1).AddTicks(-1);
+            query = query.Where(c => c.fecha_hora <= fechaFinInclusive);
         }
 
         return await query
