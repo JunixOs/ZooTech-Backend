@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <PackageReference Include="ClosedXML" Version="0.105.0" />
@@ -17,12 +17,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\ZooTech.Application\ZooTech.Application.csproj" />
     <ProjectReference Include="..\ZooTech.Domain\ZooTech.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Persistence\Mappers\" />
     <Folder Include="Persistence\Repositories\" />
   </ItemGroup>
 

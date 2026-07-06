@@ -66,6 +66,7 @@ public class GenerateOrdeniosPdfInteractorTests
         }
 
         public DateTime ServerNow { get; }
+        public DateTime UtcNow => ServerNow;
     }
 
     private sealed class FakePdfGeneratorService : IPdfGeneratorService
@@ -163,5 +164,8 @@ public class GenerateOrdeniosPdfInteractorTests
 
         public Task<Ordenio> UpdateAsync(Ordenio ordenio, CancellationToken cancellationToken)
             => Task.FromResult(ordenio);
+
+        public Task<bool> HasActiveRecordsByVacunoAsync(long vacunoId, CancellationToken cancellationToken)
+            => Task.FromResult(false);
     }
 }

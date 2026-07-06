@@ -1,7 +1,8 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
-using Microsoft.EntityFrameworkCore;
 using ZooTech.Infrastructure.Persistence.Entities;
+using ZooTech.Infrastructure.Persistence.Models;
 
 namespace ZooTech.Infrastructure.Persistence.Context;
 
@@ -124,6 +125,9 @@ public partial class GanaderiaDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+
+        modelBuilder.ApplyConfiguration(new VacunoRawRowConfiguration());
+
         modelBuilder.Entity<archivo>(entity =>
         {
             entity.HasKey(e => e.id).HasName("PK__archivo__3213E83FC88C9300");

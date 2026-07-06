@@ -70,5 +70,6 @@ public class GetOrdenioByIdInteractorTests
         public Task<IReadOnlyList<OrdenioList>> ListReportAsync(long? vacunoId, string? estadoOrdenioCode, DateTime? fechaDesde, DateTime? fechaHasta, CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<OrdenioList>>(Array.Empty<OrdenioList>());
         public Task<Ordenio> AddAsync(Ordenio ordenio, CancellationToken cancellationToken) => Task.FromResult(ordenio);
         public Task<Ordenio> UpdateAsync(Ordenio ordenio, CancellationToken cancellationToken) => Task.FromResult(ordenio);
+        public Task<bool> HasActiveRecordsByVacunoAsync(long vacunoId, CancellationToken cancellationToken) => Task.FromResult(false);
     }
 }
