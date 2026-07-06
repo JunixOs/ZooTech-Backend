@@ -1,4 +1,3 @@
-using System;
 using FluentValidation;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.Validators;
@@ -8,7 +7,7 @@ internal static class VacunoValidationRules
     public static IRuleBuilderOptions<T, string> VacunoNombreRules<T>(this IRuleBuilder<T, string> ruleBuilder) =>
         ruleBuilder
             .NotEmpty().WithMessage("El nombre del vacuno es obligatorio.")
-            .MaximumLength(15).WithMessage("El nombre no puede superar los 15 caracteres.");
+            .MaximumLength(100).WithMessage("El nombre no puede superar los 100 caracteres.");
 
     public static IRuleBuilderOptions<T, DateOnly> VacunoFechaNacimientoRules<T>(this IRuleBuilder<T, DateOnly> ruleBuilder) =>
         ruleBuilder.NotEmpty().WithMessage("La fecha de nacimiento es obligatoria.");
@@ -40,14 +39,6 @@ internal static class VacunoValidationRules
         this IRuleBuilder<T, string?> ruleBuilder,
         Func<T, bool> condition) =>
         ruleBuilder
-            .MaximumLength(150).When(condition).WithMessage("Las observaciones no pueden superar los 150 caracteres.")
-            .Must(obs => obs == null || obs.Split(new[] { ' ', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).Length <= 30)
-            .WithMessage("Las observaciones no pueden superar las 30 palabras.");
-
-    public static IRuleBuilderOptions<T, decimal?> VacunoPrecioCompraRules<T>(
-        this IRuleBuilder<T, decimal?> ruleBuilder,
-        Func<T, bool> esCompra) =>
-        ruleBuilder
-            .NotEmpty().When(esCompra)
-            .WithMessage("El precio de compra es obligatorio si la adquisición es por compra.");
+            .MaximumLength(150).When(condition)
+            .WithMessage("Las observaciones no pueden superar los 150 caracteres.");
 }

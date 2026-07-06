@@ -93,9 +93,6 @@ public sealed class FakeCeloRepository : ICeloRepository
         return Task.FromResult(true);
     }
 
-    public Task<bool> HasActiveRecordsByVacunoAsync(long vacunoId, CancellationToken cancellationToken = default)
-        => Task.FromResult(false);
-
     public Task<bool> ExistsCodigoAsync(
         string codigo,
         CancellationToken cancellationToken = default)

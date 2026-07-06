@@ -74,7 +74,6 @@ public class DeleteOrdenioInteractorTests
         public Task<(IReadOnlyList<OrdenioList> Items, int TotalCount)> ListAsync(long? vacunoId, string? estadoOrdenioCode, DateTime? fechaDesde, DateTime? fechaHasta, int page, int pageSize, CancellationToken cancellationToken) => Task.FromResult<(IReadOnlyList<OrdenioList> Items, int TotalCount)>((Array.Empty<OrdenioList>(), 0));
         public Task<IReadOnlyList<OrdenioList>> ListReportAsync(long? vacunoId, string? estadoOrdenioCode, DateTime? fechaDesde, DateTime? fechaHasta, CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<OrdenioList>>(Array.Empty<OrdenioList>());
         public Task<Ordenio> AddAsync(Ordenio ordenio, CancellationToken cancellationToken) => Task.FromResult(ordenio);
-        public Task<bool> HasActiveRecordsByVacunoAsync(long vacunoId, CancellationToken cancellationToken) => Task.FromResult(false);
 
         public Task<Ordenio> UpdateAsync(Ordenio ordenio, CancellationToken cancellationToken)
         {
