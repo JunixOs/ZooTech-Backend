@@ -39,6 +39,7 @@ public class TriajeRepository : ITriajeRepository
         string? nombre = null,
         string? tipoPeso = null,
         decimal? pesoKg = null,
+        long? vacunoId = null,
         CancellationToken cancellationToken = default)
     {
         var query = _context.triajes
@@ -46,6 +47,9 @@ public class TriajeRepository : ITriajeRepository
             .Include(t => t.vacuno)
             .Where(t => t.deleted_at == null)
             .AsQueryable();
+
+        if (vacunoId.HasValue)
+            query = query.Where(t => t.vacuno_id == vacunoId.Value);
 
         if (!string.IsNullOrEmpty(codigo))
             query = query.Where(t => t.codigo.Contains(codigo));

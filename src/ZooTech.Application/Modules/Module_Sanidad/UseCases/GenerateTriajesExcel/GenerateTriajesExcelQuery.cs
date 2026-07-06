@@ -7,4 +7,5 @@ public sealed record GenerateTriajesExcelQuery(
     string? Codigo,
     string? Nombre,
     string? TipoPeso,
-    decimal? PesoKg);
+    decimal? PesoKg,
+    long? VacunoId);

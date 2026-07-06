@@ -15,6 +15,7 @@ public interface ITriajeRepository
         string? nombre = null,
         string? tipoPeso = null,
         decimal? pesoKg = null,
+        long? vacunoId = null,
         CancellationToken cancellationToken = default);
     Task<Triaje> AddAsync(Triaje triaje, CancellationToken cancellationToken = default);
     Task<Triaje> UpdateAsync(Triaje triaje, CancellationToken cancellationToken = default);

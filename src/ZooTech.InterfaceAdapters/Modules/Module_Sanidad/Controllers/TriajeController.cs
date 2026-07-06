@@ -134,10 +134,11 @@ public sealed class TriajeController : ControllerBase
         [FromQuery] string? nombre,
         [FromQuery] string? tipoPeso,
         [FromQuery] decimal? pesoKg,
+        [FromQuery] long? vacunoId,
         CancellationToken cancellationToken)
     {
         var report = await _generatePdfInputPort.HandleAsync(
-            new GenerateTriajesPdfQuery(fecha, fechaDesde, fechaHasta, codigo, nombre, tipoPeso, pesoKg),
+            new GenerateTriajesPdfQuery(fecha, fechaDesde, fechaHasta, codigo, nombre, tipoPeso, pesoKg, vacunoId),
             cancellationToken);
 
         return File(report.Content, report.ContentType, report.FileName);
@@ -154,10 +155,11 @@ public sealed class TriajeController : ControllerBase
         [FromQuery] string? nombre,
         [FromQuery] string? tipoPeso,
         [FromQuery] decimal? pesoKg,
+        [FromQuery] long? vacunoId,
         CancellationToken cancellationToken)
     {
         var report = await _generateExcelInputPort.HandleAsync(
-            new GenerateTriajesExcelQuery(fecha, fechaDesde, fechaHasta, codigo, nombre, tipoPeso, pesoKg),
+            new GenerateTriajesExcelQuery(fecha, fechaDesde, fechaHasta, codigo, nombre, tipoPeso, pesoKg, vacunoId),
             cancellationToken);
 
         return File(report.Content, report.ContentType, report.FileName);

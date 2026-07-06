@@ -7,4 +7,5 @@ public sealed record GenerateTriajesPdfQuery(
     string? Codigo,
     string? Nombre,
     string? TipoPeso,
-    decimal? PesoKg);
+    decimal? PesoKg,
+    long? VacunoId);
