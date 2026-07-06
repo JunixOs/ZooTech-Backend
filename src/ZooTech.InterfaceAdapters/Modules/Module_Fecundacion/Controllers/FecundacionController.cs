@@ -50,25 +50,32 @@ public sealed class FecundacionController : ControllerBase
     [HttpGet]
     [ProducesResponseType(typeof(PagedResponse<List<FecundacionItemResponse>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ListarFecundacion(
+        [FromQuery] string? search,
         [FromQuery] string? query,
+        [FromQuery(Name = "q")] string? q,
         [FromQuery] DateTime? fechaDesde,
         [FromQuery] DateTime? fechaHasta,
         [FromQuery] string? resultado,
         [FromQuery] int page = 1,
-        [FromQuery] int limit = 20,
+        [FromQuery] int? pageSize = null,
+        [FromQuery] int? limit = null,
         CancellationToken cancellationToken = default)
     {
+        var currentPage = NormalizePage(page);
+        var currentPageSize = NormalizePageSize(pageSize ?? limit);
+        var searchTerm = FirstNonBlank(search, query, q);
+
         var command = new ListarFecundacionCommand(
-            Query: query,
+            Query: searchTerm,
             FechaDesde: fechaDesde,
             FechaHasta: fechaHasta,
             Resultado: resultado,
-            Page: page,
-            Limit: limit);
+            Page: currentPage,
+            Limit: currentPageSize);
 
         var output = await _listarFecundacionInputPort.HandleAsync(command, cancellationToken);
         var response = output.Items.Select(FecundacionMapper.ToListItemResponse).ToList();
-        return Ok(PagedResponse<List<FecundacionItemResponse>>.OkPaged(response, page, limit, output.TotalCount));
+        return Ok(PagedResponse<List<FecundacionItemResponse>>.OkPaged(response, currentPage, currentPageSize, output.TotalCount));
     }
 
     // ===== DE ÉL — Create =====
@@ -109,10 +116,12 @@ public sealed class FecundacionController : ControllerBase
     public async Task<IActionResult> SearchVacunos(
         [FromQuery] string? sexo,
         [FromQuery(Name = "q")] string? query,
-        CancellationToken cancellationToken)
+        [FromQuery] bool soloDisponibles = false,
+        [FromQuery] long? excluirFecundacionId = null,
+        CancellationToken cancellationToken = default)
     {
         var output = await _searchVacunosInputPort.HandleAsync(
-            new SearchFecundacionVacunosQuery(sexo, query),
+            new SearchFecundacionVacunosQuery(sexo, query, soloDisponibles, excluirFecundacionId),
             cancellationToken);
 
         var response = output.Select(FecundacionMapper.ToResponse).ToList();
@@ -151,6 +160,17 @@ public sealed class FecundacionController : ControllerBase
         await _deleteInputPort.HandleAsync(id, command, cancellationToken);
         return NoContent();
     }
+
+    private static int NormalizePage(int page)
+        => page <= 0 ? 1 : page;
+
+    private static int NormalizePageSize(int? pageSize)
+        => !pageSize.HasValue || pageSize.Value <= 0
+            ? 20
+            : Math.Min(pageSize.Value, 100);
+
+    private static string? FirstNonBlank(params string?[] values)
+        => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value))?.Trim();
 
     private long GetUserIdFromHeader()
     {

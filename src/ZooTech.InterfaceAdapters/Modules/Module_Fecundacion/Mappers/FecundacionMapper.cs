@@ -32,7 +32,9 @@ public static class FecundacionMapper
             request.MachoExterno,
             donorName,
             donorId,
-            actorUsuarioId);
+            actorUsuarioId,
+            request.CodigoSemen,
+            request.CodigoEmbrion);
     }
 
     public static CreateFecundacionResponse ToResponse(CreateFecundacionOutput output)

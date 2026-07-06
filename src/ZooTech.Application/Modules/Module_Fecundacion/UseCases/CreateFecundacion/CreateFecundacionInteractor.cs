@@ -68,7 +68,9 @@ public sealed class CreateFecundacionInteractor : ICreateFecundacionInputPort
             utcNow: utcNow,
             machoExterno: command.MachoExterno,
             machoExternoNombre: command.MachoExternoNombre,
-            vacunoDonanteId: command.VacunoDonanteId);
+            vacunoDonanteId: command.VacunoDonanteId,
+            codigoSemen: command.CodigoSemen,
+            codigoEmbrion: command.CodigoEmbrion);
 
         // Persistir en base de datos
         var saved = await _fecundacionRepository.AddAsync(fecundacion, cancellationToken);

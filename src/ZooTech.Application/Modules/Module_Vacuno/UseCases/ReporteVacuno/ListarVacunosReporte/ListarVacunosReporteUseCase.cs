@@ -23,13 +23,14 @@ public sealed class ListarVacunosReporteUseCase : IListarVacunosReporteUseCase
         var fechaRegistro = ParseDate(query.FechaRegistro);
         var formato = Normalize(query.Formato) ?? "json";
         var page = ParsePositiveInt(query.Page, DefaultPage);
-        var limit = Math.Min(ParsePositiveInt(query.Limit, DefaultLimit), MaxLimit);
+        var limit = Math.Min(ParsePositiveInt(query.PageSize ?? query.Limit, DefaultLimit), MaxLimit);
+        var search = Normalize(query.Search) ?? Normalize(query.Q);
 
         var result = await _repository.ListarAsync(
             new ListadoVacunosReporteReadQuery(
                 fechaDesde,
                 fechaHasta,
-                Normalize(query.Q),
+                search,
                 Normalize(query.Codigo),
                 fechaRegistro,
                 Normalize(query.Nombre),
@@ -46,9 +47,14 @@ public sealed class ListarVacunosReporteUseCase : IListarVacunosReporteUseCase
             .Select(item => new VacunoListadoReporteItem(
                 item.Id,
                 item.Codigo,
+                item.FechaNacimiento,
                 item.FechaRegistro,
                 item.Nombre,
+                item.TipoAdquisicion,
                 item.Raza,
+                item.Color,
+                item.Sexo,
+                item.Granja,
                 item.Procedencia,
                 item.Estado,
                 item.EstadoRegistro))
@@ -60,7 +66,7 @@ public sealed class ListarVacunosReporteUseCase : IListarVacunosReporteUseCase
             new ReporteVacunoListadoFiltros(
                 fechaDesde,
                 fechaHasta,
-                Normalize(query.Q),
+                search,
                 Normalize(query.Codigo),
                 fechaRegistro,
                 Normalize(query.Nombre),
@@ -70,7 +76,10 @@ public sealed class ListarVacunosReporteUseCase : IListarVacunosReporteUseCase
                 NormalizeEstadoRegistro(query.EstadoRegistro),
                 Normalize(query.AptoPara),
                 formato),
-            null);
+            null,
+            result.Total,
+            page,
+            limit);
     }
 
     private static DateOnly? ParseDate(string? value)
@@ -87,8 +96,15 @@ public sealed class ListarVacunosReporteUseCase : IListarVacunosReporteUseCase
 
     private static string? NormalizeEstado(string? value)
     {
-        var normalized = Normalize(value)?.ToUpperInvariant();
-        return normalized is "SANO" or "ENFERMO" or "CUARENTENA" or "MUERTO" ? normalized : null;
+        var normalized = Normalize(value);
+        var lower = normalized?.ToLowerInvariant();
+        if (lower is "vivo" or "muerto")
+        {
+            return lower;
+        }
+
+        var upper = normalized?.ToUpperInvariant();
+        return upper is "SANO" or "ENFERMO" or "CUARENTENA" or "MUERTO" ? upper : null;
     }
 
     private static string? NormalizeEstadoRegistro(string? value)

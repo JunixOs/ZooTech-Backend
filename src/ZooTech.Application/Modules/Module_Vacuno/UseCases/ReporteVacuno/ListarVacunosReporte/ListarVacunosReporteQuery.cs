@@ -3,6 +3,7 @@ namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.Lista
 public sealed record ListarVacunosReporteQuery(
     string? FechaDesde,
     string? FechaHasta,
+    string? Search,
     string? Q,
     string? Codigo,
     string? FechaRegistro,
@@ -14,4 +15,5 @@ public sealed record ListarVacunosReporteQuery(
     string? AptoPara,
     string? Formato,
     string? Page,
+    string? PageSize,
     string? Limit);
