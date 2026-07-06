@@ -6,6 +6,7 @@ using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllTipoPesos;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllTriajes;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllVacunosSanidad;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetHistorialByVacunoId;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetHistorialGeneral;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetTriajeById;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.UpdateTriaje;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GenerateTriajesPdf;
@@ -30,6 +31,7 @@ public sealed class TriajeController : ControllerBase
     private readonly IGetAllTipoPesosInputPort _getTipoPesosInputPort;
     private readonly IGetAllVacunosSanidadInputPort _getVacunosInputPort;
     private readonly IGetHistorialByVacunoIdInputPort _getHistorialInputPort;
+    private readonly IGetHistorialGeneralInputPort _getHistorialGeneralInputPort;
     private readonly IGenerateTriajesPdfInputPort _generatePdfInputPort;
     private readonly IGenerateTriajesExcelInputPort _generateExcelInputPort;
 
@@ -42,6 +44,7 @@ public sealed class TriajeController : ControllerBase
         IGetAllTipoPesosInputPort getTipoPesosInputPort,
         IGetAllVacunosSanidadInputPort getVacunosInputPort,
         IGetHistorialByVacunoIdInputPort getHistorialInputPort,
+        IGetHistorialGeneralInputPort getHistorialGeneralInputPort,
         IGenerateTriajesPdfInputPort generatePdfInputPort,
         IGenerateTriajesExcelInputPort generateExcelInputPort)
     {
@@ -53,6 +56,7 @@ public sealed class TriajeController : ControllerBase
         _getTipoPesosInputPort = getTipoPesosInputPort;
         _getVacunosInputPort = getVacunosInputPort;
         _getHistorialInputPort = getHistorialInputPort;
+        _getHistorialGeneralInputPort = getHistorialGeneralInputPort;
         _generatePdfInputPort = generatePdfInputPort;
         _generateExcelInputPort = generateExcelInputPort;
     }
@@ -177,9 +181,24 @@ public sealed class TriajeController : ControllerBase
 
     [HttpGet("historial/{vacunoId:long}")]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetHistorial(long vacunoId, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> GetHistorial(
+        long vacunoId,
+        [FromQuery] string? desde = null,
+        [FromQuery] string? hasta = null,
+        CancellationToken cancellationToken = default)
     {
-        var output = await _getHistorialInputPort.HandleAsync(vacunoId, cancellationToken);
+        var output = await _getHistorialInputPort.HandleAsync(vacunoId, desde, hasta, cancellationToken);
+        return Ok(GeneralResponseDTO<object>.Ok(output.Items.Select(t => new { id = t.Id, fechaHora = t.FechaHora, tipoPesoCode = t.TipoPesoCode, pesoKg = t.PesoKg })));
+    }
+
+    [HttpGet("historial-general")]
+    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetHistorialGeneral(
+        [FromQuery] string? desde = null,
+        [FromQuery] string? hasta = null,
+        CancellationToken cancellationToken = default)
+    {
+        var output = await _getHistorialGeneralInputPort.HandleAsync(desde, hasta, cancellationToken);
         return Ok(GeneralResponseDTO<object>.Ok(output.Items.Select(t => new { id = t.Id, fechaHora = t.FechaHora, tipoPesoCode = t.TipoPesoCode, pesoKg = t.PesoKg })));
     }
 }

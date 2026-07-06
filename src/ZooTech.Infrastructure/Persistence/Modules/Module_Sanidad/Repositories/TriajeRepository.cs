@@ -146,12 +146,56 @@ public class TriajeRepository : ITriajeRepository
         return $"TRI{maxNumber + 1:D3}";
     }
 
-    public async Task<IEnumerable<TriajeHistorialItem>> GetHistorialByVacunoIdAsync(long vacunoId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<TriajeHistorialItem>> GetHistorialByVacunoIdAsync(long vacunoId, string? fechaDesde = null, string? fechaHasta = null, CancellationToken cancellationToken = default)
     {
-        return await _context.triajes
+        var query = _context.triajes
             .AsNoTracking()
-            .Where(t => t.vacuno_id == vacunoId && t.deleted_at == null)
-            .OrderByDescending(t => t.fecha_hora)
+            .Where(t => t.vacuno_id == vacunoId && t.deleted_at == null);
+
+        if (!string.IsNullOrEmpty(fechaDesde) &&
+            DateTime.TryParseExact(fechaDesde, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var desde))
+        {
+            query = query.Where(t => t.fecha_hora >= desde.Date);
+        }
+
+        if (!string.IsNullOrEmpty(fechaHasta) &&
+            DateTime.TryParseExact(fechaHasta, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var hasta))
+        {
+            query = query.Where(t => t.fecha_hora < hasta.Date.AddDays(1));
+        }
+
+        return await query
+            .OrderBy(t => t.fecha_hora)
+            .Select(t => new TriajeHistorialItem
+            {
+                Id = t.id,
+                FechaHora = t.fecha_hora,
+                TipoPesoCode = t.tipo_peso_code,
+                PesoKg = t.peso_kg
+            })
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IEnumerable<TriajeHistorialItem>> GetHistorialGeneralAsync(string? fechaDesde = null, string? fechaHasta = null, CancellationToken cancellationToken = default)
+    {
+        var query = _context.triajes
+            .AsNoTracking()
+            .Where(t => t.deleted_at == null);
+
+        if (!string.IsNullOrEmpty(fechaDesde) &&
+            DateTime.TryParseExact(fechaDesde, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var desde))
+        {
+            query = query.Where(t => t.fecha_hora >= desde.Date);
+        }
+
+        if (!string.IsNullOrEmpty(fechaHasta) &&
+            DateTime.TryParseExact(fechaHasta, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var hasta))
+        {
+            query = query.Where(t => t.fecha_hora < hasta.Date.AddDays(1));
+        }
+
+        return await query
+            .OrderBy(t => t.fecha_hora)
             .Select(t => new TriajeHistorialItem
             {
                 Id = t.id,

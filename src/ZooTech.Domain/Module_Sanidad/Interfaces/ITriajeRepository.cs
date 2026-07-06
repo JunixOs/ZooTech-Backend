@@ -21,9 +21,9 @@ public interface ITriajeRepository
     Task DeleteAsync(long id, CancellationToken cancellationToken = default);
     Task<string> GenerateCodigoAsync(CancellationToken cancellationToken = default);
 
-    Task<IEnumerable<TriajeHistorialItem>> GetHistorialByVacunoIdAsync(long vacunoId, CancellationToken cancellationToken = default);
+    Task<IEnumerable<TriajeHistorialItem>> GetHistorialByVacunoIdAsync(long vacunoId, string? fechaDesde = null, string? fechaHasta = null, CancellationToken cancellationToken = default);
     Task<IEnumerable<TriajeDetallePorVacunoItem>> GetDetallesByVacunoIdAsync(long vacunoId, CancellationToken cancellationToken = default);
-    //Task<IEnumerable<TriajeHistorialItem>> GetHistorialGeneralAsync(string? desde = null, string? hasta = null, CancellationToken cancellationToken = default);
+    Task<IEnumerable<TriajeHistorialItem>> GetHistorialGeneralAsync(string? fechaDesde = null, string? fechaHasta = null, CancellationToken cancellationToken = default);
      
     Task<bool> ExistsVacunoAsync(long vacunoId, CancellationToken cancellationToken = default);
     Task<bool> ExistsUsuarioAsync(long usuarioId, CancellationToken cancellationToken = default);

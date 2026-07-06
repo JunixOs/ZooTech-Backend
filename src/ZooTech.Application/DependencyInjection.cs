@@ -14,6 +14,7 @@ using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetTriajeById;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.UpdateTriaje;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GenerateTriajesPdf;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GenerateTriajesExcel;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetHistorialGeneral;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.CreateVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
@@ -49,6 +50,7 @@ public static class DependencyInjection
         services.AddScoped<IGetDetallesTriajeByVacunoIdInputPort, GetDetallesTriajeByVacunoIdInteractor>();
         services.AddScoped<IGenerateTriajesPdfInputPort, GenerateTriajesPdfInteractor>();
         services.AddScoped<IGenerateTriajesExcelInputPort, GenerateTriajesExcelInteractor>();
+        services.AddScoped<IGetHistorialGeneralInputPort, GetHistorialGeneralInteractor>();
 
         // ============================================
         // Use Cases - Module_ProduccionLeche
