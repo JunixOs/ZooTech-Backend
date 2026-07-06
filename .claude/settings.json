@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "obsidian": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "D:\\99-archive\\01-obsidian\\knowledge"]
+    }
+  }
+}

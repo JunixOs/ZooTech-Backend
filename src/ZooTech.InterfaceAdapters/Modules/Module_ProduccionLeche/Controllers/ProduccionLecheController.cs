@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.CreateOrdenio;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.DeleteOrdenio;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GenerateOrdeniosPdf;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GenerateOrdeniosExcel;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GetOrdenioById;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.ListOrdenios;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.UpdateOrdenio;
@@ -21,6 +23,8 @@ public sealed class ProduccionLecheController : ControllerBase
     private readonly IListarVacunosInputPort _listarVacunosInputPort;
     private readonly ICreateOrdenioInputPort _createInputPort;
     private readonly IGetOrdenioByIdInputPort _getByIdInputPort;
+    private readonly IGetOrdeniosPdfInputPort _getOrdeniosPdfInputPort;
+    private readonly IGetOrdeniosExcelInputPort _getOrdeniosExcelInputPort;
     private readonly IListOrdeniosInputPort _listInputPort;
     private readonly IUpdateOrdenioInputPort _updateInputPort;
     private readonly IDeleteOrdenioInputPort _deleteInputPort;
@@ -29,6 +33,8 @@ public sealed class ProduccionLecheController : ControllerBase
         IListarVacunosInputPort listarVacunosInputPort,
         ICreateOrdenioInputPort createInputPort,
         IGetOrdenioByIdInputPort getByIdInputPort,
+        IGetOrdeniosPdfInputPort getOrdeniosPdfInputPort,
+        IGetOrdeniosExcelInputPort getOrdeniosExcelInputPort,
         IListOrdeniosInputPort listInputPort,
         IUpdateOrdenioInputPort updateInputPort,
         IDeleteOrdenioInputPort deleteInputPort)
@@ -36,6 +42,8 @@ public sealed class ProduccionLecheController : ControllerBase
         _listarVacunosInputPort = listarVacunosInputPort;
         _createInputPort = createInputPort;
         _getByIdInputPort = getByIdInputPort;
+        _getOrdeniosPdfInputPort = getOrdeniosPdfInputPort;
+        _getOrdeniosExcelInputPort = getOrdeniosExcelInputPort;
         _listInputPort = listInputPort;
         _updateInputPort = updateInputPort;
         _deleteInputPort = deleteInputPort;
@@ -81,6 +89,7 @@ public sealed class ProduccionLecheController : ControllerBase
 
     [HttpGet]
     [ProducesResponseType(typeof(GeneralResponseDTO<ListOrdeniosResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> List(
         [FromQuery] long? vacunoId,
         [FromQuery] string? estadoOrdenioCode,
@@ -98,6 +107,40 @@ public sealed class ProduccionLecheController : ControllerBase
                 cancellationToken),
             currentPage, currentPageSize);
         return Ok(GeneralResponseDTO<ListOrdeniosResponse>.Ok(data));
+    }
+
+    [HttpGet("reporte/pdf")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GeneratePdf(
+        [FromQuery] long? vacunoId,
+        [FromQuery] string? estadoOrdenioCode,
+        [FromQuery] DateTime? fechaDesde,
+        [FromQuery] DateTime? fechaHasta,
+        [FromQuery] bool comparativo,
+        CancellationToken cancellationToken)
+    {
+        var report = await _getOrdeniosPdfInputPort.HandleAsync(
+            new GenerateOrdeniosComparationPdfQuery(vacunoId, estadoOrdenioCode, fechaDesde, fechaHasta, comparativo),
+            cancellationToken);
+
+        return File(report.Content, report.ContentType, report.FileName);
+    }
+
+    [HttpGet("reporte/excel")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GenerateExcel(
+        [FromQuery] long? vacunoId,
+        [FromQuery] string? estadoOrdenioCode,
+        [FromQuery] DateTime? fechaDesde,
+        [FromQuery] DateTime? fechaHasta,
+        CancellationToken cancellationToken)
+    {
+        var report = await _getOrdeniosExcelInputPort.HandleAsync(
+            new GenerateOrdeniosComparationExcelQuery(vacunoId, estadoOrdenioCode, fechaDesde, fechaHasta),
+            cancellationToken);
+
+        return File(report.Content, report.ContentType, report.FileName);
     }
 
     [HttpPatch("{id:long}")]

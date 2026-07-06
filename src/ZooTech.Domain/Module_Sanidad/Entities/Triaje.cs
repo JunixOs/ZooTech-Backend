@@ -69,16 +69,12 @@ public sealed class Triaje
         string tipoPesoCode,
         decimal pesoKg,
         string? observaciones,
-        string estadoRegistroCode,
+        string? estadoRegistroCode,
         long? encargadoUsuarioId,
         DateTime utcNow)
     {
-        TriajeRule.ValidarVacunoId(vacunoId);
-        TriajeRule.ValidarTipoPesoCode(tipoPesoCode);
-        TriajeRule.ValidarPesoKg(pesoKg);
-        TriajeRule.ValidarEstadoRegistroCode(estadoRegistroCode);
-        TriajeRule.ValidarFechaHora(fechaHora);
-
+        Validate(vacunoId, tipoPesoCode, pesoKg, fechaHora);
+        ArgumentException.ThrowIfNullOrWhiteSpace(estadoRegistroCode);
         return new Triaje(
             id: 0,
             codigo: codigo.Trim(),
@@ -87,7 +83,7 @@ public sealed class Triaje
             vacunoNombre: string.Empty,
             tipoPesoCode: tipoPesoCode.Trim(),
             pesoKg: pesoKg,
-            observaciones: observaciones?.Trim(),
+            observaciones: SanitizeObservaciones(observaciones),
             estadoRegistroCode: estadoRegistroCode.Trim(),
             encargadoUsuarioId: encargadoUsuarioId,
             createdBy: encargadoUsuarioId,
@@ -118,35 +114,42 @@ public sealed class Triaje
         DateTime? deletedAt,
         string? motivoEliminacion)
     {
+        Validate(vacunoId, tipoPesoCode, pesoKg, fechaHora);
+
         return new Triaje(
-            id, codigo, fechaHora, vacunoId, vacunoNombre,
-            tipoPesoCode, pesoKg, observaciones, estadoRegistroCode,
-            encargadoUsuarioId, createdBy, updatedBy, deletedBy,
-            createdAt, updatedAt, deletedAt, motivoEliminacion);
+            id, 
+            codigo, 
+            fechaHora, 
+            vacunoId, 
+            vacunoNombre,
+            tipoPesoCode, 
+            pesoKg, 
+            SanitizeObservaciones(observaciones), 
+            estadoRegistroCode,
+            encargadoUsuarioId,
+            createdBy, 
+            updatedBy, 
+            deletedBy,
+            createdAt, 
+            updatedAt, 
+            deletedAt, 
+            motivoEliminacion);
     }
 
     public void Update(
-        long vacunoId,
         string tipoPesoCode,
         decimal pesoKg,
         string? observaciones,
-        string estadoRegistroCode,
         long? encargadoUsuarioId,
         DateTime utcNow)
     {
         if (IsDeleted)
             throw new InvalidOperationException("No se puede actualizar un triaje eliminado.");
-
-        TriajeRule.ValidarVacunoId(vacunoId);
         TriajeRule.ValidarTipoPesoCode(tipoPesoCode);
         TriajeRule.ValidarPesoKg(pesoKg);
-        TriajeRule.ValidarEstadoRegistroCode(estadoRegistroCode);
-
-        VacunoId = vacunoId;
         TipoPesoCode = tipoPesoCode.Trim();
         PesoKg = pesoKg;
-        Observaciones = observaciones?.Trim();
-        EstadoRegistroCode = estadoRegistroCode.Trim();
+        Observaciones = SanitizeObservaciones(observaciones);
         EncargadoUsuarioId = encargadoUsuarioId;
         UpdatedBy = encargadoUsuarioId;
         UpdatedAt = utcNow;
@@ -156,7 +159,7 @@ public sealed class Triaje
     {
         if (IsDeleted)
             throw new InvalidOperationException("El triaje ya se encuentra eliminado.");
-
+        TriajeRule.ValidarMotivoEliminacion(motivoEliminacion);
         MotivoEliminacion = motivoEliminacion;
         DeletedAt = utcNow;
         DeletedBy = actorId;
@@ -164,4 +167,27 @@ public sealed class Triaje
         UpdatedBy = actorId;
     }
 
+    private static string? SanitizeObservaciones(string? observaciones)
+    {
+        if (string.IsNullOrWhiteSpace(observaciones))
+            return null;
+
+        var value = observaciones.Trim();
+        return value.Length > 150 ? value[..150] : value;
+    }
+
+    private static void Validate(
+        long vacunoId,
+        string tipoPesoCode,
+        decimal pesoKg,
+        DateTime fechaHora
+        )
+    {
+        TriajeRule.ValidarFechaHora(fechaHora);
+        TriajeRule.ValidarFechaHoraFutura(fechaHora);
+
+        TriajeRule.ValidarTipoPesoCode(tipoPesoCode);
+        TriajeRule.ValidarPesoKg(pesoKg);
+        TriajeRule.ValidarVacunoId(vacunoId);
+    }
 }

@@ -6,63 +6,138 @@ namespace ZooTech.Application.UnitTests.Modules.Module_Celo.UseCases.GetCelos;
 
 public sealed class FakeCeloRepository : ICeloRepository
 {
-    public List<Celo> Celos { get; set; } = [];
+    // Esta colección es la que usa GetAllAsync.
+    public List<CeloListItem> Celos { get; set; } = [];
+
     public Dictionary<long, int> Counts { get; set; } = [];
 
-    public Task<List<Celo>> GetAllAsync(CancellationToken cancellationToken = default)
-        => Task.FromResult(Celos);
+    public Task<List<CeloListItem>> GetAllAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(Celos);
+    }
 
-    public Task<Dictionary<long, int>> GetVecesEnCeloCountsAsync(CancellationToken cancellationToken = default)
-        => Task.FromResult(Counts);
+    public Task<Dictionary<long, int>> GetVecesEnCeloCountsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(Counts);
+    }
 
-    public Task<Celo?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
-        => Task.FromResult(Celos.FirstOrDefault(c => c.Id == id));
+    // No se usa en estos tests, pero se implementa porque ICeloRepository lo exige.
+    public Task<List<CeloReporteItem>> GetAllForReporteAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(new List<CeloReporteItem>());
+    }
 
-    public Task<Celo> AddAsync(Celo celo, CancellationToken cancellationToken = default)
-        => Task.FromResult(celo);
+    // No se usa en estos tests, pero se implementa porque ICeloRepository lo exige.
+    public Task<(IReadOnlyList<CeloListItem> Items, int TotalCount)> GetPagedAsync(
+        string? search,
+        int page,
+        int pageSize,
+        DateTime? fechaInicio = null,
+        DateTime? fechaFin = null,
+        IReadOnlyDictionary<string, string>? columnFilters = null,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<(IReadOnlyList<CeloListItem> Items, int TotalCount)>((Celos, Celos.Count));
+    }
 
-    public Task<Celo> UpdateAsync(Celo celo, CancellationToken cancellationToken = default)
-        => Task.FromResult(celo);
+    // No se usa en estos tests, pero se implementa porque ICeloRepository lo exige.
+    public Task<(IReadOnlyList<CeloReporteItem> Items, int TotalCount)> GetPagedForReporteAsync(
+        string? search,
+        int page,
+        int pageSize,
+        DateTime? fechaInicio = null,
+        DateTime? fechaFin = null,
+        IReadOnlyDictionary<string, string>? columnFilters = null,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<(IReadOnlyList<CeloReporteItem> Items, int TotalCount)>((new List<CeloReporteItem>(), 0));
+    }
 
-    public Task<bool> ExistsVacunoAsync(long vacunoId, CancellationToken cancellationToken = default)
-        => Task.FromResult(true);
+    // No se usa en estos tests, pero se implementa porque ICeloRepository lo exige.
+    public Task<Dictionary<long, int>> GetCriasCountsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(new Dictionary<long, int>());
+    }
+
+    // No se usa en estos tests, pero se implementa porque ICeloRepository lo exige.
+    public Task<Celo?> GetByIdAsync(
+        long id,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<Celo?>(null);
+    }
+
+    // No se usan en estos tests, pero la interfaz obliga a declararlos.
+    public Task<Celo> AddAsync(
+        Celo celo,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(celo);
+    }
+
+    public Task<Celo> UpdateAsync(
+        Celo celo,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(celo);
+    }
+
+    public Task<bool> ExistsVacunoAsync(
+        long vacunoId,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(true);
+    }
 
     public Task<bool> HasActiveRecordsByVacunoAsync(long vacunoId, CancellationToken cancellationToken = default)
         => Task.FromResult(false);
 
-    public Task<bool> ExistsCodigoAsync(string codigo, CancellationToken cancellationToken = default)
-        => Task.FromResult(false);
+    public Task<bool> ExistsCodigoAsync(
+        string codigo,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(false);
+    }
+
+    // No se usa en estos tests, pero se implementa porque ICeloRepository lo exige.
+    public Task<List<DateTime>> GetByDateRangeAsync(
+        DateTime? fechaInicio,
+        DateTime? fechaFin,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(new List<DateTime>());
+    }
 }
 
 public sealed class GetCelosInteractorTests
 {
-    private static Celo BuildCelo(long id, long vacunoId, string codigo, string codigoVacuno, string nombreVacuno)
+    private static CeloListItem BuildCeloListItem(
+        long id,
+        long vacunoId,
+        string codigo,
+        string codigoVacuno,
+        string nombreVacuno)
     {
-        var now = DateTime.UtcNow.AddMinutes(-1);
-        return Celo.Rehydrate(
+        var fechaHora = DateTime.UtcNow.AddMinutes(-1);
+
+        return CeloListItem.Rehydrate(
             id: id,
             codigo: codigo,
-            fechaHora: now,
+            fechaHora: fechaHora,
             vacunoId: vacunoId,
             vacunoCodigo: codigoVacuno,
-            nombreVacuno: nombreVacuno,
-            encargadoUsuarioId: 1,
-            observaciones: null,
-            estadoRegistroCode: "ACTIVO",
-            caracteristicaCodes: [],
-            createdAt: now,
-            updatedAt: now,
-            deletedAt: null,
-            motivoEliminacion: null,
-            createdBy: null,
-            updatedBy: null,
-            deletedBy: null);
+            nombreVacuno: nombreVacuno);
     }
 
     [Fact]
     public async Task HandleAsync_ShouldReturnEmptyList_WhenNoCelosExist()
     {
         var repo = new FakeCeloRepository();
+
         var interactor = new GetCelosInteractor(repo);
 
         var result = await interactor.HandleAsync();
@@ -74,29 +149,47 @@ public sealed class GetCelosInteractorTests
     [Fact]
     public async Task HandleAsync_ShouldMapVecesEnCeloFromCounts()
     {
-        var vacunoId = 1L;
-        var celo = BuildCelo(1, vacunoId, "CELO-001", "V-001", "Blanca");
+        const long vacunoId = 1;
+
+        var celo = BuildCeloListItem(
+            id: 1,
+            vacunoId: vacunoId,
+            codigo: "CELO-001",
+            codigoVacuno: "V-001",
+            nombreVacuno: "Blanca");
 
         var repo = new FakeCeloRepository
         {
             Celos = [celo],
-            Counts = new Dictionary<long, int> { [vacunoId] = 3 }
+            Counts = new Dictionary<long, int>
+            {
+                [vacunoId] = 3
+            }
         };
 
         var interactor = new GetCelosInteractor(repo);
+
         var result = await interactor.HandleAsync();
 
         Assert.Single(result.Items);
-        Assert.Equal(3, result.Items[0].VecesEnCelo);
-        Assert.Equal("CELO-001", result.Items[0].CodigoRegistro);
-        Assert.Equal("V-001", result.Items[0].CodigoVacuno);
-        Assert.Equal("Blanca", result.Items[0].NombreVacuno);
+
+        var item = result.Items[0];
+
+        Assert.Equal(3, item.VecesEnCelo);
+        Assert.Equal("CELO-001", item.CodigoRegistro);
+        Assert.Equal("V-001", item.CodigoVacuno);
+        Assert.Equal("Blanca", item.NombreVacuno);
     }
 
     [Fact]
     public async Task HandleAsync_ShouldDefaultToOne_WhenVacunoNotInCounts()
     {
-        var celo = BuildCelo(1, 99L, "CELO-001", "V-099", "Rosa");
+        var celo = BuildCeloListItem(
+            id: 1,
+            vacunoId: 99,
+            codigo: "CELO-001",
+            codigoVacuno: "V-099",
+            nombreVacuno: "Rosa");
 
         var repo = new FakeCeloRepository
         {
@@ -105,8 +198,10 @@ public sealed class GetCelosInteractorTests
         };
 
         var interactor = new GetCelosInteractor(repo);
+
         var result = await interactor.HandleAsync();
 
+        Assert.Single(result.Items);
         Assert.Equal(1, result.Items[0].VecesEnCelo);
     }
 }

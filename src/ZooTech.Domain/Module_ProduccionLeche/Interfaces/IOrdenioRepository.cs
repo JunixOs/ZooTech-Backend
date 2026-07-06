@@ -11,13 +11,19 @@ public interface IOrdenioRepository
     Task<bool> ExistsUsuarioAsync(long usuarioId, CancellationToken cancellationToken);
     Task<bool> ExistsEstadoAsync(string estadoOrdenioCode, CancellationToken cancellationToken);
     Task<Ordenio?> GetByIdAsync(long id, CancellationToken cancellationToken);
-    Task<(IReadOnlyList<Ordenio> Items, int TotalCount)> ListAsync(
+    Task<(IReadOnlyList<OrdenioList> Items, int TotalCount)> ListAsync(
         long? vacunoId,
         string? estadoOrdenioCode,
         DateTime? fechaDesde,
         DateTime? fechaHasta,
         int page,
         int pageSize,
+        CancellationToken cancellationToken);
+    Task<IReadOnlyList<OrdenioList>> ListReportAsync(
+        long? vacunoId,
+        string? estadoOrdenioCode,
+        DateTime? fechaDesde,
+        DateTime? fechaHasta,
         CancellationToken cancellationToken);
     Task<Ordenio> AddAsync(Ordenio ordenio, CancellationToken cancellationToken);
     Task<Ordenio> UpdateAsync(Ordenio ordenio, CancellationToken cancellationToken);

@@ -2,19 +2,25 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ZooTech.Application.Common.Gateway.Context;
+using ZooTech.Application.Common.Gateway.Export;
 using ZooTech.Application.Common.Gateway.Features;
 using ZooTech.Application.Common.Gateway.Time;
 using ZooTech.Application.Modules.Animals.UseCases.DeleteAnimal;
 using ZooTech.Application.Modules.Animals.UseCases.ReportAnimalList;
 using ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.Common;
+using ZooTech.Application.Common.Gateway.Services;
+using ZooTech.Domain.Common.Interfaces;
 using ZooTech.Domain.Module_Celo.Interfaces;
 using ZooTech.Application.Modules.Module_Fecundacion.Common;
 using ZooTech.Domain.Module_Fecundacion.Interfaces;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
+using ZooTech.Infrastructure.Common.Export;
 using ZooTech.Infrastructure.Common.Time;
 using ZooTech.Infrastructure.Features;
+using ZooTech.Infrastructure.Common.Services.PdfGenerator;
+using ZooTech.Infrastructure.Common.Services.ExcelGenerator;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Persistence.Modules.Module_Celo.Repositories;
 using ZooTech.Infrastructure.Persistence.Modules.Module_Fecundacion.Repositories;
@@ -25,6 +31,7 @@ using ZooTech.Application.Modules.Module_Vacuno.Common;
 using ZooTech.Infrastructure.Reports;
 using ZooTech.Infrastructure.Repositories;
 using ZooTech.Infrastructure.Tenant;
+using ZooTech.Infrastructure.Persistence.Repositories;
 
 namespace ZooTech.Infrastructure;
 
@@ -68,7 +75,12 @@ public static class DependencyInjection
 
         services.AddScoped<IDateTimeProvider, DateTimeProvider>();
         services.AddSingleton<ZooTech.Application.Common.Configuration.IVacunosConfiguration, ZooTech.Infrastructure.Configuration.VacunosConfiguration>();
+        services.AddScoped<IExcelDocumentGenerator, ExcelDocumentGenerator>();
+        services.AddScoped<IPdfDocumentGenerator, PdfDocumentGenerator>();
+        services.AddScoped<IPdfGeneratorService, PdfGeneratorService>();
+        services.AddScoped<IOrdeniosComparationPdfGeneratorService, PdfGenerateComparationService>();
 
+        services.AddScoped<IExcelGeneratorService, ExcelGeneratorService>();
         // ============================================
         // Repositories
         // ============================================
@@ -81,7 +93,7 @@ public static class DependencyInjection
         services.AddScoped<IFecundacionRepository, FecundacionRepository>();
         services.AddScoped<IFecundacionEstadoRepository, FecundacionEstadoRepository>();
         services.AddScoped<IOrdenioRepository, OrdenioRepository>();
-        services.AddScoped<IVacunoRepository, VacunoRepository>();
+        services.AddScoped<IVacunoRepository, ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Repositories.VacunoRepository>();
         services.AddScoped<
             ZooTech.Application.Common.Gateway.Repositories.IVacunoRepository,
             ZooTech.Infrastructure.Persistence.Repositories.VacunoRepository>();
@@ -97,7 +109,7 @@ public static class DependencyInjection
         services.AddScoped<IRegistroVacunoReadRepository, RegistroVacunoReadRepository>();
         services.AddScoped<ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte.IRegistroVacunoExcelReportService, RegistroVacunoExcelReportService>();
         services.AddScoped<ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte.IRegistroVacunoPdfReportService, RegistroVacunoPdfReportService>();
-        services.AddScoped<ZooTech.Application.Common.Gateway.Services.IArbolGenealogicoExportService, ZooTech.Infrastructure.Reports.Vacunos.ArbolGenealogicoExcelExportService>();
+        services.AddScoped<IEstadoRegistroRepository, EstadoRegistroRepository>();
 
         // ============================================
         // Reports
