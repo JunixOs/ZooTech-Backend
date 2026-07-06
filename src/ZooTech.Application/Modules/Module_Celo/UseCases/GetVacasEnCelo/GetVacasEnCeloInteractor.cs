@@ -24,9 +24,11 @@ public sealed class GetVacasEnCeloInteractor : IGetVacasEnCeloInputPort
         var counts = await _celoRepository.GetVecesEnCeloCountsAsync(cancellationToken);
         var criasCounts = await _celoRepository.GetCriasCountsAsync(cancellationToken);
 
+        var fechaFinInclusive = fechaFin?.Date.AddDays(1).AddTicks(-1);
+
         var filtrados = celos.Where(c =>
             (!fechaInicio.HasValue || c.FechaHora >= fechaInicio.Value) &&
-            (!fechaFin.HasValue || c.FechaHora <= fechaFin.Value));
+            (!fechaFinInclusive.HasValue || c.FechaHora <= fechaFinInclusive.Value));
 
         var hoy = DateTime.UtcNow.Date;
 

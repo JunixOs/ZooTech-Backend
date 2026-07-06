@@ -23,11 +23,13 @@ public sealed class GetComparacionCelosRealVsEstandarPorVacunoInteractor
     {
         var celos = await _repository.GetAllAsync(cancellationToken);
 
+        var fechaFinInclusive = fechaFin?.Date.AddDays(1).AddTicks(-1);
+
         var registrosVacuno = celos
             .Where(c => c.VacunoCodigo == codigoVacuno)
             .Where(c =>
                 (!fechaInicio.HasValue || c.FechaHora >= fechaInicio.Value) &&
-                (!fechaFin.HasValue || c.FechaHora <= fechaFin.Value))
+                (!fechaFinInclusive.HasValue || c.FechaHora <= fechaFinInclusive.Value))
             .Select(c => c.FechaHora)
             .ToList();
 
