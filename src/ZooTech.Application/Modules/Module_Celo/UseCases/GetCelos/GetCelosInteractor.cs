@@ -18,12 +18,13 @@ public sealed class GetCelosInteractor : IGetCelosInputPort
 
         var items = celos.Select(c => new CeloItemDto
         {
+            Id = c.Id,
+
             CodigoRegistro = c.Codigo,
             Fecha = DateOnly.FromDateTime(c.FechaHora),
             Hora = TimeOnly.FromDateTime(c.FechaHora),
             CodigoVacuno = c.VacunoCodigo,
             NombreVacuno = c.NombreVacuno,
-            RazaVacuno = c.RazaVacuno,
             VecesEnCelo = counts.GetValueOrDefault(c.VacunoId, 1),
         }).ToList();
 

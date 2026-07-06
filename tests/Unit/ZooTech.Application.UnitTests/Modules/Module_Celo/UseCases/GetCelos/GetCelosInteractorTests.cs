@@ -24,6 +24,46 @@ public sealed class FakeCeloRepository : ICeloRepository
     }
 
     // No se usa en estos tests, pero se implementa porque ICeloRepository lo exige.
+    public Task<List<CeloReporteItem>> GetAllForReporteAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(new List<CeloReporteItem>());
+    }
+
+    // No se usa en estos tests, pero se implementa porque ICeloRepository lo exige.
+    public Task<(IReadOnlyList<CeloListItem> Items, int TotalCount)> GetPagedAsync(
+        string? search,
+        int page,
+        int pageSize,
+        DateTime? fechaInicio = null,
+        DateTime? fechaFin = null,
+        IReadOnlyDictionary<string, string>? columnFilters = null,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<(IReadOnlyList<CeloListItem> Items, int TotalCount)>((Celos, Celos.Count));
+    }
+
+    // No se usa en estos tests, pero se implementa porque ICeloRepository lo exige.
+    public Task<(IReadOnlyList<CeloReporteItem> Items, int TotalCount)> GetPagedForReporteAsync(
+        string? search,
+        int page,
+        int pageSize,
+        DateTime? fechaInicio = null,
+        DateTime? fechaFin = null,
+        IReadOnlyDictionary<string, string>? columnFilters = null,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<(IReadOnlyList<CeloReporteItem> Items, int TotalCount)>((new List<CeloReporteItem>(), 0));
+    }
+
+    // No se usa en estos tests, pero se implementa porque ICeloRepository lo exige.
+    public Task<Dictionary<long, int>> GetCriasCountsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(new Dictionary<long, int>());
+    }
+
+    // No se usa en estos tests, pero se implementa porque ICeloRepository lo exige.
     public Task<Celo?> GetByIdAsync(
         long id,
         CancellationToken cancellationToken = default)
@@ -59,6 +99,15 @@ public sealed class FakeCeloRepository : ICeloRepository
     {
         return Task.FromResult(false);
     }
+
+    // No se usa en estos tests, pero se implementa porque ICeloRepository lo exige.
+    public Task<List<DateTime>> GetByDateRangeAsync(
+        DateTime? fechaInicio,
+        DateTime? fechaFin,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(new List<DateTime>());
+    }
 }
 
 public sealed class GetCelosInteractorTests
@@ -68,8 +117,7 @@ public sealed class GetCelosInteractorTests
         long vacunoId,
         string codigo,
         string codigoVacuno,
-        string nombreVacuno,
-        string razaVacuno = "Holstein")
+        string nombreVacuno)
     {
         var fechaHora = DateTime.UtcNow.AddMinutes(-1);
 
@@ -79,8 +127,7 @@ public sealed class GetCelosInteractorTests
             fechaHora: fechaHora,
             vacunoId: vacunoId,
             vacunoCodigo: codigoVacuno,
-            nombreVacuno: nombreVacuno,
-            razaVacuno: razaVacuno);
+            nombreVacuno: nombreVacuno);
     }
 
     [Fact]
@@ -106,8 +153,7 @@ public sealed class GetCelosInteractorTests
             vacunoId: vacunoId,
             codigo: "CELO-001",
             codigoVacuno: "V-001",
-            nombreVacuno: "Blanca",
-            razaVacuno: "Holstein");
+            nombreVacuno: "Blanca");
 
         var repo = new FakeCeloRepository
         {
@@ -140,8 +186,7 @@ public sealed class GetCelosInteractorTests
             vacunoId: 99,
             codigo: "CELO-001",
             codigoVacuno: "V-099",
-            nombreVacuno: "Rosa",
-            razaVacuno: "Jersey");
+            nombreVacuno: "Rosa");
 
         var repo = new FakeCeloRepository
         {

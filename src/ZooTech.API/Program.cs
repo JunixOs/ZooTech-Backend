@@ -7,6 +7,7 @@ using ZooTech.InterfaceAdapters.Middleware;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.Controllers;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Controllers;
+using QuestPDF.Infrastructure;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services
     .AddControllers()
@@ -57,6 +58,7 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod();
     });
 });
+QuestPDF.Settings.License = LicenseType.Community;
 var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
