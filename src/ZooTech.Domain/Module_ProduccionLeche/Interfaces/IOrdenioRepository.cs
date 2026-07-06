@@ -7,7 +7,6 @@ public interface IOrdenioRepository
     Task<bool> ExistsCodigoAsync(string codigo, CancellationToken cancellationToken);
     Task<bool> ExistsVacunoFechaAsync(long vacunoId, DateTime fechaHora, long? excludeOrdenioId, CancellationToken cancellationToken);
     Task<bool> ExistsVacunoAsync(long vacunoId, CancellationToken cancellationToken);
-    Task<bool> HasActiveRecordsByVacunoAsync(long vacunoId, CancellationToken cancellationToken);
     Task<bool> ExistsUsuarioAsync(long usuarioId, CancellationToken cancellationToken);
     Task<bool> ExistsEstadoAsync(string estadoOrdenioCode, CancellationToken cancellationToken);
     Task<Ordenio?> GetByIdAsync(long id, CancellationToken cancellationToken);

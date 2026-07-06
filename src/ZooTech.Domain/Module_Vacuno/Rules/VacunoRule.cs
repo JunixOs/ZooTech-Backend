@@ -2,44 +2,6 @@ namespace ZooTech.Domain.Module_Vacuno.Rules;
 
 public static class VacunoRule
 {
-    public static void ValidarIdPersistido(long id)
-    {
-        if (id <= 0)
-            throw new ArgumentException("El ID persistido del vacuno debe ser mayor a 0.");
-    }
-
-    public static void ValidarCampoPersistido(string? valor, string nombreCampo)
-    {
-        if (string.IsNullOrWhiteSpace(valor))
-            throw new ArgumentException($"El campo persistido {nombreCampo} del vacuno es obligatorio.");
-    }
-
-    public static void ValidarFechasPersistidas(
-        DateOnly fechaNacimiento,
-        DateOnly fechaRegistro,
-        DateTime createdAt,
-        DateTime updatedAt,
-        DateTime? deletedAt)
-    {
-        if (fechaNacimiento == default)
-            throw new ArgumentException("La fecha de nacimiento persistida del vacuno es obligatoria.");
-
-        if (fechaRegistro == default)
-            throw new ArgumentException("La fecha de registro persistida del vacuno es obligatoria.");
-
-        if (createdAt == default)
-            throw new ArgumentException("La fecha de creación persistida del vacuno es obligatoria.");
-
-        if (updatedAt == default)
-            throw new ArgumentException("La fecha de actualización persistida del vacuno es obligatoria.");
-
-        if (updatedAt < createdAt)
-            throw new ArgumentException("La fecha de actualización persistida no puede ser anterior a la creación.");
-
-        if (deletedAt.HasValue && deletedAt.Value < createdAt)
-            throw new ArgumentException("La fecha de eliminación persistida no puede ser anterior a la creación.");
-    }
-
     public static void ValidarCodigo(string? codigo)
     {
         if (string.IsNullOrWhiteSpace(codigo))

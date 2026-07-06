@@ -112,8 +112,5 @@ public class UpdateOrdenioInteractorTests
 
         public Task<Ordenio> UpdateAsync(Ordenio ordenio, CancellationToken cancellationToken)
             => Task.FromResult(ordenio);
-
-        public Task<bool> HasActiveRecordsByVacunoAsync(long vacunoId, CancellationToken cancellationToken)
-            => Task.FromResult(false);
     }
 }
