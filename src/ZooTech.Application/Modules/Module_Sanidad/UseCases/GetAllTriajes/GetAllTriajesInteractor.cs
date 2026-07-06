@@ -1,4 +1,5 @@
 using ZooTech.Domain.Module_Sanidad.Interfaces;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.Common;
 
 namespace ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllTriajes;
 
@@ -19,10 +20,7 @@ public sealed class GetAllTriajesInteractor : IGetAllTriajesInputPort
         var (triajes, total) = await _repository.GetAllAsync(
             pagina, tamano, query.Fecha, query.Codigo, query.Nombre, query.TipoPeso, query.PesoKg, cancellationToken);
 
-        var items = triajes.Select(t => new TriajeItemOutput(
-            t.Id, t.Codigo, t.FechaHora, t.VacunoId, t.VacunoNombre,
-            t.TipoPesoCode, t.PesoKg, t.Observaciones, t.EstadoRegistroCode,
-            t.EncargadoUsuarioId, t.CreatedAt)).ToList();
+        var items = triajes.Select(TriajeMapper.ToOutput).ToList();
 
         return new GetAllTriajesOutput(items, total);
     }

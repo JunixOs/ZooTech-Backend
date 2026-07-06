@@ -30,7 +30,6 @@ public class GetAllTriajesUseCaseTests
                 It.IsAny<string?>(),
                 It.IsAny<string?>(),
                 It.IsAny<string?>(),
-                It.IsAny<string?>(),
                 It.IsAny<decimal?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync((triajes, triajes.Count));
@@ -53,7 +52,6 @@ public class GetAllTriajesUseCaseTests
         _repositoryMock.Setup(r => r.GetAllAsync(
                 It.IsAny<int>(),
                 It.IsAny<int>(),
-                It.IsAny<string?>(),
                 It.IsAny<string?>(),
                 It.IsAny<string?>(),
                 It.IsAny<string?>(),

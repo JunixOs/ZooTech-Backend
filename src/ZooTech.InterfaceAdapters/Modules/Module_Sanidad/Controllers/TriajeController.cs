@@ -8,7 +8,8 @@ using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllVacunosSanidad;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetHistorialByVacunoId;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetTriajeById;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.UpdateTriaje;
-using ZooTech.Application.Modules.Module_Sanidad.UseCases.DownloadReporte;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GenerateTriajesPdf;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GenerateTriajesExcel;
 using ZooTech.InterfaceAdapters.DTOs;
 
 using ZooTech.InterfaceAdapters.Modules.Module_Sanidad.DTOs.Requests;
@@ -29,6 +30,8 @@ public sealed class TriajeController : ControllerBase
     private readonly IGetAllTipoPesosInputPort _getTipoPesosInputPort;
     private readonly IGetAllVacunosSanidadInputPort _getVacunosInputPort;
     private readonly IGetHistorialByVacunoIdInputPort _getHistorialInputPort;
+    private readonly IGenerateTriajesPdfInputPort _generatePdfInputPort;
+    private readonly IGenerateTriajesExcelInputPort _generateExcelInputPort;
 
     public TriajeController(
         IGetAllTriajesInputPort getAllInputPort,
@@ -38,7 +41,9 @@ public sealed class TriajeController : ControllerBase
         IDeleteTriajeInputPort deleteInputPort,
         IGetAllTipoPesosInputPort getTipoPesosInputPort,
         IGetAllVacunosSanidadInputPort getVacunosInputPort,
-        IGetHistorialByVacunoIdInputPort getHistorialInputPort)
+        IGetHistorialByVacunoIdInputPort getHistorialInputPort,
+        IGenerateTriajesPdfInputPort generatePdfInputPort,
+        IGenerateTriajesExcelInputPort generateExcelInputPort)
     {
         _getAllInputPort = getAllInputPort;
         _getByIdInputPort = getByIdInputPort;
@@ -48,6 +53,8 @@ public sealed class TriajeController : ControllerBase
         _getTipoPesosInputPort = getTipoPesosInputPort;
         _getVacunosInputPort = getVacunosInputPort;
         _getHistorialInputPort = getHistorialInputPort;
+        _generatePdfInputPort = generatePdfInputPort;
+        _generateExcelInputPort = generateExcelInputPort;
     }
 
     [HttpGet]
@@ -108,6 +115,42 @@ public sealed class TriajeController : ControllerBase
     {
         await _deleteInputPort.HandleAsync(id, new DeleteTriajeCommand(request.MotivoEliminacion), cancellationToken);
         return NoContent();
+    }
+
+    [HttpGet("reporte/pdf")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GeneratePdf(
+        [FromQuery] string? fecha,
+        [FromQuery] string? codigo,
+        [FromQuery] string? nombre,
+        [FromQuery] string? tipoPeso,
+        [FromQuery] decimal? pesoKg,
+        CancellationToken cancellationToken)
+    {
+        var report = await _generatePdfInputPort.HandleAsync(
+            new GenerateTriajesPdfQuery(fecha, codigo, nombre, tipoPeso, pesoKg),
+            cancellationToken);
+
+        return File(report.Content, report.ContentType, report.FileName);
+    }
+
+    [HttpGet("reporte/excel")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GenerateExcel(
+        [FromQuery] string? fecha,
+        [FromQuery] string? codigo,
+        [FromQuery] string? nombre,
+        [FromQuery] string? tipoPeso,
+        [FromQuery] decimal? pesoKg,
+        CancellationToken cancellationToken)
+    {
+        var report = await _generateExcelInputPort.HandleAsync(
+            new GenerateTriajesExcelQuery(fecha, codigo, nombre, tipoPeso, pesoKg),
+            cancellationToken);
+
+        return File(report.Content, report.ContentType, report.FileName);
     }
 
     [HttpGet("tipos-peso")]

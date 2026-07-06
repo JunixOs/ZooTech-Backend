@@ -1,3 +1,4 @@
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.Common;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.CreateTriaje;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllTriajes;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetTriajeById;
@@ -39,7 +40,7 @@ internal static class TriajeMapper
         return new PagedTriajeResponse(data, pagination);
     }
 
-    private static TriajeResponse FromItemOutput(TriajeItemOutput item)
+    private static TriajeResponse FromItemOutput(TriajeOutput item)
         => new(item.Id, item.Codigo, item.FechaHora, item.VacunoId,
                item.VacunoNombre, item.TipoPesoCode, item.PesoKg, item.Observaciones,
                item.EstadoRegistroCode, item.EncargadoUsuarioId, item.CreatedAt);
