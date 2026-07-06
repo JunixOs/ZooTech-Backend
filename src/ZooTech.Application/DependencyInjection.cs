@@ -43,8 +43,6 @@ using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Delet
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GetOrdenioById;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.ListOrdenios;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.UpdateOrdenio;
-using ZooTech.Application.Modules.Module_Vacuno.UseCases.GenerarArbolGenealogico;
-using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunosPaginado;
 
 namespace ZooTech.Application;
 
@@ -105,6 +103,7 @@ public static class DependencyInjection
         services.AddScoped<ICreateFecundacionInputPort, CreateFecundacionInteractor>();
         services.AddScoped<IDeleteFecundacionInputPort, DeleteFecundacionInteractor>();
         services.AddScoped<IGetFecundacionForEditInputPort, GetFecundacionForEditInteractor>();
+        services.AddScoped<IListarFecundacionInputPort, ListarFecundacionInteractor>();
         services.AddScoped<IGetFecundacionOptionsInputPort, GetFecundacionOptionsInteractor>();
         services.AddScoped<ISearchFecundacionVacunosInputPort, SearchFecundacionVacunosInteractor>();
         services.AddScoped<IUpdateFecundacionInputPort, UpdateFecundacionInteractor>();
@@ -122,15 +121,6 @@ public static class DependencyInjection
         services.AddScoped<IGetArbolGenealogicoInputPort, GetArbolGenealogicoInteractor>();
         services.AddScoped<ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte.IObtenerRegistroVacunoReporteUseCase, ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte.ObtenerRegistroVacunoReporteUseCase>();
         services.AddScoped<IListarVacunosReporteUseCase, ListarVacunosReporteUseCase>();
-
-        // ============================================
-        // Use Cases - Module_Vacuno (listado paginado/genealogia)
-        // ============================================
-        services.AddScoped<ICreateFecundacionInputPort, CreateFecundacionInteractor>();
-        services.AddScoped<IListarFecundacionInputPort, ListarFecundacionInteractor>();
-        services.AddScoped<IListarVacunosPaginadoInputPort, ListarVacunosPaginadoInteractor>();
-        services.AddScoped<IGenerarArbolGenealogicoInputPort, GenerarArbolGenealogicoInteractor>();
-        services.AddScoped<ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarArbolGenealogico.IExportarArbolGenealogicoInputPort, ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarArbolGenealogico.ExportarArbolGenealogicoInteractor>();
 
         return services;
     }

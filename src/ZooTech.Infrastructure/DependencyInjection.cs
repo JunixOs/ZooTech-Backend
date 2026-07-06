@@ -82,9 +82,6 @@ public static class DependencyInjection
         services.AddScoped<IFecundacionEstadoRepository, FecundacionEstadoRepository>();
         services.AddScoped<IOrdenioRepository, OrdenioRepository>();
         services.AddScoped<IVacunoRepository, VacunoRepository>();
-        services.AddScoped<
-            ZooTech.Application.Common.Gateway.Repositories.IVacunoRepository,
-            ZooTech.Infrastructure.Persistence.Repositories.VacunoRepository>();
         services.AddScoped<IVacunoListadoReadRepository, VacunoListadoReadRepository>();
         services.AddScoped<IVacunoActivityStatsReadRepository, VacunoActivityStatsReadRepository>();
         services.AddScoped<IVacunoGranjaReadRepository, VacunoGranjaReadRepository>();
