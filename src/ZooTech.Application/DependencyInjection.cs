@@ -12,7 +12,8 @@ using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllVacunosSanidad;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetHistorialByVacunoId;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetTriajeById;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.UpdateTriaje;
-using ZooTech.Application.Modules.Module_Sanidad.Services;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GenerateTriajesPdf;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GenerateTriajesExcel;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.CreateVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
@@ -46,12 +47,8 @@ public static class DependencyInjection
         services.AddScoped<IGetAllVacunosSanidadInputPort, GetAllVacunosSanidadInteractor>();
         services.AddScoped<IGetHistorialByVacunoIdInputPort, GetHistorialByVacunoIdInteractor>();
         services.AddScoped<IGetDetallesTriajeByVacunoIdInputPort, GetDetallesTriajeByVacunoIdInteractor>();
-        services.AddScoped<IDownloadReporteTriajesInputPort, DownloadReporteTriajesInteractor>();
-
-        // ============================================
-        // Services - Module_Sanidad
-        // ============================================
-        services.AddScoped<TriajeReporteFileService>();
+        services.AddScoped<IGenerateTriajesPdfInputPort, GenerateTriajesPdfInteractor>();
+        services.AddScoped<IGenerateTriajesExcelInputPort, GenerateTriajesExcelInteractor>();
 
         // ============================================
         // Use Cases - Module_ProduccionLeche

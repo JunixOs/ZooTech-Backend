@@ -1,4 +1,4 @@
-﻿using ZooTech.Domain.Module_Sanidad.Entities;
+using ZooTech.Domain.Module_Sanidad.Entities;
 
 namespace ZooTech.Domain.Module_Sanidad.Interfaces;
 
@@ -23,8 +23,10 @@ public interface ITriajeRepository
 
     Task<IEnumerable<TriajeHistorialItem>> GetHistorialByVacunoIdAsync(long vacunoId, CancellationToken cancellationToken = default);
     Task<IEnumerable<TriajeDetallePorVacunoItem>> GetDetallesByVacunoIdAsync(long vacunoId, CancellationToken cancellationToken = default);
-
+    //Task<IEnumerable<TriajeHistorialItem>> GetHistorialGeneralAsync(string? desde = null, string? hasta = null, CancellationToken cancellationToken = default);
+     
     Task<bool> ExistsVacunoAsync(long vacunoId, CancellationToken cancellationToken = default);
     Task<bool> ExistsUsuarioAsync(long usuarioId, CancellationToken cancellationToken = default);
     Task<bool> ExistsTipoPesoAsync(string tipoPesoCode, CancellationToken cancellationToken = default);
+
 }
