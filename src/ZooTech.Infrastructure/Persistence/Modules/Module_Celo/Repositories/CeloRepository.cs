@@ -93,37 +93,12 @@ public sealed class CeloRepository : ICeloRepository
                 c.vacuno.nombre.Contains(search));
         }
 
-        if (fechaInicio.HasValue)
-        {
-            queryable = queryable.Where(c => c.fecha_hora >= fechaInicio.Value);
-        }
-
-        if (fechaFin.HasValue)
-        {
-            var fechaFinInclusive = fechaFin.Value.Date.AddDays(1).AddTicks(-1);
-            queryable = queryable.Where(c => c.fecha_hora <= fechaFinInclusive);
-        }
+        queryable = ApplyFechaRangeFilter(queryable, fechaInicio, fechaFin);
 
         // Tier 1: direct SQL-translatable column filters (row-level columns).
         if (columnFilters is not null)
         {
-            if (columnFilters.TryGetValue("codigoRegistro", out var codigoRegistroFilter) &&
-                !string.IsNullOrWhiteSpace(codigoRegistroFilter))
-            {
-                queryable = queryable.Where(c => c.codigo.Contains(codigoRegistroFilter));
-            }
-
-            if (columnFilters.TryGetValue("codigoVacuno", out var codigoVacunoFilter) &&
-                !string.IsNullOrWhiteSpace(codigoVacunoFilter))
-            {
-                queryable = queryable.Where(c => c.vacuno.codigo.Contains(codigoVacunoFilter));
-            }
-
-            if (columnFilters.TryGetValue("nombreVacuno", out var nombreVacunoFilter) &&
-                !string.IsNullOrWhiteSpace(nombreVacunoFilter))
-            {
-                queryable = queryable.Where(c => c.vacuno.nombre.Contains(nombreVacunoFilter));
-            }
+            queryable = ApplyCommonColumnFilters(queryable, columnFilters);
 
             // Tier 2: "vecesEnCelo" is not a row column — it's a historical count per
             // vacuno computed over the whole table (GetVecesEnCeloCountsAsync) and
@@ -133,13 +108,7 @@ public sealed class CeloRepository : ICeloRepository
             if (columnFilters.TryGetValue("vecesEnCelo", out var vecesEnCeloFilter) &&
                 !string.IsNullOrWhiteSpace(vecesEnCeloFilter))
             {
-                var counts = await GetVecesEnCeloCountsAsync(cancellationToken);
-                var matchingVacunoIds = counts
-                    .Where(kvp => kvp.Value.ToString().Contains(vecesEnCeloFilter))
-                    .Select(kvp => kvp.Key)
-                    .ToHashSet();
-
-                queryable = queryable.Where(c => matchingVacunoIds.Contains(c.vacuno_id));
+                queryable = await ApplyVecesEnCeloFilterAsync(queryable, vecesEnCeloFilter, cancellationToken);
             }
         }
 
@@ -246,39 +215,14 @@ public sealed class CeloRepository : ICeloRepository
                 (c.observaciones != null && c.observaciones.Contains(search)));
         }
 
-        if (fechaInicio.HasValue)
-        {
-            queryable = queryable.Where(c => c.fecha_hora >= fechaInicio.Value);
-        }
-
-        if (fechaFin.HasValue)
-        {
-            var fechaFinInclusive = fechaFin.Value.Date.AddDays(1).AddTicks(-1);
-            queryable = queryable.Where(c => c.fecha_hora <= fechaFinInclusive);
-        }
+        queryable = ApplyFechaRangeFilter(queryable, fechaInicio, fechaFin);
 
         // Tier 1: direct SQL-translatable column filters (row-level columns +
         // the `caracteristica_codes` navigation, which EF Core translates fine
         // via `.Any(...)` without needing an explicit `Include` for filtering).
         if (columnFilters is not null)
         {
-            if (columnFilters.TryGetValue("codigoRegistro", out var codigoRegistroFilter) &&
-                !string.IsNullOrWhiteSpace(codigoRegistroFilter))
-            {
-                queryable = queryable.Where(c => c.codigo.Contains(codigoRegistroFilter));
-            }
-
-            if (columnFilters.TryGetValue("codigoVacuno", out var codigoVacunoFilter) &&
-                !string.IsNullOrWhiteSpace(codigoVacunoFilter))
-            {
-                queryable = queryable.Where(c => c.vacuno.codigo.Contains(codigoVacunoFilter));
-            }
-
-            if (columnFilters.TryGetValue("nombreVacuno", out var nombreVacunoFilter) &&
-                !string.IsNullOrWhiteSpace(nombreVacunoFilter))
-            {
-                queryable = queryable.Where(c => c.vacuno.nombre.Contains(nombreVacunoFilter));
-            }
+            queryable = ApplyCommonColumnFilters(queryable, columnFilters);
 
             if (columnFilters.TryGetValue("caracteristicas", out var caracteristicasFilter) &&
                 !string.IsNullOrWhiteSpace(caracteristicasFilter))
@@ -298,13 +242,7 @@ public sealed class CeloRepository : ICeloRepository
             if (columnFilters.TryGetValue("vecesEnCelo", out var vecesEnCeloFilter) &&
                 !string.IsNullOrWhiteSpace(vecesEnCeloFilter))
             {
-                var counts = await GetVecesEnCeloCountsAsync(cancellationToken);
-                var matchingVacunoIds = counts
-                    .Where(kvp => kvp.Value.ToString().Contains(vecesEnCeloFilter))
-                    .Select(kvp => kvp.Key)
-                    .ToHashSet();
-
-                queryable = queryable.Where(c => matchingVacunoIds.Contains(c.vacuno_id));
+                queryable = await ApplyVecesEnCeloFilterAsync(queryable, vecesEnCeloFilter, cancellationToken);
             }
 
             if (columnFilters.TryGetValue("crias", out var criasFilter) &&
@@ -520,21 +458,70 @@ public sealed class CeloRepository : ICeloRepository
             .AsNoTracking()
             .Where(c => c.deleted_at == null);
 
-        if (fechaInicio.HasValue)
-        {
-            query = query.Where(c => c.fecha_hora >= fechaInicio.Value);
-        }
-
-        if (fechaFin.HasValue)
-        {
-            var fechaFinInclusive = fechaFin.Value.Date.AddDays(1).AddTicks(-1);
-            query = query.Where(c => c.fecha_hora <= fechaFinInclusive);
-        }
+        query = ApplyFechaRangeFilter(query, fechaInicio, fechaFin);
 
         return await query
             .OrderBy(c => c.fecha_hora)
             .Select(c => c.fecha_hora)
             .ToListAsync(cancellationToken);
+    }
+
+    private static IQueryable<Entities.celo_registro> ApplyFechaRangeFilter(
+        IQueryable<Entities.celo_registro> queryable,
+        DateTime? fechaInicio,
+        DateTime? fechaFin)
+    {
+        if (fechaInicio.HasValue)
+        {
+            queryable = queryable.Where(c => c.fecha_hora >= fechaInicio.Value);
+        }
+
+        if (fechaFin.HasValue)
+        {
+            var fechaFinInclusive = fechaFin.Value.Date.AddDays(1).AddTicks(-1);
+            queryable = queryable.Where(c => c.fecha_hora <= fechaFinInclusive);
+        }
+
+        return queryable;
+    }
+
+    private static IQueryable<Entities.celo_registro> ApplyCommonColumnFilters(
+        IQueryable<Entities.celo_registro> queryable,
+        IReadOnlyDictionary<string, string> columnFilters)
+    {
+        if (columnFilters.TryGetValue("codigoRegistro", out var codigoRegistroFilter) &&
+            !string.IsNullOrWhiteSpace(codigoRegistroFilter))
+        {
+            queryable = queryable.Where(c => c.codigo.Contains(codigoRegistroFilter));
+        }
+
+        if (columnFilters.TryGetValue("codigoVacuno", out var codigoVacunoFilter) &&
+            !string.IsNullOrWhiteSpace(codigoVacunoFilter))
+        {
+            queryable = queryable.Where(c => c.vacuno.codigo.Contains(codigoVacunoFilter));
+        }
+
+        if (columnFilters.TryGetValue("nombreVacuno", out var nombreVacunoFilter) &&
+            !string.IsNullOrWhiteSpace(nombreVacunoFilter))
+        {
+            queryable = queryable.Where(c => c.vacuno.nombre.Contains(nombreVacunoFilter));
+        }
+
+        return queryable;
+    }
+
+    private async Task<IQueryable<Entities.celo_registro>> ApplyVecesEnCeloFilterAsync(
+        IQueryable<Entities.celo_registro> queryable,
+        string vecesEnCeloFilter,
+        CancellationToken cancellationToken)
+    {
+        var counts = await GetVecesEnCeloCountsAsync(cancellationToken);
+        var matchingVacunoIds = counts
+            .Where(kvp => kvp.Value.ToString().Contains(vecesEnCeloFilter))
+            .Select(kvp => kvp.Key)
+            .ToHashSet();
+
+        return queryable.Where(c => matchingVacunoIds.Contains(c.vacuno_id));
     }
 
     private static Celo ToDomain(Entities.celo_registro entity)

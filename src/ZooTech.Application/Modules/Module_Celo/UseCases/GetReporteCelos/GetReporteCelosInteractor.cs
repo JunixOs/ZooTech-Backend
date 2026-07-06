@@ -17,19 +17,7 @@ public sealed class GetReporteCelosInteractor : IGetReporteCelosInputPort
         var counts = await _celoRepository.GetVecesEnCeloCountsAsync(cancellationToken);
         var criasCounts = await _celoRepository.GetCriasCountsAsync(cancellationToken);
 
-        var items = celos.Select(c => new CeloReporteItemDto
-        {
-            CodigoRegistro = c.Codigo,
-            Fecha = DateOnly.FromDateTime(c.FechaHora),
-            Hora = TimeOnly.FromDateTime(c.FechaHora),
-            CodigoVacuno = c.VacunoCodigo,
-            NombreVacuno = c.NombreVacuno,
-            VecesEnCelo = counts.GetValueOrDefault(c.VacunoId, 1),
-            Caracteristicas = c.CaracteristicaCodes.Count,
-            ListaCaracteristicas = c.CaracteristicaCodes,
-            Observaciones = c.Observaciones,
-            Crias = criasCounts.GetValueOrDefault(c.VacunoId, 0)
-        }).ToList();
+        var items = celos.Select(c => CeloReporteItemMapper.Map(c, counts, criasCounts)).ToList();
 
         return new GetReporteCelosOutput(items);
     }
