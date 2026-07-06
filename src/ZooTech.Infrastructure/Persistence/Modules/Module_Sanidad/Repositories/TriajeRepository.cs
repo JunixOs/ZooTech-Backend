@@ -52,27 +52,25 @@ public class TriajeRepository : ITriajeRepository
 
         if (!string.IsNullOrEmpty(nombre))
             query = query.Where(t => t.vacuno.nombre.Contains(nombre));
-        
+
         if (!string.IsNullOrEmpty(fecha) &&
-            DateTime.TryParseExact(fecha, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var fechaExacta))
+    DateTime.TryParseExact(fecha, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var fechaExacta))
         {
             var desdeExacta = fechaExacta.Date;
             var hastaExacta = desdeExacta.AddDays(1);
             query = query.Where(t => t.fecha_hora >= desdeExacta && t.fecha_hora < hastaExacta);
         }
-        else
-        {
-            if (!string.IsNullOrEmpty(fechaDesde) &&
-                DateTime.TryParseExact(fechaDesde, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var desde))
-            {
-                query = query.Where(t => t.fecha_hora >= desde.Date);
-            }
 
-            if (!string.IsNullOrEmpty(fechaHasta) &&
-                DateTime.TryParseExact(fechaHasta, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var hasta))
-            {
-                query = query.Where(t => t.fecha_hora < hasta.Date.AddDays(1));
-            }
+        if (!string.IsNullOrEmpty(fechaDesde) &&
+            DateTime.TryParseExact(fechaDesde, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var desde))
+        {
+            query = query.Where(t => t.fecha_hora >= desde.Date);
+        }
+
+        if (!string.IsNullOrEmpty(fechaHasta) &&
+            DateTime.TryParseExact(fechaHasta, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var hasta))
+        {
+            query = query.Where(t => t.fecha_hora < hasta.Date.AddDays(1));
         }
 
         if (!string.IsNullOrEmpty(tipoPeso))
