@@ -20,7 +20,7 @@ namespace ZooTech.Infrastructure.Identity
         {
             get
             {
-                var value = User?.FindFirstValue(JwtRegisteredClaimNames.Sub);
+                var value = User?.FindFirstValue(ClaimTypes.NameIdentifier);
 
                 return int.TryParse(value, out var id)
                     ? id
