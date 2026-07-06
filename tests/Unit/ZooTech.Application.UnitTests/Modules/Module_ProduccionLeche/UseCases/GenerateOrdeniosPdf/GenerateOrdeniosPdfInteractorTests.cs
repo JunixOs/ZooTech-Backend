@@ -1,6 +1,7 @@
 using ZooTech.Application.Common.Gateway.Services;
 using ZooTech.Application.Common.Gateway.Time;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GenerateOrdeniosPdf;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GenerateTriajesPdf;
 using ZooTech.Domain.Module_ProduccionLeche.Entities;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
 
@@ -83,6 +84,9 @@ public class GenerateOrdeniosPdfInteractorTests
             WasCalled = true;
             return _content;
         }
+
+        public byte[] GenerateTriajesReport(GenerateTriajesPdfDocument document)
+            => throw new NotSupportedException();
     }
 
     private sealed class FakeComparationPdfGeneratorService : IOrdeniosComparationPdfGeneratorService

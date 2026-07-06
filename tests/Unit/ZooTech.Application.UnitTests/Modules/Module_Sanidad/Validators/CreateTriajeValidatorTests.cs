@@ -10,16 +10,16 @@ public class CreateTriajeValidatorTests
         string tipoPesoCode = "NACIMIENTO",
         decimal pesoKg = 10,
         string? observaciones = null,
-        string estadoRegistroCode = "ACTIVO",
-        long? encargadoUsuarioId = null)
+        long? encargadoUsuarioId = null,
+        DateTime? fechaHora = null)
     {
         return new CreateTriajeCommand(
             VacunoId: vacunoId,
             TipoPesoCode: tipoPesoCode,
             PesoKg: pesoKg,
             Observaciones: observaciones,
-            EstadoRegistroCode: estadoRegistroCode,
-            EncargadoUsuarioId: encargadoUsuarioId);
+            EncargadoUsuarioId: encargadoUsuarioId,
+            FechaHora: fechaHora ?? DateTime.UtcNow);
     }
 
     [Fact]
@@ -63,21 +63,11 @@ public class CreateTriajeValidatorTests
     }
 
     [Fact]
-    public void Validate_WhenEstadoRegistroCodeIsEmpty_HasError()
-    {
-        var validator = new CreateTriajeValidator();
-
-        var result = validator.Validate(ValidCommand(estadoRegistroCode: string.Empty));
-
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(CreateTriajeCommand.EstadoRegistroCode));
-    }
-
-    [Fact]
     public void Validate_WhenObservacionesExceedsMaxLength_HasError()
     {
         var validator = new CreateTriajeValidator();
 
-        var result = validator.Validate(ValidCommand(observaciones: new string('A', 501)));
+        var result = validator.Validate(ValidCommand(observaciones: new string('A', 151)));
 
         Assert.Contains(result.Errors, e => e.PropertyName == nameof(CreateTriajeCommand.Observaciones));
     }
@@ -91,4 +81,15 @@ public class CreateTriajeValidatorTests
 
         Assert.DoesNotContain(result.Errors, e => e.PropertyName == nameof(CreateTriajeCommand.Observaciones));
     }
+
+    [Fact]
+    public void Validate_WhenFechaHoraIsFuture_HasError()
+    {
+        var validator = new CreateTriajeValidator();
+
+        var result = validator.Validate(ValidCommand(fechaHora: DateTime.UtcNow.AddDays(1)));
+
+        Assert.Contains(result.Errors, e => e.PropertyName == nameof(CreateTriajeCommand.FechaHora));
+    }
+
 }

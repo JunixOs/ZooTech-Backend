@@ -1,4 +1,4 @@
-using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.DTOs.Responses;
+using ZooTech.InterfaceAdapters.DTOs;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_Celo.DTOs.Responses;
 

@@ -8,9 +8,9 @@ using ZooTech.Application.Modules.Module_Celo.UseCases.GetVacasEnCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.ListCelos;
 using ZooTech.Application.Modules.Module_Celo.UseCases.ListReporteCeloGeneral;
 using ZooTech.Application.Modules.Module_Celo.UseCases.UpdateCelo;
+using ZooTech.InterfaceAdapters.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.DTOs.Responses;
-using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.DTOs.Responses;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_Celo.Mappers;
 
