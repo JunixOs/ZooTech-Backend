@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
+using ZooTech.InterfaceAdapters.Filters;
 
 namespace ZooTech.InterfaceAdapters;
 
@@ -7,23 +9,16 @@ public static class DependencyInjection
     public static IServiceCollection AddInterfaceAdapters(
         this IServiceCollection services)
     {
-        // ============================================
-        // Presenters
-        // ============================================
-
-        // services.AddScoped<IAnimalPresenter, AnimalPresenter>();
-
-        // ============================================
-        // Mappers
-        // ============================================
-
         // services.AddAutoMapper(typeof(DependencyInjection).Assembly);
+        services.AddScoped<TenantHeaderFilter>();
+        services.AddScoped<AnonymousOnlyFilter>();
 
-        // ============================================
-        // Filters
-        // ============================================
-
-        // services.AddScoped<ValidationFilter>();
+        // Desactivar los mensajes automaticos de validacion de
+        // ASP.NET Core
+        services.Configure<ApiBehaviorOptions>(options =>
+        {
+            options.SuppressModelStateInvalidFilter = true;
+        });
 
         return services;
     }
