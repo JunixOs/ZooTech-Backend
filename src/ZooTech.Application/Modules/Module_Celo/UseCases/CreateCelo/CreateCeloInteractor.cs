@@ -1,6 +1,7 @@
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Domain.Module_Celo.Entities;
 using ZooTech.Domain.Module_Celo.Interfaces;
+using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Celo.UseCases.CreateCelo;
 
@@ -19,7 +20,14 @@ public sealed class CreateCeloInteractor : ICreateCeloInputPort
     )
     {
         if (!await _celoRepository.ExistsVacunoAsync(command.VacunoId, cancellationToken))
-            throw new ConflictException($"El vacuno con ID {command.VacunoId} no existe.");
+            throw new ConflictException(
+                ScopeName.Application,
+                ModuleName.Celo,
+                new List<string>()
+                {
+                    "CELO-VACUNO-ID-NOT_EXISTS",
+                }
+            );
 
         var codigo = $"CELO-{DateTime.UtcNow:yyyyMMddHHmmss}";
         if (await _celoRepository.ExistsCodigoAsync(codigo, cancellationToken))

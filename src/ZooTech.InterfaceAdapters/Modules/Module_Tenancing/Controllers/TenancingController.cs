@@ -38,12 +38,15 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers
         [RestrictTenantType(TenantType.Admin)]
         [Authorize(Roles = AuthorizationRoles.Admin)]
         [HttpPost]
-        public async Task<IActionResult> CreateTenant([FromBody] CreateTenantRequestDto requestDto)
+        public async Task<IActionResult> CreateTenant(
+            [FromBody] CreateTenantRequestDto requestDto,
+            CancellationToken cancellationToken = default
+        )
         {
             var behaviorPipeline = _createTenantBehaviorPipelineFactory.Create();
 
             var command = CreateTenantMapper.ToCommand(requestDto);
-            var result = await behaviorPipeline.Execute(command);
+            var result = await behaviorPipeline.Execute(command , cancellationToken);
 
             return Ok(CreateTenantMapper.ToResponseDto(result));
         }
@@ -60,13 +63,15 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers
         [Authorize(Roles = AuthorizationRoles.Admin)]
         [HttpPost("create-tenant-user")]
         public async Task<IActionResult> CreateUserInTenant(
-            [FromBody] CreateUserInTenantRequestDTO requestDto
+            [FromBody] CreateUserInTenantRequestDTO requestDto,
+            CancellationToken cancellationToken = default
         )
         {
             var behaviorPipeline = _createUserInTenantBehaviorPipelineFactory.Create();
 
             var result = await behaviorPipeline.Execute(
-                CreateUserInTenantMapper.ToCommand(requestDto)
+                CreateUserInTenantMapper.ToCommand(requestDto),
+                cancellationToken
             );
 
             return Ok(CreateUserInTenantMapper.ToResponse(result));

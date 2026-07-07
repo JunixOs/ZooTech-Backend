@@ -33,13 +33,15 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Auth
         [RestrictTenantType(Domain.Shared.Enums.TenantType.Tenant)]
         [HttpPost("user/login")]
         public async Task<IActionResult> LoginRegularUsers(
-            [FromBody] RegularLoginRequestDTO request
+            [FromBody] RegularLoginRequestDTO request,
+            CancellationToken cancellationToken = default
         )
         {
             var behaviorPipeline = _regularLoginBehaviorPipelineFactory.Create();
 
             var result = await behaviorPipeline.Execute(
-                RegularLoginMapper.ToCommand(request)
+                RegularLoginMapper.ToCommand(request),
+                cancellationToken
             );
 
             return Ok(result);
@@ -51,13 +53,15 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Auth
         [RestrictTenantType(Domain.Shared.Enums.TenantType.Admin)]
         [HttpPost("admin/login")]
         public async Task<IActionResult> LoginAdminUsers(
-            [FromBody] AdminLoginRequestDTO requestDto
+            [FromBody] AdminLoginRequestDTO requestDto,
+            CancellationToken cancellationToken = default
         )
         {
             var behaviorPipeline = _adminLoginBehaviorPipelineFactory.Create();
 
             var result = await behaviorPipeline.Execute(
-                AdminLoginMapper.ToCommand(requestDto)
+                AdminLoginMapper.ToCommand(requestDto),
+                cancellationToken
             );
 
             return Ok(result);
@@ -65,7 +69,7 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Auth
 
         [ServiceFilter(typeof(TenantHeaderFilter))]
         [HttpPost("logout")]
-        public async Task<IActionResult> Logout()
+        public async Task<IActionResult> Logout(CancellationToken cancellationToken = default)
         {
             return Ok();
         }

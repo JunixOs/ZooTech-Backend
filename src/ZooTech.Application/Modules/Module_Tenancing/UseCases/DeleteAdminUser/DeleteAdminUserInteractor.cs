@@ -16,7 +16,7 @@ namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.DeleteAdminUser
             _adminUserRepository = adminUserRepository;
         }
 
-        public async Task<EmptyOutput> Handle(DeleteAdminUserCommand cmd)
+        public async Task<EmptyOutput> Handle(DeleteAdminUserCommand cmd, CancellationToken cancellationToken = default)
         {
             await _adminUserRepository.DeleteById(cmd.Id.GetValueOrDefault());
 

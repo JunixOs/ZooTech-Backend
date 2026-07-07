@@ -4,7 +4,7 @@ namespace ZooTech.Infrastructure.Tenant
 {
     public interface ITenantDbContextFactory
     {
-        Task<TenantCatalogDb> CreateDbContextByTenantContext();
-        Task<TenantCatalogDb> CreateDbContextBySettingsValue();
+        TenantCatalogDb CreateDbContextByTenantContext();
+        TenantCatalogDb CreateDbContextBySettingsValue();
     }
 }

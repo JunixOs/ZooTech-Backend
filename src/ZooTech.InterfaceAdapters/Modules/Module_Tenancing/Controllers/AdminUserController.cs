@@ -37,7 +37,7 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers
         [RestrictTenantType(TenantType.Admin)]
         [Authorize(Roles = AuthorizationRoles.Admin)]
         [HttpGet("users")]
-        public async Task<IActionResult> ListAdminUsers()
+        public async Task<IActionResult> ListAdminUsers(CancellationToken cancellationToken = default)
         {
             var behaviorPipeline = _listAdminUsersBehaviorPipelineFactory.Create();
 
@@ -45,7 +45,8 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers
                 EmptyCommand.Value(
                     AuditEventType.Read,
                     "List all admin users"
-                )
+                ),
+                cancellationToken
             );
 
             return Ok(ListAdminUsersMapper.ToResponse(result));
@@ -56,7 +57,8 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers
         [Authorize(Roles = AuthorizationRoles.Admin)]
         [HttpGet("delete")]
         public async Task<IActionResult> DeleteAdminUser(
-            [FromQuery] int? id
+            [FromQuery] int? id,
+            CancellationToken cancellationToken = default
         )
         {
             var behaviorPipeline = _deleteAdminUserBehaviorPipelineFactory.Create();
@@ -65,7 +67,8 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers
                 new DeleteAdminUserCommand
                 {
                     Id = id
-                }
+                },
+                cancellationToken
             );
 
             return Ok();
@@ -76,13 +79,15 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers
         [Authorize(Roles = AuthorizationRoles.Admin)]
         [HttpPost]
         public async Task<IActionResult> CreateAdminUser(
-            [FromBody] CreateAdminUserRequestDTO requestDto
+            [FromBody] CreateAdminUserRequestDTO requestDto,
+            CancellationToken cancellationToken = default
         )
         {
             var behaviorPipeline = _createAdminUserBehaviorPipelineFactory.Create();
 
             var result = await behaviorPipeline.Execute(
-                CreateAdminUserMapper.ToCommand(requestDto)
+                CreateAdminUserMapper.ToCommand(requestDto),
+                cancellationToken
             );
 
             return Ok(CreateAdminUserMapper.ToResponseDto(result));

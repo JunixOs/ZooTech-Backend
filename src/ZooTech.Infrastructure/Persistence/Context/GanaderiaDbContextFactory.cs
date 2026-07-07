@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using ZooTech.Application.Common.Gateway.Context;
 using ZooTech.Domain.Shared.Enums;
+using ZooTech.Infrastructure.Caching.ConcurrentCache;
 using ZooTech.Infrastructure.Exceptions;
 
 namespace ZooTech.Infrastructure.Persistence.Context
@@ -13,40 +14,49 @@ namespace ZooTech.Infrastructure.Persistence.Context
         private readonly ITenantContext _tenantContext;
         private readonly IConfiguration _config;
 
-        public GanaderiaDbContextFactory(ITenantContext tenantContext, IConfiguration config)
+        private readonly IConcurrentCache<string, DbContextOptions<GanaderiaDbContext>> _cache;
+
+        public GanaderiaDbContextFactory(
+            ITenantContext tenantContext, 
+            IConfiguration config,
+            IConcurrentCache<string, DbContextOptions<GanaderiaDbContext>> cache
+        )
         {
             _tenantContext = tenantContext;
             _config = config;
+
+            _cache = cache;
         }
 
         private DbContextOptions<GanaderiaDbContext> GetConnectionOptions(string databaseName, bool useAdminLogin = false)
         {
-            var connectionName = useAdminLogin
-                ? "AdminTenantTemplate"
-                : "TenantTemplate";
+            var key = $"{useAdminLogin}:{databaseName}";
 
-            var template = _config.GetConnectionString(connectionName);
+            return _cache.GetOrAdd(key, _ =>
+            {
+                var connectionName = useAdminLogin
+                    ? "AdminTenantTemplate"
+                    : "TenantTemplate";
 
-            if (string.IsNullOrWhiteSpace(template))
-                throw new UndefinedConfigurationValue(
-                    message: $"Missing configuration: ConnectionStrings:{connectionName}"
-                );
+                var template = _config.GetConnectionString(connectionName)!;
 
-            var builder = new SqlConnectionStringBuilder(template);
+                if (string.IsNullOrWhiteSpace(template))
+                    throw new UndefinedConfigurationValue(
+                        message: $"Missing configuration: ConnectionStrings:{connectionName}"
+                    );
 
-            if (string.IsNullOrWhiteSpace(databaseName))
-                throw new EmptyTenantContextValues();
+                var builder = new SqlConnectionStringBuilder(template)
+                {
+                    InitialCatalog = databaseName
+                };
 
-            builder.InitialCatalog = databaseName;
-
-            var conn = builder.ConnectionString;
-
-            return new DbContextOptionsBuilder<GanaderiaDbContext>()
-                .UseSqlServer(conn)
-                .Options;
+                return new DbContextOptionsBuilder<GanaderiaDbContext>()
+                    .UseSqlServer(builder.ConnectionString)
+                    .Options;
+            });
         }
 
-        public async Task<GanaderiaDbContext> CreateDbContextByTenantContext()
+        public GanaderiaDbContext CreateDbContextByTenantContext()
         {
             if(_tenantContext.Type != TenantType.Tenant)
             {
@@ -55,22 +65,10 @@ namespace ZooTech.Infrastructure.Persistence.Context
 
             var options = GetConnectionOptions(_tenantContext.DatabaseName);
 
-            var ganaderiaDbContext = new GanaderiaDbContext(options);
-
-            try
-            {
-                if (!await ganaderiaDbContext.Database.CanConnectAsync())
-                    throw new DatabaseConnectionException(_tenantContext.DatabaseName);
-            }
-            catch (SqlException)
-            {
-                throw new DatabaseConnectionException(_tenantContext.DatabaseName);
-            }
-
-            return ganaderiaDbContext;
+            return new GanaderiaDbContext(options);
         }
 
-        public async Task<GanaderiaDbContext> CreateDbContextBySpecificDatabaseName(string databaseName, bool useAdminLogin = false)
+        public GanaderiaDbContext CreateDbContextBySpecificDatabaseName(string databaseName, bool useAdminLogin = false)
         {
             if(_tenantContext.Type != TenantType.Admin)
             {
@@ -79,19 +77,7 @@ namespace ZooTech.Infrastructure.Persistence.Context
 
             var options = GetConnectionOptions(databaseName, useAdminLogin);
 
-            var ganaderiaDbContext = new GanaderiaDbContext(options);
-
-            try
-            {
-                if (!await ganaderiaDbContext.Database.CanConnectAsync())
-                    throw new DatabaseConnectionException(databaseName);
-            }
-            catch (SqlException)
-            {
-                throw new DatabaseConnectionException(databaseName);
-            }
-
-            return ganaderiaDbContext;
+            return new GanaderiaDbContext(options);
         }
     }
 }

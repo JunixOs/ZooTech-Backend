@@ -4,6 +4,6 @@ namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.ListAdminUsers.P
 {
     public interface IListAdminUsersInputPort
     {
-        Task<List<ListAdminUsersOutput>> Handle(EmptyCommand emptyCmd);
+        Task<List<ListAdminUsersOutput>> Handle(EmptyCommand emptyCmd, CancellationToken cancellationToken = default);
     }
 }

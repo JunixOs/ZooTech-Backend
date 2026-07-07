@@ -8,36 +8,40 @@ namespace ZooTech.Infrastructure.Persistence.Modules.Module_ProduccionLeche.Repo
 
 public sealed class OrdenioRepository : IOrdenioRepository
 {
-    private readonly GanaderiaDbContext _dbContext;
+    private readonly GanaderiaDbContext _ganaderiaDbContext;
 
-    public OrdenioRepository(GanaderiaDbContext dbContext)
+    public OrdenioRepository(
+        IGanaderiaDbContextFactory ganaderiaDbContextFactory
+    )
     {
-        _dbContext = dbContext;
+        _ganaderiaDbContext = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
     }
 
     public Task<bool> ExistsCodigoAsync(string codigo, CancellationToken cancellationToken)
-        => _dbContext.ordenios.AnyAsync(x => x.deleted_at == null && x.codigo == codigo.Trim(), cancellationToken);
+        => _ganaderiaDbContext.ordenios.AnyAsync(x => x.deleted_at == null && x.codigo == codigo.Trim(), cancellationToken);
 
-    public Task<bool> ExistsVacunoFechaAsync(long vacunoId, DateTime fechaHora, long? excludeOrdenioId, CancellationToken cancellationToken)
-        => _dbContext.ordenios.AnyAsync(
+    public async Task<bool> ExistsVacunoFechaAsync(long vacunoId, DateTime fechaHora, long? excludeOrdenioId, CancellationToken cancellationToken)
+    {
+        return await _ganaderiaDbContext.ordenios.AnyAsync(
             x => x.deleted_at == null
-                 && x.vacuno_id == vacunoId
-                 && x.fecha_hora == fechaHora
-                 && (!excludeOrdenioId.HasValue || x.id != excludeOrdenioId.Value),
+                && x.vacuno_id == vacunoId
+                && x.fecha_hora == fechaHora
+                && (!excludeOrdenioId.HasValue || x.id != excludeOrdenioId.Value),
             cancellationToken);
+    }
 
     public Task<bool> ExistsVacunoAsync(long vacunoId, CancellationToken cancellationToken)
-        => _dbContext.vacunos.AnyAsync(x => x.id == vacunoId, cancellationToken);
+        => _ganaderiaDbContext.vacunos.AnyAsync(x => x.id == vacunoId, cancellationToken);
 
     public Task<bool> ExistsUsuarioAsync(long usuarioId, CancellationToken cancellationToken)
-        => _dbContext.usuarios.AnyAsync(x => x.id == usuarioId, cancellationToken);
+        =>_ganaderiaDbContext.usuarios.AnyAsync(x => x.id == usuarioId, cancellationToken);
 
-    public Task<bool> ExistsEstadoAsync(string estadoOrdenioCode, CancellationToken cancellationToken)
-        => _dbContext.cat_estado_ordenios.AnyAsync(x => x.code == estadoOrdenioCode.Trim(), cancellationToken);
+    public Task<bool> ExistsEstadoAsync(string estadoOrdenioCode, CancellationToken cancellationToken) 
+        => _ganaderiaDbContext.cat_estado_ordenios.AnyAsync(x => x.code == estadoOrdenioCode.Trim(), cancellationToken);
 
     public async Task<Ordenio?> GetByIdAsync(long id, CancellationToken cancellationToken)
     {
-        var entity = await _dbContext.ordenios
+        var entity = await _ganaderiaDbContext.ordenios
             .Include(x => x.vacuno)
             .Include(x => x.encargado_usuario)
             .AsNoTracking()
@@ -76,14 +80,14 @@ public sealed class OrdenioRepository : IOrdenioRepository
     public async Task<Ordenio> AddAsync(Ordenio ordenio, CancellationToken cancellationToken)
     {
         var entity = ToEntity(ordenio);
-        _dbContext.ordenios.Add(entity);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        _ganaderiaDbContext.ordenios.Add(entity);
+        await _ganaderiaDbContext.SaveChangesAsync(cancellationToken);
         return ToDomain(entity);
     }
 
     public async Task<Ordenio> UpdateAsync(Ordenio ordenio, CancellationToken cancellationToken)
     {
-        var entity = await _dbContext.ordenios
+        var entity = await _ganaderiaDbContext.ordenios
             .FirstOrDefaultAsync(x => x.id == ordenio.Id, cancellationToken)
             ?? throw new InvalidOperationException("No se encontró el ordeño para actualizar.");
 
@@ -98,7 +102,7 @@ public sealed class OrdenioRepository : IOrdenioRepository
         entity.deleted_by = ordenio.DeletedBy;
         entity.motivo_eliminacion = ordenio.MotivoEliminacion;
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _ganaderiaDbContext.SaveChangesAsync(cancellationToken);
         return ToDomain(entity);
     }
 
@@ -121,9 +125,10 @@ public sealed class OrdenioRepository : IOrdenioRepository
         long? vacunoId,
         string? estadoOrdenioCode,
         DateTime? fechaDesde,
-        DateTime? fechaHasta)
+        DateTime? fechaHasta
+    )
     {
-        var queryable = _dbContext.ordenios
+        var queryable = _ganaderiaDbContext.ordenios
             .AsNoTracking()
             .Where(x => x.deleted_at == null)
             .AsQueryable();

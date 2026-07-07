@@ -14,7 +14,7 @@ namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant
             _provisioningService = provisioningService;
         }
 
-        public async Task<CreateTenantOutput> Handle(CreateTenantCommand request)
+        public async Task<CreateTenantOutput> Handle(CreateTenantCommand request, CancellationToken cancellationToken = default)
         {
             await _provisioningService.ProvisionAsync(request);
 

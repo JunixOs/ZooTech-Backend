@@ -20,7 +20,7 @@ namespace ZooTech.Infrastructure.Persistence.Repositories.GanaderiaDb
 
         public async Task Create(UsuarioDomainEntity usuarioDomainEntity)
         {
-            var ganaderiaDbContext = await _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
+            var ganaderiaDbContext = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
 
             await ganaderiaDbContext.usuarios.AddAsync(
                 UsuarioMapper.toOrm(usuarioDomainEntity)
@@ -31,7 +31,7 @@ namespace ZooTech.Infrastructure.Persistence.Repositories.GanaderiaDb
 
         public async Task<UsuarioDomainEntity?> GetByEmail(string email)
         {
-            var ganaderiaDbContext = await _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
+            var ganaderiaDbContext = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
 
             var usuarioOrm = await ganaderiaDbContext.usuarios
                 .Where(u => u.correo == email)
@@ -47,7 +47,7 @@ namespace ZooTech.Infrastructure.Persistence.Repositories.GanaderiaDb
 
         public async Task CreateInTenant(UsuarioDomainEntity usuarioDomainEntity , string tenantDatabaseName)
         {
-            var ganaderiaDbContext = await _ganaderiaDbContextFactory.CreateDbContextBySpecificDatabaseName(tenantDatabaseName);
+            var ganaderiaDbContext = _ganaderiaDbContextFactory.CreateDbContextBySpecificDatabaseName(tenantDatabaseName);
 
             await ganaderiaDbContext.usuarios.AddAsync(
                 UsuarioMapper.toOrm(usuarioDomainEntity)

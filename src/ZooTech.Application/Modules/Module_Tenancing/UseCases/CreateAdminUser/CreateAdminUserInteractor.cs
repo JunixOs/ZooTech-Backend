@@ -22,7 +22,7 @@ namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateAdminUser
         }
 
 
-        public async Task<CreateAdminUserOutput> Handle(CreateAdminUserCommand cmd)
+        public async Task<CreateAdminUserOutput> Handle(CreateAdminUserCommand cmd, CancellationToken cancellationToken = default)
         {
             await _adminUserRepository.Create(
                 AdminUserDomainEntity.CreateFromCreationRequest(

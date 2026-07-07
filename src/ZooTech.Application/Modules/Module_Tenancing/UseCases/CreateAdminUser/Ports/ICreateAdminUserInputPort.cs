@@ -2,6 +2,6 @@ namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateAdminUser.
 {
     public interface ICreateAdminUserInputPort
     {
-        Task<CreateAdminUserOutput> Handle(CreateAdminUserCommand cmd);
+        Task<CreateAdminUserOutput> Handle(CreateAdminUserCommand cmd, CancellationToken cancellationToken = default);
     }
 }

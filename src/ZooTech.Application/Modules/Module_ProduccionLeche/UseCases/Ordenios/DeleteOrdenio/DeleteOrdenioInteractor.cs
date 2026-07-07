@@ -29,7 +29,11 @@ public sealed class DeleteOrdenioInteractor : IDeleteOrdenioInputPort
         }
         catch (ArgumentException ex)
         {
-            throw new ConflictException(ex.Message);
+            throw new ConflictException(
+                ScopeName.Application,
+                ModuleName.Produccion_Leche,
+                message: ex.Message
+            );
         }
 
         _ = await _repository.UpdateAsync(existing, cancellationToken);

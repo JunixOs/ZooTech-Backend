@@ -7,16 +7,18 @@ namespace ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Repositories;
 
 public sealed class VacunoRepository : IVacunoRepository
 {
-    private readonly GanaderiaDbContext _context;
+    private readonly GanaderiaDbContext _ganaderiaDbContext;
 
-    public VacunoRepository(GanaderiaDbContext context)
+    public VacunoRepository(
+        IGanaderiaDbContextFactory ganaderiaDbContextFactory
+    )
     {
-        _context = context;
+        _ganaderiaDbContext = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
     }
 
     public async Task<List<Vacuno>> ListAllAsync(CancellationToken cancellationToken = default)
     {
-        var entities = await _context.vacunos
+        var entities = await _ganaderiaDbContext.vacunos
             .AsNoTracking()
             .Where(v => v.deleted_at == null)
             .OrderBy(v => v.codigo)
@@ -27,7 +29,7 @@ public sealed class VacunoRepository : IVacunoRepository
 
     public async Task<List<(Vacuno Vacuno, string? Procedencia)>> ListAllForDisplayAsync(CancellationToken cancellationToken = default)
     {
-        var entities = await _context.vacunos
+        var entities = await _ganaderiaDbContext.vacunos
             .AsNoTracking()
             .Include(v => v.granja)
                 .ThenInclude(g => g.distrito_codigoNavigation)
@@ -56,33 +58,31 @@ public sealed class VacunoRepository : IVacunoRepository
 
     public async Task<Vacuno?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
     {
-        var entity = await _context.vacunos
+        var entity = await _ganaderiaDbContext.vacunos
             .AsNoTracking()
             .FirstOrDefaultAsync(v => v.id == id && v.deleted_at == null, cancellationToken);
 
         return entity is null ? null : ToDomain(entity);
     }
 
-    public async Task<bool> ExistsAsync(long id, CancellationToken cancellationToken = default)
-    {
-        return await _context.vacunos
+    public Task<bool> ExistsAsync(long id, CancellationToken cancellationToken = default)
+        => _ganaderiaDbContext.vacunos
             .AnyAsync(v => v.id == id && v.deleted_at == null, cancellationToken);
-    }
 
     public Task<bool> ExistsCodigoAsync(string codigo, CancellationToken cancellationToken = default)
-        => _context.vacunos.AnyAsync(v => v.deleted_at == null && v.codigo == codigo.Trim(), cancellationToken);
+        => _ganaderiaDbContext.vacunos.AnyAsync(v => v.deleted_at == null && v.codigo == codigo.Trim(), cancellationToken);
 
     public async Task<Vacuno> AddAsync(Vacuno vacuno, CancellationToken cancellationToken = default)
     {
         var entity = ToEntity(vacuno);
-        _context.vacunos.Add(entity);
-        await _context.SaveChangesAsync(cancellationToken);
+        _ganaderiaDbContext.vacunos.Add(entity);
+        await _ganaderiaDbContext.SaveChangesAsync(cancellationToken);
         return ToDomain(entity);
     }
 
     public async Task<Vacuno> UpdateAsync(Vacuno vacuno, CancellationToken cancellationToken = default)
     {
-        var entity = await _context.vacunos
+        var entity = await _ganaderiaDbContext.vacunos
             .FirstOrDefaultAsync(v => v.id == vacuno.Id, cancellationToken)
             ?? throw new InvalidOperationException("No se encontró el vacuno para actualizar.");
 
@@ -102,7 +102,7 @@ public sealed class VacunoRepository : IVacunoRepository
         entity.deleted_by = vacuno.DeletedBy;
         entity.motivo_eliminacion = vacuno.MotivoEliminacion;
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _ganaderiaDbContext.SaveChangesAsync(cancellationToken);
         return ToDomain(entity);
     }
 

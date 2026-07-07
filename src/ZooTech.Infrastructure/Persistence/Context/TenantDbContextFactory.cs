@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using ZooTech.Application.Common.Gateway.Context;
 using ZooTech.Domain.Shared.Enums;
+using ZooTech.Infrastructure.Caching.ConcurrentCache;
 using ZooTech.Infrastructure.Exceptions;
 using ZooTech.Infrastructure.Persistence.Context;
 
@@ -14,36 +15,46 @@ namespace ZooTech.Infrastructure.Tenant
         private readonly ITenantContext _tenantContext;
         private readonly IConfiguration _config;
 
-        public TenantDbContextFactory(ITenantContext tenantContext, IConfiguration config)
+        private readonly IConcurrentCache<string, DbContextOptions<TenantCatalogDb>> _cache;
+
+        public TenantDbContextFactory(
+            ITenantContext tenantContext, 
+            IConfiguration config,
+            IConcurrentCache<string, DbContextOptions<TenantCatalogDb>> cache
+        )
         {
             _tenantContext = tenantContext;
             _config = config;
+            
+            _cache = cache;
         }
 
         private DbContextOptions<TenantCatalogDb> GetConnectionOptions(string databaseName)
         {
-            var template = _config.GetConnectionString("TenantTemplate");
+            var key = $"admin:{databaseName}";
 
-            if (string.IsNullOrWhiteSpace(template))
-                throw new UndefinedConfigurationValue(
-                    message: "ConnectionStrings:TenantTemplate not defined"
-                );
+            return _cache.GetOrAdd(key, _ =>
+            {
 
-            var builder = new SqlConnectionStringBuilder(template);
+                var template = _config.GetConnectionString("TenantTemplate")!;
 
-            if (string.IsNullOrWhiteSpace(databaseName))
-                throw new EmptyTenantContextValues();
+                if (string.IsNullOrWhiteSpace(template))
+                    throw new UndefinedConfigurationValue(
+                        message: $"Missing configuration: ConnectionStrings:TenantTemplate"
+                    );
 
-            builder.InitialCatalog = databaseName;
+                var builder = new SqlConnectionStringBuilder(template)
+                {
+                    InitialCatalog = databaseName
+                };
 
-            var conn = builder.ConnectionString;
-
-            return new DbContextOptionsBuilder<TenantCatalogDb>()
-                .UseSqlServer(conn)
-                .Options;
+                return new DbContextOptionsBuilder<TenantCatalogDb>()
+                    .UseSqlServer(builder.ConnectionString)
+                    .Options;
+            });
         }
 
-        public async Task<TenantCatalogDb> CreateDbContextByTenantContext()
+        public TenantCatalogDb CreateDbContextByTenantContext()
         {
             if(_tenantContext.Type != TenantType.Admin)
             {
@@ -52,22 +63,10 @@ namespace ZooTech.Infrastructure.Tenant
 
             var options = GetConnectionOptions(_tenantContext.DatabaseName);
 
-            var tenantDbContext = new TenantCatalogDb(options);
-
-            try
-            {
-                if (!await tenantDbContext.Database.CanConnectAsync())
-                    throw new DatabaseConnectionException(_tenantContext.DatabaseName);
-            }
-            catch (SqlException)
-            {
-                throw new DatabaseConnectionException(_tenantContext.DatabaseName);
-            }
-
-            return tenantDbContext;
+            return new TenantCatalogDb(options);
         }
 
-        public async Task<TenantCatalogDb> CreateDbContextBySettingsValue()
+        public TenantCatalogDb CreateDbContextBySettingsValue()
         {
             var adminDatabaseName = _config["MultiTenant:AdminDatabaseName"] ?? 
                 throw new UndefinedConfigurationValue(
@@ -76,19 +75,7 @@ namespace ZooTech.Infrastructure.Tenant
             
             var options = GetConnectionOptions(adminDatabaseName);
 
-            var tenantDbContext = new TenantCatalogDb(options);
-
-            try
-            {
-                if (!await tenantDbContext.Database.CanConnectAsync())
-                    throw new DatabaseConnectionException(adminDatabaseName);
-            }
-            catch (SqlException)
-            {
-                throw new DatabaseConnectionException(adminDatabaseName);
-            }
-
-            return tenantDbContext;
+            return new TenantCatalogDb(options);
         }
     }
 }

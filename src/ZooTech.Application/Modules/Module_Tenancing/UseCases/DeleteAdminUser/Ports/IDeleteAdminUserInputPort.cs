@@ -4,6 +4,6 @@ namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.DeleteAdminUser.
 {
     public interface IDeleteAdminUserInputPort
     {
-        Task<EmptyOutput> Handle(DeleteAdminUserCommand cmd);
+        Task<EmptyOutput> Handle(DeleteAdminUserCommand cmd, CancellationToken cancellationToken = default);
     }
 }

@@ -2,6 +2,6 @@ namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateUserInTena
 {
     public interface ICreateUserInTenantInputPort
     {
-        Task<CreateUserInTenantOutput> Handle(CreateUserInTenantCommand cmd);
+        Task<CreateUserInTenantOutput> Handle(CreateUserInTenantCommand cmd, CancellationToken cancellationToken = default);
     }
 }

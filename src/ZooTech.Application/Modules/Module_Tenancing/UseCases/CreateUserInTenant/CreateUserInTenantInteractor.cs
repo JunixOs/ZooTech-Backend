@@ -16,7 +16,7 @@ namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateUserInTena
             _usuarioRepository = usuarioRepository;
         }
 
-        public async Task<CreateUserInTenantOutput> Handle(CreateUserInTenantCommand cmd)
+        public async Task<CreateUserInTenantOutput> Handle(CreateUserInTenantCommand cmd, CancellationToken cancellationToken = default)
         {
             await _usuarioRepository.CreateInTenant(
                 UsuarioDomainEntity.CreateFromRequest(

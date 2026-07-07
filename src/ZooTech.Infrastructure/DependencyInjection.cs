@@ -17,8 +17,6 @@ using ZooTech.Infrastructure.Persistence.Modules.Module_Sanidad.Repositories;
 using ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Repositories;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using StackExchange.Redis;
 using ZooTech.Application.Common.Gateway.Identity;
@@ -41,12 +39,12 @@ using ZooTech.Infrastructure.Parametrization;
 using ZooTech.Infrastructure.Parametrization.Features;
 using ZooTech.Infrastructure.Parametrization.Rules;
 using ZooTech.Infrastructure.Parametrization.Settings;
-using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Persistence.Repositories.GanaderiaDb;
 using ZooTech.Infrastructure.Persistence.Repositories.MainTenantsDb;
 using ZooTech.Infrastructure.Tenant;
 using ZooTech.Infrastructure.Context;
 using MongoDB.Driver;
+using ZooTech.Infrastructure.Caching.ConcurrentCache;
 
 namespace ZooTech.Infrastructure;
 
@@ -88,6 +86,14 @@ public static class DependencyInjection
 
         services.AddSingleton<GarnetCacheConnection>();
         services.AddScoped<IAppCacheService, GarnetCacheService>();
+        services.AddSingleton<
+            IConcurrentCache<string, DbContextOptions<GanaderiaDbContext>>,
+            ConcurrentCache<string, DbContextOptions<GanaderiaDbContext>>
+        >();
+        services.AddSingleton<
+            IConcurrentCache<string, DbContextOptions<TenantCatalogDb>>,
+            ConcurrentCache<string, DbContextOptions<TenantCatalogDb>>
+        >();
 
         services.AddScoped<ITenantStore, TenantStore>();
         services.AddScoped<ITenantContext, TenantContext>();
