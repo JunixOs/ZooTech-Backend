@@ -4,10 +4,10 @@ using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetVacunoById;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.UpdateVacuno;
-using ZooTech.Domain.Module_Vacuno.ReadModels.ListarVacuno;
+using ZooTech.Domain.Module_Vacuno.Entities.ListarVacuno;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Requests;
 using ZooTech.Domain.Module_Vacuno.Models;
-using ZooTech.Domain.Module_Vacuno.ReadModels;
+using ZooTech.Domain.Module_Vacuno.Entities;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Mappers;

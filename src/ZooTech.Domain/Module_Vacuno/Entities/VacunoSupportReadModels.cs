@@ -1,4 +1,4 @@
-namespace ZooTech.Domain.Module_Vacuno.ReadModels;
+namespace ZooTech.Domain.Module_Vacuno.Entities;
 
 public sealed record VacunoCodeLookup(long Id, string Codigo);
 

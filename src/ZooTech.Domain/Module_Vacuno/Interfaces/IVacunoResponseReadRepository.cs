@@ -1,4 +1,4 @@
-using ZooTech.Domain.Module_Vacuno.ReadModels;
+using ZooTech.Domain.Module_Vacuno.Entities;
 
 namespace ZooTech.Domain.Module_Vacuno.Interfaces;
 

@@ -5,7 +5,7 @@ using ZooTech.Application.Common.Gateway.Services;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarArbolGenealogico;
 using ZooTech.Domain.Module_Vacuno.Entities;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
-using ZooTech.Domain.Module_Vacuno.ReadModels.GetArbolGenealogico;
+using ZooTech.Domain.Module_Vacuno.Entities.GetArbolGenealogico;
 using ZooTech.Application.Common.Exceptions;
 
 namespace ZooTech.Application.UnitTests.Modules.Module_Vacuno.UseCases;

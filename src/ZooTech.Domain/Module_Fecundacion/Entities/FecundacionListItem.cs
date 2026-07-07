@@ -1,4 +1,4 @@
-namespace ZooTech.Domain.Module_Fecundacion.ReadModels;
+namespace ZooTech.Domain.Module_Fecundacion.Entities;
 
 public sealed record FecundacionListItem(
     long Id,

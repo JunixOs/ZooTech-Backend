@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
-using ZooTech.Domain.Module_Vacuno.ReadModels.GetArbolGenealogico;
+using ZooTech.Domain.Module_Vacuno.Entities.GetArbolGenealogico;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.GetArbolGenealogico;
 

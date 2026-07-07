@@ -1,5 +1,5 @@
 using ZooTech.Domain.Module_Fecundacion.Entities;
-using ZooTech.Domain.Module_Fecundacion.ReadModels;
+using ZooTech.Domain.Module_Fecundacion.Entities;
 
 namespace ZooTech.Domain.Module_Fecundacion.Interfaces;
 
