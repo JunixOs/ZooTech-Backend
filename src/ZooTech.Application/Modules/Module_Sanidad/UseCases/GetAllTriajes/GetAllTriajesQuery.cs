@@ -9,4 +9,5 @@ public sealed record GetAllTriajesQuery(
     string? Codigo = null,
     string? Nombre = null,
     string? TipoPeso = null,
-    decimal? PesoKg = null);
+    decimal? PesoKg = null,
+    long? VacunoId = null);

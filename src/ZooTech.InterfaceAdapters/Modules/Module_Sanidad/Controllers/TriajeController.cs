@@ -74,11 +74,12 @@ public sealed class TriajeController : ControllerBase
         [FromQuery] string? nombre = null,
         [FromQuery] string? tipoPeso = null,
         [FromQuery] decimal? pesoKg = null,
+        [FromQuery] long? vacunoId = null,
         CancellationToken cancellationToken = default)
     {
         var currentPage = pagina <= 0 ? 1 : pagina;
         var currentTamano = tamano <= 0 ? 10 : Math.Min(tamano, 100);
-        var query = new GetAllTriajesQuery(currentPage, currentTamano, fecha, fechaDesde, fechaHasta, codigo, nombre, tipoPeso, pesoKg);
+        var query = new GetAllTriajesQuery(currentPage, currentTamano, fecha, fechaDesde, fechaHasta, codigo, nombre, tipoPeso, pesoKg, vacunoId);
         var output = await _getAllInputPort.HandleAsync(query, cancellationToken);
         return Ok(GeneralResponseDTO<PagedTriajeResponse>.Ok(TriajeMapper.ToPagedResponse(output, currentPage, currentTamano)));
     }

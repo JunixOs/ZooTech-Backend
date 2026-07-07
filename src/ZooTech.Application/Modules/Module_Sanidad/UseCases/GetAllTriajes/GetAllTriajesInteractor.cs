@@ -18,16 +18,7 @@ public sealed class GetAllTriajesInteractor : IGetAllTriajesInputPort
         var tamano = query.Tamano <= 0 ? 10 : Math.Min(query.Tamano, 100);
 
         var (triajes, total) = await _repository.GetAllAsync(
-    pagina: pagina,
-    tamano: tamano,
-    fecha: query.Fecha,
-    fechaDesde: query.FechaDesde,
-    fechaHasta: query.FechaHasta,
-    codigo: query.Codigo,
-    nombre: query.Nombre,
-    tipoPeso: query.TipoPeso,
-    pesoKg: query.PesoKg,
-    cancellationToken: cancellationToken);
+            pagina, tamano, query.Fecha, query.FechaDesde, query.FechaHasta, query.Codigo, query.Nombre, query.TipoPeso, query.PesoKg, query.VacunoId, cancellationToken);
 
         var items = triajes.Select(TriajeMapper.ToOutput).ToList();
 
