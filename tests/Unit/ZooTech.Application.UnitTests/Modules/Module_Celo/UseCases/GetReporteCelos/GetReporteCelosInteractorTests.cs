@@ -68,7 +68,6 @@ public sealed class GetReporteCelosInteractorTests
 
     private sealed class FakeCeloReporteRepository : ICeloRepository
     {
-        public Task<bool> HasActiveRecordsByVacunoAsync(long vacunoId, CancellationToken cancellationToken = default) => Task.FromResult(false);
         public List<CeloReporteItem> Celos { get; set; } = [];
         public Dictionary<long, int> VecesEnCeloCounts { get; set; } = [];
         public Dictionary<long, int> CriasCounts { get; set; } = [];
@@ -106,6 +105,9 @@ public sealed class GetReporteCelosInteractorTests
 
         public Task<bool> ExistsVacunoAsync(long vacunoId, CancellationToken cancellationToken = default)
             => Task.FromResult(true);
+
+        public Task<bool> HasActiveRecordsByVacunoAsync(long vacunoId, CancellationToken cancellationToken = default)
+            => Task.FromResult(false);
 
         public Task<bool> ExistsCodigoAsync(string codigo, CancellationToken cancellationToken = default)
             => Task.FromResult(false);

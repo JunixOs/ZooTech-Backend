@@ -1,56 +1,18 @@
-using ZooTech.Application.Modules.Module_Celo.UseCases.ListReporteCeloGeneral;
+using ZooTech.Application.Modules.Module_Celo.UseCases.ListCelos;
 using ZooTech.Domain.Module_Celo.Entities;
 using ZooTech.Domain.Module_Celo.Interfaces;
 
-namespace ZooTech.Application.UnitTests.Modules.Module_Celo.UseCases.ListReporteCeloGeneral;
+namespace ZooTech.Application.UnitTests.Modules.Module_Celo.UseCases.ListCelos;
 
-public sealed class ListReporteCeloGeneralInteractorTests
+public sealed class ListCelosInteractorTests
 {
-    [Fact]
-    public async Task HandleAsync_MapsRepositoryDataToDtoAndPagesResult()
-    {
-        var fechaHora = new DateTime(2026, 5, 10, 14, 30, 0);
-        var celo = CeloReporteItem.Rehydrate(
-            id: 1,
-            codigo: "CEL-001",
-            fechaHora: fechaHora,
-            vacunoId: 42,
-            vacunoCodigo: "V-042",
-            nombreVacuno: "Lola",
-            observaciones: "Sin novedades",
-            caracteristicaCodes: ["INQUIETA"]);
-
-        var repository = new FakeCeloReporteRepository
-        {
-            PagedCelos = [celo],
-            PagedTotalCount = 1,
-            VecesEnCeloCounts = new Dictionary<long, int> { [42] = 5 },
-            CriasCounts = new Dictionary<long, int> { [42] = 1 }
-        };
-        var interactor = new ListReporteCeloGeneralInteractor(repository);
-
-        var output = await interactor.HandleAsync(
-            search: "Lola",
-            page: 1,
-            pageSize: 20,
-            cancellationToken: CancellationToken.None);
-
-        var item = Assert.Single(output.Result.Data);
-        Assert.Equal("CEL-001", item.CodigoRegistro);
-        Assert.Equal(5, item.VecesEnCelo);
-        Assert.Equal(1, item.Crias);
-        Assert.Equal(1, output.Result.TotalCount);
-        Assert.Equal(1, output.Result.Page);
-        Assert.Equal(20, output.Result.PageSize);
-    }
-
     [Theory]
     [InlineData(0, 1)]
     [InlineData(-5, 1)]
     public async Task HandleAsync_WhenPageIsNotPositive_DefaultsToFirstPage(int page, int expectedPage)
     {
-        var repository = new FakeCeloReporteRepository();
-        var interactor = new ListReporteCeloGeneralInteractor(repository);
+        var repository = new FakeCeloRepository();
+        var interactor = new ListCelosInteractor(repository);
 
         var output = await interactor.HandleAsync(search: null, page: page, pageSize: 20);
 
@@ -59,34 +21,33 @@ public sealed class ListReporteCeloGeneralInteractorTests
 
     [Theory]
     [InlineData(0, 20)]
+    [InlineData(10, 10)]
+    [InlineData(25, 25)]
+    [InlineData(50, 50)]
+    [InlineData(100, 100)]
     [InlineData(150, 100)]
     public async Task HandleAsync_ClampsPageSizeBetweenDefaultAndMax(int pageSize, int expectedPageSize)
     {
-        var repository = new FakeCeloReporteRepository();
-        var interactor = new ListReporteCeloGeneralInteractor(repository);
+        var repository = new FakeCeloRepository();
+        var interactor = new ListCelosInteractor(repository);
 
         var output = await interactor.HandleAsync(search: null, page: 1, pageSize: pageSize);
 
         Assert.Equal(expectedPageSize, output.Result.PageSize);
     }
 
-    private sealed class FakeCeloReporteRepository : ICeloRepository
+    private sealed class FakeCeloRepository : ICeloRepository
     {
-        public List<CeloReporteItem> PagedCelos { get; set; } = [];
-        public int PagedTotalCount { get; set; }
-        public Dictionary<long, int> VecesEnCeloCounts { get; set; } = [];
-        public Dictionary<long, int> CriasCounts { get; set; } = [];
-
-        public Task<(IReadOnlyList<CeloReporteItem> Items, int TotalCount)> GetPagedForReporteAsync(
+        public Task<(IReadOnlyList<CeloListItem> Items, int TotalCount)> GetPagedAsync(
             string? search, int page, int pageSize, DateTime? fechaInicio = null, DateTime? fechaFin = null,
             IReadOnlyDictionary<string, string>? columnFilters = null, CancellationToken cancellationToken = default)
-            => Task.FromResult<(IReadOnlyList<CeloReporteItem>, int)>((PagedCelos, PagedTotalCount));
+            => Task.FromResult<(IReadOnlyList<CeloListItem>, int)>((new List<CeloListItem>(), 0));
 
         public Task<Dictionary<long, int>> GetVecesEnCeloCountsAsync(CancellationToken cancellationToken = default)
-            => Task.FromResult(VecesEnCeloCounts);
+            => Task.FromResult(new Dictionary<long, int>());
 
         public Task<Dictionary<long, int>> GetCriasCountsAsync(CancellationToken cancellationToken = default)
-            => Task.FromResult(CriasCounts);
+            => Task.FromResult(new Dictionary<long, int>());
 
         public Task<List<CeloReporteItem>> GetAllForReporteAsync(CancellationToken cancellationToken = default)
             => Task.FromResult(new List<CeloReporteItem>());
@@ -94,10 +55,10 @@ public sealed class ListReporteCeloGeneralInteractorTests
         public Task<List<CeloListItem>> GetAllAsync(CancellationToken cancellationToken = default)
             => Task.FromResult(new List<CeloListItem>());
 
-        public Task<(IReadOnlyList<CeloListItem> Items, int TotalCount)> GetPagedAsync(
+        public Task<(IReadOnlyList<CeloReporteItem> Items, int TotalCount)> GetPagedForReporteAsync(
             string? search, int page, int pageSize, DateTime? fechaInicio = null, DateTime? fechaFin = null,
             IReadOnlyDictionary<string, string>? columnFilters = null, CancellationToken cancellationToken = default)
-            => Task.FromResult<(IReadOnlyList<CeloListItem>, int)>((new List<CeloListItem>(), 0));
+            => Task.FromResult<(IReadOnlyList<CeloReporteItem>, int)>((new List<CeloReporteItem>(), 0));
 
         public Task<Celo?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
             => Task.FromResult<Celo?>(null);
@@ -122,4 +83,3 @@ public sealed class ListReporteCeloGeneralInteractorTests
             => Task.FromResult(new List<DateTime>());
     }
 }
-
