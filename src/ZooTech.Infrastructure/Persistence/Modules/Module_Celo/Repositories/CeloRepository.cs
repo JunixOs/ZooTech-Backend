@@ -443,12 +443,6 @@ public sealed class CeloRepository : ICeloRepository
             .AnyAsync(v => v.id == vacunoId, cancellationToken);
     }
 
-    public async Task<bool> HasActiveRecordsByVacunoAsync(long vacunoId, CancellationToken cancellationToken = default)
-    {
-        return await _context.celo_registros
-            .AnyAsync(c => c.vacuno_id == vacunoId && c.deleted_at == null, cancellationToken);
-    }
-
     public async Task<bool> ExistsCodigoAsync(string codigo, CancellationToken cancellationToken = default)
     {
         return await _context.celo_registros

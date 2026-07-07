@@ -1,4 +1,4 @@
-using ZooTech.Application.Modules.Module_Vacuno.Exceptions;
+using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Modules.Module_Vacuno.Common;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
 
@@ -16,7 +16,8 @@ public sealed class GetVacunoByIdInteractor : IGetVacunoByIdInputPort
     public async Task<GetVacunoByIdOutput> HandleAsync(long id, CancellationToken cancellationToken)
     {
         var vacuno = await _repository.GetByIdAsync(id, cancellationToken)
-            ?? throw new VacunoNotFoundException($"No existe un vacuno con el ID {id}.");
+            ?? throw new NotFoundException("No se encontró el vacuno solicitado.");
+
         return new GetVacunoByIdOutput(VacunoAppMapper.ToOutput(vacuno));
     }
 }

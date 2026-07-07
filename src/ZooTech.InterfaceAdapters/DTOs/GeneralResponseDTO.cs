@@ -1,10 +1,10 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace ZooTech.InterfaceAdapters.DTOs
 {
-    public class GeneralResponseDTO<T>
+    internal class GeneralResponseDTO<T>
     {
         public T? Data { get; set; }
 
