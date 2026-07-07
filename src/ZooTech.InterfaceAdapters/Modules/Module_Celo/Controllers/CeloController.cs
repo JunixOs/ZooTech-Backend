@@ -201,7 +201,6 @@ public sealed class CeloController : ControllerBase
         [FromQuery] DateTime? fechaFin,
         CancellationToken cancellationToken)
     {
-        // TODO: Corregir
         var behaviorPipeline = _getVacasEnCeloBehaviorPipelineFactory.Create();
 
         var output = await behaviorPipeline.Execute(
