@@ -1,3 +1,5 @@
+using System;
+
 namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses;
 
 public sealed record VacunoResponse(
@@ -15,4 +17,13 @@ public sealed record VacunoResponse(
     string? Observaciones,
     DateOnly FechaRegistro,
     DateTime CreatedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt,
+    string? CodigoPadre,
+    string? CodigoMadre,
+    string? Granja,
+    string? Distrito,
+    string? Departamento,
+    string? Provincia,
+    string? CodigoDistrito,
+    string? AptoPara,
+    DateTime? FechaUtilizacion);

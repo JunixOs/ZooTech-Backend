@@ -28,6 +28,8 @@ public class ListOrdeniosInteractorTests
         public int CapturedPage { get; private set; }
         public int CapturedPageSize { get; private set; }
 
+        public Task<bool> HasActiveRecordsByVacunoAsync(long vacunoId, CancellationToken cancellationToken) => Task.FromResult(false);
+
         public Task<bool> ExistsCodigoAsync(string codigo, CancellationToken cancellationToken)
             => Task.FromResult(false);
 
@@ -63,3 +65,4 @@ public class ListOrdeniosInteractorTests
             => Task.FromResult(ordenio);
     }
 }
+

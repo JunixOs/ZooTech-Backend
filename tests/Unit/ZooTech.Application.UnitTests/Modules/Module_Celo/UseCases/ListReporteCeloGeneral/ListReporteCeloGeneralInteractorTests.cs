@@ -72,6 +72,7 @@ public sealed class ListReporteCeloGeneralInteractorTests
 
     private sealed class FakeCeloReporteRepository : ICeloRepository
     {
+        public Task<bool> HasActiveRecordsByVacunoAsync(long vacunoId, CancellationToken cancellationToken = default) => Task.FromResult(false);
         public List<CeloReporteItem> PagedCelos { get; set; } = [];
         public int PagedTotalCount { get; set; }
         public Dictionary<long, int> VecesEnCeloCounts { get; set; } = [];
@@ -119,3 +120,4 @@ public sealed class ListReporteCeloGeneralInteractorTests
             => Task.FromResult(new List<DateTime>());
     }
 }
+

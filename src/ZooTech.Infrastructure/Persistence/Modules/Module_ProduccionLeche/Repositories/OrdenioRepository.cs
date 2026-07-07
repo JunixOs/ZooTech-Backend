@@ -29,6 +29,9 @@ public sealed class OrdenioRepository : IOrdenioRepository
     public Task<bool> ExistsVacunoAsync(long vacunoId, CancellationToken cancellationToken)
         => _dbContext.vacunos.AnyAsync(x => x.id == vacunoId, cancellationToken);
 
+    public Task<bool> HasActiveRecordsByVacunoAsync(long vacunoId, CancellationToken cancellationToken)
+        => _dbContext.ordenios.AnyAsync(x => x.vacuno_id == vacunoId && x.deleted_at == null, cancellationToken);
+
     public Task<bool> ExistsUsuarioAsync(long usuarioId, CancellationToken cancellationToken)
         => _dbContext.usuarios.AnyAsync(x => x.id == usuarioId, cancellationToken);
 

@@ -11,4 +11,6 @@ public sealed record CreateVacunoCommand(
     long? PadreId,
     long? MadreId,
     long GranjaId,
-    string? Observaciones);
+    string? Observaciones,
+    decimal? PrecioCompra,
+    string? AptoPara);

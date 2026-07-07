@@ -50,6 +50,10 @@ public interface ICeloRepository
         long vacunoId,
         CancellationToken cancellationToken = default);
 
+    Task<bool> HasActiveRecordsByVacunoAsync(
+        long vacunoId,
+        CancellationToken cancellationToken = default);
+
     Task<bool> ExistsCodigoAsync(
         string codigo,
         CancellationToken cancellationToken = default);
