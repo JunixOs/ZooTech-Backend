@@ -3,6 +3,6 @@ using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Commo
 namespace ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.ListOrdenios;
 
 public sealed record ListOrdeniosOutput(
-    IReadOnlyList<OrdenioOutput> Data,
+    IReadOnlyList<OrdenioListOutput> Data,
     int TotalCount);
 

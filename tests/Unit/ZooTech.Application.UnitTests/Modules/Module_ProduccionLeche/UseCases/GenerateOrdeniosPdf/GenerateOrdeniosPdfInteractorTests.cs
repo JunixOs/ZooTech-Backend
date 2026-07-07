@@ -141,6 +141,7 @@ public class GenerateOrdeniosPdfInteractorTests
                 fechaHora: fecha,
                 vacunoId: 1,
                 nombreVacuno: "Luna",
+                vacunoCodigo: "VAC-001",
                 encargadoUsuarioId: 2,
                 nombreCompleto: "Juan Perez",
                 litros: 12,

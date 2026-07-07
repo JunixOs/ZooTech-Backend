@@ -159,6 +159,7 @@ public sealed class OrdenioRepository : IOrdenioRepository
             vacuno = new vacuno
             {
                 id = entity.vacuno.id,
+                codigo = entity.vacuno.codigo,
                 nombre = entity.vacuno.nombre
             },
             encargado_usuario = new usuario
@@ -169,7 +170,7 @@ public sealed class OrdenioRepository : IOrdenioRepository
         };
 
 
-    public static OrdenioList ListOrdenioToDomain(ordenio entity) 
+    public static OrdenioList ListOrdenioToDomain(ordenio entity)
         => OrdenioList.Rehydrate(
 
             entity.id,
@@ -177,6 +178,7 @@ public sealed class OrdenioRepository : IOrdenioRepository
             entity.fecha_hora,
             entity.vacuno_id,
             entity.vacuno?.nombre ?? string.Empty,
+            entity.vacuno?.codigo ?? string.Empty,
             entity.encargado_usuario_id,
             entity.encargado_usuario?.nombre_completo ?? string.Empty,
             entity.litros,

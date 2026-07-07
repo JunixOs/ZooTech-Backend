@@ -51,7 +51,7 @@ public static class ProduccionLecheMapper
 
     public static OrdenioResponse ToResponse(OrdenioOutput output)
         => ToOrdenioResponse(output);
-           
+
 
     public static OrdenioResponse ToResponse(CreateOrdenioOutput output)
         => ToOrdenioResponse(output.Data);
@@ -64,7 +64,7 @@ public static class ProduccionLecheMapper
 
     public static ListOrdeniosResponse ToResponse(ListOrdeniosOutput output, int page, int pageSize)
     {
-        var data = output.Data.Select(ToOrdenioResponse).ToList();
+        var data = output.Data.Select(ToOrdenioResponseList).ToList();
         var totalPages = (int)Math.Ceiling((double)output.TotalCount / pageSize);
         return new ListOrdeniosResponse(data, new PaginationResponse(page, pageSize, output.TotalCount, totalPages));
     }
@@ -76,6 +76,22 @@ public static class ProduccionLecheMapper
             output.FechaHora,
             output.VacunoId,
             output.NombreVacuno,
+            output.EncargadoUsuarioId,
+            output.NombreCompleto,
+            output.Litros,
+            output.EstadoOrdenioCode,
+            output.Observaciones,
+            output.CreatedAt,
+            output.UpdatedAt);
+
+    public static OrdenioListResponse ToOrdenioResponseList(OrdenioListOutput output)
+        => new(
+            output.Id,
+            output.Codigo,
+            output.FechaHora,
+            output.VacunoId,
+            output.NombreVacuno,
+            output.VacunoCodigo,
             output.EncargadoUsuarioId,
             output.NombreCompleto,
             output.Litros,

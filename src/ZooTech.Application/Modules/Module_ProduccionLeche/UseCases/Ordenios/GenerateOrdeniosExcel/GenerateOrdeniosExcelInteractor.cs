@@ -33,7 +33,7 @@ internal sealed class GenerateOrdeniosExcelInteractor : IGetOrdeniosExcelInputPo
             cancellationToken);
 
         var document = new GenerateOrdeniosExcelDocument(
-            entities.Select(OrdenioMapper.ToOutput).ToList(),
+            entities.Select(OrdenioMapper.ToOutputList).ToList(),
             query.VacunoId,
             query.EstadoOrdenioCode,
             query.FechaDesde,

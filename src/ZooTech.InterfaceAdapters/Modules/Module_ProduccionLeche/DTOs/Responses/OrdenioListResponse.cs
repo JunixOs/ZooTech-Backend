@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+namespace ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.DTOs.Responses;
 
-namespace ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Common;
-
-public sealed record OrdenioListOutput(
+public sealed record OrdenioListResponse(
     long? Id,
     string Codigo,
     DateTime FechaHora,
@@ -12,7 +8,7 @@ public sealed record OrdenioListOutput(
     string NombreVacuno,
     string VacunoCodigo,
     long EncargadoUsuarioId,
-    string NombreCompleto,
+    string NombreEncargado,
     decimal Litros,
     string EstadoOrdenioCode,
     string? Observaciones,
