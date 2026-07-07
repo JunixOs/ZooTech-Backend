@@ -1,4 +1,3 @@
-using FluentValidation;
 using ZooTech.Application.Common.Gateway.Time;
 using ZooTech.Domain.Module_Sanidad.Entities;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
@@ -9,18 +8,15 @@ public sealed class CreateTriajeInteractor : ICreateTriajeInputPort
 {
     private readonly ITriajeRepository _repository;
     private readonly IDateTimeProvider _dateTimeProvider;
-    private readonly IValidator<CreateTriajeCommand> _validator;
 
-    public CreateTriajeInteractor(ITriajeRepository repository, IDateTimeProvider dateTimeProvider, IValidator<CreateTriajeCommand> validator)
+    public CreateTriajeInteractor(ITriajeRepository repository, IDateTimeProvider dateTimeProvider)
     {
         _repository = repository;
         _dateTimeProvider = dateTimeProvider;
-        _validator = validator;
     }
 
-    public async Task<CreateTriajeOutput> HandleAsync(CreateTriajeCommand command, CancellationToken cancellationToken = default)
+    public async Task<CreateTriajeOutput> Handle(CreateTriajeCommand command, CancellationToken cancellationToken = default)
     {
-        await _validator.ValidateAndThrowAsync(command, cancellationToken);
         var codigo = await _repository.GenerateCodigoAsync(cancellationToken);
         var utcNow = _dateTimeProvider.ServerNow;
 

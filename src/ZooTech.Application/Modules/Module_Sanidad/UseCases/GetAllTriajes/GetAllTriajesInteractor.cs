@@ -11,7 +11,7 @@ public sealed class GetAllTriajesInteractor : IGetAllTriajesInputPort
         _repository = repository;
     }
 
-    public async Task<GetAllTriajesOutput> HandleAsync(GetAllTriajesQuery query, CancellationToken cancellationToken = default)
+    public async Task<GetAllTriajesOutput> Handle(GetAllTriajesQuery query, CancellationToken cancellationToken = default)
     {
         var pagina = query.Pagina <= 0 ? 1 : query.Pagina;
         var tamano = query.Tamano <= 0 ? 10 : Math.Min(query.Tamano, 100);

@@ -57,6 +57,15 @@ using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.Gener
 using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.GetOrdenioById;
 using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.ListOrdenios;
 using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.UpdateOrdenio;
+using ZooTech.Application.Common.Behaviors.Module_Sanidad.CreateTriaje;
+using ZooTech.Application.Modules.Module_Sanidad.Validators;
+using ZooTech.Application.Common.Behaviors.Module_Sanidad.DeleteTriaje;
+using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetAllTipoPesos;
+using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetAllTriajes;
+using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetAllVacunosSanidad;
+using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetHistorialByVacunoId;
+using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetTriajeById;
+using ZooTech.Application.Common.Behaviors.Module_Sanidad.UpdateTriaje;
 
 namespace ZooTech.Application;
 
@@ -68,14 +77,32 @@ public static class DependencyInjection
         // ============================================
         // Use Cases - Module_Sanidad
         // ============================================
-        services.AddScoped<IGetAllTriajesInputPort, GetAllTriajesInteractor>();
-        services.AddScoped<IGetTriajeByIdInputPort, GetTriajeByIdInteractor>();
         services.AddScoped<ICreateTriajeInputPort, CreateTriajeInteractor>();
-        services.AddScoped<IUpdateTriajeInputPort, UpdateTriajeInteractor>();
+        services.AddScoped<ICreateTriajeBehaviorPipelineFactory, CreateTriajeBehaviorPipelineFactory>();
+        services.AddScoped<ICommandValidator<CreateTriajeCommand>, CreateTriajeValidator>();
+
         services.AddScoped<IDeleteTriajeInputPort, DeleteTriajeInteractor>();
+        services.AddScoped<IDeleteTriajeBehaviorPipelineFactory, DeleteTriajeBehaviorPipelineFactory>();
+        services.AddScoped<ICommandValidator<DeleteTriajeCommand>, DeleteTriajeValidator>();
+
         services.AddScoped<IGetAllTipoPesosInputPort, GetAllTipoPesosInteractor>();
+        services.AddScoped<IGetAllTipoPesosBehaviorPipelineFactory, GetAllTipoPesosBehaviorPipelineFactory>();
+
+        services.AddScoped<IGetAllTriajesInputPort, GetAllTriajesInteractor>();
+        services.AddScoped<IGetAllTriajesBehaviorPipelineFactory, GetAllTriajesBehaviorPipelineFactory>();
+
         services.AddScoped<IGetAllVacunosSanidadInputPort, GetAllVacunosSanidadInteractor>();
+        services.AddScoped<IGetAllVacunosSanidadBehaviorPipelineFactory, GetAllVacunosSanidadBehaviorPipelineFactory>();
+
         services.AddScoped<IGetHistorialByVacunoIdInputPort, GetHistorialByVacunoIdInteractor>();
+        services.AddScoped<IGetHistorialByVacunoIdBehaviorPipelineFactory, GetHistorialByVacunoIdBehaviorPipelineFactory>();
+
+        services.AddScoped<IGetTriajeByIdInputPort, GetTriajeByIdInteractor>();
+        services.AddScoped<IGetTriajeByIdBehaviorPipelineFactory, GetTriajeByIdBehaviorPipelineFactory>();
+
+        services.AddScoped<IUpdateTriajeInputPort, UpdateTriajeInteractor>();
+        services.AddScoped<IUpdateTriajeBehaviorPipelineFactory, UpdateTriajeBehaviorPipelineFactory>();
+        services.AddScoped<ICommandValidator<UpdateTriajeCommand>, UpdateTriajeValidator>();
 
         // ============================================
         // Use Cases - Module_ProduccionLeche
