@@ -7,20 +7,8 @@ internal sealed class UpdateTriajeValidator : AbstractValidator<UpdateTriajeComm
 {
     public UpdateTriajeValidator()
     {
-        RuleFor(x => x.VacunoId)
-            .GreaterThan(0).WithMessage("El ID del vacuno debe ser mayor que cero.");
-
-        RuleFor(x => x.TipoPesoCode)
-            .NotEmpty().WithMessage("El tipo de peso es obligatorio.");
-
-        RuleFor(x => x.PesoKg)
-            .GreaterThan(0).WithMessage("El peso debe ser mayor que cero.");
-
-        RuleFor(x => x.EstadoRegistroCode)
-            .NotEmpty().WithMessage("El estado de registro es obligatorio.");
-
-        RuleFor(x => x.Observaciones)
-            .MaximumLength(500).When(x => x.Observaciones is not null)
-            .WithMessage("Las observaciones no pueden superar los 500 caracteres.");
+        RuleFor(x => x.TipoPesoCode).TriajeTipoPesoCodeRules();
+        RuleFor(x => x.PesoKg).TriajePesoKgRules();
+        RuleFor(x => x.Observaciones).TriajeObservacionesRules(x => x.Observaciones is not null);
     }
 }

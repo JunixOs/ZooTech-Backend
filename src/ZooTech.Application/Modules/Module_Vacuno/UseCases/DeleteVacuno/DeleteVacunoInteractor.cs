@@ -49,7 +49,7 @@ public sealed class DeleteVacunoInteractor : IDeleteVacunoInputPort
             throw new VacunoHasDependenciesException("El vacuno tiene registros de ordeño activos.");
         }
 
-        var triajes = await _triajeRepository.GetHistorialByVacunoIdAsync(id, cancellationToken);
+        var triajes = await _triajeRepository.GetHistorialByVacunoIdAsync(id, cancellationToken: cancellationToken);
         if (triajes != null && triajes.Any())
         {
             throw new VacunoHasDependenciesException("El vacuno tiene registros de triaje activos.");

@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.CreateOrdenio;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.DeleteOrdenio;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GenerateOrdeniosPdf;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GenerateOrdeniosExcel;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GetOrdenioById;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.ListOrdenios;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.UpdateOrdenio;
@@ -10,7 +12,6 @@ using ZooTech.InterfaceAdapters.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.DTOs.Responses;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Mappers;
-using ApiErrorResponse = ZooTech.InterfaceAdapters.DTOs.Responses.ErrorResponse;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
 
@@ -21,6 +22,8 @@ public sealed class ProduccionLecheController : ControllerBase
     private readonly IListarVacunosInputPort _listarVacunosInputPort;
     private readonly ICreateOrdenioInputPort _createInputPort;
     private readonly IGetOrdenioByIdInputPort _getByIdInputPort;
+    private readonly IGetOrdeniosPdfInputPort _getOrdeniosPdfInputPort;
+    private readonly IGetOrdeniosExcelInputPort _getOrdeniosExcelInputPort;
     private readonly IListOrdeniosInputPort _listInputPort;
     private readonly IUpdateOrdenioInputPort _updateInputPort;
     private readonly IDeleteOrdenioInputPort _deleteInputPort;
@@ -29,6 +32,8 @@ public sealed class ProduccionLecheController : ControllerBase
         IListarVacunosInputPort listarVacunosInputPort,
         ICreateOrdenioInputPort createInputPort,
         IGetOrdenioByIdInputPort getByIdInputPort,
+        IGetOrdeniosPdfInputPort getOrdeniosPdfInputPort,
+        IGetOrdeniosExcelInputPort getOrdeniosExcelInputPort,
         IListOrdeniosInputPort listInputPort,
         IUpdateOrdenioInputPort updateInputPort,
         IDeleteOrdenioInputPort deleteInputPort)
@@ -36,6 +41,8 @@ public sealed class ProduccionLecheController : ControllerBase
         _listarVacunosInputPort = listarVacunosInputPort;
         _createInputPort = createInputPort;
         _getByIdInputPort = getByIdInputPort;
+        _getOrdeniosPdfInputPort = getOrdeniosPdfInputPort;
+        _getOrdeniosExcelInputPort = getOrdeniosExcelInputPort;
         _listInputPort = listInputPort;
         _updateInputPort = updateInputPort;
         _deleteInputPort = deleteInputPort;
@@ -52,15 +59,18 @@ public sealed class ProduccionLecheController : ControllerBase
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetVacunos(CancellationToken cancellationToken)
     {
-        var output = await _listarVacunosInputPort.HandleAsync(new ListarVacunosCommand(), cancellationToken);
+        // TODO: este endpoint necesita su propio caso de uso sin paginar para el selector de Leche, en vez de forzar Limit al máximo de ListarVacunos
+        var output = await _listarVacunosInputPort.HandleAsync(
+            new ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos.ListarVacunosCommand(Limit: 100, FechaDesde: DateTime.MinValue, FechaHasta: DateTime.MaxValue), 
+            cancellationToken);
         var data = output.Items.Select(x => new { id = x.Id, codigo = x.Codigo, nombre = x.Nombre, raza = x.RazaCode });
         return Ok(GeneralResponseDTO<object>.Ok(data));
     }
 
     [HttpPost]
     [ProducesResponseType(typeof(GeneralResponseDTO<OrdenioResponse>), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Create(
         [FromBody] CreateOrdenioRequest request,
         CancellationToken cancellationToken)
@@ -72,7 +82,7 @@ public sealed class ProduccionLecheController : ControllerBase
 
     [HttpGet("{id:long}")]
     [ProducesResponseType(typeof(GeneralResponseDTO<OrdenioResponse>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById([FromRoute] long id, CancellationToken cancellationToken)
     {
         var data = ProduccionLecheMapper.ToResponse(await _getByIdInputPort.HandleAsync(id, cancellationToken));
@@ -81,6 +91,7 @@ public sealed class ProduccionLecheController : ControllerBase
 
     [HttpGet]
     [ProducesResponseType(typeof(GeneralResponseDTO<ListOrdeniosResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> List(
         [FromQuery] long? vacunoId,
         [FromQuery] string? estadoOrdenioCode,
@@ -100,10 +111,44 @@ public sealed class ProduccionLecheController : ControllerBase
         return Ok(GeneralResponseDTO<ListOrdeniosResponse>.Ok(data));
     }
 
+    [HttpGet("reporte/pdf")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GeneratePdf(
+        [FromQuery] long? vacunoId,
+        [FromQuery] string? estadoOrdenioCode,
+        [FromQuery] DateTime? fechaDesde,
+        [FromQuery] DateTime? fechaHasta,
+        [FromQuery] bool comparativo,
+        CancellationToken cancellationToken)
+    {
+        var report = await _getOrdeniosPdfInputPort.HandleAsync(
+            new GenerateOrdeniosComparationPdfQuery(vacunoId, estadoOrdenioCode, fechaDesde, fechaHasta, comparativo),
+            cancellationToken);
+
+        return File(report.Content, report.ContentType, report.FileName);
+    }
+
+    [HttpGet("reporte/excel")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GenerateExcel(
+        [FromQuery] long? vacunoId,
+        [FromQuery] string? estadoOrdenioCode,
+        [FromQuery] DateTime? fechaDesde,
+        [FromQuery] DateTime? fechaHasta,
+        CancellationToken cancellationToken)
+    {
+        var report = await _getOrdeniosExcelInputPort.HandleAsync(
+            new GenerateOrdeniosComparationExcelQuery(vacunoId, estadoOrdenioCode, fechaDesde, fechaHasta),
+            cancellationToken);
+
+        return File(report.Content, report.ContentType, report.FileName);
+    }
+
     [HttpPatch("{id:long}")]
     [ProducesResponseType(typeof(GeneralResponseDTO<OrdenioResponse>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Update(
         [FromRoute] long id,
         [FromBody] UpdateOrdenioRequest request,
@@ -116,8 +161,8 @@ public sealed class ProduccionLecheController : ControllerBase
 
     [HttpDelete("{id:long}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(
         [FromRoute] long id,
         [FromBody] DeleteOrdenioRequest request,

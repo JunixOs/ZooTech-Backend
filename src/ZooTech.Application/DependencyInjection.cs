@@ -1,3 +1,5 @@
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using ZooTech.Application.Modules.Animals.UseCases.DeleteAnimal;
@@ -8,27 +10,39 @@ using ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.Common;
 using ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.GetFecundacionEstado;
 using ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.UpdateFecundacionEstado;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetCelos;
+using ZooTech.Application.Modules.Module_Celo.UseCases.GetComparacionCelosRealVsEstandar;
+using ZooTech.Application.Modules.Module_Celo.UseCases.GetComparacionCelosRealVsEstandarPorVacuno;
+using ZooTech.Application.Modules.Module_Celo.UseCases.GetReporteCelos;
+using ZooTech.Application.Modules.Module_Celo.UseCases.GetVacasEnCelo;
+using ZooTech.Application.Modules.Module_Celo.UseCases.ListCelos;
+using ZooTech.Application.Modules.Module_Celo.UseCases.ListReporteCeloGeneral;
 using ZooTech.Application.Modules.Module_Celo.UseCases.UpdateCelo;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.CreateFecundacion;
-using ZooTech.Application.Modules.Module_Fecundacion.UseCases.ListarFecundacion;
-using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.CreateOrdenio;
-using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.DeleteOrdenio;
-using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GetOrdenioById;
-using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.ListOrdenios;
-using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.UpdateOrdenio;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.DeleteFecundacion;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.GetFecundacionForEdit;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.GetFecundacionOptions;
+using ZooTech.Application.Modules.Module_Fecundacion.UseCases.ListarFecundacion;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.SearchFecundacionVacunos;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.UpdateFecundacion;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.CreateOrdenio;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.DeleteOrdenio;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GenerateOrdeniosExcel;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GenerateOrdeniosPdf;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GetOrdenioById;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.ListOrdenios;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.UpdateOrdenio;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.CreateTriaje;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.DeleteTriaje;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GenerateTriajesExcel;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GenerateTriajesPdf;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllTipoPesos;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllTriajes;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllVacunosSanidad;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetHistorialByVacunoId;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetHistorialGeneral;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetTriajeById;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.UpdateTriaje;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.CreateVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarArbolGenealogico;
@@ -38,11 +52,6 @@ using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetVacunoCatalogs;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ListarVacunosReporte;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.UpdateVacuno;
-using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.CreateOrdenio;
-using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.DeleteOrdenio;
-using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GetOrdenioById;
-using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.ListOrdenios;
-using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.UpdateOrdenio;
 
 namespace ZooTech.Application;
 
@@ -62,18 +71,24 @@ public static class DependencyInjection
         services.AddScoped<IGetAllTipoPesosInputPort, GetAllTipoPesosInteractor>();
         services.AddScoped<IGetAllVacunosSanidadInputPort, GetAllVacunosSanidadInteractor>();
         services.AddScoped<IGetHistorialByVacunoIdInputPort, GetHistorialByVacunoIdInteractor>();
+        services.AddScoped<IGetDetallesTriajeByVacunoIdInputPort, GetDetallesTriajeByVacunoIdInteractor>();
+        services.AddScoped<IGenerateTriajesPdfInputPort, GenerateTriajesPdfInteractor>();
+        services.AddScoped<IGenerateTriajesExcelInputPort, GenerateTriajesExcelInteractor>();
+        services.AddScoped<IGetHistorialGeneralInputPort, GetHistorialGeneralInteractor>();
 
         // ============================================
         // Use Cases - Module_ProduccionLeche
         // ============================================
         services.AddScoped<ICreateOrdenioInputPort, CreateOrdenioInteractor>();
+        services.AddScoped<IGetOrdeniosPdfInputPort, GenerateOrdeniosPdfInteractor>();
+        services.AddScoped<IGetOrdeniosExcelInputPort, GenerateOrdeniosExcelInteractor>();
         services.AddScoped<IGetOrdenioByIdInputPort, GetOrdenioByIdInteractor>();
         services.AddScoped<IListOrdeniosInputPort, ListOrdeniosInteractor>();
         services.AddScoped<IUpdateOrdenioInputPort, UpdateOrdenioInteractor>();
         services.AddScoped<IDeleteOrdenioInputPort, DeleteOrdenioInteractor>();
 
         // ============================================
-        // FluentValidation — all assemblies
+        // FluentValidation â€” all assemblies
         // ============================================
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly, includeInternalTypes: true);
 
@@ -81,6 +96,12 @@ public static class DependencyInjection
         // Use Cases - Module_Celo
         // ============================================
         services.AddScoped<IGetCelosInputPort, GetCelosInteractor>();
+        services.AddScoped<IGetReporteCelosInputPort, GetReporteCelosInteractor>();
+        services.AddScoped<IGetComparacionCelosRealVsEstandarInputPort, GetComparacionCelosRealVsEstandarInteractor>();
+        services.AddScoped<IGetComparacionCelosRealVsEstandarPorVacunoInputPort, GetComparacionCelosRealVsEstandarPorVacunoInteractor>();
+        services.AddScoped<IGetVacasEnCeloInputPort, GetVacasEnCeloInteractor>();
+        services.AddScoped<IListCelosInputPort, ListCelosInteractor>();
+        services.AddScoped<IListReporteCeloGeneralInputPort, ListReporteCeloGeneralInteractor>();
         services.AddScoped<ICreateCeloInputPort, CreateCeloInteractor>();
         services.AddScoped<IUpdateCeloInputPort, UpdateCeloInteractor>();
         services.AddScoped<IDeleteCeloInputPort, DeleteCeloInteractor>();
@@ -114,7 +135,6 @@ public static class DependencyInjection
         services.AddScoped<IListarVacunosInputPort, ListarVacunosInteractor>();
         services.AddScoped<ICreateVacunoInputPort, CreateVacunoInteractor>();
         services.AddScoped<IGetVacunoByIdInputPort, GetVacunoByIdInteractor>();
-        services.AddScoped<IGetVacunoCatalogsInputPort, GetVacunoCatalogsInteractor>();
         services.AddScoped<IUpdateVacunoInputPort, UpdateVacunoInteractor>();
         services.AddScoped<IDeleteVacunoInputPort, DeleteVacunoInteractor>();
         services.AddScoped<IExportarArbolGenealogicoInputPort,ExportarArbolGenealogicoInteractor>();
