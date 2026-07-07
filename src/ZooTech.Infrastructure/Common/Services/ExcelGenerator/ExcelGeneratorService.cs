@@ -169,9 +169,6 @@ public sealed class ExcelGeneratorService : IExcelGeneratorService
             filters.Add($"Hasta: {document.FechaHasta}");
         if (document.VacunoId.HasValue)
             filters.Add($"Vacuno ID: {document.VacunoId.Value}");
-        if (document.VacunoNombre.HasValue)
-            filters.Add($"Nombre Vacuno: {document.VacunoNombre.Value}");
-
         if (!string.IsNullOrWhiteSpace(document.Fecha))
             filters.Add($"Fecha: {document.Fecha}");
 
