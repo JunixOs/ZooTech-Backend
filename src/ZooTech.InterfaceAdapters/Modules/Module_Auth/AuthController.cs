@@ -11,7 +11,7 @@ using ZooTech.InterfaceAdapters.Modules.Module_Auth.Mappers;
 namespace ZooTech.InterfaceAdapters.Modules.Module_Auth
 {
     [ApiController]
-        [Route("api/v1/auth")]
+    [Route("api/v1/auth")]
     [ApiExplorerSettings(GroupName = "auth")]
     public class AuthController : ControllerBase
     {

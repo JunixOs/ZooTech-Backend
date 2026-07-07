@@ -21,6 +21,7 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
 
 [ApiController]
 [Route("api/v1/produccion-leche")]
+[ApiExplorerSettings(GroupName = "produccion_leche")]
 public sealed class ProduccionLecheController : ControllerBase
 {
     // TODO: Modificar aqui "IListarVacunosInputPort" por un Pipeline

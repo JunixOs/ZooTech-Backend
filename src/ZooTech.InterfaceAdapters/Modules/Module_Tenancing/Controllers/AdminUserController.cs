@@ -15,6 +15,7 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers
 {
     [ApiController]
     [Route("api/v1/admin-user")]
+    [ApiExplorerSettings(GroupName = "tenancing-admin-user")]
     public class AdminUserController : ControllerBase
     {
         private readonly IListAdminUsersBehaviorPipelineFactory _listAdminUsersBehaviorPipelineFactory;

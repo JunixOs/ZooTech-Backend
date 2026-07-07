@@ -14,7 +14,6 @@ using ZooTech.InterfaceAdapters.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.DTOs.Responses;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.Mappers;
-using ZooTech.Application.Modules.Module_Celo.UseCases.GetCelos;
 using ZooTech.Application.Common.Behaviors.Module_Celo.GetComparacionCelosRealVsEstandar;
 using ZooTech.Application.Common.Behaviors.Module_Celo.GetVacasEnCelo;
 using ZooTech.Application.Common.Behaviors.Module_Celo.ListCelos;
@@ -26,11 +25,9 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Celo.Controllers;
 
 [ApiController]
 [Route("api/v1/celo")]
-[ApiExplorerSettings(GroupName = "public")]
+[ApiExplorerSettings(GroupName = "celo")]
 public sealed class CeloController : ControllerBase
 {
-    // TODO: Modificar "GetCelosInputPort"
-    private readonly IGetCelosInputPort _getCelosInputPort;
     private readonly IGetCelosBehaviorPipelineFactory _getCelosBehaviorPipelineFactory;
     private readonly ICreateCeloBehaviorPipelineFactory _createCeloBehaviorPipelineFactory;
     private readonly IUpdateCeloBehaviorPipelineFactory _updateCeloBehaviorPipelineFactory;
