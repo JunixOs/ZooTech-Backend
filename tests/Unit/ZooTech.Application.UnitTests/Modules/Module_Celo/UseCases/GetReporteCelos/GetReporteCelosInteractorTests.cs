@@ -117,3 +117,4 @@ public sealed class GetReporteCelosInteractorTests
             => Task.FromResult(new List<DateTime>());
     }
 }
+

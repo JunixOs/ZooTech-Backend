@@ -10,7 +10,7 @@ internal sealed class CreateTriajeValidator : AbstractValidator<CreateTriajeComm
         RuleFor(x => x.VacunoId).TriajeVacunoIdRules();
         RuleFor(x => x.TipoPesoCode).TriajeTipoPesoCodeRules();
         RuleFor(x => x.PesoKg).TriajePesoKgRules();
-        RuleFor(x => x.EstadoRegistroCode).TriajeEstadoRegistroCodeRules();
         RuleFor(x => x.Observaciones).TriajeObservacionesRules(x => x.Observaciones is not null);
+        RuleFor(x => x.FechaHora).TriajeFechaHoraRules();
     }
 }

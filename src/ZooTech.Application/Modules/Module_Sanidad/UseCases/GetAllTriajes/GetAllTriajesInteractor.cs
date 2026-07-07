@@ -1,4 +1,5 @@
 using ZooTech.Domain.Module_Sanidad.Interfaces;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.Common;
 
 namespace ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllTriajes;
 
@@ -17,15 +18,19 @@ public sealed class GetAllTriajesInteractor : IGetAllTriajesInputPort
         var tamano = query.Tamano <= 0 ? 10 : Math.Min(query.Tamano, 100);
 
         var (triajes, total) = await _repository.GetAllAsync(
-            pagina, tamano, query.Fecha, query.Codigo, query.Nombre, query.TipoPeso, query.PesoKg, cancellationToken);
+    pagina: pagina,
+    tamano: tamano,
+    fecha: query.Fecha,
+    fechaDesde: query.FechaDesde,
+    fechaHasta: query.FechaHasta,
+    codigo: query.Codigo,
+    nombre: query.Nombre,
+    tipoPeso: query.TipoPeso,
+    pesoKg: query.PesoKg,
+    cancellationToken: cancellationToken);
 
-        var items = triajes.Select(t => new TriajeItemOutput(
-            t.Id, t.Codigo, t.FechaHora, t.VacunoId, t.VacunoNombre,
-            t.TipoPesoCode, t.PesoKg, t.Observaciones, t.EstadoRegistroCode,
-            t.EncargadoUsuarioId, t.CreatedAt)).ToList();
+        var items = triajes.Select(TriajeMapper.ToOutput).ToList();
 
-        var totalPaginas = (int)Math.Ceiling((double)total / tamano);
-
-        return new GetAllTriajesOutput(items, total, pagina, tamano, totalPaginas);
+        return new GetAllTriajesOutput(items, total);
     }
 }

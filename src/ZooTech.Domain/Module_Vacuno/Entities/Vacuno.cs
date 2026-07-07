@@ -4,6 +4,29 @@ namespace ZooTech.Domain.Module_Vacuno.Entities;
 
 public sealed class Vacuno
 {
+    public long Id { get; }
+    public string Codigo { get; private set; }
+    public string Nombre { get; private set; }
+    public DateOnly FechaNacimiento { get; private set; }
+    public string TipoAdquisicionCode { get; private set; }
+    public string RazaCode { get; private set; }
+    public string ColorCode { get; private set; }
+    public string SexoCode { get; private set; }
+    public long? PadreId { get; private set; }
+    public long? MadreId { get; private set; }
+    public long GranjaId { get; private set; }
+    public string? Observaciones { get; private set; }
+    public DateOnly FechaRegistro { get; private set; }
+    public DateTime CreatedAt { get; }
+    public DateTime UpdatedAt { get; private set; }
+    public DateTime? DeletedAt { get; private set; }
+    public string? MotivoEliminacion { get; private set; }
+    public long? CreatedBy { get; }
+    public long? UpdatedBy { get; private set; }
+    public long? DeletedBy { get; private set; }
+
+    public bool IsDeleted => DeletedAt.HasValue;
+
     private Vacuno(
         long id,
         string codigo,
@@ -48,28 +71,6 @@ public sealed class Vacuno
         DeletedBy = deletedBy;
     }
 
-    public long Id { get; }
-    public string Codigo { get; private set; }
-    public string Nombre { get; private set; }
-    public DateOnly FechaNacimiento { get; private set; }
-    public string TipoAdquisicionCode { get; private set; }
-    public string RazaCode { get; private set; }
-    public string ColorCode { get; private set; }
-    public string SexoCode { get; private set; }
-    public long? PadreId { get; private set; }
-    public long? MadreId { get; private set; }
-    public long GranjaId { get; private set; }
-    public string? Observaciones { get; private set; }
-    public DateOnly FechaRegistro { get; private set; }
-    public DateTime CreatedAt { get; }
-    public DateTime UpdatedAt { get; private set; }
-    public DateTime? DeletedAt { get; private set; }
-    public string? MotivoEliminacion { get; private set; }
-    public long? CreatedBy { get; }
-    public long? UpdatedBy { get; private set; }
-    public long? DeletedBy { get; private set; }
-
-    public bool IsDeleted => DeletedAt.HasValue;
 
     public static Vacuno CreateNew(
         string codigo,
@@ -133,7 +134,20 @@ public sealed class Vacuno
         long? updatedBy,
         long? deletedBy)
     {
-        Validate(codigo, nombre, razaCode, sexoCode, tipoAdquisicionCode, colorCode, granjaId, observaciones);
+        ValidateRehydrate(
+            id,
+            codigo,
+            nombre,
+            fechaNacimiento,
+            tipoAdquisicionCode,
+            razaCode,
+            colorCode,
+            sexoCode,
+            granjaId,
+            fechaRegistro,
+            createdAt,
+            updatedAt,
+            deletedAt);
 
         return new Vacuno(
             id,
@@ -147,7 +161,7 @@ public sealed class Vacuno
             padreId,
             madreId,
             granjaId,
-            SanitizeObservaciones(observaciones),
+            observaciones,
             fechaRegistro,
             createdAt,
             updatedAt,
@@ -223,6 +237,32 @@ public sealed class Vacuno
         VacunoRule.ValidarColorCode(colorCode);
         VacunoRule.ValidarGranjaId(granjaId);
         VacunoRule.ValidarObservaciones(observaciones);
+    }
+
+    private static void ValidateRehydrate(
+        long id,
+        string codigo,
+        string nombre,
+        DateOnly fechaNacimiento,
+        string tipoAdquisicionCode,
+        string razaCode,
+        string colorCode,
+        string sexoCode,
+        long granjaId,
+        DateOnly fechaRegistro,
+        DateTime createdAt,
+        DateTime updatedAt,
+        DateTime? deletedAt)
+    {
+        VacunoRule.ValidarIdPersistido(id);
+        VacunoRule.ValidarCampoPersistido(codigo, nameof(Codigo));
+        VacunoRule.ValidarCampoPersistido(nombre, nameof(Nombre));
+        VacunoRule.ValidarCampoPersistido(tipoAdquisicionCode, nameof(TipoAdquisicionCode));
+        VacunoRule.ValidarCampoPersistido(razaCode, nameof(RazaCode));
+        VacunoRule.ValidarCampoPersistido(colorCode, nameof(ColorCode));
+        VacunoRule.ValidarCampoPersistido(sexoCode, nameof(SexoCode));
+        VacunoRule.ValidarGranjaId(granjaId);
+        VacunoRule.ValidarFechasPersistidas(fechaNacimiento, fechaRegistro, createdAt, updatedAt, deletedAt);
     }
 
     private static string? SanitizeObservaciones(string? observaciones)

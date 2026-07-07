@@ -6,7 +6,7 @@ namespace ZooTech.Application.UnitTests.Modules.Module_Vacuno.Validators;
 public class CreateVacunoValidatorTests
 {
     private static CreateVacunoCommand ValidCommand(
-        string codigo = "V-001",
+        string codigo = "VAC001",
         string nombre = "Lola",
         string tipoAdquisicionCode = "COMPRA",
         string razaCode = "HOLSTEIN",
@@ -26,6 +26,8 @@ public class CreateVacunoValidatorTests
             PadreId: null,
             MadreId: null,
             GranjaId: granjaId,
+            PrecioCompra: 1000m,
+            AptoPara: "Carne",
             Observaciones: observaciones);
     }
 
