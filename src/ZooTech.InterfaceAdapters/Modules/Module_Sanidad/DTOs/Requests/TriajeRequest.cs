@@ -5,5 +5,5 @@ public sealed record TriajeRequest(
     string TipoPesoCode,
     decimal PesoKg,
     string? Observaciones,
-    string EstadoRegistroCode,
-    long? EncargadoUsuarioId);
+    long? EncargadoUsuarioId,
+    DateTime FechaHora);

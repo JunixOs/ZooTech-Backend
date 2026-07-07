@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using FluentValidation;
 using Microsoft.AspNetCore.Http;
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.InterfaceAdapters.DTOs;
@@ -24,7 +25,7 @@ public sealed class ExceptionHandlingMiddleware
         catch (ValidationException ex)
         {
             await WriteErrorAsync(context, HttpStatusCode.BadRequest,
-                string.Join(" | ", ex.Errors.Select(e => e.Message)));
+                string.Join(" | ", ex.Errors.Select(e => e.ErrorMessage)));
         }
         catch (NotFoundException ex)
         {

@@ -4,3 +4,4 @@ public interface IGetCelosInputPort
 {
     Task<GetCelosOutput> HandleAsync(CancellationToken cancellationToken = default);
 }
+    

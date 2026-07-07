@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using ZooTech.Domain.Module_Celo.Entities;
 using ZooTech.Domain.Module_Celo.Interfaces;
 using ZooTech.Infrastructure.Persistence.Context;
+using ZooTech.Infrastructure.Persistence.Entities;
 
 namespace ZooTech.Infrastructure.Persistence.Modules.Module_Celo.Repositories;
 
@@ -14,17 +15,33 @@ public sealed class CeloRepository : ICeloRepository
         _context = context;
     }
 
-    public async Task<List<Celo>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<List<CeloListItem>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         var entities = await _context.celo_registros
             .AsNoTracking()
-            .Include(c => c.vacuno)
-            .Include(c => c.caracteristica_codes)
             .Where(c => c.deleted_at == null)
+            .Select(c => new celo_registro
+            {
+                id = c.id,
+                codigo = c.codigo,
+                fecha_hora = c.fecha_hora,
+                vacuno_id = c.vacuno_id,
+
+                vacuno = new vacuno
+                {
+                    id = c.vacuno.id,
+                    codigo = c.vacuno.codigo,
+                    nombre = c.vacuno.nombre,
+                    raza_code = c.vacuno.raza_code,
+
+                },
+
+            })
+            
             .OrderByDescending(c => c.fecha_hora)
             .ToListAsync(cancellationToken);
 
-        return entities.Select(ToDomain).ToList();
+        return entities.Select(ListAllCeloToDomain).ToList();
     }
 
     public async Task<Dictionary<long, int>> GetVecesEnCeloCountsAsync(CancellationToken cancellationToken = default)
@@ -129,6 +146,22 @@ public sealed class CeloRepository : ICeloRepository
             updatedBy: entity.updated_by,
             deletedBy: entity.deleted_by);
     }
+
+
+    private static CeloListItem ListAllCeloToDomain(Entities.celo_registro entity)
+
+    {
+        return CeloListItem.Rehydrate(
+            id: entity.id,
+            codigo: entity.codigo,
+            fechaHora: entity.fecha_hora,
+            vacunoId: entity.vacuno_id,
+            vacunoCodigo: entity.vacuno?.codigo ?? string.Empty,
+            nombreVacuno: entity.vacuno?.nombre ?? string.Empty,
+            razaVacuno: entity.vacuno?.raza_code ?? string.Empty);
+           
+
+    } 
 
     private static Entities.celo_registro ToEntity(Celo celo)
     {

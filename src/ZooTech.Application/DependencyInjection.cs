@@ -1,5 +1,4 @@
 using FluentValidation;
-using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using ZooTech.Application.Modules.Module_Celo.UseCases.CreateCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.DeleteCelo;
@@ -10,12 +9,13 @@ using ZooTech.Application.Modules.Module_Sanidad.UseCases.DeleteTriaje;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllTipoPesos;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllTriajes;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllVacunosSanidad;
-using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetDistribucionTipoPesoReport;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetHistorialByVacunoId;
-using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetPesoPromedioReport;
-using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetResumenReport;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetTriajeById;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.UpdateTriaje;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GenerateTriajesPdf;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GenerateTriajesExcel;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetHistorialGeneral;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.CreateVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetVacunoById;
@@ -23,6 +23,8 @@ using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.UpdateVacuno;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.CreateOrdenio;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.DeleteOrdenio;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GenerateOrdeniosPdf;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GenerateOrdeniosExcel;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GetOrdenioById;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.ListOrdenios;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.UpdateOrdenio;
@@ -45,14 +47,17 @@ public static class DependencyInjection
         services.AddScoped<IGetAllTipoPesosInputPort, GetAllTipoPesosInteractor>();
         services.AddScoped<IGetAllVacunosSanidadInputPort, GetAllVacunosSanidadInteractor>();
         services.AddScoped<IGetHistorialByVacunoIdInputPort, GetHistorialByVacunoIdInteractor>();
-        services.AddScoped<IGetResumenReportInputPort, GetResumenReportInteractor>();
-        services.AddScoped<IGetPesoPromedioReportInputPort, GetPesoPromedioReportInteractor>();
-        services.AddScoped<IGetDistribucionTipoPesoReportInputPort, GetDistribucionTipoPesoReportInteractor>();
+        services.AddScoped<IGetDetallesTriajeByVacunoIdInputPort, GetDetallesTriajeByVacunoIdInteractor>();
+        services.AddScoped<IGenerateTriajesPdfInputPort, GenerateTriajesPdfInteractor>();
+        services.AddScoped<IGenerateTriajesExcelInputPort, GenerateTriajesExcelInteractor>();
+        services.AddScoped<IGetHistorialGeneralInputPort, GetHistorialGeneralInteractor>();
 
         // ============================================
         // Use Cases - Module_ProduccionLeche
         // ============================================
         services.AddScoped<ICreateOrdenioInputPort, CreateOrdenioInteractor>();
+        services.AddScoped<IGetOrdeniosPdfInputPort, GenerateOrdeniosPdfInteractor>();
+        services.AddScoped<IGetOrdeniosExcelInputPort, GenerateOrdeniosExcelInteractor>();
         services.AddScoped<IGetOrdenioByIdInputPort, GetOrdenioByIdInteractor>();
         services.AddScoped<IListOrdeniosInputPort, ListOrdeniosInteractor>();
         services.AddScoped<IUpdateOrdenioInputPort, UpdateOrdenioInteractor>();
@@ -62,11 +67,6 @@ public static class DependencyInjection
         // FluentValidation — all assemblies
         // ============================================
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly, includeInternalTypes: true);
-
-        // ============================================
-        // MediatR — pipelines, handlers
-        // ============================================
-        services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly));
 
         // ============================================
         // Use Cases - Module_Celo

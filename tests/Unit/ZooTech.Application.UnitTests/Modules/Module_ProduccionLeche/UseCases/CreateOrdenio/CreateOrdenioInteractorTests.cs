@@ -71,6 +71,14 @@ public class CreateOrdenioInteractorTests
             CancellationToken cancellationToken)
             => Task.FromResult<(IReadOnlyList<Ordenio> Items, int TotalCount)>((Array.Empty<Ordenio>(), 0));
 
+        public Task<IReadOnlyList<Ordenio>> ListReportAsync(
+            long? vacunoId,
+            string? estadoOrdenioCode,
+            DateTime? fechaDesde,
+            DateTime? fechaHasta,
+            CancellationToken cancellationToken)
+            => Task.FromResult<IReadOnlyList<Ordenio>>(Array.Empty<Ordenio>());
+
         public Task<Ordenio> AddAsync(Ordenio ordenio, CancellationToken cancellationToken)
             => Task.FromResult(ordenio);
 
