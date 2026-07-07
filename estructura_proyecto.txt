@@ -1,0 +1,571 @@
+.
+├── .agent
+│   └── skills
+│       ├── api-desing-rest
+│       │   └── SKILL.md
+│       ├── application-layer-patterns
+│       │   └── SKILL.md
+│       ├── clean-architecture
+│       │   └── SKILL.md
+│       ├── domain-drive-desing
+│       │   └── SKILL.md
+│       ├── infraestructure-persistence
+│       │   └── SKILL.md
+│       ├── integration-testing
+│       │   └── SKILL.md
+│       ├── multi-tenant
+│       │   └── SKILL.md
+│       └── unit-testing
+│           └── SKILL.md
+├── .codex-run-logs
+│   ├── api-contract-vacuno
+│   │   ├── [Content_Types].xml
+│   │   ├── _rels
+│   │   │   └── .rels
+│   │   ├── customXml
+│   │   │   ├── _rels
+│   │   │   │   └── item1.xml.rels
+│   │   │   ├── item1.xml
+│   │   │   └── itemProps1.xml
+│   │   ├── docProps
+│   │   │   ├── app.xml
+│   │   │   └── core.xml
+│   │   └── word
+│   │       ├── _rels
+│   │       │   └── document.xml.rels
+│   │       ├── document.xml
+│   │       ├── fontTable.xml
+│   │       ├── numbering.xml
+│   │       ├── settings.xml
+│   │       ├── styles.xml
+│   │       ├── theme
+│   │       │   └── theme1.xml
+│   │       └── webSettings.xml
+│   ├── api-contract-vacuno.txt
+│   ├── api-contract-vacuno.zip
+│   ├── check_db
+│   │   ├── Program.cs
+│   │   └── check_db.csproj
+│   └── read_docx.py
+├── .gitignore
+├── README.md
+├── UpgradeLog.htm
+├── ZooTech Backend - Solution.slnx
+├── analisis_backend_zootech.md
+├── azure-pipelines.yml
+├── docs
+│   ├── api-contracts
+│   │   ├── contratos
+│   │   │   ├── reproduccion-celo.yaml
+│   │   │   ├── reproduccion-fecundacion.yaml
+│   │   │   ├── reproduccion-leche.yaml
+│   │   │   ├── sanidad-triaje.yaml
+│   │   │   └── vacuno.yaml
+│   │   └── guia-contrato-api.md
+│   ├── architecture
+│   │   ├── PFS001.html
+│   │   ├── PFS001.pdf
+│   │   ├── estandar-clean-architecture.md
+│   │   └── guia_zootech.md
+│   ├── commits
+│   │   └── commits-contract.md
+│   ├── development-dotnet-core
+│   │   └── development-dotnet-core.md
+│   └── vacuno
+│       ├── APIContratoVacuno.docx
+│       ├── ApiContratoFecundacion.pdf
+│       ├── Arquitectura.pdf
+│       ├── DiagramaClases.html
+│       ├── InfraestructuraListarVacuno.docx
+│       ├── RequisitoGrafico.docx
+│       ├── RequisitoGrafico.md
+│       └── RequisitoListarVacuno.docx
+├── scripts
+│   ├── generate-branchs.ps1
+│   └── modificate-project.ps1
+├── src
+│   ├── ZooTech.API
+│   │   ├── Program.cs
+│   │   ├── Properties
+│   │   │   └── launchSettings.json
+│   │   ├── ZooTech.API.csproj
+│   │   ├── ZooTech.API.http
+│   │   └── appsettings.json
+│   ├── ZooTech.Application
+│   │   ├── Common
+│   │   │   ├── Configuration
+│   │   │   │   └── IVacunosConfiguration.cs
+│   │   │   ├── Exceptions
+│   │   │   │   ├── .gitkeep
+│   │   │   │   ├── BusinessException.cs
+│   │   │   │   ├── ConflictException.cs
+│   │   │   │   └── NotFoundException.cs
+│   │   │   ├── Gateway
+│   │   │   │   ├── Context
+│   │   │   │   │   └── ITenantContext.cs
+│   │   │   │   ├── Features
+│   │   │   │   │   └── IFeatureService.cs
+│   │   │   │   ├── Repositories
+│   │   │   │   │   └── .gitkeep
+│   │   │   │   ├── Services
+│   │   │   │   │   └── IArbolGenealogicoExportService.cs
+│   │   │   │   └── Time
+│   │   │   │       ├── .gitkeep
+│   │   │   │       └── IDateTimeProvider.cs
+│   │   │   └── Models
+│   │   │       └── PaginationModel.cs
+│   │   ├── DependencyInjection.cs
+│   │   ├── Modules
+│   │   │   ├── Module_Celo
+│   │   │   │   ├── UseCases
+│   │   │   │   │   ├── CreateCelo
+│   │   │   │   │   │   ├── CreateCeloCommand.cs
+│   │   │   │   │   │   ├── CreateCeloInteractor.cs
+│   │   │   │   │   │   ├── CreateCeloOutput.cs
+│   │   │   │   │   │   └── ICreateCeloInputPort.cs
+│   │   │   │   │   ├── DeleteCelo
+│   │   │   │   │   │   ├── DeleteCeloCommand.cs
+│   │   │   │   │   │   ├── DeleteCeloInteractor.cs
+│   │   │   │   │   │   └── IDeleteCeloInputPort.cs
+│   │   │   │   │   ├── GetCelos
+│   │   │   │   │   │   ├── CeloItemDto.cs
+│   │   │   │   │   │   ├── GetCelosInteractor.cs
+│   │   │   │   │   │   ├── GetCelosOutput.cs
+│   │   │   │   │   │   └── IGetCelosInputPort.cs
+│   │   │   │   │   └── UpdateCelo
+│   │   │   │   │       ├── IUpdateCeloInputPort.cs
+│   │   │   │   │       ├── UpdateCeloCommand.cs
+│   │   │   │   │       ├── UpdateCeloInteractor.cs
+│   │   │   │   │       └── UpdateCeloOutput.cs
+│   │   │   │   └── Validators
+│   │   │   │       ├── CreateCeloValidator.cs
+│   │   │   │       ├── DeleteCeloValidator.cs
+│   │   │   │       └── UpdateCeloValidator.cs
+│   │   │   ├── Module_Fecundacion
+│   │   │   │   ├── UseCases
+│   │   │   │   │   ├── CreateFecundacion
+│   │   │   │   │   │   ├── CreateFecundacionCommand.cs
+│   │   │   │   │   │   ├── CreateFecundacionInteractor.cs
+│   │   │   │   │   │   ├── CreateFecundacionOutput.cs
+│   │   │   │   │   │   └── ICreateFecundacionInputPort.cs
+│   │   │   │   │   └── ListarFecundacion
+│   │   │   │   │       ├── IListarFecundacionInputPort.cs
+│   │   │   │   │       ├── ListarFecundacionCommand.cs
+│   │   │   │   │       ├── ListarFecundacionInteractor.cs
+│   │   │   │   │       └── ListarFecundacionOutput.cs
+│   │   │   │   └── Validators
+│   │   │   │       └── CreateFecundacionValidator.cs
+│   │   │   ├── Module_ProduccionLeche
+│   │   │   │   ├── UseCases
+│   │   │   │   │   ├── .gitkeep
+│   │   │   │   │   └── Ordenios
+│   │   │   │   │       ├── Common
+│   │   │   │   │       │   ├── OrdenioMapper.cs
+│   │   │   │   │       │   ├── OrdenioOutput.cs
+│   │   │   │   │       │   └── OrdenioReferenceValidator.cs
+│   │   │   │   │       ├── CreateOrdenio
+│   │   │   │   │       │   ├── CreateOrdenioCommand.cs
+│   │   │   │   │       │   ├── CreateOrdenioInteractor.cs
+│   │   │   │   │       │   ├── CreateOrdenioOutput.cs
+│   │   │   │   │       │   └── ICreateOrdenioInputPort.cs
+│   │   │   │   │       ├── DeleteOrdenio
+│   │   │   │   │       │   ├── DeleteOrdenioCommand.cs
+│   │   │   │   │       │   ├── DeleteOrdenioInteractor.cs
+│   │   │   │   │       │   └── IDeleteOrdenioInputPort.cs
+│   │   │   │   │       ├── GetOrdenioById
+│   │   │   │   │       │   ├── GetOrdenioByIdInteractor.cs
+│   │   │   │   │       │   ├── GetOrdenioByIdOutput.cs
+│   │   │   │   │       │   └── IGetOrdenioByIdInputPort.cs
+│   │   │   │   │       ├── ListOrdenios
+│   │   │   │   │       │   ├── IListOrdeniosInputPort.cs
+│   │   │   │   │       │   ├── ListOrdeniosInteractor.cs
+│   │   │   │   │       │   ├── ListOrdeniosOutput.cs
+│   │   │   │   │       │   └── ListOrdeniosQuery.cs
+│   │   │   │   │       └── UpdateOrdenio
+│   │   │   │   │           ├── IUpdateOrdenioInputPort.cs
+│   │   │   │   │           ├── UpdateOrdenioCommand.cs
+│   │   │   │   │           ├── UpdateOrdenioInteractor.cs
+│   │   │   │   │           └── UpdateOrdenioOutput.cs
+│   │   │   │   └── Validators
+│   │   │   │       ├── CreateOrdenioValidator.cs
+│   │   │   │       ├── DeleteOrdenioValidator.cs
+│   │   │   │       └── UpdateOrdenioValidator.cs
+│   │   │   ├── Module_Sanidad
+│   │   │   │   ├── UseCases
+│   │   │   │   │   ├── CreateTriaje
+│   │   │   │   │   │   ├── CreateTriajeCommand.cs
+│   │   │   │   │   │   ├── CreateTriajeInteractor.cs
+│   │   │   │   │   │   ├── CreateTriajeOutput.cs
+│   │   │   │   │   │   └── ICreateTriajeInputPort.cs
+│   │   │   │   │   ├── DeleteTriaje
+│   │   │   │   │   │   ├── DeleteTriajeCommand.cs
+│   │   │   │   │   │   ├── DeleteTriajeInteractor.cs
+│   │   │   │   │   │   └── IDeleteTriajeInputPort.cs
+│   │   │   │   │   ├── GetAllTipoPesos
+│   │   │   │   │   │   ├── GetAllTipoPesosInteractor.cs
+│   │   │   │   │   │   ├── GetAllTipoPesosOutput.cs
+│   │   │   │   │   │   └── IGetAllTipoPesosInputPort.cs
+│   │   │   │   │   ├── GetAllTriajes
+│   │   │   │   │   │   ├── GetAllTriajesInteractor.cs
+│   │   │   │   │   │   ├── GetAllTriajesOutput.cs
+│   │   │   │   │   │   ├── GetAllTriajesQuery.cs
+│   │   │   │   │   │   └── IGetAllTriajesInputPort.cs
+│   │   │   │   │   ├── GetAllVacunosSanidad
+│   │   │   │   │   │   ├── GetAllVacunosSanidadInteractor.cs
+│   │   │   │   │   │   ├── GetAllVacunosSanidadOutput.cs
+│   │   │   │   │   │   └── IGetAllVacunosSanidadInputPort.cs
+│   │   │   │   │   ├── GetHistorialByVacunoId
+│   │   │   │   │   │   ├── GetHistorialByVacunoIdInteractor.cs
+│   │   │   │   │   │   ├── GetHistorialByVacunoIdOutput.cs
+│   │   │   │   │   │   └── IGetHistorialByVacunoIdInputPort.cs
+│   │   │   │   │   ├── GetTriajeById
+│   │   │   │   │   │   ├── GetTriajeByIdInteractor.cs
+│   │   │   │   │   │   ├── GetTriajeByIdOutput.cs
+│   │   │   │   │   │   └── IGetTriajeByIdInputPort.cs
+│   │   │   │   │   └── UpdateTriaje
+│   │   │   │   │       ├── IUpdateTriajeInputPort.cs
+│   │   │   │   │       ├── UpdateTriajeCommand.cs
+│   │   │   │   │       ├── UpdateTriajeInteractor.cs
+│   │   │   │   │       └── UpdateTriajeOutput.cs
+│   │   │   │   └── Validators
+│   │   │   │       ├── CreateTriajeValidator.cs
+│   │   │   │       ├── DeleteTriajeValidator.cs
+│   │   │   │       └── UpdateTriajeValidator.cs
+│   │   │   └── Module_Vacuno
+│   │   │       ├── Common
+│   │   │       │   ├── IVacunoQueryRepository.cs
+│   │   │       │   ├── VacunoAppMapper.cs
+│   │   │       │   └── VacunoOutput.cs
+│   │   │       ├── UseCases
+│   │   │       │   ├── CreateVacuno
+│   │   │       │   │   ├── CreateVacunoCommand.cs
+│   │   │       │   │   ├── CreateVacunoInteractor.cs
+│   │   │       │   │   ├── CreateVacunoOutput.cs
+│   │   │       │   │   └── ICreateVacunoInputPort.cs
+│   │   │       │   ├── DeleteVacuno
+│   │   │       │   │   ├── DeleteVacunoCommand.cs
+│   │   │       │   │   ├── DeleteVacunoInteractor.cs
+│   │   │       │   │   └── IDeleteVacunoInputPort.cs
+│   │   │       │   ├── ExportarArbolGenealogico
+│   │   │       │   │   ├── ExportarArbolGenealogicoCommand.cs
+│   │   │       │   │   ├── ExportarArbolGenealogicoInteractor.cs
+│   │   │       │   │   └── IExportarArbolGenealogicoInputPort.cs
+│   │   │       │   ├── GetArbolGenealogico
+│   │   │       │   │   ├── GetArbolGenealogicoCommand.cs
+│   │   │       │   │   ├── GetArbolGenealogicoInputPort.cs
+│   │   │       │   │   ├── GetArbolGenealogicoInteractor.cs
+│   │   │       │   │   └── GetArbolGenealogicoOutput.cs
+│   │   │       │   ├── GetVacunoById
+│   │   │       │   │   ├── GetVacunoByIdInteractor.cs
+│   │   │       │   │   ├── GetVacunoByIdOutput.cs
+│   │   │       │   │   └── IGetVacunoByIdInputPort.cs
+│   │   │       │   ├── ListarVacunos
+│   │   │       │   │   ├── IListarVacunosInputPort.cs
+│   │   │       │   │   ├── ListarVacunosCommand.cs
+│   │   │       │   │   ├── ListarVacunosInteractor.cs
+│   │   │       │   │   └── ListarVacunosOutput.cs
+│   │   │       │   └── UpdateVacuno
+│   │   │       │       ├── IUpdateVacunoInputPort.cs
+│   │   │       │       ├── UpdateVacunoCommand.cs
+│   │   │       │       ├── UpdateVacunoInteractor.cs
+│   │   │       │       └── UpdateVacunoOutput.cs
+│   │   │       └── Validators
+│   │   │           ├── CreateVacunoValidator.cs
+│   │   │           ├── DeleteVacunoValidator.cs
+│   │   │           └── UpdateVacunoValidator.cs
+│   │   └── ZooTech.Application.csproj
+│   ├── ZooTech.Domain
+│   │   ├── Module_Celo
+│   │   │   ├── Entities
+│   │   │   │   └── Celo.cs
+│   │   │   ├── Interfaces
+│   │   │   │   └── ICeloRepository.cs
+│   │   │   └── Rules
+│   │   │       └── CeloRule.cs
+│   │   ├── Module_Fecundacion
+│   │   │   ├── Entities
+│   │   │   │   └── Fecundacion.cs
+│   │   │   ├── Interfaces
+│   │   │   │   └── IFecundacionRepository.cs
+│   │   │   └── ReadModels
+│   │   │       └── ListarFecundacion
+│   │   │           └── FecundacionListItem.cs
+│   │   ├── Module_ProduccionLeche
+│   │   │   ├── Entities
+│   │   │   │   └── Ordenio.cs
+│   │   │   ├── Interfaces
+│   │   │   │   └── IOrdenioRepository.cs
+│   │   │   └── Rules
+│   │   │       └── OrdenioRule.cs
+│   │   ├── Module_Sanidad
+│   │   │   ├── Entities
+│   │   │   │   ├── TipoPeso.cs
+│   │   │   │   ├── Triaje.cs
+│   │   │   │   ├── TriajeHistorialItem.cs
+│   │   │   │   └── VacunoOption.cs
+│   │   │   ├── Interfaces
+│   │   │   │   ├── ITipoPesoRepository.cs
+│   │   │   │   └── ITriajeRepository.cs
+│   │   │   └── Rules
+│   │   │       ├── .gitkeep
+│   │   │       └── TriajeRule.cs
+│   │   ├── Module_Vacuno
+│   │   │   ├── Entities
+│   │   │   │   └── Vacuno.cs
+│   │   │   ├── Interfaces
+│   │   │   │   └── IVacunoRepository.cs
+│   │   │   ├── ReadModels
+│   │   │   │   ├── GetArbolGenealogico
+│   │   │   │   │   ├── GetArbolGenealogicoItem.cs
+│   │   │   │   │   └── VacunoGenealogiaNode.cs
+│   │   │   │   └── ListarVacuno
+│   │   │   │       └── VacunoListItem.cs
+│   │   │   └── Rules
+│   │   │       └── VacunoRule.cs
+│   │   └── ZooTech.Domain.csproj
+│   ├── ZooTech.Infrastructure
+│   │   ├── Common
+│   │   │   └── Time
+│   │   │       └── DateTimeProvider.cs
+│   │   ├── Configuration
+│   │   │   └── VacunosConfiguration.cs
+│   │   ├── DependencyInjection.cs
+│   │   ├── Features
+│   │   │   └── DevFeatureService.cs
+│   │   ├── Persistence
+│   │   │   ├── Context
+│   │   │   │   ├── GanaderiaDbContext.cs
+│   │   │   │   └── TenantCatalogDb.cs
+│   │   │   ├── Entities
+│   │   │   │   ├── archivo.cs
+│   │   │   │   ├── bitacora_auditorium.cs
+│   │   │   │   ├── cat_caracteristica_celo.cs
+│   │   │   │   ├── cat_color.cs
+│   │   │   │   ├── cat_estado_celo.cs
+│   │   │   │   ├── cat_estado_fecundacion_vacuno.cs
+│   │   │   │   ├── cat_estado_ordenio.cs
+│   │   │   │   ├── cat_estado_registro.cs
+│   │   │   │   ├── cat_estado_sequium.cs
+│   │   │   │   ├── cat_estado_trazabilidad.cs
+│   │   │   │   ├── cat_estado_vacuno.cs
+│   │   │   │   ├── cat_formato_reporte.cs
+│   │   │   │   ├── cat_modulo.cs
+│   │   │   │   ├── cat_raza.cs
+│   │   │   │   ├── cat_resultado_fecundacion.cs
+│   │   │   │   ├── cat_sexo.cs
+│   │   │   │   ├── cat_tipo_adquisicion.cs
+│   │   │   │   ├── cat_tipo_archivo.cs
+│   │   │   │   ├── cat_tipo_fecundacion.cs
+│   │   │   │   ├── cat_tipo_peso.cs
+│   │   │   │   ├── cat_tipo_reporte.cs
+│   │   │   │   ├── cat_tipo_responsable.cs
+│   │   │   │   ├── cat_tipo_utilizacion.cs
+│   │   │   │   ├── celo_configuracion.cs
+│   │   │   │   ├── celo_registro.cs
+│   │   │   │   ├── celo_registro_caracteristica_libre.cs
+│   │   │   │   ├── fecundacion.cs
+│   │   │   │   ├── fecundacion_crium.cs
+│   │   │   │   ├── fecundacion_donante.cs
+│   │   │   │   ├── fecundacion_embrion.cs
+│   │   │   │   ├── fecundacion_inseminacion.cs
+│   │   │   │   ├── geo_departamento.cs
+│   │   │   │   ├── geo_distrito.cs
+│   │   │   │   ├── geo_provincium.cs
+│   │   │   │   ├── granja.cs
+│   │   │   │   ├── incidente_vacuno.cs
+│   │   │   │   ├── ordenio.cs
+│   │   │   │   ├── parametro_sistema.cs
+│   │   │   │   ├── periodo_sequium.cs
+│   │   │   │   ├── produccion_leche_estandar.cs
+│   │   │   │   ├── reporte_descarga.cs
+│   │   │   │   ├── reproductor_externo.cs
+│   │   │   │   ├── responsable.cs
+│   │   │   │   ├── triaje.cs
+│   │   │   │   ├── usuario.cs
+│   │   │   │   ├── v_celo_estado_vacuno.cs
+│   │   │   │   ├── v_produccion_leche_estandar_vigente.cs
+│   │   │   │   ├── v_vacuno_estado_vigente.cs
+│   │   │   │   ├── v_vacuno_utilizacion_vigente.cs
+│   │   │   │   ├── vacuno.cs
+│   │   │   │   ├── vacuno_adquisicion.cs
+│   │   │   │   ├── vacuno_estado_fecundacion_historial.cs
+│   │   │   │   ├── vacuno_estado_historial.cs
+│   │   │   │   ├── vacuno_foto.cs
+│   │   │   │   └── vacuno_utilizacion_historial.cs
+│   │   │   ├── Mappers
+│   │   │   │   └── VacunoMapper.cs
+│   │   │   ├── Models
+│   │   │   │   ├── AncestroDbDto.cs
+│   │   │   │   ├── VacunoRawRow.cs
+│   │   │   │   └── VacunoRawRowConfiguration.cs
+│   │   │   ├── Modules
+│   │   │   │   ├── Module_Celo
+│   │   │   │   │   └── Repositories
+│   │   │   │   │       └── CeloRepository.cs
+│   │   │   │   ├── Module_Fecundacion
+│   │   │   │   │   └── Repositories
+│   │   │   │   │       └── FecundacionRepository.cs
+│   │   │   │   ├── Module_ProduccionLeche
+│   │   │   │   │   ├── Configurations
+│   │   │   │   │   │   └── .gitkeep
+│   │   │   │   │   ├── Entities
+│   │   │   │   │   │   └── .gitkeep
+│   │   │   │   │   ├── Mappers
+│   │   │   │   │   │   └── .gitkeep
+│   │   │   │   │   └── Repositories
+│   │   │   │   │       ├── .gitkeep
+│   │   │   │   │       └── OrdenioRepository.cs
+│   │   │   │   ├── Module_Sanidad
+│   │   │   │   │   └── Repositories
+│   │   │   │   │       ├── TipoPesoRepository.cs
+│   │   │   │   │       └── TriajeRepository.cs
+│   │   │   │   └── Module_Vacuno
+│   │   │   │       └── Repositories
+│   │   │   │           └── VacunoRepository.cs
+│   │   │   └── TenantCatalogDb.cs
+│   │   ├── Reports
+│   │   │   └── Vacunos
+│   │   │       └── ArbolGenealogicoExcelExportService.cs
+│   │   ├── Tenant
+│   │   │   ├── ITenantDbContextFactory.cs
+│   │   │   ├── ITenantStore.cs
+│   │   │   ├── TenantContext.cs
+│   │   │   ├── TenantDbContextFactory.cs
+│   │   │   ├── TenantInfo.cs
+│   │   │   ├── TenantProvisioningService.cs
+│   │   │   └── TenantStore.cs
+│   │   ├── Time
+│   │   │   └── DateTimeProvider.cs
+│   │   └── ZooTech.Infrastructure.csproj
+│   └── ZooTech.InterfaceAdapters
+│       ├── Controllers
+│       │   └── HomeController.cs
+│       ├── DTOs
+│       │   ├── GeneralResponseDTO.cs
+│       │   └── PagedResponse.cs
+│       ├── DependencyInjection.cs
+│       ├── Middleware
+│       │   ├── .gitkeep
+│       │   └── ExceptionHandlingMiddleware.cs
+│       ├── Modules
+│       │   ├── Module_Celo
+│       │   │   ├── Controllers
+│       │   │   │   └── CeloController.cs
+│       │   │   ├── DTOs
+│       │   │   │   ├── Requests
+│       │   │   │   │   ├── CreateCeloRequest.cs
+│       │   │   │   │   ├── DeleteCeloRequest.cs
+│       │   │   │   │   └── UpdateCeloRequest.cs
+│       │   │   │   └── Responses
+│       │   │   │       ├── CeloItemResponse.cs
+│       │   │   │       ├── CreateCeloResponse.cs
+│       │   │   │       └── UpdateCeloResponse.cs
+│       │   │   └── Mappers
+│       │   │       └── CeloMapper.cs
+│       │   ├── Module_Fecundacion
+│       │   │   ├── Controllers
+│       │   │   │   └── FecundacionController.cs
+│       │   │   ├── DTOs
+│       │   │   │   ├── Requests
+│       │   │   │   │   └── CreateFecundacionRequest.cs
+│       │   │   │   └── Responses
+│       │   │   │       ├── CreateFecundacionResponse.cs
+│       │   │   │       └── FecundacionItemResponse.cs
+│       │   │   └── Mappers
+│       │   │       └── FecundacionMapper.cs
+│       │   ├── Module_ProduccionLeche
+│       │   │   ├── Controllers
+│       │   │   │   ├── .gitkeep
+│       │   │   │   └── ProduccionLecheController.cs
+│       │   │   ├── DTOs
+│       │   │   │   ├── Requests
+│       │   │   │   │   ├── .gitkeep
+│       │   │   │   │   ├── CreateOrdenioRequest.cs
+│       │   │   │   │   ├── DeleteOrdenioRequest.cs
+│       │   │   │   │   └── UpdateOrdenioRequest.cs
+│       │   │   │   └── Responses
+│       │   │   │       ├── .gitkeep
+│       │   │   │       ├── ListOrdeniosResponse.cs
+│       │   │   │       ├── OrdenioResponse.cs
+│       │   │   │       └── PaginationResponse.cs
+│       │   │   └── Mappers
+│       │   │       ├── .gitkeep
+│       │   │       └── ProduccionLecheMapper.cs
+│       │   ├── Module_Sanidad
+│       │   │   ├── Controllers
+│       │   │   │   └── TriajeController.cs
+│       │   │   ├── DTOs
+│       │   │   │   ├── Requests
+│       │   │   │   │   ├── DeleteTriajeRequest.cs
+│       │   │   │   │   └── TriajeRequest.cs
+│       │   │   │   └── Responses
+│       │   │   │       └── TriajeResponse.cs
+│       │   │   └── Mappers
+│       │   │       └── TriajeMapper.cs
+│       │   └── Module_Vacuno
+│       │       ├── Controllers
+│       │       │   └── VacunoController.cs
+│       │       ├── DTOs
+│       │       │   ├── Requests
+│       │       │   │   ├── CreateVacunoRequest.cs
+│       │       │   │   ├── DeleteVacunoRequest.cs
+│       │       │   │   └── UpdateVacunoRequest.cs
+│       │       │   └── Responses
+│       │       │       ├── VacunoActivityPointResponse.cs
+│       │       │       ├── VacunoActivityStatsResponse.cs
+│       │       │       ├── VacunoItemResponse.cs
+│       │       │       └── VacunoResponse.cs
+│       │       └── Mappers
+│       │           └── VacunoMapper.cs
+│       ├── Properties
+│       │   └── launchSettings.json
+│       ├── ZooTech.InterfaceAdapters.csproj
+│       ├── ZooTech.InterfaceAdapters.http
+│       ├── appsettings.Development.json
+│       └── appsettings.json
+└── tests
+    ├── Integration
+    │   ├── ZooTech.API.IntegrationTests
+    │   │   ├── Controllers
+    │   │   │   └── VacunoControllerTests.cs
+    │   │   └── ZooTech.API.IntegrationTests.csproj
+    │   ├── ZooTech.Infrastructure.IntegrationTests
+    │   │   └── ZooTech.Infrastructure.IntegrationTests.csproj
+    │   └── ZooTech.InterfaceAdapters.IntegrationTests
+    │       └── ZooTech.InterfaceAdapters.IntegrationTests.csproj
+    └── Unit
+        ├── ZooTech.Application.UnitTests
+        │   ├── Modules
+        │   │   ├── Module_Celo
+        │   │   │   └── UseCases
+        │   │   │       └── GetCelos
+        │   │   │           └── GetCelosInteractorTests.cs
+        │   │   ├── Module_Fecundacion
+        │   │   │   └── UseCases
+        │   │   │       └── CreateFecundacion
+        │   │   │           └── CreateFecundacionInteractorTests.cs
+        │   │   ├── Module_ProduccionLeche
+        │   │   │   └── UseCases
+        │   │   │       └── CreateOrdenio
+        │   │   │           └── CreateOrdenioInteractorTests.cs
+        │   │   ├── Module_Sanidad
+        │   │   │   └── UseCases
+        │   │   │       ├── GetAllTipoPesos
+        │   │   │       │   └── GetAllTipoPesosUseCaseTests.cs
+        │   │   │       ├── GetAllTriajes
+        │   │   │       │   └── GetAllTriajesUseCaseTests.cs
+        │   │   │       └── GetAllVacunosSanidad
+        │   │   │           └── GetAllVacunosSanidadUseCaseTests.cs
+        │   │   └── Module_Vacuno
+        │   │       └── UseCases
+        │   │           ├── ExportarArbolGenealogicoInteractorTests.cs
+        │   │           └── ListarVacunosInteractorTests.cs
+        │   └── ZooTech.Application.UnitTests.csproj
+        ├── ZooTech.Domain.UnitTests
+        │   ├── Module_ProduccionLeche
+        │   │   └── OrdenioTests.cs
+        │   └── ZooTech.Domain.UnitTests.csproj
+        ├── ZooTech.Infrastructure.UnitTests
+        │   └── ZooTech.Infrastructure.UnitTests.csproj
+        └── ZooTech.InterfaceAdapters.UnitTests
+            └── ZooTech.InterfaceAdapters.UnitTests.csproj

@@ -7,10 +7,8 @@ internal sealed class UpdateTriajeValidator : AbstractValidator<UpdateTriajeComm
 {
     public UpdateTriajeValidator()
     {
-        RuleFor(x => x.VacunoId).TriajeVacunoIdRules();
         RuleFor(x => x.TipoPesoCode).TriajeTipoPesoCodeRules();
         RuleFor(x => x.PesoKg).TriajePesoKgRules();
-        RuleFor(x => x.EstadoRegistroCode).TriajeEstadoRegistroCodeRules();
         RuleFor(x => x.Observaciones).TriajeObservacionesRules(x => x.Observaciones is not null);
     }
 }

@@ -1,6 +1,7 @@
 using ZooTech.Application.Common.Gateway.Services;
 using ZooTech.Application.Common.Gateway.Time;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GenerateOrdeniosPdf;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GenerateTriajesPdf;
 using ZooTech.Domain.Module_ProduccionLeche.Entities;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
 
@@ -83,6 +84,9 @@ public class GenerateOrdeniosPdfInteractorTests
             WasCalled = true;
             return _content;
         }
+
+        public byte[] GenerateTriajesReport(GenerateTriajesPdfDocument document)
+            => throw new NotSupportedException();
     }
 
     private sealed class FakeComparationPdfGeneratorService : IOrdeniosComparationPdfGeneratorService
@@ -107,6 +111,8 @@ public class GenerateOrdeniosPdfInteractorTests
     {
         public long? CapturedVacunoId { get; private set; }
         public string? CapturedEstadoOrdenioCode { get; private set; }
+
+        public Task<bool> HasActiveRecordsByVacunoAsync(long vacunoId, CancellationToken cancellationToken) => Task.FromResult(false);
 
         public Task<bool> ExistsCodigoAsync(string codigo, CancellationToken cancellationToken)
             => Task.FromResult(false);
@@ -162,3 +168,4 @@ public class GenerateOrdeniosPdfInteractorTests
             => Task.FromResult(ordenio);
     }
 }
+

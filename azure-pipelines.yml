@@ -19,7 +19,7 @@ steps:
     displayName: 'Install tools'
 
   - script: |
-      D:\tools\dotnet-sonarscanner begin /k:"zootech-backend" /n:"ZooTech Backend" /d:sonar.token="$(SONAR_TOKEN)" /d:sonar.host.url="$(SONAR_HOST_URL)" /d:sonar.cs.vscoveragexml.reportsPaths="coverage.xml" /d:sonar.qualitygate.wait=true
+      D:\tools\dotnet-sonarscanner begin /k:"zootech-backend" /n:"ZooTech Backend" /d:sonar.token="$(SONAR_TOKEN)" /d:sonar.host.url="$(SONAR_HOST_URL)" /d:sonar.cs.vscoveragexml.reportsPaths="$(Build.SourcesDirectory)\coverage.xml" /d:sonar.qualitygate.wait=true
     displayName: 'SonarQube Begin'
 
   - script: |
@@ -27,7 +27,7 @@ steps:
     displayName: 'Build'
 
   - script: |
-      D:\tools\dotnet-coverage collect "dotnet test ""ZooTech Backend - Solution.slnx"" --no-build" -f xml -o "coverage.xml"
+      D:\tools\dotnet-coverage collect "dotnet test ""ZooTech Backend - Solution.slnx"" --no-build" -f xml -o "$(Build.SourcesDirectory)\coverage.xml"
     displayName: 'Test & Coverage'
 
   - script: |
