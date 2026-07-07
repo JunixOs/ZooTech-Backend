@@ -13,6 +13,9 @@ public sealed class ListadoVacunosRequest
     [FromQuery(Name = "q")]
     public string? Q { get; init; }
 
+    [FromQuery(Name = "search")]
+    public string? Search { get; init; }
+
     [FromQuery(Name = "codigo")]
     public string? Codigo { get; init; }
 
@@ -45,5 +48,7 @@ public sealed class ListadoVacunosRequest
 
     [FromQuery(Name = "limit")]
     public string? Limit { get; init; }
-}
 
+    [FromQuery(Name = "pageSize")]
+    public string? PageSize { get; init; }
+}

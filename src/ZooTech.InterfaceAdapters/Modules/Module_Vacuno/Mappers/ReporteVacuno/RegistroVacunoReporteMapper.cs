@@ -21,6 +21,7 @@ public static class RegistroVacunoReporteMapper
             request.FechaDesde,
             request.FechaHasta,
             request.Q,
+            request.Search,
             request.Codigo,
             request.FechaRegistro,
             request.Nombre,
@@ -31,7 +32,8 @@ public static class RegistroVacunoReporteMapper
             request.AptoPara,
             request.Formato,
             request.Page,
-            request.Limit);
+            request.Limit,
+            request.PageSize);
     }
 
     public static ListadoVacunosReporteResponse ToResponse(ListarVacunosReporteResponse response)
@@ -48,6 +50,9 @@ public static class RegistroVacunoReporteMapper
                     item.Estado,
                     item.EstadoRegistro))
                 .ToList(),
+            response.TotalCount,
+            response.Page,
+            response.PageSize,
             new ReporteVacunoResumenResponse(response.Resumen.TotalVacunos),
             new ReporteVacunoFiltrosResponse(
                 response.Filtros.FechaDesde,

@@ -2,6 +2,9 @@ namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.Lista
 
 public sealed record ListarVacunosReporteResponse(
     IReadOnlyCollection<VacunoListadoReporteItem> Data,
+    int TotalCount,
+    int Page,
+    int PageSize,
     ReporteVacunoListadoResumen Resumen,
     ReporteVacunoListadoFiltros Filtros,
     string? DownloadUrl);

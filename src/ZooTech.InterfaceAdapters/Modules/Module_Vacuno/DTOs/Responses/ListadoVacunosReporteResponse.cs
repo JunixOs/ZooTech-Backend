@@ -2,6 +2,9 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses;
 
 public sealed record ListadoVacunosReporteResponse(
     IReadOnlyCollection<VacunoListadoItemResponse> Data,
+    int TotalCount,
+    int Page,
+    int PageSize,
     ReporteVacunoResumenResponse Resumen,
     ReporteVacunoFiltrosResponse Filtros,
     string? DownloadUrl);
@@ -31,4 +34,3 @@ public sealed record ReporteVacunoFiltrosResponse(
     string? EstadoRegistro,
     string? AptoPara,
     string Formato);
-

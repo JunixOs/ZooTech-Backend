@@ -5,8 +5,8 @@ namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.Lista
 public sealed class ListarVacunosReporteUseCase : IListarVacunosReporteUseCase
 {
     private const int DefaultPage = 1;
-    private const int DefaultLimit = 10;
-    private const int MaxLimit = 100;
+    private const int DefaultPageSize = 20;
+    private const int MaxPageSize = 100;
     private readonly IListadoVacunosReporteReadRepository _repository;
 
     public ListarVacunosReporteUseCase(IListadoVacunosReporteReadRepository repository)
@@ -23,13 +23,14 @@ public sealed class ListarVacunosReporteUseCase : IListarVacunosReporteUseCase
         var fechaRegistro = ParseDate(query.FechaRegistro);
         var formato = Normalize(query.Formato) ?? "json";
         var page = ParsePositiveInt(query.Page, DefaultPage);
-        var limit = Math.Min(ParsePositiveInt(query.Limit, DefaultLimit), MaxLimit);
+        var pageSize = Math.Min(ParsePositiveInt(query.PageSize ?? query.Limit, DefaultPageSize), MaxPageSize);
+        var search = Normalize(query.Search) ?? Normalize(query.Q);
 
         var result = await _repository.ListarAsync(
             new ListadoVacunosReporteReadQuery(
                 fechaDesde,
                 fechaHasta,
-                Normalize(query.Q),
+                search,
                 Normalize(query.Codigo),
                 fechaRegistro,
                 Normalize(query.Nombre),
@@ -39,7 +40,7 @@ public sealed class ListarVacunosReporteUseCase : IListarVacunosReporteUseCase
                 NormalizeEstadoRegistro(query.EstadoRegistro),
                 Normalize(query.AptoPara),
                 page,
-                limit),
+                pageSize),
             cancellationToken);
 
         var items = result.Items
@@ -56,11 +57,14 @@ public sealed class ListarVacunosReporteUseCase : IListarVacunosReporteUseCase
 
         return new ListarVacunosReporteResponse(
             items,
+            result.Total,
+            page,
+            pageSize,
             new ReporteVacunoListadoResumen(result.Total),
             new ReporteVacunoListadoFiltros(
                 fechaDesde,
                 fechaHasta,
-                Normalize(query.Q),
+                search,
                 Normalize(query.Codigo),
                 fechaRegistro,
                 Normalize(query.Nombre),

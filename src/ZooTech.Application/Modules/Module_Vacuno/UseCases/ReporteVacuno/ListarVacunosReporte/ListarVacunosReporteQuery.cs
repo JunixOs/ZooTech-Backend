@@ -4,6 +4,7 @@ public sealed record ListarVacunosReporteQuery(
     string? FechaDesde,
     string? FechaHasta,
     string? Q,
+    string? Search,
     string? Codigo,
     string? FechaRegistro,
     string? Nombre,
@@ -14,4 +15,5 @@ public sealed record ListarVacunosReporteQuery(
     string? AptoPara,
     string? Formato,
     string? Page,
-    string? Limit);
+    string? Limit,
+    string? PageSize);
