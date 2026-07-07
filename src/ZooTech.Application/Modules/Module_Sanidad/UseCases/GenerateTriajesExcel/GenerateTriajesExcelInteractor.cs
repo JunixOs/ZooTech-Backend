@@ -35,15 +35,19 @@ internal sealed class GenerateTriajesExcelInteractor : IGenerateTriajesExcelInpu
             query.Nombre,
             query.TipoPeso,
             query.PesoKg,
+            query.VacunoId,
             cancellationToken: cancellationToken);
 
         var document = new GenerateTriajesExcelDocument(
             triajes.Select(TriajeMapper.ToOutput).ToList(),
             query.Fecha,
+            query.FechaDesde,
+            query.FechaHasta,
             query.Codigo,
             query.Nombre,
             query.TipoPeso,
             query.PesoKg,
+            query.VacunoId,
             _dateTimeProvider.ServerNow);
 
         return new GenerateTriajesExcelOutput(
