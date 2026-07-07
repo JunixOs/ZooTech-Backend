@@ -21,7 +21,6 @@ using ZooTech.Application.Modules.Module_Sanidad.UseCases.UpdateTriaje;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GenerateTriajesPdf;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GenerateTriajesExcel;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetHistorialGeneral;
-using ZooTech.Application.Modules.Module_Sanidad.UseCases;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.CreateVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetVacunoById;
@@ -82,6 +81,11 @@ using ZooTech.Application.Common.Behaviors.Module_Celo.GetReporteCelos;
 using ZooTech.Application.Common.Behaviors.Module_Celo.GetVacasEnCelo;
 using ZooTech.Application.Common.Behaviors.Module_Celo.ListCelos;
 using ZooTech.Application.Common.Behaviors.Module_Celo.ListReporteCeloGeneral;
+using ZooTech.Application.Common.Behaviors.Module_Sanidad.GenerateTriajesExcel;
+using ZooTech.Application.Common.Behaviors.Module_Sanidad.GenerateTriajesPdf;
+using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetHistorialGeneral;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetDetalleTriajeByVacunoId;
+using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetDetallesTriajeByVacunoId;
 
 
 namespace ZooTech.Application;
@@ -121,10 +125,17 @@ public static class DependencyInjection
         services.AddScoped<IUpdateTriajeBehaviorPipelineFactory, UpdateTriajeBehaviorPipelineFactory>();
         services.AddScoped<ICommandValidator<UpdateTriajeCommand>, UpdateTriajeValidator>();
 
-        services.AddScoped<IGetDetallesTriajeByVacunoIdInputPort, GetDetallesTriajeByVacunoIdInteractor>();
-        services.AddScoped<IGenerateTriajesPdfInputPort, GenerateTriajesPdfInteractor>();
         services.AddScoped<IGenerateTriajesExcelInputPort, GenerateTriajesExcelInteractor>();
+        services.AddScoped<IGenerateTriajesExcelBehaviorPipelineFactory, GenerateTriajesExcelBehaviorPipelineFactory>();
+
+        services.AddScoped<IGenerateTriajesPdfInputPort, GenerateTriajesPdfInteractor>();
+        services.AddScoped<IGenerateTriajesPdfBehaviorPipelineFactory, GenerateTriajesPdfBehaviorPipelineFactory>();
+
         services.AddScoped<IGetHistorialGeneralInputPort, GetHistorialGeneralInteractor>();
+        services.AddScoped<IGetHistorialGeneralBehaviorPipelineFactory, GetHistorialGeneralBehaviorPipelineFactory>();
+
+        services.AddScoped<IGetDetallesTriajeByVacunoIdInputPort, GetDetallesTriajeByVacunoIdInteractor>();
+        services.AddScoped<IGetDetallesTriajeByVacunoIdBehaviorPipelineFactory, GetDetallesTriajeByVacunoIdBehaviorPipelineFactory>();
 
         // ============================================
         // Use Cases - Module_ProduccionLeche

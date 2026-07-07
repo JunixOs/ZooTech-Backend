@@ -12,9 +12,9 @@ public sealed class GetHistorialGeneralInteractor : IGetHistorialGeneralInputPor
         _repository = repository;
     }
 
-    public async Task<GetHistorialGeneralOutput> HandleAsync(string? fechaDesde = null, string? fechaHasta = null, CancellationToken cancellationToken = default)
+    public async Task<GetHistorialGeneralOutput> HandleAsync(GetHistorialGeneralCommand cmd, CancellationToken cancellationToken = default)
     {
-        var items = await _repository.GetHistorialGeneralAsync(fechaDesde, fechaHasta, cancellationToken);
+        var items = await _repository.GetHistorialGeneralAsync(cmd.FechaDesde, cmd.FechaHasta, cancellationToken);
         var output = items.Select(t => new HistorialTriajeItemOutput(t.Id, t.FechaHora, t.TipoPesoCode, t.PesoKg)).ToList();
         return new GetHistorialGeneralOutput(output);
     }

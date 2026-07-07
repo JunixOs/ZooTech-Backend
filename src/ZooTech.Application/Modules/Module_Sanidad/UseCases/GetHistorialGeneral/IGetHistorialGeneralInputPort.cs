@@ -2,5 +2,5 @@ namespace ZooTech.Application.Modules.Module_Sanidad.UseCases.GetHistorialGenera
 
 public interface IGetHistorialGeneralInputPort
 {
-    Task<GetHistorialGeneralOutput> HandleAsync(string? fechaDesde = null, string? fechaHasta = null, CancellationToken cancellationToken = default);
+    Task<GetHistorialGeneralOutput> HandleAsync(GetHistorialGeneralCommand cmd, CancellationToken cancellationToken = default);
 }
