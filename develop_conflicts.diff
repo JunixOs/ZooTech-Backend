@@ -1,4 +1,4 @@
-﻿diff --cc src/ZooTech.API/appsettings.json
+diff --cc src/ZooTech.API/appsettings.json
 index fc77529,a4fafe6..0000000
 --- a/src/ZooTech.API/appsettings.json
 +++ b/src/ZooTech.API/appsettings.json
@@ -8,7 +8,7 @@ index fc77529,a4fafe6..0000000
     },
 ++<<<<<<< HEAD
  +  "ConnectionStrings": {
- +    "DefaultConnection": "Server=69.164.246.85,1433;Database=zootech;User Id=sebastian.ramirez;Password=ZooTech@2026#10;TrustServerCertificate=True;"
+ +    "DefaultConnection": "Server=69.164.246.85,1433;Database=zootech;User Id=<db_user>;Password=<db_password>;TrustServerCertificate=True;"
  +  },
  +  "Database": {
  +    "ConnectionName": "DefaultConnection"
@@ -25,7 +25,7 @@ index fc77529,a4fafe6..0000000
 ++=======
 + 
 +   "ConnectionStrings": {
-+     "DefaultConnection": "Server=69.164.246.85,1433;Database=zootech;User Id=aracely.gonzales;Password=ZooTech@2026#03;TrustServerCertificate=True;"
++     "DefaultConnection": "Server=69.164.246.85,1433;Database=zootech;User Id=<db_user>;Password=<db_password>;TrustServerCertificate=True;"
 ++>>>>>>> origin/develop
     },
  -
@@ -116,7 +116,7 @@ index 1572740,aae888d..0000000
 ++<<<<<<< HEAD
  +            ?? throw new VacunoNotFoundException($"No existe el vacuno con el ID {id}.");
  +
- +        // Validar dependencias (PDF p├íg 10: "Solo se elimina si no tiene registros dependientes activos: triajes, incidentes, orde├▒os, etc.")
+ +        // Validar dependencias (PDF p+�g 10: "Solo se elimina si no tiene registros dependientes activos: triajes, incidentes, orde+�os, etc.")
  +        if (await _celoRepository.HasActiveRecordsByVacunoAsync(id, cancellationToken))
  +        {
  +            throw new VacunoHasDependenciesException("El vacuno tiene registros de celo activos.");
@@ -124,7 +124,7 @@ index 1572740,aae888d..0000000
  +
  +        if (await _ordenioRepository.HasActiveRecordsByVacunoAsync(id, cancellationToken))
  +        {
- +            throw new VacunoHasDependenciesException("El vacuno tiene registros de orde├▒o activos.");
+ +            throw new VacunoHasDependenciesException("El vacuno tiene registros de orde+�o activos.");
  +        }
  +
  +        var triajes = await _triajeRepository.GetHistorialByVacunoIdAsync(id, cancellationToken);
@@ -133,7 +133,7 @@ index 1572740,aae888d..0000000
  +            throw new VacunoHasDependenciesException("El vacuno tiene registros de triaje activos.");
  +        }
 ++=======
-+             ?? throw new NotFoundException("No se encontr├│ el vacuno solicitado.");
++             ?? throw new NotFoundException("No se encontr+� el vacuno solicitado.");
 ++>>>>>>> origin/develop
   
           try
@@ -205,10 +205,10 @@ index d323859,2fc0ff8..0000000
 @@@ -10,44 -9,15 +9,54 @@@ internal sealed class CreateVacunoValid
       {
           RuleFor(x => x.Codigo)
-              .NotEmpty().WithMessage("El c├│digo del vacuno es obligatorio.")
--             .MaximumLength(10).WithMessage("El c├│digo no puede superar los 10 caracteres.")
--             .Matches("^[A-Z0-9]+$").WithMessage("El c├│digo debe estar en may├║sculas y contener solo letras y n├║meros.");
-+             .MaximumLength(15).WithMessage("El c├│digo no puede superar los 15 caracteres.");
+              .NotEmpty().WithMessage("El c+�digo del vacuno es obligatorio.")
+-             .MaximumLength(10).WithMessage("El c+�digo no puede superar los 10 caracteres.")
+-             .Matches("^[A-Z0-9]+$").WithMessage("El c+�digo debe estar en may+�sculas y contener solo letras y n+�meros.");
++             .MaximumLength(15).WithMessage("El c+�digo no puede superar los 15 caracteres.");
   
 ++<<<<<<< HEAD
  +        RuleFor(x => x.Codigo)
@@ -222,20 +222,20 @@ index d323859,2fc0ff8..0000000
  +            .NotEmpty().WithMessage("La fecha de nacimiento es obligatoria.");
  +
  +        RuleFor(x => x.TipoAdquisicionCode)
- +            .NotEmpty().WithMessage("El tipo de adquisici├│n es obligatorio.")
- +            .MaximumLength(30).WithMessage("El c├│digo de tipo de adquisici├│n no puede superar los 30 caracteres.");
+ +            .NotEmpty().WithMessage("El tipo de adquisici+�n es obligatorio.")
+ +            .MaximumLength(30).WithMessage("El c+�digo de tipo de adquisici+�n no puede superar los 30 caracteres.");
  +
  +        RuleFor(x => x.RazaCode)
  +            .NotEmpty().WithMessage("La raza es obligatoria.")
- +            .MaximumLength(30).WithMessage("El c├│digo de raza no puede superar los 30 caracteres.");
+ +            .MaximumLength(30).WithMessage("El c+�digo de raza no puede superar los 30 caracteres.");
  +
  +        RuleFor(x => x.ColorCode)
  +            .NotEmpty().WithMessage("El color es obligatorio.")
- +            .MaximumLength(30).WithMessage("El c├│digo de color no puede superar los 30 caracteres.");
+ +            .MaximumLength(30).WithMessage("El c+�digo de color no puede superar los 30 caracteres.");
  +
  +        RuleFor(x => x.SexoCode)
  +            .NotEmpty().WithMessage("El sexo es obligatorio.")
- +            .MaximumLength(10).WithMessage("El c├│digo de sexo no puede superar los 10 caracteres.");
+ +            .MaximumLength(10).WithMessage("El c+�digo de sexo no puede superar los 10 caracteres.");
  +
  +        RuleFor(x => x.GranjaId)
  +            .GreaterThan(0).WithMessage("El ID de la granja debe ser mayor que cero.");
@@ -246,7 +246,7 @@ index d323859,2fc0ff8..0000000
  +            .WithMessage("Las observaciones no pueden superar las 30 palabras.");
  +
  +        RuleFor(x => x.PrecioCompra)
- +            .NotEmpty().When(x => x.TipoAdquisicionCode == "COMPRA").WithMessage("El precio de compra es obligatorio si la adquisici├│n es por compra.");
+ +            .NotEmpty().When(x => x.TipoAdquisicionCode == "COMPRA").WithMessage("El precio de compra es obligatorio si la adquisici+�n es por compra.");
 ++=======
 +         RuleFor(x => x.Nombre).VacunoNombreRules();
 +         RuleFor(x => x.FechaNacimiento).VacunoFechaNacimientoRules();
@@ -570,7 +570,7 @@ index eae758c,7b09f43..0000000
  +
  +using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Services;
 ++=======
-+ ´╗┐using Microsoft.Extensions.DependencyInjection;
++ �++using Microsoft.Extensions.DependencyInjection;
 ++>>>>>>> origin/develop
   
   namespace ZooTech.InterfaceAdapters;
@@ -747,7 +747,7 @@ index 7387321,6bec7ef..0000000
  +                error = new
  +                {
  +                    code = "VALIDATION_ERROR",
- +                    message = "Los datos enviados no son v├ílidos.",
+ +                    message = "Los datos enviados no son v+�lidos.",
  +                    details = new[]
  +                    {
  +                        new { field = "codigoPadre", message = "Un vacuno no puede ser su propio padre." }
@@ -763,7 +763,7 @@ index 7387321,6bec7ef..0000000
  +                error = new
  +                {
  +                    code = "VALIDATION_ERROR",
- +                    message = "Los datos enviados no son v├ílidos.",
+ +                    message = "Los datos enviados no son v+�lidos.",
  +                    details = new[]
  +                    {
  +                        new { field = "codigoMadre", message = "Un vacuno no puede ser su propia madre." }
@@ -785,7 +785,7 @@ index 7387321,6bec7ef..0000000
  +                    error = new
  +                    {
  +                        code = "VALIDATION_ERROR",
- +                        message = "Los datos enviados no son v├ílidos.",
+ +                        message = "Los datos enviados no son v+�lidos.",
  +                        details = new[]
  +                        {
  +                            new { field = "codigoPadre", message = "El vacuno padre especificado no existe." }
@@ -824,7 +824,7 @@ index 7387321,6bec7ef..0000000
  +                    error = new
  +                    {
  +                        code = "VALIDATION_ERROR",
- +                        message = "Los datos enviados no son v├ílidos.",
+ +                        message = "Los datos enviados no son v+�lidos.",
  +                        details = new[]
  +                        {
  +                            new { field = "codigoMadre", message = "El vacuno madre especificado no existe." }
@@ -861,10 +861,10 @@ index 7387321,6bec7ef..0000000
  +                    error = new
  +                    {
  +                        code = "VALIDATION_ERROR",
- +                        message = "Los datos enviados no son v├ílidos.",
+ +                        message = "Los datos enviados no son v+�lidos.",
  +                        details = new[]
  +                        {
- +                            new { field = "granjaId", message = "La granja seleccionada no existe o no est├í activa." }
+ +                            new { field = "granjaId", message = "La granja seleccionada no existe o no est+� activa." }
  +                        }
  +                    }
  +                });
@@ -885,10 +885,10 @@ index 7387321,6bec7ef..0000000
  +                        error = new
  +                        {
  +                            code = "VALIDATION_ERROR",
- +                            message = "Los datos enviados no son v├ílidos.",
+ +                            message = "Los datos enviados no son v+�lidos.",
  +                            details = new[]
  +                            {
- +                                new { field = "codigoDistrito", message = "El distrito especificado no es v├ílido o no est├í registrado." }
+ +                                new { field = "codigoDistrito", message = "El distrito especificado no es v+�lido o no est+� registrado." }
  +                            }
  +                        }
  +                    });
@@ -919,10 +919,10 @@ index 7387321,6bec7ef..0000000
  +                error = new
  +                {
  +                    code = "VALIDATION_ERROR",
- +                    message = "Los datos enviados no son v├ílidos.",
+ +                    message = "Los datos enviados no son v+�lidos.",
  +                    details = new[]
  +                    {
- +                        new { field = "granjaId", message = "La granja seleccionada no es v├ílida o no ha sido especificada." }
+ +                        new { field = "granjaId", message = "La granja seleccionada no es v+�lida o no ha sido especificada." }
  +                    }
  +                }
  +            });
@@ -986,7 +986,7 @@ index 7387321,6bec7ef..0000000
  +                error = new
  +                {
  +                    code = "VALIDATION_ERROR",
- +                    message = "Los datos enviados no son v├ílidos.",
+ +                    message = "Los datos enviados no son v+�lidos.",
  +                    details = new[]
  +                    {
  +                        new { field = "codigoPadre", message = "Un vacuno no puede ser su propio padre." }
@@ -1002,7 +1002,7 @@ index 7387321,6bec7ef..0000000
  +                error = new
  +                {
  +                    code = "VALIDATION_ERROR",
- +                    message = "Los datos enviados no son v├ílidos.",
+ +                    message = "Los datos enviados no son v+�lidos.",
  +                    details = new[]
  +                    {
  +                        new { field = "codigoMadre", message = "Un vacuno no puede ser su propia madre." }
@@ -1024,7 +1024,7 @@ index 7387321,6bec7ef..0000000
  +                    error = new
  +                    {
  +                        code = "VALIDATION_ERROR",
- +                        message = "Los datos enviados no son v├ílidos.",
+ +                        message = "Los datos enviados no son v+�lidos.",
  +                        details = new[]
  +                        {
  +                            new { field = "codigoPadre", message = "El vacuno padre especificado no existe." }
@@ -1063,7 +1063,7 @@ index 7387321,6bec7ef..0000000
  +                    error = new
  +                    {
  +                        code = "VALIDATION_ERROR",
- +                        message = "Los datos enviados no son v├ílidos.",
+ +                        message = "Los datos enviados no son v+�lidos.",
  +                        details = new[]
  +                        {
  +                            new { field = "codigoMadre", message = "El vacuno madre especificado no existe." }
@@ -1100,10 +1100,10 @@ index 7387321,6bec7ef..0000000
  +                    error = new
  +                    {
  +                        code = "VALIDATION_ERROR",
- +                        message = "Los datos enviados no son v├ílidos.",
+ +                        message = "Los datos enviados no son v+�lidos.",
  +                        details = new[]
  +                        {
- +                            new { field = "granjaId", message = "La granja seleccionada no existe o no est├í activa." }
+ +                            new { field = "granjaId", message = "La granja seleccionada no existe o no est+� activa." }
  +                        }
  +                    }
  +                });
@@ -1124,10 +1124,10 @@ index 7387321,6bec7ef..0000000
  +                        error = new
  +                        {
  +                            code = "VALIDATION_ERROR",
- +                            message = "Los datos enviados no son v├ílidos.",
+ +                            message = "Los datos enviados no son v+�lidos.",
  +                            details = new[]
  +                            {
- +                                new { field = "codigoDistrito", message = "El distrito especificado no es v├ílido o no est├í registrado." }
+ +                                new { field = "codigoDistrito", message = "El distrito especificado no es v+�lido o no est+� registrado." }
  +                            }
  +                        }
  +                    });
@@ -1158,10 +1158,10 @@ index 7387321,6bec7ef..0000000
  +                error = new
  +                {
  +                    code = "VALIDATION_ERROR",
- +                    message = "Los datos enviados no son v├ílidos.",
+ +                    message = "Los datos enviados no son v+�lidos.",
  +                    details = new[]
  +                    {
- +                        new { field = "granjaId", message = "La granja seleccionada no es v├ílida o no ha sido especificada." }
+ +                        new { field = "granjaId", message = "La granja seleccionada no es v+�lida o no ha sido especificada." }
  +                    }
  +                }
  +            });
@@ -1994,7 +1994,7 @@ index c7389b4,40e79c4..0000000
   public sealed class FakeCeloRepository : ICeloRepository
   {
 -     public List<Celo> Celos { get; set; } = [];
-+     // Esta colecci├│n es la que usa GetAllAsync.
++     // Esta colecci+�n es la que usa GetAllAsync.
 +     public List<CeloListItem> Celos { get; set; } = [];
 + 
       public Dictionary<long, int> Counts { get; set; } = [];
