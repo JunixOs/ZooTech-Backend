@@ -11,7 +11,7 @@ public class PdfGeneratorServiceTests
     {
         var service = new PdfGeneratorService();
         var document = new GenerateOrdeniosPdfDocument(
-            Array.Empty<OrdenioOutput>(),
+            Array.Empty<OrdenioListOutput>(),
             VacunoId: null,
             EstadoOrdenioCode: null,
             FechaDesde: null,
@@ -29,7 +29,7 @@ public class PdfGeneratorServiceTests
     {
         var service = new PdfGenerateComparationService();
         var document = new GenerateOrdeniosPdfDocument(
-            Array.Empty<OrdenioOutput>(),
+            Array.Empty<OrdenioListOutput>(),
             VacunoId: null,
             EstadoOrdenioCode: null,
             FechaDesde: null,
@@ -50,9 +50,9 @@ public class PdfGeneratorServiceTests
         var document = new GenerateOrdeniosPdfDocument(
             new[]
             {
-                new OrdenioOutput(1, "ORD-001", generatedAt.AddDays(-2), 1, "Luna", 2, "Juan Perez", 10, "ACTIVO", null, generatedAt, generatedAt),
-                new OrdenioOutput(2, "ORD-002", generatedAt.AddDays(-1), 1, "Luna", 2, "Juan Perez", 8, "ACTIVO", null, generatedAt, generatedAt),
-                new OrdenioOutput(3, "ORD-003", generatedAt.AddDays(-1), 2, "Estrella", 3, "Maria Lopez", 14, "ACTIVO", null, generatedAt, generatedAt)
+                new OrdenioListOutput(1, "ORD-001", generatedAt.AddDays(-2), 1, "Luna", "VAC-001", 2, "Juan Perez", 10, "ACTIVO", null, generatedAt, generatedAt),
+                new OrdenioListOutput(2, "ORD-002", generatedAt.AddDays(-1), 1, "Luna", "VAC-001", 2, "Juan Perez", 8, "ACTIVO", null, generatedAt, generatedAt),
+                new OrdenioListOutput(3, "ORD-003", generatedAt.AddDays(-1), 2, "Estrella", "VAC-002", 3, "Maria Lopez", 14, "ACTIVO", null, generatedAt, generatedAt)
             },
             VacunoId: null,
             EstadoOrdenioCode: null,
@@ -74,9 +74,9 @@ public class PdfGeneratorServiceTests
         var document = new GenerateOrdeniosPdfDocument(
             new[]
             {
-                new OrdenioOutput(1, "ORD-001", generatedAt.AddDays(-2), 1, "Luna", 2, "Juan Perez", 10, "ACTIVO", null, generatedAt, generatedAt),
-                new OrdenioOutput(2, "ORD-002", generatedAt.AddDays(-1), 1, "Luna", 2, "Juan Perez", 8, "ACTIVO", null, generatedAt, generatedAt),
-                new OrdenioOutput(3, "ORD-003", generatedAt, 1, "Luna", 2, "Juan Perez", 14, "ACTIVO", null, generatedAt, generatedAt)
+                new OrdenioListOutput(1, "ORD-001", generatedAt.AddDays(-2), 1, "Luna", "VAC-001", 2, "Juan Perez", 10, "ACTIVO", null, generatedAt, generatedAt),
+                new OrdenioListOutput(2, "ORD-002", generatedAt.AddDays(-1), 1, "Luna", "VAC-001", 2, "Juan Perez", 8, "ACTIVO", null, generatedAt, generatedAt),
+                new OrdenioListOutput(3, "ORD-003", generatedAt, 1, "Luna", "VAC-001", 2, "Juan Perez", 14, "ACTIVO", null, generatedAt, generatedAt)
             },
             VacunoId: 1,
             EstadoOrdenioCode: null,
