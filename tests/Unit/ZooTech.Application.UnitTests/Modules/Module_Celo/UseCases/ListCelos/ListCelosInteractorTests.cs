@@ -72,6 +72,9 @@ public sealed class ListCelosInteractorTests
         public Task<bool> ExistsVacunoAsync(long vacunoId, CancellationToken cancellationToken = default)
             => Task.FromResult(true);
 
+        public Task<bool> HasActiveRecordsByVacunoAsync(long vacunoId, CancellationToken cancellationToken = default)
+            => Task.FromResult(false);
+
         public Task<bool> ExistsCodigoAsync(string codigo, CancellationToken cancellationToken = default)
             => Task.FromResult(false);
 

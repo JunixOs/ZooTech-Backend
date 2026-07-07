@@ -93,6 +93,14 @@ public sealed class FakeCeloRepository : ICeloRepository
         return Task.FromResult(true);
     }
 
+    // No se usa en estos tests, pero se implementa porque ICeloRepository lo exige.
+    public Task<bool> HasActiveRecordsByVacunoAsync(
+        long vacunoId,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(false);
+    }
+
     public Task<bool> ExistsCodigoAsync(
         string codigo,
         CancellationToken cancellationToken = default)
