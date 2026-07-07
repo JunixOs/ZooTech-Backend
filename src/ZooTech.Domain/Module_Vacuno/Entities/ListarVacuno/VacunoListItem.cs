@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace ZooTech.Domain.Module_Vacuno.ReadModels.ListarVacuno;
+namespace ZooTech.Domain.Module_Vacuno.Entities.ListarVacuno;
 
 public sealed record VacunoListItem(
     long Id,

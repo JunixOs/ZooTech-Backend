@@ -4,7 +4,7 @@ using Xunit;
 using ZooTech.Application.Common.Configuration;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
-using ZooTech.Domain.Module_Vacuno.ReadModels.ListarVacuno;
+using ZooTech.Domain.Module_Vacuno.Entities.ListarVacuno;
 
 namespace ZooTech.Application.UnitTests.Modules.Module_Vacuno.UseCases;
 

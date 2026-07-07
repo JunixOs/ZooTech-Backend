@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace ZooTech.Domain.Module_Vacuno.ReadModels.GetArbolGenealogico;
+namespace ZooTech.Domain.Module_Vacuno.Entities.GetArbolGenealogico;
 
 public sealed record GetArbolGenealogicoItem(
     long Id,

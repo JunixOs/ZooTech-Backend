@@ -3,12 +3,12 @@ using System.Linq;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetArbolGenealogico;
 using ZooTech.Domain.Module_Vacuno.Entities;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
-using ZooTech.Domain.Module_Vacuno.ReadModels.GetArbolGenealogico;
-using ZooTech.Domain.Module_Vacuno.ReadModels.ListarVacuno;
+using ZooTech.Domain.Module_Vacuno.Entities.GetArbolGenealogico;
+using ZooTech.Domain.Module_Vacuno.Entities.ListarVacuno;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Persistence.Mappers;
 using ZooTech.Domain.Module_Vacuno.Models;
-using ZooTech.Domain.Module_Vacuno.ReadModels;
+using ZooTech.Domain.Module_Vacuno.Entities;
 using ZooTech.Infrastructure.Persistence.Models;
 
 namespace ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Repositories;

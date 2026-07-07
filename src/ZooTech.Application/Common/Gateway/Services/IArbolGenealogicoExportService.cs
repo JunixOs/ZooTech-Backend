@@ -1,5 +1,5 @@
 using ZooTech.Domain.Module_Vacuno.Entities;
-using ZooTech.Domain.Module_Vacuno.ReadModels.GetArbolGenealogico;
+using ZooTech.Domain.Module_Vacuno.Entities.GetArbolGenealogico;
 
 namespace ZooTech.Application.Common.Gateway.Services;
 

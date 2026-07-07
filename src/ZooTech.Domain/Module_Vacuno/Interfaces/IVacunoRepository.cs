@@ -1,8 +1,8 @@
 using ZooTech.Domain.Module_Vacuno.Entities;
-using ZooTech.Domain.Module_Vacuno.ReadModels.ListarVacuno;
-using ZooTech.Domain.Module_Vacuno.ReadModels.GetArbolGenealogico;
+using ZooTech.Domain.Module_Vacuno.Entities.ListarVacuno;
+using ZooTech.Domain.Module_Vacuno.Entities.GetArbolGenealogico;
 using ZooTech.Domain.Module_Vacuno.Models;
-using ZooTech.Domain.Module_Vacuno.ReadModels;
+using ZooTech.Domain.Module_Vacuno.Entities;
 
 namespace ZooTech.Domain.Module_Vacuno.Interfaces;
 

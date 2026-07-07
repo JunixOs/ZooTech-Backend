@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using ZooTech.Domain.Module_Fecundacion.Entities;
 using ZooTech.Domain.Module_Fecundacion.Interfaces;
-using ZooTech.Domain.Module_Fecundacion.ReadModels;
+using ZooTech.Domain.Module_Fecundacion.Entities;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Persistence.Entities;
 using ZooTech.Application.Modules.Module_Fecundacion.Common;

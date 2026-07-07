@@ -4,7 +4,7 @@ using ZooTech.Application.Modules.Module_Fecundacion.UseCases.GetFecundacionForE
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.GetFecundacionOptions;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.SearchFecundacionVacunos;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.UpdateFecundacion;
-using ZooTech.Domain.Module_Fecundacion.ReadModels;
+using ZooTech.Domain.Module_Fecundacion.Entities;
 using ZooTech.Domain.Module_Fecundacion.Rules;
 using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.DTOs;
