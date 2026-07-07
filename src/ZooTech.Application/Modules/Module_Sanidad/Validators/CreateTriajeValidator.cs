@@ -28,7 +28,7 @@ public class CreateTriajeValidator : ICommandValidator<CreateTriajeCommand>
             errors.Add("TRIAJE-TRIAJE-CREATE-PESO_KG-INVALID");
         }
 
-        if (string.IsNullOrWhiteSpace(request.EstadoRegistroCode))
+        if (request.FechaHora is null)
         {
             errors.Add("TRIAJE-TRIAJE-CREATE-ESTADO_REGISTRO_CODE-NULL");
         }

@@ -9,11 +9,9 @@ public class UpdateTriajeCommand : IAuditableRequest
     public string Action => "Update a triaje";
 
     public long Id { get; set; }
-    public long VacunoId { get; set; }
     public string? TipoPesoCode { get; set; }
     public decimal PesoKg { get; set; }
     public string? Observaciones { get; set; }
-    public string? EstadoRegistroCode { get; set; }
     public long? EncargadoUsuarioId { get; set; }
 
 }

@@ -1,6 +1,7 @@
 using ZooTech.Application.Common.Gateway.Services;
 using ZooTech.Application.Common.Gateway.Time;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GenerateOrdeniosPdf;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GenerateTriajesPdf;
 using ZooTech.Domain.Module_ProduccionLeche.Entities;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
 
@@ -83,6 +84,9 @@ public class GenerateOrdeniosPdfInteractorTests
             WasCalled = true;
             return _content;
         }
+
+        public byte[] GenerateTriajesReport(GenerateTriajesPdfDocument document)
+            => throw new NotSupportedException();
     }
 
     private sealed class FakeComparationPdfGeneratorService : IOrdeniosComparationPdfGeneratorService
@@ -126,35 +130,32 @@ public class GenerateOrdeniosPdfInteractorTests
         public Task<Ordenio?> GetByIdAsync(long id, CancellationToken cancellationToken)
             => Task.FromResult<Ordenio?>(null);
 
-        public Task<(IReadOnlyList<Ordenio> Items, int TotalCount)> ListAsync(long? vacunoId, string? estadoOrdenioCode, DateTime? fechaDesde, DateTime? fechaHasta, int page, int pageSize, CancellationToken cancellationToken)
-            => Task.FromResult<(IReadOnlyList<Ordenio> Items, int TotalCount)>((Array.Empty<Ordenio>(), 0));
+        public Task<(IReadOnlyList<OrdenioList> Items, int TotalCount)> ListAsync(long? vacunoId, string? estadoOrdenioCode, DateTime? fechaDesde, DateTime? fechaHasta, int page, int pageSize, CancellationToken cancellationToken)
+            => Task.FromResult<(IReadOnlyList<OrdenioList> Items, int TotalCount)>((Array.Empty<OrdenioList>(), 0));
 
-        public Task<IReadOnlyList<Ordenio>> ListReportAsync(long? vacunoId, string? estadoOrdenioCode, DateTime? fechaDesde, DateTime? fechaHasta, CancellationToken cancellationToken)
+        public Task<IReadOnlyList<OrdenioList>> ListReportAsync(long? vacunoId, string? estadoOrdenioCode, DateTime? fechaDesde, DateTime? fechaHasta, CancellationToken cancellationToken)
         {
             CapturedVacunoId = vacunoId;
             CapturedEstadoOrdenioCode = estadoOrdenioCode;
 
             var fecha = new DateTime(2026, 7, 1, 8, 0, 0, DateTimeKind.Utc);
-            var ordenio = Ordenio.Rehydrate(
-            id: 1,
-            codigo: "ORD-001",
-            fechaHora: fecha,
-            vacunoId: 1,
-            nombreVacuno: "Luna",
-            encargadoUsuarioId: 2,
-            nombreCompleto: "Juan Perez",
-            litros: 12,
-            estadoOrdenioCode: "ACTIVO",
-            observaciones: null,
+            var ordenio = OrdenioList.Rehydrate(
+                id: 1,
+                codigo: "ORD-001",
+                fechaHora: fecha,
+                vacunoId: 1,
+                nombreVacuno: "Luna",
+                encargadoUsuarioId: 2,
+                nombreCompleto: "Juan Perez",
+                litros: 12,
+                estadoOrdenioCode: "ACTIVO",
+                observaciones: null,
                 createdAt: fecha,
                 updatedAt: fecha,
                 deletedAt: null,
-                motivoEliminacion: null,
-                createdBy: 2,
-                updatedBy: 2,
-                deletedBy: null);
+                motivoEliminacion: null);
 
-            return Task.FromResult<IReadOnlyList<Ordenio>>(new[] { ordenio });
+            return Task.FromResult<IReadOnlyList<OrdenioList>>(new[] { ordenio });
         }
 
         public Task<Ordenio> AddAsync(Ordenio ordenio, CancellationToken cancellationToken)

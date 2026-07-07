@@ -1,3 +1,5 @@
+using ZooTech.InterfaceAdapters.DTOs;
+
 namespace ZooTech.InterfaceAdapters.Modules.Module_Sanidad.DTOs.Responses;
 
 public sealed record TriajeResponse(
@@ -15,7 +17,4 @@ public sealed record TriajeResponse(
 
 public sealed record PagedTriajeResponse(
     IReadOnlyList<TriajeResponse> Data,
-    int TotalRegistros,
-    int Pagina,
-    int Tamano,
-    int TotalPaginas);
+    PaginationResponse Pagination);

@@ -9,5 +9,7 @@ namespace ZooTech.Application.Modules.Module_Sanidad.UseCases.GetHistorialByVacu
         public string Action => "Get historial by vacuno Id";
 
         public long Vacunoid { get; set; }
+        public string? FechaDesde { get; set; } 
+        public string? FechaHasta { get; set; }
     }
 }

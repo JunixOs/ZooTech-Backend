@@ -46,15 +46,15 @@ public class ListOrdeniosInteractorTests
         public Task<Ordenio?> GetByIdAsync(long id, CancellationToken cancellationToken)
             => Task.FromResult<Ordenio?>(null);
 
-        public Task<(IReadOnlyList<Ordenio> Items, int TotalCount)> ListAsync(long? vacunoId, string? estadoOrdenioCode, DateTime? fechaDesde, DateTime? fechaHasta, int page, int pageSize, CancellationToken cancellationToken)
+        public Task<(IReadOnlyList<OrdenioList> Items, int TotalCount)> ListAsync(long? vacunoId, string? estadoOrdenioCode, DateTime? fechaDesde, DateTime? fechaHasta, int page, int pageSize, CancellationToken cancellationToken)
         {
             CapturedPage = page;
             CapturedPageSize = pageSize;
-            return Task.FromResult<(IReadOnlyList<Ordenio> Items, int TotalCount)>((Array.Empty<Ordenio>(), 0));
+            return Task.FromResult<(IReadOnlyList<OrdenioList> Items, int TotalCount)>((Array.Empty<OrdenioList>(), 0));
         }
 
-        public Task<IReadOnlyList<Ordenio>> ListReportAsync(long? vacunoId, string? estadoOrdenioCode, DateTime? fechaDesde, DateTime? fechaHasta, CancellationToken cancellationToken)
-            => Task.FromResult<IReadOnlyList<Ordenio>>(Array.Empty<Ordenio>());
+        public Task<IReadOnlyList<OrdenioList>> ListReportAsync(long? vacunoId, string? estadoOrdenioCode, DateTime? fechaDesde, DateTime? fechaHasta, CancellationToken cancellationToken)
+            => Task.FromResult<IReadOnlyList<OrdenioList>>(Array.Empty<OrdenioList>());
 
         public Task<Ordenio> AddAsync(Ordenio ordenio, CancellationToken cancellationToken)
             => Task.FromResult(ordenio);

@@ -12,6 +12,6 @@ public class CreateTriajeCommand : IAuditableRequest
     public string? TipoPesoCode { get; set; }
     public decimal PesoKg { get; set; }
     public string? Observaciones { get; set; }
-    public string? EstadoRegistroCode { get; set; }
+    public DateTime? FechaHora { get; set; }
     public long? EncargadoUsuarioId { get; set; }
 }

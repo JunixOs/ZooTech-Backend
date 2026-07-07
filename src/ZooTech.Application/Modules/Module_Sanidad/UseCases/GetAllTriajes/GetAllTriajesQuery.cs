@@ -11,6 +11,8 @@ public class GetAllTriajesQuery : IAuditableRequest
     public int Pagina { get; set; }
     public int Tamano { get; set; }
     public string? Fecha { get; set; }
+    public string? FechaDesde { get; set; }
+    public string? FechaHasta { get; set; }
     public string? Codigo { get; set; }
     public string? Nombre { get; set; }
     public string? TipoPeso { get; set; }

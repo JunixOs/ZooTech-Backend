@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using ZooTech.Application;
-using ZooTech.Application.Common.Gateway.Services;
 using ZooTech.Infrastructure;
 using ZooTech.InterfaceAdapters;
 using ZooTech.InterfaceAdapters.Controllers;
@@ -11,6 +10,7 @@ using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Controllers;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers;
 
+using QuestPDF.Infrastructure;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services
     .AddControllers()
@@ -83,6 +83,7 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod();
     });
 });
+QuestPDF.Settings.License = LicenseType.Community;
 var app = builder.Build();
 
 // ===== Configurar Middlewares =====

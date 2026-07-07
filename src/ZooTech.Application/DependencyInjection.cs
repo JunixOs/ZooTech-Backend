@@ -3,6 +3,12 @@ using Microsoft.Extensions.DependencyInjection;
 using ZooTech.Application.Modules.Module_Celo.UseCases.CreateCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.DeleteCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetCelos;
+using ZooTech.Application.Modules.Module_Celo.UseCases.GetComparacionCelosRealVsEstandar;
+using ZooTech.Application.Modules.Module_Celo.UseCases.GetComparacionCelosRealVsEstandarPorVacuno;
+using ZooTech.Application.Modules.Module_Celo.UseCases.GetReporteCelos;
+using ZooTech.Application.Modules.Module_Celo.UseCases.GetVacasEnCelo;
+using ZooTech.Application.Modules.Module_Celo.UseCases.ListCelos;
+using ZooTech.Application.Modules.Module_Celo.UseCases.ListReporteCeloGeneral;
 using ZooTech.Application.Modules.Module_Celo.UseCases.UpdateCelo;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.CreateTriaje;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.DeleteTriaje;
@@ -12,6 +18,10 @@ using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllVacunosSanidad;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetHistorialByVacunoId;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetTriajeById;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.UpdateTriaje;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GenerateTriajesPdf;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GenerateTriajesExcel;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetHistorialGeneral;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.CreateVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetVacunoById;
@@ -66,6 +76,13 @@ using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetAllVacunosSanidad;
 using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetHistorialByVacunoId;
 using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetTriajeById;
 using ZooTech.Application.Common.Behaviors.Module_Sanidad.UpdateTriaje;
+using ZooTech.Application.Common.Behaviors.Module_Celo.GetComparacionCelosRealVsEstandar;
+using ZooTech.Application.Common.Behaviors.Module_Celo.GetComparacionCelosRealVsEstandarPorVacuno;
+using ZooTech.Application.Common.Behaviors.Module_Celo.GetReporteCelos;
+using ZooTech.Application.Common.Behaviors.Module_Celo.GetVacasEnCelo;
+using ZooTech.Application.Common.Behaviors.Module_Celo.ListCelos;
+using ZooTech.Application.Common.Behaviors.Module_Celo.ListReporteCeloGeneral;
+
 
 namespace ZooTech.Application;
 
@@ -104,6 +121,11 @@ public static class DependencyInjection
         services.AddScoped<IUpdateTriajeBehaviorPipelineFactory, UpdateTriajeBehaviorPipelineFactory>();
         services.AddScoped<ICommandValidator<UpdateTriajeCommand>, UpdateTriajeValidator>();
 
+        services.AddScoped<IGetDetallesTriajeByVacunoIdInputPort, GetDetallesTriajeByVacunoIdInteractor>();
+        services.AddScoped<IGenerateTriajesPdfInputPort, GenerateTriajesPdfInteractor>();
+        services.AddScoped<IGenerateTriajesExcelInputPort, GenerateTriajesExcelInteractor>();
+        services.AddScoped<IGetHistorialGeneralInputPort, GetHistorialGeneralInteractor>();
+
         // ============================================
         // Use Cases - Module_ProduccionLeche
         // ============================================
@@ -141,6 +163,24 @@ public static class DependencyInjection
         // ============================================
         services.AddScoped<IGetCelosInputPort, GetCelosInteractor>();
         services.AddScoped<IGetCelosBehaviorPipelineFactory, GetCelosBehaviorPipelineFactory>();
+
+        services.AddScoped<IGetComparacionCelosRealVsEstandarInputPort, GetComparacionCelosRealVsEstandarInteractor>();
+        services.AddScoped<IGetComparacionCelosRealVsEstandarBehaviorPipelineFactory, GetComparacionCelosRealVsEstandarBehaviorPipelineFactory>();
+        
+        services.AddScoped<IGetComparacionCelosRealVsEstandarPorVacunoInputPort, GetComparacionCelosRealVsEstandarPorVacunoInteractor>();
+        services.AddScoped<IGetComparacionCelosRealVsEstandarPorVacunoBehaviorPipelineFactory, GetComparacionCelosRealVsEstandarPorVacunoBehaviorPipelineFactory>();
+
+        services.AddScoped<IGetReporteCelosInputPort, GetReporteCelosInteractor>();
+        services.AddScoped<IGetReporteCelosBehaviorPipelineFactory, GetReporteCelosBehaviorPipelineFactory>();
+
+        services.AddScoped<IGetVacasEnCeloInputPort, GetVacasEnCeloInteractor>();
+        services.AddScoped<IGetVacasEnCeloBehaviorPipelineFactory, GetVacasEnCeloBehaviorPipelineFactory>();
+
+        services.AddScoped<IListCelosInputPort, ListCelosInteractor>();
+        services.AddScoped<IListCelosBehaviorPipelineFactory, ListCelosBehaviorPipelineFactory>();
+
+        services.AddScoped<IListReporteCeloGeneralInputPort, ListReporteCeloGeneralInteractor>();
+        services.AddScoped<IListReporteCeloGeneralBehaviorPipelineFactory, ListReporteCeloGeneralBehaviorPipelineFactory>();
 
         services.AddScoped<ICreateCeloInputPort, CreateCeloInteractor>();
         services.AddScoped<ICreateCeloBehaviorPipelineFactory, CreateCeloBehaviorPipelineFactory>();

@@ -18,11 +18,6 @@ internal sealed class UpdateTriajeValidator : ICommandValidator<UpdateTriajeComm
             errors.Add("SANIDAD-TRIAJE-UPDATE-ID-INVALID");
         }
 
-        if (request.VacunoId <= 0)
-        {
-            errors.Add("SANIDAD-TRIAJE-UPDATE-VACUNO_ID-INVALID");
-        }
-
         if (string.IsNullOrWhiteSpace(request.TipoPesoCode))
         {
             errors.Add("SANIDAD-TRIAJE-UPDATE-TIPO_PESO_CODE-NULL");
@@ -31,11 +26,6 @@ internal sealed class UpdateTriajeValidator : ICommandValidator<UpdateTriajeComm
         if (request.PesoKg <= 0)
         {
             errors.Add("SANIDAD-TRIAJE-UPDATE-PESO_KG-INVALID");
-        }
-
-        if (string.IsNullOrWhiteSpace(request.EstadoRegistroCode))
-        {
-            errors.Add("SANIDAD-TRIAJE-UPDATE-ESTADO_REGISTRO_CODE-NULL");
         }
 
         if (!string.IsNullOrWhiteSpace(request.Observaciones) &&

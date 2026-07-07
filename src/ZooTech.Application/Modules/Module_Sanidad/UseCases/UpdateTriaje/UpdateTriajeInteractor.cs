@@ -1,9 +1,24 @@
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Common.Gateway.Time;
+using ZooTech.Domain.Module_Sanidad.Entities;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
 using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Sanidad.UseCases.UpdateTriaje;
+
+public sealed record UpdateTriajeOutput(
+    long Id,
+    string Codigo,
+    DateTime FechaHora,
+    long VacunoId,
+    string? VacunoNombre,
+    string TipoPesoCode,
+    decimal PesoKg,
+    string? Observaciones,
+    string EstadoRegistroCode,
+    long? EncargadoUsuarioId,
+    DateTime CreatedAt,
+    DateTime UpdatedAt);
 
 public sealed class UpdateTriajeInteractor : IUpdateTriajeInputPort
 {
@@ -26,19 +41,28 @@ public sealed class UpdateTriajeInteractor : IUpdateTriajeInputPort
             );
 
         triaje.Update(
-            command.VacunoId,
             command.TipoPesoCode,
             command.PesoKg,
             command.Observaciones,
-            command.EstadoRegistroCode,
             command.EncargadoUsuarioId,
             _dateTimeProvider.ServerNow);
 
-        await _repository.UpdateAsync(triaje, cancellationToken);
+        var updated = await _repository.UpdateAsync(triaje, cancellationToken);
 
-        return new UpdateTriajeOutput(
-            triaje.Id, triaje.Codigo, triaje.FechaHora, triaje.VacunoId,
-            triaje.TipoPesoCode, triaje.PesoKg, triaje.Observaciones,
-            triaje.EstadoRegistroCode, triaje.EncargadoUsuarioId, triaje.CreatedAt);
+        return ToOutput(updated);
     }
+
+    private static UpdateTriajeOutput ToOutput(Triaje triaje) => new(
+        triaje.Id,
+        triaje.Codigo,
+        triaje.FechaHora,
+        triaje.VacunoId,
+        triaje.VacunoNombre,
+        triaje.TipoPesoCode,
+        triaje.PesoKg,
+        triaje.Observaciones,
+        triaje.EstadoRegistroCode,
+        triaje.EncargadoUsuarioId,
+        triaje.CreatedAt,
+        triaje.UpdatedAt);
 }
