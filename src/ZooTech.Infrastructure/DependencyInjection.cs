@@ -88,8 +88,17 @@ public static class DependencyInjection
         services.AddScoped<ITriajeRepository, TriajeRepository>();
         services.AddScoped<ITipoPesoRepository, TipoPesoRepository>();
         
-        var garnetConnectionString = configuration["Garnet:ConnectionString"]
-            ?? throw new InvalidOperationException("Garnet:ConnectionString no configurado");
+        var garnetConnectionString = configuration["Garnet:ConnectionString"];
+        if (string.IsNullOrWhiteSpace(garnetConnectionString))
+        {
+            garnetConnectionString = "localhost,abortConnect=false";
+        }
+        else if (!garnetConnectionString.Contains("abortConnect="))
+        {
+            garnetConnectionString = garnetConnectionString.Contains(";") || garnetConnectionString.Contains(",")
+                ? garnetConnectionString + ",abortConnect=false"
+                : garnetConnectionString + ",abortConnect=false";
+        }
 
         services.AddSingleton<IConnectionMultiplexer>(sp =>
             ConnectionMultiplexer.Connect(garnetConnectionString));
