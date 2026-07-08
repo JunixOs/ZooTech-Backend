@@ -104,29 +104,8 @@ public sealed class UpdateFecundacionValidator : ICommandValidator<UpdateFecunda
             }
         }
 
-        if (FecundacionRules.EsInseminacionArtificial(request.TipoFecundacionCode))
-        {
-            if (string.IsNullOrWhiteSpace(request.CodigoSemen))
-            {
-                errors.Add("FECUNDACION-FECUNDACION-UPDATE-CODIGO_SEMEN-NULL");
-            }
-            else if (request.CodigoSemen.Length > 30)
-            {
-                errors.Add("FECUNDACION-FECUNDACION-UPDATE-CODIGO_SEMEN-INVALID");
-            }
-        }
-
-        if (FecundacionRules.EsTransferenciaEmbriones(request.TipoFecundacionCode))
-        {
-            if (string.IsNullOrWhiteSpace(request.CodigoEmbrion))
-            {
-                errors.Add("FECUNDACION-FECUNDACION-UPDATE-CODIGO_EMBRION-NULL");
-            }
-            else if (request.CodigoEmbrion.Length > 30)
-            {
-                errors.Add("FECUNDACION-FECUNDACION-UPDATE-CODIGO_EMBRION-INVALID");
-            }
-        }
+        FecundacionCommonValidationRules.ValidateCodigoSemenAndEmbrion(
+            errors, "UPDATE", request.TipoFecundacionCode, request.CodigoSemen, request.CodigoEmbrion);
 
         return errors;
     }

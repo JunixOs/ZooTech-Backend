@@ -1,4 +1,5 @@
 using ZooTech.Application.Common.Validator;
+using ZooTech.Application.Modules.Module_Tenancing.Validators;
 using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateUserInTenant
@@ -11,23 +12,7 @@ namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateUserInTena
         {
             var errors = new List<string>();
 
-            if (string.IsNullOrWhiteSpace(request.Email))
-            {
-                errors.Add("TENANCING-ADMIN_USER-CREATE-EMAIL-NULL");
-            }
-            else if (!System.Net.Mail.MailAddress.TryCreate(request.Email, out _))
-            {
-                errors.Add("TENANCING-ADMIN_USER-CREATE-");
-            }
-
-            if (string.IsNullOrWhiteSpace(request.UserName))
-            {
-                errors.Add("TENANCING-ADMIN_USER-CREATE-USERNAME-NULL");
-            }
-            else if (request.UserName.Length < 3 || request.UserName.Length > 50)
-            {
-                errors.Add("TENANCING-ADMIN_USER-CREATE-USERNAME-INVALID");
-            }
+            TenancingCommonValidationRules.ValidateEmailAndUsername(errors, "CREATE", request.Email, request.UserName);
 
             if (string.IsNullOrWhiteSpace(request.FullName))
             {

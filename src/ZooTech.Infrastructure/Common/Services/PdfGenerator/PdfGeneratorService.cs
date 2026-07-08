@@ -26,6 +26,76 @@ public sealed class PdfGeneratorService : IPdfGeneratorService
 
     public byte[] GenerateOrdeniosReport(GenerateOrdeniosPdfDocument document)
     {
+        return ComposeReport(
+            title: "Reporte de ordenios",
+            generatedAtUtc: document.GeneratedAtUtc,
+            filterLine: BuildFilters(document),
+            itemsCount: document.Items.Count,
+            composeTable: c => ComposeGenericTable(
+                c,
+                columnWeights: new[] { 1.2f, 1.8f, 1.8f, 1.2f, 1.2f },
+                headers: new[] { "Codigo", "Fecha", "Vacuno", "Litros", "Estado" },
+                items: document.Items,
+                cellSelector: item => new[]
+                {
+                    item.Codigo,
+                    FormatDateTime(item.FechaHora),
+                    item.NombreVacuno,
+                    item.Litros.ToString("0.##", CultureInfo.InvariantCulture),
+                    item.EstadoOrdenioCode
+                }));
+    }
+
+    private static string BuildFilters(GenerateOrdeniosPdfDocument document)
+    {
+        return BuildFilterLine(
+            ("VacunoId", document.VacunoId?.ToString()),
+            ("Estado", document.EstadoOrdenioCode),
+            ("Desde", document.FechaDesde?.ToString("yyyy-MM-dd HH:mm")),
+            ("Hasta", document.FechaHasta?.ToString("yyyy-MM-dd HH:mm")));
+    }
+
+    public byte[] GenerateTriajesReport(GenerateTriajesPdfDocument document)
+    {
+        return ComposeReport(
+            title: "Reporte de triajes",
+            generatedAtUtc: document.GeneratedAtUtc,
+            filterLine: BuildTriajeFilters(document),
+            itemsCount: document.Items.Count,
+            composeTable: c => ComposeGenericTable(
+                c,
+                columnWeights: new[] { 1.2f, 1.5f, 1f, 1.8f, 1.2f, 1f, 2f },
+                headers: new[] { "C.Registro", "Fecha", "Hora", "Vacuno", "Tipo Peso", "Peso (Kg)", "Observaciones" },
+                items: document.Items,
+                cellSelector: item => new[]
+                {
+                    item.Codigo,
+                    FormatDate(item.FechaHora),
+                    FormatTime(item.FechaHora),
+                    item.VacunoNombre,
+                    item.TipoPesoCode,
+                    item.PesoKg.ToString("0.##", CultureInfo.InvariantCulture),
+                    item.Observaciones ?? string.Empty
+                }));
+    }
+
+    private static string BuildTriajeFilters(GenerateTriajesPdfDocument document)
+    {
+        return BuildFilterLine(
+            ("Fecha", document.Fecha),
+            ("Código", document.Codigo),
+            ("Nombre", document.Nombre),
+            ("Tipo peso", document.TipoPeso),
+            ("Peso", document.PesoKg.HasValue ? $"{document.PesoKg.Value} Kg" : null));
+    }
+
+    private static byte[] ComposeReport(
+        string title,
+        DateTime generatedAtUtc,
+        string filterLine,
+        int itemsCount,
+        Action<IContainer> composeTable)
+    {
         return Document.Create(container =>
         {
             container.Page(page =>
@@ -34,11 +104,11 @@ public sealed class PdfGeneratorService : IPdfGeneratorService
                 page.Size(PageSizes.A4);
                 page.DefaultTextStyle(x => x.FontSize(10).FontColor(TextDark));
 
-                page.Header().Element(c => ComposeHeader(c, document));
+                page.Header().Element(c => ComposeHeader(c, title, generatedAtUtc, filterLine));
 
                 page.Content().PaddingTop(16).Column(column =>
                 {
-                    if (document.Items.Count == 0)
+                    if (itemsCount == 0)
                     {
                         column.Item()
                             .Background(PrimaryLighter)
@@ -51,7 +121,7 @@ public sealed class PdfGeneratorService : IPdfGeneratorService
                         return;
                     }
 
-                    column.Item().Element(c => ComposeTable(c, document));
+                    column.Item().Element(composeTable);
                 });
 
                 page.Footer().Element(ComposeFooter);
@@ -59,62 +129,64 @@ public sealed class PdfGeneratorService : IPdfGeneratorService
         }).GeneratePdf();
     }
 
-    private static void ComposeHeader(IContainer container, GenerateOrdeniosPdfDocument document)
+    private static void ComposeHeader(IContainer container, string title, DateTime generatedAtUtc, string filterLine)
     {
         container
             .Background(Primary)
             .Padding(16)
             .Column(column =>
             {
-                column.Item().Text("Reporte de ordenios")
+                column.Item().Text(title)
                     .FontColor(Colors.White)
                     .SemiBold()
                     .FontSize(18);
 
                 column.Item().PaddingTop(4)
-                    .Text($"Generado: {FormatDateTime(document.GeneratedAtUtc)} UTC")
+                    .Text($"Generado: {FormatDateTime(generatedAtUtc)} UTC")
                     .FontColor(Colors.White)
                     .FontSize(9);
 
                 column.Item().PaddingTop(2)
-                    .Text(BuildFilters(document))
+                    .Text(filterLine)
                     .FontColor(Colors.White)
                     .FontSize(9);
             });
     }
 
-    private static void ComposeTable(IContainer container, GenerateOrdeniosPdfDocument document)
+    private static void ComposeGenericTable<T>(
+        IContainer container,
+        float[] columnWeights,
+        string[] headers,
+        IReadOnlyList<T> items,
+        Func<T, string[]> cellSelector)
     {
         container.Table(table =>
         {
             table.ColumnsDefinition(columns =>
             {
-                columns.RelativeColumn(1.2f);
-                columns.RelativeColumn(1.8f);
-                columns.RelativeColumn(1.8f);
-                columns.RelativeColumn(1.2f);
-                columns.RelativeColumn(1.2f);
+                foreach (var weight in columnWeights)
+                {
+                    columns.RelativeColumn(weight);
+                }
             });
 
             table.Header(header =>
             {
-                header.Cell().Element(StyleHeaderCell).Text("Codigo");
-                header.Cell().Element(StyleHeaderCell).Text("Fecha");
-                header.Cell().Element(StyleHeaderCell).Text("Vacuno");
-                header.Cell().Element(StyleHeaderCell).Text("Litros");
-                header.Cell().Element(StyleHeaderCell).Text("Estado");
+                foreach (var title in headers)
+                {
+                    header.Cell().Element(StyleHeaderCell).Text(title);
+                }
             });
 
-            for (var i = 0; i < document.Items.Count; i++)
+            for (var i = 0; i < items.Count; i++)
             {
-                var item = document.Items[i];
+                var values = cellSelector(items[i]);
                 var isAlternate = i % 2 == 1;
 
-                table.Cell().Element(x => StyleRowCell(x, isAlternate)).Text(item.Codigo);
-                table.Cell().Element(x => StyleRowCell(x, isAlternate)).Text(FormatDateTime(item.FechaHora));
-                table.Cell().Element(x => StyleRowCell(x, isAlternate)).Text(item.NombreVacuno);
-                table.Cell().Element(x => StyleRowCell(x, isAlternate)).Text(item.Litros.ToString("0.##", CultureInfo.InvariantCulture));
-                table.Cell().Element(x => StyleRowCell(x, isAlternate)).Text(item.EstadoOrdenioCode);
+                foreach (var value in values)
+                {
+                    table.Cell().Element(x => StyleRowCell(x, isAlternate)).Text(value);
+                }
             }
         });
     }
@@ -140,149 +212,14 @@ public sealed class PdfGeneratorService : IPdfGeneratorService
             });
     }
 
-    private static string BuildFilters(GenerateOrdeniosPdfDocument document)
+    private static string BuildFilterLine(params (string Label, string? Value)[] filters)
     {
-        var filters = new List<string>();
+        var parts = filters
+            .Where(f => !string.IsNullOrWhiteSpace(f.Value))
+            .Select(f => $"{f.Label}: {f.Value}")
+            .ToList();
 
-        if (document.VacunoId.HasValue)
-            filters.Add($"VacunoId: {document.VacunoId.Value}");
-
-        if (!string.IsNullOrWhiteSpace(document.EstadoOrdenioCode))
-            filters.Add($"Estado: {document.EstadoOrdenioCode}");
-
-        if (document.FechaDesde.HasValue)
-            filters.Add($"Desde: {document.FechaDesde.Value:yyyy-MM-dd HH:mm}");
-
-        if (document.FechaHasta.HasValue)
-            filters.Add($"Hasta: {document.FechaHasta.Value:yyyy-MM-dd HH:mm}");
-
-        return filters.Count == 0 ? "Filtros: sin filtros" : $"Filtros: {string.Join(" | ", filters)}";
-    }
-
-    private static string FormatDateTime(DateTime value)
-        => value.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
-
-    public byte[] GenerateTriajesReport(GenerateTriajesPdfDocument document)
-    {
-        return Document.Create(container =>
-        {
-            container.Page(page =>
-            {
-                page.Margin(24);
-                page.Size(PageSizes.A4);
-                page.DefaultTextStyle(x => x.FontSize(10).FontColor(TextDark));
-
-                page.Header().Element(c => ComposeTriajeHeader(c, document));
-
-                page.Content().PaddingTop(16).Column(column =>
-                {
-                    if (document.Items.Count == 0)
-                    {
-                        column.Item()
-                            .Background(PrimaryLighter)
-                            .Border(1)
-                            .BorderColor(BorderSoft)
-                            .Padding(16)
-                            .AlignCenter()
-                            .Text("No se encontraron registros para los filtros solicitados.")
-                            .FontColor(TextMuted);
-                        return;
-                    }
-
-                    column.Item().Element(c => ComposeTriajeTable(c, document));
-                });
-
-                page.Footer().Element(ComposeFooter);
-            });
-        }).GeneratePdf();
-    }
-
-    private static void ComposeTriajeHeader(IContainer container, GenerateTriajesPdfDocument document)
-    {
-        container
-            .Background(Primary)
-            .Padding(16)
-            .Column(column =>
-            {
-                column.Item().Text("Reporte de triajes")
-                    .FontColor(Colors.White)
-                    .SemiBold()
-                    .FontSize(18);
-
-                column.Item().PaddingTop(4)
-                    .Text($"Generado: {FormatDateTime(document.GeneratedAtUtc)} UTC")
-                    .FontColor(Colors.White)
-                    .FontSize(9);
-
-                column.Item().PaddingTop(2)
-                    .Text(BuildTriajeFilters(document))
-                    .FontColor(Colors.White)
-                    .FontSize(9);
-            });
-    }
-
-    private static void ComposeTriajeTable(IContainer container, GenerateTriajesPdfDocument document)
-    {
-        container.Table(table =>
-        {
-            table.ColumnsDefinition(columns =>
-            {
-                columns.RelativeColumn(1.2f);
-                columns.RelativeColumn(1.5f);
-                columns.RelativeColumn(1f);
-                columns.RelativeColumn(1.8f);
-                columns.RelativeColumn(1.2f);
-                columns.RelativeColumn(1f);
-                columns.RelativeColumn(2f);
-            });
-
-            table.Header(header =>
-            {
-                header.Cell().Element(StyleHeaderCell).Text("C.Registro");
-                header.Cell().Element(StyleHeaderCell).Text("Fecha");
-                header.Cell().Element(StyleHeaderCell).Text("Hora");
-                header.Cell().Element(StyleHeaderCell).Text("Vacuno");
-                header.Cell().Element(StyleHeaderCell).Text("Tipo Peso");
-                header.Cell().Element(StyleHeaderCell).Text("Peso (Kg)");
-                header.Cell().Element(StyleHeaderCell).Text("Observaciones");
-            });
-
-            for (var i = 0; i < document.Items.Count; i++)
-            {
-                var item = document.Items[i];
-                var isAlternate = i % 2 == 1;
-
-                table.Cell().Element(x => StyleRowCell(x, isAlternate)).Text(item.Codigo);
-                table.Cell().Element(x => StyleRowCell(x, isAlternate)).Text(FormatDate(item.FechaHora));
-                table.Cell().Element(x => StyleRowCell(x, isAlternate)).Text(FormatTime(item.FechaHora));
-                table.Cell().Element(x => StyleRowCell(x, isAlternate)).Text(item.VacunoNombre);
-                table.Cell().Element(x => StyleRowCell(x, isAlternate)).Text(item.TipoPesoCode);
-                table.Cell().Element(x => StyleRowCell(x, isAlternate)).Text(item.PesoKg.ToString("0.##", CultureInfo.InvariantCulture));
-                table.Cell().Element(x => StyleRowCell(x, isAlternate)).Text(item.Observaciones ?? string.Empty);
-            }
-        });
-    }
-
-    private static string BuildTriajeFilters(GenerateTriajesPdfDocument document)
-    {
-        var filters = new List<string>();
-
-        if (!string.IsNullOrWhiteSpace(document.Fecha))
-            filters.Add($"Fecha: {document.Fecha}");
-
-        if (!string.IsNullOrWhiteSpace(document.Codigo))
-            filters.Add($"Código: {document.Codigo}");
-
-        if (!string.IsNullOrWhiteSpace(document.Nombre))
-            filters.Add($"Nombre: {document.Nombre}");
-
-        if (!string.IsNullOrWhiteSpace(document.TipoPeso))
-            filters.Add($"Tipo peso: {document.TipoPeso}");
-
-        if (document.PesoKg.HasValue)
-            filters.Add($"Peso: {document.PesoKg.Value} Kg");
-
-        return filters.Count == 0 ? "Filtros: sin filtros" : $"Filtros: {string.Join(" | ", filters)}";
+        return parts.Count == 0 ? "Filtros: sin filtros" : $"Filtros: {string.Join(" | ", parts)}";
     }
 
     private static string FormatDate(DateTime value)
@@ -290,6 +227,9 @@ public sealed class PdfGeneratorService : IPdfGeneratorService
 
     private static string FormatTime(DateTime value)
         => value.ToString("HH:mm:ss", CultureInfo.InvariantCulture);
+
+    private static string FormatDateTime(DateTime value)
+        => value.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
 
     private static IContainer StyleHeaderCell(IContainer container)
     {

@@ -19,14 +19,14 @@ public sealed class SettingsGenerator
 
         foreach (var group in settings.GroupBy(x => x.GroupCode))
         {
-            sb.AppendLine($"    public static class {ToPascal(group.Key)}");
+            sb.AppendLine($"    public static class {GeneratorSupport.ToPascal(group.Key)}");
             sb.AppendLine("    {");
 
             foreach (var item in group)
             {
                 sb.AppendLine(
                     $"""
-                            public static readonly SettingDefinition<{MapType(item.DataType)}> {ToPascal(item.Code)} = new("{item.Code}");
+                            public static readonly SettingDefinition<{MapType(item.DataType)}> {GeneratorSupport.ToPascal(item.Code)} = new("{item.Code}");
                     """);
             }
 
@@ -53,30 +53,5 @@ public sealed class SettingsGenerator
             "JSON" or "ARRAY" => "string",
             _ => "string"
         };
-    }
-
-    private static string ToPascal(string value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return value;
-
-        var parts = value
-            .ToLower()
-            .Split(new[] { '_', '-', ' ' }, StringSplitOptions.RemoveEmptyEntries);
-
-        var sb = new StringBuilder();
-        foreach (var part in parts)
-        {
-            sb.Append(char.ToUpper(part[0]));
-            if (part.Length > 1)
-                sb.Append(part.Substring(1));
-        }
-
-        var result = sb.ToString();
-
-        if (result.Length > 0 && char.IsDigit(result[0]))
-            result = "_" + result;
-
-        return result;
     }
 }

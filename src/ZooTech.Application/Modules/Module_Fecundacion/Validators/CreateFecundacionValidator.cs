@@ -1,6 +1,5 @@
 using ZooTech.Application.Common.Validator;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.CreateFecundacion;
-using ZooTech.Domain.Module_Fecundacion.Rules;
 using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Fecundacion.Validators;
@@ -67,29 +66,8 @@ public sealed class CreateFecundacionValidator : ICommandValidator<CreateFecunda
             }
         }
 
-        if (FecundacionRules.EsInseminacionArtificial(request.TipoFecundacionCode))
-        {
-            if (string.IsNullOrWhiteSpace(request.CodigoSemen))
-            {
-                errors.Add("FECUNDACION-FECUNDACION-CREATE-CODIGO_SEMEN-NULL");
-            }
-            else if (request.CodigoSemen.Length > 30)
-            {
-                errors.Add("FECUNDACION-FECUNDACION-CREATE-CODIGO_SEMEN-INVALID");
-            }
-        }
-
-        if (FecundacionRules.EsTransferenciaEmbriones(request.TipoFecundacionCode))
-        {
-            if (string.IsNullOrWhiteSpace(request.CodigoEmbrion))
-            {
-                errors.Add("FECUNDACION-FECUNDACION-CREATE-CODIGO_EMBRION-NULL");
-            }
-            else if (request.CodigoEmbrion.Length > 30)
-            {
-                errors.Add("FECUNDACION-FECUNDACION-CREATE-CODIGO_EMBRION-INVALID");
-            }
-        }
+        FecundacionCommonValidationRules.ValidateCodigoSemenAndEmbrion(
+            errors, "CREATE", request.TipoFecundacionCode, request.CodigoSemen, request.CodigoEmbrion);
 
         return errors;
     }
