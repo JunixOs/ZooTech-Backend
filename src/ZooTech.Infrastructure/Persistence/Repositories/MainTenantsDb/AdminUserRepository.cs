@@ -50,8 +50,20 @@ namespace ZooTech.Infrastructure.Persistence.Repositories.MainTenantsDb
 
         public async Task Update(AdminUserDomainEntity adminUserDomainEntity)
         {
-            var adminUserOrm = AdminUserMapper.ToOrm(adminUserDomainEntity);
-            _tenantDbContext.admin_users.Update(adminUserOrm);
+            var orm = await _tenantDbContext.admin_users
+                .FirstAsync(x => x.id == adminUserDomainEntity.Id);
+
+            orm.email = adminUserDomainEntity.Email;
+            orm.username = adminUserDomainEntity.UserName;
+            orm.password_hash = adminUserDomainEntity.PasswordHash;
+            orm.first_name = adminUserDomainEntity.FirstName;
+            orm.last_name = adminUserDomainEntity.LastName;
+            orm.is_active = adminUserDomainEntity.IsActive;
+            orm.last_login_at = adminUserDomainEntity.LastLoginAt;
+            orm.metadata = adminUserDomainEntity.Metadata;
+            orm.updated_at = adminUserDomainEntity.UpdatedAt;
+            orm.created_at = adminUserDomainEntity.CreatedAt;
+            orm.deleted_at = adminUserDomainEntity.DeletedAt;
 
             await _tenantDbContext.SaveChangesAsync();
         }
