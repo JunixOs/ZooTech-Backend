@@ -26,7 +26,7 @@ namespace ZooTech.InterfaceAdapters.Middleware
                 );
             _adminSubDomain = config["MultiTenant:AdminSubDomain"]
                 ?? throw new UndefinedConfigurationValue(
-                    message: "Missing configuration: MultiTenant:BaseDomain"
+                    message: "Missing configuration: MultiTenant:AdminSubDomain"
                 );
         }
 

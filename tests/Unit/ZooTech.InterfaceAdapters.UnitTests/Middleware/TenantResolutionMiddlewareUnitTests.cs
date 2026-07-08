@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Moq;
+using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Common.Gateway.Context;
 using ZooTech.Application.Common.Gateway.Tenant;
 using ZooTech.Domain.Admin.Enums;
@@ -12,9 +13,13 @@ namespace ZooTech.InterfaceAdapters.UnitTests.Middleware
 {
     public class TenantResolutionMiddlewareUnitTests
     {
-        private static IConfiguration CreateConfig(string baseDomain = "zootech.com")
+        private static IConfiguration CreateConfig(string baseDomain = "zootech.com", string adminSubDomain = "admin")
         {
-            var settings = new Dictionary<string, string> { { "MultiTenant:BaseDomain", baseDomain } };
+            var settings = new Dictionary<string, string>
+            {
+                { "MultiTenant:BaseDomain", baseDomain },
+                { "MultiTenant:AdminSubDomain", adminSubDomain }
+            };
             return new ConfigurationBuilder().AddInMemoryCollection(settings!).Build();
         }
 
@@ -74,10 +79,12 @@ namespace ZooTech.InterfaceAdapters.UnitTests.Middleware
             context.Request.Host = new HostString("localhost");
 
             // Act
-            await middleware.InvokeAsync(context, tenantStoreMock.Object, tenantContextMock.Object);
+            var act = () => middleware.InvokeAsync(context, tenantStoreMock.Object, tenantContextMock.Object);
 
             // Assert
-            context.Response.StatusCode.Should().Be(404);
+            // NotFoundException is translated to a 404 response by ExceptionHandlingMiddleware,
+            // which wraps TenantResolutionMiddleware in the real pipeline (see Program.cs).
+            await act.Should().ThrowAsync<NotFoundException>();
         }
     }
 }
