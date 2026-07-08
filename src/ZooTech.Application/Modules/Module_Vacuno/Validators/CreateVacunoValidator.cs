@@ -1,3 +1,4 @@
+using System;
 using FluentValidation;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.CreateVacuno;
 
@@ -7,10 +8,7 @@ internal sealed class CreateVacunoValidator : AbstractValidator<CreateVacunoComm
 {
     public CreateVacunoValidator()
     {
-        RuleFor(x => x.Codigo)
-            .NotEmpty().WithMessage("El código del vacuno es obligatorio.")
-            .MaximumLength(15).WithMessage("El código no puede superar los 15 caracteres.");
-
+        RuleFor(x => x.Codigo).VacunoCodigoRules();
         RuleFor(x => x.Nombre).VacunoNombreRules();
         RuleFor(x => x.FechaNacimiento).VacunoFechaNacimientoRules();
         RuleFor(x => x.TipoAdquisicionCode).VacunoTipoAdquisicionCodeRules();
@@ -19,5 +17,6 @@ internal sealed class CreateVacunoValidator : AbstractValidator<CreateVacunoComm
         RuleFor(x => x.SexoCode).VacunoSexoCodeRules();
         RuleFor(x => x.GranjaId).VacunoGranjaIdRules();
         RuleFor(x => x.Observaciones).VacunoObservacionesRules(x => x.Observaciones is not null);
+        RuleFor(x => x.PrecioCompra).VacunoPrecioCompraRules(x => x.TipoAdquisicionCode == "COMPRA");
     }
 }

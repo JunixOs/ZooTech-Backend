@@ -59,7 +59,10 @@ public sealed class ProduccionLecheController : ControllerBase
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetVacunos(CancellationToken cancellationToken)
     {
-        var output = await _listarVacunosInputPort.HandleAsync(cancellationToken);
+        // TODO: este endpoint necesita su propio caso de uso sin paginar para el selector de Leche, en vez de forzar Limit al máximo de ListarVacunos
+        var output = await _listarVacunosInputPort.HandleAsync(
+            new ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos.ListarVacunosCommand(Limit: 100, FechaDesde: DateTime.MinValue, FechaHasta: DateTime.MaxValue), 
+            cancellationToken);
         var data = output.Items.Select(x => new { id = x.Id, codigo = x.Codigo, nombre = x.Nombre, raza = x.RazaCode });
         return Ok(GeneralResponseDTO<object>.Ok(data));
     }

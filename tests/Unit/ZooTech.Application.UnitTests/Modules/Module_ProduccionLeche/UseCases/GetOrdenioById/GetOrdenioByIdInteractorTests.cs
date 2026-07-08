@@ -60,6 +60,7 @@ public class GetOrdenioByIdInteractorTests
             _ordenio = ordenio;
         }
 
+        public Task<bool> HasActiveRecordsByVacunoAsync(long vacunoId, CancellationToken cancellationToken) => Task.FromResult(false);
         public Task<bool> ExistsCodigoAsync(string codigo, CancellationToken cancellationToken) => Task.FromResult(false);
         public Task<bool> ExistsVacunoFechaAsync(long vacunoId, DateTime fechaHora, long? excludeOrdenioId, CancellationToken cancellationToken) => Task.FromResult(false);
         public Task<bool> ExistsVacunoAsync(long vacunoId, CancellationToken cancellationToken) => Task.FromResult(true);
@@ -72,3 +73,4 @@ public class GetOrdenioByIdInteractorTests
         public Task<Ordenio> UpdateAsync(Ordenio ordenio, CancellationToken cancellationToken) => Task.FromResult(ordenio);
     }
 }
+

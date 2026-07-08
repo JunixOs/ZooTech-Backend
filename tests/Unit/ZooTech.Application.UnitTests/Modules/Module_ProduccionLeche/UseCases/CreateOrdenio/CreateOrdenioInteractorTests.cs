@@ -52,6 +52,9 @@ public class CreateOrdenioInteractorTests
         public Task<bool> ExistsVacunoAsync(long vacunoId, CancellationToken cancellationToken)
             => Task.FromResult(ExistsVacunoResult);
 
+        public Task<bool> HasActiveRecordsByVacunoAsync(long vacunoId, CancellationToken cancellationToken)
+            => Task.FromResult(false);
+
         public Task<bool> ExistsUsuarioAsync(long usuarioId, CancellationToken cancellationToken)
             => Task.FromResult(ExistsUsuarioResult);
 
