@@ -112,6 +112,8 @@ public class GenerateOrdeniosPdfInteractorTests
         public long? CapturedVacunoId { get; private set; }
         public string? CapturedEstadoOrdenioCode { get; private set; }
 
+        public Task<bool> HasActiveRecordsByVacunoAsync(long vacunoId, CancellationToken cancellationToken) => Task.FromResult(false);
+
         public Task<bool> ExistsCodigoAsync(string codigo, CancellationToken cancellationToken)
             => Task.FromResult(false);
 
@@ -165,3 +167,4 @@ public class GenerateOrdeniosPdfInteractorTests
             => Task.FromResult(ordenio);
     }
 }
+

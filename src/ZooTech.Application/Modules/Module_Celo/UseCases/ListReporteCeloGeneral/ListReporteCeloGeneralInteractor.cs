@@ -1,4 +1,5 @@
 using ZooTech.Application.Common.Pagination;
+using ZooTech.Application.Modules.Module_Celo.Models;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetReporteCelos;
 using ZooTech.Domain.Module_Celo.Interfaces;
 
@@ -18,7 +19,9 @@ public sealed class ListReporteCeloGeneralInteractor : IListReporteCeloGeneralIn
         CancellationToken cancellationToken = default)
     {
         var currentPage = cmd.Page <= 0 ? 1 : cmd.Page;
-        var currentPageSize = cmd.PageSize <= 0 ? 20 : Math.Min(cmd.PageSize, 100);
+        var currentPageSize = cmd.PageSize <= 0
+            ? CeloPaginationDefaults.DefaultPageSize
+            : Math.Min(cmd.PageSize, CeloPaginationDefaults.MaxPageSize);
 
         var (celos, totalCount) = await _celoRepository.GetPagedForReporteAsync(
             cmd.Search,

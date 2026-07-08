@@ -71,6 +71,8 @@ public class UpdateOrdenioInteractorTests
         public bool ExistsUsuarioResult { get; set; }
         public bool ExistsEstadoResult { get; set; }
 
+        public Task<bool> HasActiveRecordsByVacunoAsync(long vacunoId, CancellationToken cancellationToken) => Task.FromResult(false);
+
         public Task<bool> ExistsCodigoAsync(string codigo, CancellationToken cancellationToken)
             => Task.FromResult(ExistsCodigoResult);
 
@@ -114,3 +116,4 @@ public class UpdateOrdenioInteractorTests
             => Task.FromResult(ordenio);
     }
 }
+

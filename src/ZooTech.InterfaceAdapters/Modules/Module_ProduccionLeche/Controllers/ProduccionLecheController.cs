@@ -16,6 +16,7 @@ using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.Gener
 using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.GetOrdenioById;
 using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.ListOrdenios;
 using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.UpdateOrdenio;
+using ZooTech.Application.Common.Behaviors.Module_Vacuno.ListarVacunos;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
 
@@ -24,8 +25,7 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
 [ApiExplorerSettings(GroupName = "produccion_leche")]
 public sealed class ProduccionLecheController : ControllerBase
 {
-    // TODO: Modificar aqui "IListarVacunosInputPort" por un Pipeline
-    private readonly IListarVacunosInputPort _listarVacunosInputPort;
+    private readonly IListarVacunosBehaviorPipelineFactory _listarVacunosBehaviorPipelineFactory;
     private readonly ICreateOrdenioBehaviorPipelineFactory _createOrdenioBehaviorPipelineFactory;
     private readonly IGetOrdenioByIdBehaviorPipelineFactory _getOrdenioByIdBehaviorPipelineFactory;
     private readonly IGenerateOrdeniosPdfBehaviorPipelineFactory _generateOrdeniosPdfBehaviorPipelineFactory;
@@ -35,7 +35,7 @@ public sealed class ProduccionLecheController : ControllerBase
     private readonly IDeleteOrdenioBehaviorPipelineFactory _deleteOrdenioBehaviorPipelineFactory;
 
     public ProduccionLecheController(
-        IListarVacunosInputPort listarVacunosInputPort,
+        IListarVacunosBehaviorPipelineFactory listarVacunosBehaviorPipelineFactory,
         ICreateOrdenioBehaviorPipelineFactory createOrdenioBehaviorPipelineFactory,
         IGetOrdenioByIdBehaviorPipelineFactory getOrdenioByIdBehaviorPipelineFactory,
         IGenerateOrdeniosPdfBehaviorPipelineFactory generateOrdeniosPdfBehaviorPipelineFactory,
@@ -46,7 +46,7 @@ public sealed class ProduccionLecheController : ControllerBase
 
     )
     {
-        _listarVacunosInputPort = listarVacunosInputPort;
+        _listarVacunosBehaviorPipelineFactory = listarVacunosBehaviorPipelineFactory;
         
         _createOrdenioBehaviorPipelineFactory = createOrdenioBehaviorPipelineFactory;
         _getOrdenioByIdBehaviorPipelineFactory = getOrdenioByIdBehaviorPipelineFactory;
@@ -68,7 +68,12 @@ public sealed class ProduccionLecheController : ControllerBase
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetVacunos(CancellationToken cancellationToken)
     {
-        var output = await _listarVacunosInputPort.HandleAsync(cancellationToken);
+        // TODO: este endpoint necesita su propio caso de uso sin paginar para el selector de Leche, en vez de forzar Limit al máximo de ListarVacunos
+        var behaviorPipeline = _listarVacunosBehaviorPipelineFactory.Create();
+
+        var output = await behaviorPipeline.Execute(
+            new ListarVacunosCommand(Limit: 100, FechaDesde: DateTime.MinValue, FechaHasta: DateTime.MaxValue), 
+            cancellationToken);
         var data = output.Items.Select(x => new { id = x.Id, codigo = x.Codigo, nombre = x.Nombre, raza = x.RazaCode });
         return Ok(GeneralResponseDTO<object>.Ok(data));
     }

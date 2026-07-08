@@ -29,9 +29,9 @@ public sealed class CreateCeloInteractor : ICreateCeloInputPort
                 }
             );
 
-        var codigo = $"CELO-{DateTime.UtcNow:yyyyMMddHHmmss}";
+        var codigo = $"C{DateTime.UtcNow:yyMMddHHmmss}";
         if (await _celoRepository.ExistsCodigoAsync(codigo, cancellationToken))
-            codigo = $"CELO-{DateTime.UtcNow:yyyyMMddHHmmssfff}";
+            codigo = $"C{DateTime.UtcNow:yyMMddHHmmssff}";
 
         var utcNow = DateTime.UtcNow;
 

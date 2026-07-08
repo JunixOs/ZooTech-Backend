@@ -1,29 +1,52 @@
+
+using ZooTech.Application.Common.Gateway.Parametrization;
+using ZooTech.Domain.Configuration;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
 
 public sealed class ListarVacunosInteractor : IListarVacunosInputPort
 {
-    private readonly IVacunoRepository _vacunoRepository;
+    private const int DefaultPage = 1;
+    private const int DefaultPageSize = 20;
+    private const int MaxPageSize = 100;
 
-    public ListarVacunosInteractor(IVacunoRepository vacunoRepository)
+    private readonly IVacunoRepository _vacunoRepository;
+    private readonly ITenantConfigurationProvider _tenantConfigurationProvider;
+
+    public ListarVacunosInteractor(
+        IVacunoRepository vacunoRepository, 
+        ITenantConfigurationProvider tenantConfigurationProvider
+    )
     {
         _vacunoRepository = vacunoRepository;
+        _tenantConfigurationProvider = tenantConfigurationProvider;
     }
 
-    public async Task<ListarVacunosOutput> HandleAsync(CancellationToken cancellationToken = default)
+    public async Task<ListarVacunosOutput> HandleAsync(ListarVacunosCommand command, CancellationToken cancellationToken = default)
     {
-        var vacunos = await _vacunoRepository.ListAllForDisplayAsync(cancellationToken);
+        var fechaDesde = command.FechaDesde;
+        if (!fechaDesde.HasValue && !command.FechaHasta.HasValue)
+        {
+            var defaultFilterDays = await _tenantConfigurationProvider.GetSettingAsync(
+                Settings.Vacunos.VacunosDefaultFilterDays
+            );
 
-        var items = vacunos.Select(x => new VacunoItemDto(
-            Id: x.Vacuno.Id,
-            Codigo: x.Vacuno.Codigo,
-            Nombre: x.Vacuno.Nombre,
-            FechaNacimiento: x.Vacuno.FechaNacimiento,
-            RazaCode: x.Vacuno.RazaCode,
-            SexoCode: x.Vacuno.SexoCode,
-            Procedencia: x.Procedencia)).ToList();
+            fechaDesde = DateTime.UtcNow.AddDays(-defaultFilterDays);
+        }
 
-        return new ListarVacunosOutput(items);
+        var page = command.Page <= 0 ? DefaultPage : command.Page;
+        var pageSize = command.Limit <= 0 ? DefaultPageSize : Math.Min(command.Limit, MaxPageSize);
+
+        var (items, totalCount) = await _vacunoRepository.GetPagedAsync(
+            command.Query,
+            fechaDesde,
+            command.FechaHasta,
+            command.Estado,
+            page,
+            pageSize,
+            cancellationToken);
+
+        return new ListarVacunosOutput(items, totalCount);
     }
 }

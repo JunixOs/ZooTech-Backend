@@ -69,7 +69,7 @@ namespace ZooTech.Infrastructure.Tenant
                 created_at = DateTime.UtcNow
             };
 
-            var tenantCatalogDb = await _tenantDbContextFactory.CreateDbContextByTenantContext();
+            var tenantCatalogDb = _tenantDbContextFactory.CreateDbContextByTenantContext();
 
             bool tenantSaved = false;
             bool databaseCreated = false;

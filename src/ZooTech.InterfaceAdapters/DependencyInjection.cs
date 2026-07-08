@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using ZooTech.InterfaceAdapters.Filters;
+using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Services;
 
 namespace ZooTech.InterfaceAdapters;
 
@@ -19,6 +20,12 @@ public static class DependencyInjection
         {
             options.SuppressModelStateInvalidFilter = true;
         });
+        // ============================================
+        // Filters
+        // ============================================
+
+        // services.AddScoped<ValidationFilter>();
+        services.AddScoped<IVacunoReferenceResolver, VacunoReferenceResolver>();
 
         return services;
     }

@@ -15,7 +15,7 @@ namespace ZooTech.Infrastructure.Tenant
 
         public async Task MigrateAsync(string tenantDatabaseName)
         {
-            var context = await _ganaderiaDbContextFactory.CreateDbContextBySpecificDatabaseName(tenantDatabaseName , true);
+            var context = _ganaderiaDbContextFactory.CreateDbContextBySpecificDatabaseName(tenantDatabaseName , true);
 
             if (context.Database.IsRelational())
             {

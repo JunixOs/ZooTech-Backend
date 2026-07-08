@@ -28,7 +28,9 @@ namespace ZooTech.Infrastructure.Tenant
                 return tenantCached;
             }
 
-            var tenantDbContext = await _tenantDbContextFactory.CreateDbContextBySettingsValue();
+            // Esto es para acceder al database plane
+            // Se usa un valor de configuracion que no depende del Context actual aaaa :)
+            var tenantDbContext = _tenantDbContextFactory.CreateDbContextBySettingsValue();
 
             var tenantInfo = await tenantDbContext.tenants
                 .AsNoTracking()

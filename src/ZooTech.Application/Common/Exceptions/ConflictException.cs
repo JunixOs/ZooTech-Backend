@@ -10,8 +10,8 @@ public class ConflictException : AppApplicationException
             List<string>? details = null,
             string? message = null
         ) : base(
-            "FORBIDDEN_ERROR",
-            ErrorType.Forbidden,
+            "CONFLICT_ERROR",
+            ErrorType.Conflict,
             scopeName,
             message ?? "A conflict occurred while attempting to enter the data",
             moduleName,

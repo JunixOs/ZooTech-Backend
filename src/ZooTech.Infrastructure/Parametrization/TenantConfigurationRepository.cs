@@ -18,7 +18,7 @@ public sealed class TenantConfigurationRepository : ITenantConfigurationReposito
 
     public async Task<TenantConfiguration> LoadTenantConfigAsync(int tenantId)
     {
-        var tenantDbContext = await _tenantDbContextFactory.CreateDbContextBySettingsValue();
+        var tenantDbContext = _tenantDbContextFactory.CreateDbContextBySettingsValue();
 
         var settings = await tenantDbContext.setting_definitions
             .Where(sd => 

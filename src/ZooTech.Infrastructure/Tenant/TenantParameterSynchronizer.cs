@@ -18,7 +18,7 @@ namespace ZooTech.Infrastructure.Tenant
 
         public async Task SynchronizeAsync(int tenantId)
         {
-            await using var tenantCatalogDb = await _tenantDbContextFactory.CreateDbContextByTenantContext();
+            await using var tenantCatalogDb = _tenantDbContextFactory.CreateDbContextByTenantContext();
 
             var tenant = await tenantCatalogDb.tenants
                 .Include(t => t.tenant_features)

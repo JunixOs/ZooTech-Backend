@@ -1,4 +1,3 @@
-using FluentValidation;
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Common;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
@@ -9,17 +8,14 @@ namespace ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.U
 public sealed class UpdateOrdenioInteractor : IUpdateOrdenioInputPort
 {
     private readonly IOrdenioRepository _repository;
-    private readonly IValidator<UpdateOrdenioCommand> _validator;
 
-    public UpdateOrdenioInteractor(IOrdenioRepository repository, IValidator<UpdateOrdenioCommand> validator)
+    public UpdateOrdenioInteractor(IOrdenioRepository repository)
     {
         _repository = repository;
-        _validator = validator;
     }
 
     public async Task<UpdateOrdenioOutput> Handle(UpdateOrdenioCommand command, CancellationToken cancellationToken)
     {
-        await _validator.ValidateAndThrowAsync(command, cancellationToken);
         var existing = await _repository.GetByIdAsync(command.Id, cancellationToken)
             ?? throw new NotFoundException(
                 ScopeName.Application,
