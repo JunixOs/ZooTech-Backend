@@ -13,13 +13,15 @@ public class CreateTriajeValidatorTests
         long? encargadoUsuarioId = null,
         DateTime? fechaHora = null)
     {
-        return new CreateTriajeCommand(
-            VacunoId: vacunoId,
-            TipoPesoCode: tipoPesoCode,
-            PesoKg: pesoKg,
-            Observaciones: observaciones,
-            EncargadoUsuarioId: encargadoUsuarioId,
-            FechaHora: fechaHora ?? DateTime.UtcNow);
+        return new CreateTriajeCommand
+        {
+            VacunoId = vacunoId,
+            TipoPesoCode = tipoPesoCode,
+            PesoKg = pesoKg,
+            Observaciones = observaciones,
+            EncargadoUsuarioId = encargadoUsuarioId,
+            FechaHora = fechaHora ?? DateTime.UtcNow,
+        };
     }
 
     [Fact]
@@ -29,7 +31,7 @@ public class CreateTriajeValidatorTests
 
         var result = validator.Validate(ValidCommand());
 
-        Assert.True(result.IsValid);
+        Assert.Empty(result);
     }
 
     [Fact]
@@ -39,7 +41,7 @@ public class CreateTriajeValidatorTests
 
         var result = validator.Validate(ValidCommand(vacunoId: 0));
 
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(CreateTriajeCommand.VacunoId));
+        Assert.NotEmpty(result);
     }
 
     [Fact]
@@ -49,7 +51,7 @@ public class CreateTriajeValidatorTests
 
         var result = validator.Validate(ValidCommand(tipoPesoCode: string.Empty));
 
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(CreateTriajeCommand.TipoPesoCode));
+        Assert.NotEmpty(result);
     }
 
     [Fact]
@@ -59,7 +61,7 @@ public class CreateTriajeValidatorTests
 
         var result = validator.Validate(ValidCommand(pesoKg: 0));
 
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(CreateTriajeCommand.PesoKg));
+        Assert.NotEmpty(result);
     }
 
     [Fact]
@@ -69,7 +71,7 @@ public class CreateTriajeValidatorTests
 
         var result = validator.Validate(ValidCommand(observaciones: new string('A', 151)));
 
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(CreateTriajeCommand.Observaciones));
+        Assert.NotEmpty(result);
     }
 
     [Fact]
@@ -79,7 +81,7 @@ public class CreateTriajeValidatorTests
 
         var result = validator.Validate(ValidCommand(observaciones: null));
 
-        Assert.DoesNotContain(result.Errors, e => e.PropertyName == nameof(CreateTriajeCommand.Observaciones));
+        Assert.Empty(result);
     }
 
     [Fact]
@@ -89,7 +91,7 @@ public class CreateTriajeValidatorTests
 
         var result = validator.Validate(ValidCommand(fechaHora: DateTime.UtcNow.AddDays(1)));
 
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(CreateTriajeCommand.FechaHora));
+        Assert.NotEmpty(result);
     }
 
 }

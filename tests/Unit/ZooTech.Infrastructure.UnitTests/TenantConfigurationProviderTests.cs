@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Caching.Memory;
 using Moq;
 using ZooTech.Application.Common.Gateway.Caching;
+using ZooTech.Application.Common.Gateway.Context;
 using ZooTech.Application.Common.Gateway.Parametrization;
 using ZooTech.Application.Common.Gateway.Repositories.Parametrization;
 using ZooTech.Domain.Configuration;
@@ -26,6 +27,13 @@ public sealed class TenantConfigurationProviderTests
         LoadedAt = DateTime.UtcNow
     };
 
+    private static Mock<ITenantContext> CreateTenantContextMock(int tenantId = 1)
+    {
+        var tenantContextMock = new Mock<ITenantContext>();
+        tenantContextMock.Setup(t => t.TenantId).Returns(tenantId);
+        return tenantContextMock;
+    }
+
     [Fact]
     public async Task GetConfigAsync_L1Hit_SkipsL2AndDb()
     {
@@ -35,12 +43,13 @@ public sealed class TenantConfigurationProviderTests
 
         var cacheMock = new Mock<IAppCacheService>();
         var repoMock = new Mock<ITenantConfigurationRepository>();
+        var tenantContextMock = CreateTenantContextMock();
 
         var provider = new TenantConfigurationProvider(
-            memoryCache, cacheMock.Object, repoMock.Object);
+            memoryCache, cacheMock.Object, repoMock.Object, tenantContextMock.Object);
 
         var result = await provider.GetSettingAsync(
-            1, new SettingDefinition<int>("MAX_LOGIN_ATTEMPTS"));
+            new SettingDefinition<int>("MAX_LOGIN_ATTEMPTS"));
 
         result.Should().Be(5);
         cacheMock.Verify(
@@ -60,12 +69,13 @@ public sealed class TenantConfigurationProviderTests
             .ReturnsAsync((true, sampleConfig));
 
         var repoMock = new Mock<ITenantConfigurationRepository>();
+        var tenantContextMock = CreateTenantContextMock();
 
         var provider = new TenantConfigurationProvider(
-            memoryCache, cacheMock.Object, repoMock.Object);
+            memoryCache, cacheMock.Object, repoMock.Object, tenantContextMock.Object);
 
         var result = await provider.GetSettingAsync(
-            1, new SettingDefinition<int>("MAX_LOGIN_ATTEMPTS"));
+            new SettingDefinition<int>("MAX_LOGIN_ATTEMPTS"));
 
         result.Should().Be(5);
         repoMock.Verify(r => r.LoadTenantConfigAsync(It.IsAny<int>()), Times.Never);
@@ -95,12 +105,13 @@ public sealed class TenantConfigurationProviderTests
         var repoMock = new Mock<ITenantConfigurationRepository>();
         repoMock.Setup(r => r.LoadTenantConfigAsync(1))
             .ReturnsAsync(sampleConfig);
+        var tenantContextMock = CreateTenantContextMock();
 
         var provider = new TenantConfigurationProvider(
-            memoryCache, cacheMock.Object, repoMock.Object);
+            memoryCache, cacheMock.Object, repoMock.Object, tenantContextMock.Object);
 
         var result = await provider.GetSettingAsync(
-            1, new SettingDefinition<int>("MAX_LOGIN_ATTEMPTS"));
+            new SettingDefinition<int>("MAX_LOGIN_ATTEMPTS"));
 
         result.Should().Be(5);
         repoMock.Verify(r => r.LoadTenantConfigAsync(1), Times.Once);
@@ -124,11 +135,12 @@ public sealed class TenantConfigurationProviderTests
 
         var cacheMock = new Mock<IAppCacheService>();
         var repoMock = new Mock<ITenantConfigurationRepository>();
+        var tenantContextMock = CreateTenantContextMock();
 
         var provider = new TenantConfigurationProvider(
-            memoryCache, cacheMock.Object, repoMock.Object);
+            memoryCache, cacheMock.Object, repoMock.Object, tenantContextMock.Object);
 
-        await provider.InvalidateTenantAsync(1);
+        await provider.InvalidateTenantAsync();
 
         var l1Exists = memoryCache.TryGetValue("tenant:config:1", out _);
         l1Exists.Should().BeFalse();
@@ -146,20 +158,21 @@ public sealed class TenantConfigurationProviderTests
 
         var cacheMock = new Mock<IAppCacheService>();
         var repoMock = new Mock<ITenantConfigurationRepository>();
+        var tenantContextMock = CreateTenantContextMock();
 
         var provider = new TenantConfigurationProvider(
-            memoryCache, cacheMock.Object, repoMock.Object);
+            memoryCache, cacheMock.Object, repoMock.Object, tenantContextMock.Object);
 
         var intResult = await provider.GetSettingAsync(
-            1, new SettingDefinition<int>("MAX_LOGIN_ATTEMPTS"));
+            new SettingDefinition<int>("MAX_LOGIN_ATTEMPTS"));
         intResult.Should().Be(5);
 
         var boolResult = await provider.GetSettingAsync(
-            1, new SettingDefinition<bool>("FEATURE_X_ENABLED"));
+            new SettingDefinition<bool>("FEATURE_X_ENABLED"));
         boolResult.Should().BeTrue();
 
         var stringResult = await provider.GetSettingAsync(
-            1, new SettingDefinition<string>("WELCOME_MESSAGE"));
+            new SettingDefinition<string>("WELCOME_MESSAGE"));
         stringResult.Should().Be("Hello");
     }
 
@@ -172,16 +185,17 @@ public sealed class TenantConfigurationProviderTests
 
         var cacheMock = new Mock<IAppCacheService>();
         var repoMock = new Mock<ITenantConfigurationRepository>();
+        var tenantContextMock = CreateTenantContextMock();
 
         var provider = new TenantConfigurationProvider(
-            memoryCache, cacheMock.Object, repoMock.Object);
+            memoryCache, cacheMock.Object, repoMock.Object, tenantContextMock.Object);
 
         var intResult = await provider.GetSettingAsync(
-            1, new SettingDefinition<int>("NONEXISTENT_INT"));
+            new SettingDefinition<int>("NONEXISTENT_INT"));
         intResult.Should().Be(0);
 
         var boolResult = await provider.GetSettingAsync(
-            1, new SettingDefinition<bool>("NONEXISTENT_BOOL"));
+            new SettingDefinition<bool>("NONEXISTENT_BOOL"));
         boolResult.Should().BeFalse();
     }
 
@@ -194,12 +208,13 @@ public sealed class TenantConfigurationProviderTests
 
         var cacheMock = new Mock<IAppCacheService>();
         var repoMock = new Mock<ITenantConfigurationRepository>();
+        var tenantContextMock = CreateTenantContextMock();
 
         var provider = new TenantConfigurationProvider(
-            memoryCache, cacheMock.Object, repoMock.Object);
+            memoryCache, cacheMock.Object, repoMock.Object, tenantContextMock.Object);
 
         var result = await provider.IsFeatureEnabledAsync(
-            1, new FeatureCode("MODULE_VACUNOS"));
+            new FeatureCode("MODULE_VACUNOS"));
 
         result.Should().BeTrue();
     }
@@ -213,12 +228,13 @@ public sealed class TenantConfigurationProviderTests
 
         var cacheMock = new Mock<IAppCacheService>();
         var repoMock = new Mock<ITenantConfigurationRepository>();
+        var tenantContextMock = CreateTenantContextMock();
 
         var provider = new TenantConfigurationProvider(
-            memoryCache, cacheMock.Object, repoMock.Object);
+            memoryCache, cacheMock.Object, repoMock.Object, tenantContextMock.Object);
 
         var result = await provider.IsFeatureEnabledAsync(
-            1, new FeatureCode("MODULE_INVENTORY"));
+            new FeatureCode("MODULE_INVENTORY"));
 
         result.Should().BeFalse();
     }
@@ -232,12 +248,13 @@ public sealed class TenantConfigurationProviderTests
 
         var cacheMock = new Mock<IAppCacheService>();
         var repoMock = new Mock<ITenantConfigurationRepository>();
+        var tenantContextMock = CreateTenantContextMock();
 
         var provider = new TenantConfigurationProvider(
-            memoryCache, cacheMock.Object, repoMock.Object);
+            memoryCache, cacheMock.Object, repoMock.Object, tenantContextMock.Object);
 
         var result = await provider.IsRuleEnabledAsync(
-            1, new RuleCode("VACUNOS_ELIMINACION_CONDICIONADA"));
+            new RuleCode("VACUNOS_ELIMINACION_CONDICIONADA"));
 
         result.Should().BeTrue();
     }
@@ -251,12 +268,13 @@ public sealed class TenantConfigurationProviderTests
 
         var cacheMock = new Mock<IAppCacheService>();
         var repoMock = new Mock<ITenantConfigurationRepository>();
+        var tenantContextMock = CreateTenantContextMock();
 
         var provider = new TenantConfigurationProvider(
-            memoryCache, cacheMock.Object, repoMock.Object);
+            memoryCache, cacheMock.Object, repoMock.Object, tenantContextMock.Object);
 
         var result = await provider.IsRuleEnabledAsync(
-            1, new RuleCode("NONEXISTENT_RULE"));
+            new RuleCode("NONEXISTENT_RULE"));
 
         result.Should().BeFalse();
     }

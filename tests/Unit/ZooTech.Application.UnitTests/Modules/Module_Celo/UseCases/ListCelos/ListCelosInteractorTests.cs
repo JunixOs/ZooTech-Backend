@@ -14,7 +14,7 @@ public sealed class ListCelosInteractorTests
         var repository = new FakeCeloRepository();
         var interactor = new ListCelosInteractor(repository);
 
-        var output = await interactor.HandleAsync(search: null, page: page, pageSize: 20);
+        var output = await interactor.HandleAsync(new ListCelosCommand { Search = null, Page = page, PageSize = 20 });
 
         Assert.Equal(expectedPage, output.Result.Page);
     }
@@ -31,7 +31,7 @@ public sealed class ListCelosInteractorTests
         var repository = new FakeCeloRepository();
         var interactor = new ListCelosInteractor(repository);
 
-        var output = await interactor.HandleAsync(search: null, page: 1, pageSize: pageSize);
+        var output = await interactor.HandleAsync(new ListCelosCommand { Search = null, Page = 1, PageSize = pageSize });
 
         Assert.Equal(expectedPageSize, output.Result.PageSize);
     }

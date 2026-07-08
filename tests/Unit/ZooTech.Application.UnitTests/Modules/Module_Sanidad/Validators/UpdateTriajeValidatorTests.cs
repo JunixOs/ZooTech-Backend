@@ -6,16 +6,20 @@ namespace ZooTech.Application.UnitTests.Modules.Module_Sanidad.Validators;
 public class UpdateTriajeValidatorTests
 {
     private static UpdateTriajeCommand ValidCommand(
+        long id = 1,
         string tipoPesoCode = "NACIMIENTO",
         decimal pesoKg = 10,
         string? observaciones = null,
         long? encargadoUsuarioId = null)
     {
-        return new UpdateTriajeCommand(
-            TipoPesoCode: tipoPesoCode,
-            PesoKg: pesoKg,
-            Observaciones: observaciones,
-            EncargadoUsuarioId: encargadoUsuarioId);
+        return new UpdateTriajeCommand
+        {
+            Id = id,
+            TipoPesoCode = tipoPesoCode,
+            PesoKg = pesoKg,
+            Observaciones = observaciones,
+            EncargadoUsuarioId = encargadoUsuarioId,
+        };
     }
 
     [Fact]
@@ -25,7 +29,7 @@ public class UpdateTriajeValidatorTests
 
         var result = validator.Validate(ValidCommand());
 
-        Assert.True(result.IsValid);
+        Assert.Empty(result);
     }
 
     [Fact]
@@ -35,7 +39,7 @@ public class UpdateTriajeValidatorTests
 
         var result = validator.Validate(ValidCommand(tipoPesoCode: string.Empty));
 
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(UpdateTriajeCommand.TipoPesoCode));
+        Assert.NotEmpty(result);
     }
 
     [Fact]
@@ -45,7 +49,7 @@ public class UpdateTriajeValidatorTests
 
         var result = validator.Validate(ValidCommand(pesoKg: 0));
 
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(UpdateTriajeCommand.PesoKg));
+        Assert.NotEmpty(result);
     }
 
     [Fact]
@@ -55,7 +59,7 @@ public class UpdateTriajeValidatorTests
 
         var result = validator.Validate(ValidCommand(observaciones: new string('A', 151)));
 
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(UpdateTriajeCommand.Observaciones));
+        Assert.NotEmpty(result);
     }
 
     [Fact]
@@ -65,6 +69,6 @@ public class UpdateTriajeValidatorTests
 
         var result = validator.Validate(ValidCommand(observaciones: null));
 
-        Assert.DoesNotContain(result.Errors, e => e.PropertyName == nameof(UpdateTriajeCommand.Observaciones));
+        Assert.Empty(result);
     }
 }

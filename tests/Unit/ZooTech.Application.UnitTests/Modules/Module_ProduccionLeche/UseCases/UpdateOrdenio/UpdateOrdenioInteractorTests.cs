@@ -1,4 +1,3 @@
-using FluentValidation;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.UpdateOrdenio;
 using ZooTech.Domain.Module_ProduccionLeche.Entities;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
@@ -36,18 +35,20 @@ public class UpdateOrdenioInteractorTests
             ExistsUsuarioResult = true,
             ExistsEstadoResult = true
         };
-        var validator = new InlineValidator<UpdateOrdenioCommand>();
-        var interactor = new UpdateOrdenioInteractor(repository, validator);
+        var interactor = new UpdateOrdenioInteractor(repository);
         var nuevaFecha = fecha.AddHours(2);
 
-        var command = new UpdateOrdenioCommand(
-            FechaHora: nuevaFecha,
-            EncargadoUsuarioId: 5,
-            Litros: 18,
-            EstadoOrdenioCode: "FINALIZADO",
-            Observaciones: "Actualizado");
+        var command = new UpdateOrdenioCommand
+        {
+            Id = 10,
+            FechaHora = nuevaFecha,
+            EncargadoUsuarioId = 5,
+            Litros = 18,
+            EstadoOrdenioCode = "FINALIZADO",
+            Observaciones = "Actualizado"
+        };
 
-        var result = await interactor.HandleAsync(10, command, CancellationToken.None);
+        var result = await interactor.Handle(command, CancellationToken.None);
 
         Assert.Equal(18, result.Data.Litros);
         Assert.Equal(nuevaFecha, result.Data.FechaHora);

@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Caching.Memory;
 using Moq;
 using ZooTech.Application.Common.Gateway.Caching;
+using ZooTech.Application.Common.Gateway.Context;
 using ZooTech.Application.Common.Gateway.Parametrization;
 using ZooTech.Application.Common.Gateway.Repositories.Parametrization;
 using ZooTech.Domain.Configuration;
@@ -20,6 +21,13 @@ public sealed class TenantConfigurationProviderIntegrationTests
         LoadedAt = DateTime.UtcNow
     };
 
+    private static Mock<ITenantContext> CreateTenantContextMock(int tenantId = 1)
+    {
+        var tenantContextMock = new Mock<ITenantContext>();
+        tenantContextMock.Setup(t => t.TenantId).Returns(tenantId);
+        return tenantContextMock;
+    }
+
     [Fact]
     public async Task Provider_EndToEnd_CacheThenDB()
     {
@@ -28,6 +36,7 @@ public sealed class TenantConfigurationProviderIntegrationTests
 
         var cacheMock = new Mock<IAppCacheService>();
         var repoMock = new Mock<ITenantConfigurationRepository>();
+        var tenantContextMock = CreateTenantContextMock();
 
         // Phase 1: Cold start — cache empty, must load from repo
         cacheMock.Setup(c => c.TryGetAsync<TenantConfiguration>("tenant:config:1"))
@@ -42,10 +51,10 @@ public sealed class TenantConfigurationProviderIntegrationTests
             .ReturnsAsync(sampleConfig);
 
         var provider = new TenantConfigurationProvider(
-            memoryCache, cacheMock.Object, repoMock.Object);
+            memoryCache, cacheMock.Object, repoMock.Object, tenantContextMock.Object);
 
         var coldResult = await provider.GetSettingAsync(
-            1, new SettingDefinition<int>("MAX_LOGIN_ATTEMPTS"));
+            new SettingDefinition<int>("MAX_LOGIN_ATTEMPTS"));
         coldResult.Should().Be(5);
         repoMock.Verify(r => r.LoadTenantConfigAsync(1), Times.Once);
 
@@ -54,12 +63,12 @@ public sealed class TenantConfigurationProviderIntegrationTests
         cacheMock.Invocations.Clear();
 
         var hotResult = await provider.GetSettingAsync(
-            1, new SettingDefinition<int>("MAX_LOGIN_ATTEMPTS"));
+            new SettingDefinition<int>("MAX_LOGIN_ATTEMPTS"));
         hotResult.Should().Be(5);
         repoMock.Verify(r => r.LoadTenantConfigAsync(It.IsAny<int>()), Times.Never);
 
         // Phase 3: Invalidate — clears both L1 and L2
-        await provider.InvalidateTenantAsync(1);
+        await provider.InvalidateTenantAsync();
 
         var l1Exists = memoryCache.TryGetValue("tenant:config:1", out _);
         l1Exists.Should().BeFalse();
@@ -81,7 +90,7 @@ public sealed class TenantConfigurationProviderIntegrationTests
             .ReturnsAsync(sampleConfig);
 
         var coldAgainResult = await provider.GetSettingAsync(
-            1, new SettingDefinition<int>("MAX_LOGIN_ATTEMPTS"));
+            new SettingDefinition<int>("MAX_LOGIN_ATTEMPTS"));
         coldAgainResult.Should().Be(5);
     }
 
@@ -96,12 +105,13 @@ public sealed class TenantConfigurationProviderIntegrationTests
             .ReturnsAsync((true, sampleConfig));
 
         var repoMock = new Mock<ITenantConfigurationRepository>();
+        var tenantContextMock = CreateTenantContextMock();
 
         var provider = new TenantConfigurationProvider(
-            memoryCache, cacheMock.Object, repoMock.Object);
+            memoryCache, cacheMock.Object, repoMock.Object, tenantContextMock.Object);
 
         var result1 = await provider.GetSettingAsync(
-            1, new SettingDefinition<int>("MAX_LOGIN_ATTEMPTS"));
+            new SettingDefinition<int>("MAX_LOGIN_ATTEMPTS"));
         result1.Should().Be(5);
 
         var l1Exists = memoryCache.TryGetValue("tenant:config:1", out TenantConfiguration? l1Cached);

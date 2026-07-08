@@ -63,19 +63,40 @@ namespace ZooTech.Infrastructure.Tenant
 
             var options = GetConnectionOptions(_tenantContext.DatabaseName);
 
-            return new TenantCatalogDb(options);
+            var tenantDbContext = new TenantCatalogDb(options);
+
+            EnsureCanConnect(tenantDbContext, _tenantContext.DatabaseName);
+
+            return tenantDbContext;
         }
 
         public TenantCatalogDb CreateDbContextBySettingsValue()
         {
-            var adminDatabaseName = _config["MultiTenant:AdminDatabaseName"] ?? 
+            var adminDatabaseName = _config["MultiTenant:AdminDatabaseName"] ??
                 throw new UndefinedConfigurationValue(
                     message: "Missing Configuration: MultiTenant:AdminDatabaseName"
                 );
-            
+
             var options = GetConnectionOptions(adminDatabaseName);
 
-            return new TenantCatalogDb(options);
+            var tenantDbContext = new TenantCatalogDb(options);
+
+            EnsureCanConnect(tenantDbContext, adminDatabaseName);
+
+            return tenantDbContext;
+        }
+
+        private static void EnsureCanConnect(TenantCatalogDb tenantDbContext, string databaseName)
+        {
+            try
+            {
+                if (!tenantDbContext.Database.CanConnect())
+                    throw new DatabaseConnectionException(databaseName);
+            }
+            catch (SqlException)
+            {
+                throw new DatabaseConnectionException(databaseName);
+            }
         }
     }
 }

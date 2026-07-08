@@ -2,7 +2,8 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using ZooTech.Application.Common.Behaviors;
-using ZooTech.Application.Common.Behaviors.Module_Tenancing;
+using ZooTech.Application.Common.Behaviors.Module_Tenancing.CreateTenant;
+using ZooTech.Application.Common.Behaviors.Module_Tenancing.CreateUserInTenant;
 using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant;
 using ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers;
 using ZooTech.InterfaceAdapters.Modules.Module_Tenancing.DTOs.Requests;
@@ -26,15 +27,20 @@ public class TenancingControllerTests
 
         var pipeline = new BehaviorPipeline<CreateTenantCommand, CreateTenantOutput>(
             [],
-            _ => Task.FromResult(expectedResult)
+            (_, _) => Task.FromResult(expectedResult)
         );
 
-        var pipelineFactoryMock = new Mock<ICreateTenantPipelineFactory>();
-        pipelineFactoryMock
+        var createTenantPipelineFactoryMock = new Mock<ICreateTenantBehaviorPipelineFactory>();
+        createTenantPipelineFactoryMock
             .Setup(bm => bm.Create())
             .Returns(pipeline);
 
-        var controller = new TenancingController(pipelineFactoryMock.Object);
+        var createUserInTenantPipelineFactoryMock = new Mock<ICreateUserInTenantBehaviorPipelineFactory>();
+
+        var controller = new TenancingController(
+            createTenantPipelineFactoryMock.Object,
+            createUserInTenantPipelineFactoryMock.Object
+        );
 
         var request = new CreateTenantRequestDto
         {
@@ -71,6 +77,6 @@ public class TenancingControllerTests
         responseDto.Code.Should().Be(expectedResult.Code);
         responseDto.SubDomain.Should().Be(expectedResult.SubDomain);
 
-        pipelineFactoryMock.Verify(bm => bm.Create(), Times.Once);
+        createTenantPipelineFactoryMock.Verify(bm => bm.Create(), Times.Once);
     }
 }

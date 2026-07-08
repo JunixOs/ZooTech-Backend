@@ -86,7 +86,7 @@ public class FecundacionEstadoInteractorTests
                 FecundacionEstadoConstants.Confirmada,
                 7)));
 
-        Assert.Contains("estadoFecundacion", exception.Errors.Keys);
+        Assert.Contains("estadoFecundacion", exception.Details);
         Assert.False(repository.Updated);
     }
 
@@ -101,7 +101,7 @@ public class FecundacionEstadoInteractorTests
                 FecundacionEstadoConstants.EnProceso,
                 null)));
 
-        Assert.Contains("updatedBy", exception.Errors.Keys);
+        Assert.Contains("updatedBy", exception.Details);
     }
 
     [Fact]
@@ -128,7 +128,6 @@ public class FecundacionEstadoInteractorTests
     {
         return new UpdateFecundacionEstadoInteractor(
             repository,
-            new UpdateFecundacionEstadoValidator(),
             new FecundacionEstadoTransitionValidator());
     }
 

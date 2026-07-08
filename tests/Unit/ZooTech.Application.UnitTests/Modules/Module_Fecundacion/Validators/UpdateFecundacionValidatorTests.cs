@@ -14,8 +14,8 @@ public sealed class UpdateFecundacionValidatorTests
 
         var result = _validator.Validate(command);
 
-        Assert.False(result.IsValid);
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(UpdateFecundacionCommand.FechaProcedimiento));
+        Assert.False(result.Count == 0);
+        Assert.Contains(result, e => e.Contains("FECHA_PROCEDIMIENTO"));
     }
 
     [Fact]
@@ -25,8 +25,8 @@ public sealed class UpdateFecundacionValidatorTests
 
         var result = _validator.Validate(command);
 
-        Assert.False(result.IsValid);
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(UpdateFecundacionCommand.CodigoSemen));
+        Assert.False(result.Count == 0);
+        Assert.Contains(result, e => e.Contains("CODIGO_SEMEN"));
     }
 
     [Fact]
@@ -36,8 +36,8 @@ public sealed class UpdateFecundacionValidatorTests
 
         var result = _validator.Validate(command);
 
-        Assert.False(result.IsValid);
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(UpdateFecundacionCommand.CodigoEmbrion));
+        Assert.False(result.Count == 0);
+        Assert.Contains(result, e => e.Contains("CODIGO_EMBRION"));
     }
 
     [Fact]
@@ -47,7 +47,7 @@ public sealed class UpdateFecundacionValidatorTests
 
         var result = _validator.Validate(command);
 
-        Assert.True(result.IsValid);
+        Assert.True(result.Count == 0);
     }
 
     private static UpdateFecundacionCommand BuildCommand(

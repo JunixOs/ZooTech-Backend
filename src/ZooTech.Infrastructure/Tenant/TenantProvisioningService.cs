@@ -97,6 +97,28 @@ namespace ZooTech.Infrastructure.Tenant
 
                 if (tenantSaved)
                 {
+                    // Required one-to-one child relationships must be removed explicitly:
+                    // their FK is non-nullable, so EF cannot sever them by setting it to null
+                    // (ClientSetNull) when the parent tenant is removed.
+                    if (tenant.address is not null)
+                    {
+                        tenantCatalogDb.addresses.Remove(tenant.address);
+                    }
+
+                    if (tenant.tenant_branding is not null)
+                    {
+                        tenantCatalogDb.tenant_brandings.Remove(tenant.tenant_branding);
+                    }
+
+                    if (tenant.tenant_database_connection is not null)
+                    {
+                        tenantCatalogDb.tenant_database_connections.Remove(tenant.tenant_database_connection);
+                    }
+
+                    tenantCatalogDb.tenant_features.RemoveRange(tenant.tenant_features);
+                    tenantCatalogDb.setting_values.RemoveRange(tenant.setting_values);
+                    tenantCatalogDb.tenant_business_rules.RemoveRange(tenant.tenant_business_rules);
+
                     tenantCatalogDb.tenants.Remove(tenant);
                     await tenantCatalogDb.SaveChangesAsync();
                 }

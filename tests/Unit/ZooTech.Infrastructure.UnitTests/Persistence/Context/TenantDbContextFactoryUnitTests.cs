@@ -4,7 +4,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Moq;
 using ZooTech.Application.Common.Gateway.Context;
+using ZooTech.Domain.Shared.Enums;
+using ZooTech.Infrastructure.Caching.ConcurrentCache;
 using ZooTech.Infrastructure.Exceptions;
+using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Tenant;
 
 namespace ZooTech.Infrastructure.UnitTests.Persistence.Context
@@ -12,7 +15,7 @@ namespace ZooTech.Infrastructure.UnitTests.Persistence.Context
     public class TenantDbContextFactoryUnitTests
     {
         [Fact]
-        public async Task CreateDbContext_Should_Throw_When_Database_Unreachable()
+        public void CreateDbContext_Should_Throw_When_Database_Unreachable()
         {
             // Arrange
             var tenantContextMock = new Mock<ITenantContext>();
@@ -20,6 +23,10 @@ namespace ZooTech.Infrastructure.UnitTests.Persistence.Context
             tenantContextMock
                 .Setup(t => t.DatabaseName)
                 .Returns("Ganaderia_Test");
+
+            tenantContextMock
+                .Setup(t => t.Type)
+                .Returns(TenantType.Admin);
 
             var inMemorySettings = new Dictionary<string , string>
             {
@@ -33,16 +40,22 @@ namespace ZooTech.Infrastructure.UnitTests.Persistence.Context
                 .AddInMemoryCollection(inMemorySettings!)
                 .Build();
 
+            var cacheMock = new Mock<IConcurrentCache<string, DbContextOptions<TenantCatalogDb>>>();
+            cacheMock
+                .Setup(c => c.GetOrAdd(It.IsAny<string>(), It.IsAny<Func<string, DbContextOptions<TenantCatalogDb>>>()))
+                .Returns((string key, Func<string, DbContextOptions<TenantCatalogDb>> factory) => factory(key));
+
             var factory = new TenantDbContextFactory(
                 tenantContextMock.Object,
-                configuration
+                configuration,
+                cacheMock.Object
             );
 
             // Act
-            var act = async () => await factory.CreateDbContext();
+            var act = () => factory.CreateDbContextByTenantContext();
 
             // Assert
-            await act.Should().ThrowAsync<DatabaseConnectionException>();
+            act.Should().Throw<DatabaseConnectionException>();
         }
     }
 }
