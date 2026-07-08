@@ -20,6 +20,14 @@ using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Mappers;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Mappers.ReporteVacuno;
+using ZooTech.Application.Common.Behaviors.Module_Vacuno.ListarVacunos;
+using ZooTech.Application.Common.Behaviors.Module_Vacuno.CreateVacuno;
+using ZooTech.Application.Common.Behaviors.Module_Vacuno.GetVacunoById;
+using ZooTech.Application.Common.Behaviors.Module_Vacuno.UpdateVacuno;
+using ZooTech.Application.Common.Behaviors.Module_Vacuno.DeleteVacuno;
+using ZooTech.Application.Common.Behaviors.Module_Vacuno.ExportarArbolGenealogico;
+using ZooTech.Application.Common.Behaviors.Module_Vacuno.ReporteVacuno.ListarVacunosReporte;
+using ZooTech.Application.Common.Behaviors.Module_Vacuno.GetArbolGenealogico;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Controllers;
 
@@ -28,40 +36,41 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Controllers;
 [ApiExplorerSettings(GroupName = "public")]
 public sealed class VacunoController : ControllerBase
 {
-    private readonly IListarVacunosInputPort _listarInputPort;
-    private readonly ICreateVacunoInputPort _createInputPort;
-    private readonly IGetVacunoByIdInputPort _getByIdInputPort;
-    private readonly IUpdateVacunoInputPort _updateInputPort;
-    private readonly IDeleteVacunoInputPort _deleteInputPort;
-    private readonly IExportarArbolGenealogicoInputPort _exportarArbolInputPort;
-    private readonly IListarVacunosReporteUseCase _listarVacunosReporteUseCase;
+    private readonly IListarVacunosBehaviorPipelineFactory _listarVacunosBehaviorPipelineFactory;
+    private readonly ICreateVacunoBehaviorPipelineFactory _createVacunoBehaviorPipelineFactory;
+    private readonly IGetVacunoByIdBehaviorPipelineFactory _getVacunoByIdBehaviorPipelineFactory;
+    private readonly IUpdateVacunoBehaviorPipelineFactory _updateVacunoBehaviorPipelineFactory;
+    private readonly IDeleteVacunoBehaviorPipelineFactory _deleteVacunoBehaviorPipelineFactory;
+    private readonly IExportarArbolGenealogicoBehaviorPipelineFactory _exportarArbolGenealogicoBehaviorPipelineFactory;
+    private readonly IListarVacunosReporteBehaviorPipelineFactory _listarVacunosReporteBehaviorPipelineFactory;
+    private readonly IGetArbolGenealogicoBehaviorPipelineFactory _getArbolGenealogicoBehaviorPipelineFactory;
     private readonly IVacunoRepository _vacunoRepository;
-    private readonly IGetArbolGenealogicoInputPort _getArbolGenealogicoInputPort;
     private readonly IAnimalReportExcelService _animalReportExcelService;
     private readonly IAnimalReportPdfService _animalReportPdfService;
 
     public VacunoController(
-        IListarVacunosInputPort listarInputPort,
-        ICreateVacunoInputPort createInputPort,
-        IGetVacunoByIdInputPort getByIdInputPort,
-        IUpdateVacunoInputPort updateInputPort,
-        IDeleteVacunoInputPort deleteInputPort,
-        IGetArbolGenealogicoInputPort getArbolGenealogicoInputPort,
-        IExportarArbolGenealogicoInputPort exportarArbolInputPort,
-        IListarVacunosReporteUseCase listarVacunosReporteUseCase,
+        IListarVacunosBehaviorPipelineFactory listarVacunosBehaviorPipelineFactory,
+        ICreateVacunoBehaviorPipelineFactory createVacunoBehaviorPipelineFactory,
+        IGetVacunoByIdBehaviorPipelineFactory getVacunoByIdBehaviorPipelineFactory,
+        IUpdateVacunoBehaviorPipelineFactory updateVacunoBehaviorPipelineFactory,
+        IDeleteVacunoBehaviorPipelineFactory deleteVacunoBehaviorPipelineFactory,
+        IExportarArbolGenealogicoBehaviorPipelineFactory exportarArbolGenealogicoBehaviorPipelineFactory,
+        IListarVacunosReporteBehaviorPipelineFactory listarVacunosReporteBehaviorPipelineFactory,
+        IGetArbolGenealogicoBehaviorPipelineFactory getArbolGenealogicoBehaviorPipelineFactory,
         IVacunoRepository vacunoRepository,
         IAnimalReportExcelService animalReportExcelService,
         IAnimalReportPdfService animalReportPdfService)
     {
-        _listarInputPort = listarInputPort;
-        _createInputPort = createInputPort;
-        _getByIdInputPort = getByIdInputPort;
-        _updateInputPort = updateInputPort;
-        _deleteInputPort = deleteInputPort;
-        _exportarArbolInputPort = exportarArbolInputPort;
-        _listarVacunosReporteUseCase = listarVacunosReporteUseCase;
+        _listarVacunosBehaviorPipelineFactory = listarVacunosBehaviorPipelineFactory;
+        _createVacunoBehaviorPipelineFactory = createVacunoBehaviorPipelineFactory;
+        _getVacunoByIdBehaviorPipelineFactory = getVacunoByIdBehaviorPipelineFactory;
+        _updateVacunoBehaviorPipelineFactory = updateVacunoBehaviorPipelineFactory;
+        _deleteVacunoBehaviorPipelineFactory = deleteVacunoBehaviorPipelineFactory;
+        _exportarArbolGenealogicoBehaviorPipelineFactory = exportarArbolGenealogicoBehaviorPipelineFactory;
+        _listarVacunosReporteBehaviorPipelineFactory = listarVacunosReporteBehaviorPipelineFactory;
+        _getArbolGenealogicoBehaviorPipelineFactory = getArbolGenealogicoBehaviorPipelineFactory;
+
         _vacunoRepository = vacunoRepository;
-        _getArbolGenealogicoInputPort = getArbolGenealogicoInputPort;
         _animalReportExcelService = animalReportExcelService;
         _animalReportPdfService = animalReportPdfService;
     }
@@ -92,7 +101,9 @@ public sealed class VacunoController : ControllerBase
             Page: currentPage,
             Limit: currentPageSize);
 
-        var output = await _listarInputPort.HandleAsync(command, cancellationToken);
+        var behaviorPipeline = _listarVacunosBehaviorPipelineFactory.Create();
+
+        var output = await behaviorPipeline.Execute(command, cancellationToken);
         var response = output.Items.Select(VacunoMapper.ToResponse).ToList();
         return Ok(PagedResponse<List<VacunoItemResponse>>.OkPaged(response, currentPage, currentPageSize, output.TotalCount));
     }
@@ -104,8 +115,10 @@ public sealed class VacunoController : ControllerBase
     public async Task<IActionResult> GetArbolGenealogico(
     [FromRoute] long id, [FromQuery] int niveles = 4, CancellationToken cancellationToken = default)
     {
+        var behaviorPipeline = _getArbolGenealogicoBehaviorPipelineFactory.Create();
+
         var command = new GetArbolGenealogicoCommand(id, niveles);
-        var output = await _getArbolGenealogicoInputPort.HandleAsync(command, cancellationToken);
+        var output = await behaviorPipeline.Execute(command, cancellationToken);
         return Ok(GeneralResponseDTO<object>.Ok(output.Arbol));
     }
 
@@ -115,9 +128,12 @@ public sealed class VacunoController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ExportarArbolGenealogico([FromRoute] long id, [FromQuery] int niveles = 4, CancellationToken cancellationToken = default)
     {
-        var command = new ExportarArbolGenealogicoCommand(niveles);
-        var bytes = await _exportarArbolInputPort.HandleAsync(id, command, cancellationToken);
-        return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Genealogia_{id}.xlsx");
+        var behaviorPipeline = _exportarArbolGenealogicoBehaviorPipelineFactory.Create();
+
+        var command = new ExportarArbolGenealogicoCommand(id, niveles);
+
+        var result = await behaviorPipeline.Execute(command, cancellationToken);
+        return File(result.excel, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Genealogia_{id}.xlsx");
     }
 
     [HttpPost]
@@ -129,196 +145,24 @@ public sealed class VacunoController : ControllerBase
         [FromServices] GanaderiaDbContext db,
         CancellationToken cancellationToken)
     {
-        if (!string.IsNullOrWhiteSpace(request.CodigoPadre) && request.CodigoPadre.Trim() == request.Codigo.Trim())
+        var (padreId, madreId, parentError) = await ResolveParentsAsync(
+            request.CodigoPadre, request.CodigoMadre, request.Codigo.Trim(), db, cancellationToken);
+        if (parentError != null)
         {
-            return BadRequest(new
-            {
-                error = new
-                {
-                    code = "VALIDATION_ERROR",
-                    message = "Los datos enviados no son válidos.",
-                    details = new[]
-                    {
-                        new { field = "codigoPadre", message = "Un vacuno no puede ser su propio padre." }
-                    }
-                }
-            });
+            return parentError;
         }
 
-        if (!string.IsNullOrWhiteSpace(request.CodigoMadre) && request.CodigoMadre.Trim() == request.Codigo.Trim())
+        var (granjaId, granjaError) = await ResolveGranjaAsync(
+            request.GranjaId, request.Granja, request.CodigoDistrito, db, cancellationToken);
+        if (granjaError != null)
         {
-            return BadRequest(new
-            {
-                error = new
-                {
-                    code = "VALIDATION_ERROR",
-                    message = "Los datos enviados no son válidos.",
-                    details = new[]
-                    {
-                        new { field = "codigoMadre", message = "Un vacuno no puede ser su propia madre." }
-                    }
-                }
-            });
+            return granjaError;
         }
 
-        long? padreId = null;
-        if (!string.IsNullOrWhiteSpace(request.CodigoPadre))
-        {
-            var padre = await db.vacunos.FirstOrDefaultAsync(v => v.codigo == request.CodigoPadre.Trim()
-                && v.deleted_at == null
-                && !db.v_vacuno_estado_vigentes.Any(e => e.vacuno_id == v.id && e.estado_code == "MUERTO"), cancellationToken);
-            if (padre == null)
-            {
-                return BadRequest(new
-                {
-                    error = new
-                    {
-                        code = "VALIDATION_ERROR",
-                        message = "Los datos enviados no son válidos.",
-                        details = new[]
-                        {
-                            new { field = "codigoPadre", message = "El vacuno padre especificado no existe." }
-                        }
-                    }
-                });
-            }
-            if (!IsMaleSexCode(padre.sexo_code))
-            {
-                return BadRequest(new
-                {
-                    error = new
-                    {
-                        code = "VALIDATION_ERROR",
-                        message = "Los datos enviados no son validos.",
-                        details = new[]
-                        {
-                            new { field = "codigoPadre", message = "El padre debe ser un vacuno macho activo." }
-                        }
-                    }
-                });
-            }
-            padreId = padre.id;
-        }
-
-        long? madreId = null;
-        if (!string.IsNullOrWhiteSpace(request.CodigoMadre))
-        {
-            var madre = await db.vacunos.FirstOrDefaultAsync(v => v.codigo == request.CodigoMadre.Trim()
-                && v.deleted_at == null
-                && !db.v_vacuno_estado_vigentes.Any(e => e.vacuno_id == v.id && e.estado_code == "MUERTO"), cancellationToken);
-            if (madre == null)
-            {
-                return BadRequest(new
-                {
-                    error = new
-                    {
-                        code = "VALIDATION_ERROR",
-                        message = "Los datos enviados no son válidos.",
-                        details = new[]
-                        {
-                            new { field = "codigoMadre", message = "El vacuno madre especificado no existe." }
-                        }
-                    }
-                });
-            }
-            if (!IsFemaleSexCode(madre.sexo_code))
-            {
-                return BadRequest(new
-                {
-                    error = new
-                    {
-                        code = "VALIDATION_ERROR",
-                        message = "Los datos enviados no son validos.",
-                        details = new[]
-                        {
-                            new { field = "codigoMadre", message = "La madre debe ser un vacuno hembra activo." }
-                        }
-                    }
-                });
-            }
-            madreId = madre.id;
-        }
-
-        long granjaId = 0;
-        if (request.GranjaId.HasValue && request.GranjaId.Value > 0)
-        {
-            var granjaExiste = await db.granjas.AnyAsync(g => g.id == request.GranjaId.Value && g.activo, cancellationToken);
-            if (!granjaExiste)
-            {
-                return BadRequest(new
-                {
-                    error = new
-                    {
-                        code = "VALIDATION_ERROR",
-                        message = "Los datos enviados no son válidos.",
-                        details = new[]
-                        {
-                            new { field = "granjaId", message = "La granja seleccionada no existe o no está activa." }
-                        }
-                    }
-                });
-            }
-            granjaId = request.GranjaId.Value;
-        }
-        else
-        {
-            var granjaNombre = request.Granja?.Trim();
-            var distritoCodigo = request.CodigoDistrito?.Trim();
-            if (!string.IsNullOrWhiteSpace(granjaNombre) && !string.IsNullOrWhiteSpace(distritoCodigo))
-            {
-                var distritoExists = await db.geo_distritos.AnyAsync(d => d.codigo == distritoCodigo, cancellationToken);
-                if (!distritoExists)
-                {
-                    return BadRequest(new
-                    {
-                        error = new
-                        {
-                            code = "VALIDATION_ERROR",
-                            message = "Los datos enviados no son válidos.",
-                            details = new[]
-                            {
-                                new { field = "codigoDistrito", message = "El distrito especificado no es válido o no está registrado." }
-                            }
-                        }
-                    });
-                }
-
-                var granja = await db.granjas.FirstOrDefaultAsync(g => g.nombre == granjaNombre && g.distrito_codigo == distritoCodigo, cancellationToken);
-                if (granja == null)
-                {
-                    granja = new ZooTech.Infrastructure.Persistence.Entities.granja
-                    {
-                        nombre = granjaNombre,
-                        distrito_codigo = distritoCodigo,
-                        activo = true,
-                        created_at = DateTime.UtcNow,
-                        updated_at = DateTime.UtcNow
-                    };
-                    db.granjas.Add(granja);
-                    await db.SaveChangesAsync(cancellationToken);
-                }
-                granjaId = granja.id;
-            }
-        }
-
-        if (granjaId <= 0)
-        {
-            return BadRequest(new
-            {
-                error = new
-                {
-                    code = "VALIDATION_ERROR",
-                    message = "Los datos enviados no son válidos.",
-                    details = new[]
-                    {
-                        new { field = "granjaId", message = "La granja seleccionada no es válida o no ha sido especificada." }
-                    }
-                }
-            });
-        }
+        var behaviorPipeline = _createVacunoBehaviorPipelineFactory.Create();
 
         var command = VacunoMapper.ToCommand(request, padreId, madreId, granjaId);
-        var output = await _createInputPort.HandleAsync(command, cancellationToken);
+        var output = await behaviorPipeline.Execute(command, cancellationToken);
         var response = await EnrichResponseAsync(output.Data, db, cancellationToken);
         return Created($"/api/v1/vacuno/{response.Id}", GeneralResponseDTO<VacunoResponse>.Ok(response));
     }
@@ -331,8 +175,13 @@ public sealed class VacunoController : ControllerBase
         [FromServices] GanaderiaDbContext db,
         CancellationToken cancellationToken)
     {
+        var behaviorPipeline = _getVacunoByIdBehaviorPipelineFactory.Create();
+
         long id = await ResolveIdAsync(identifier, cancellationToken);
-        var output = await _getByIdInputPort.HandleAsync(id, cancellationToken);
+        var output = await behaviorPipeline.Execute(
+            new GetVacunoByIdCommand(id),
+            cancellationToken
+        );
         var response = await EnrichResponseAsync(output.Data, db, cancellationToken);
         return Ok(GeneralResponseDTO<VacunoResponse>.Ok(response));
     }
@@ -356,196 +205,24 @@ public sealed class VacunoController : ControllerBase
 
         var ownCodigo = existingVacuno.codigo;
 
-        if (!string.IsNullOrWhiteSpace(request.CodigoPadre) && request.CodigoPadre.Trim() == ownCodigo)
+        var (padreId, madreId, parentError) = await ResolveParentsAsync(
+            request.CodigoPadre, request.CodigoMadre, ownCodigo, db, cancellationToken);
+        if (parentError != null)
         {
-            return BadRequest(new
-            {
-                error = new
-                {
-                    code = "VALIDATION_ERROR",
-                    message = "Los datos enviados no son válidos.",
-                    details = new[]
-                    {
-                        new { field = "codigoPadre", message = "Un vacuno no puede ser su propio padre." }
-                    }
-                }
-            });
+            return parentError;
         }
 
-        if (!string.IsNullOrWhiteSpace(request.CodigoMadre) && request.CodigoMadre.Trim() == ownCodigo)
+        var (granjaId, granjaError) = await ResolveGranjaAsync(
+            request.GranjaId, request.Granja, request.CodigoDistrito, db, cancellationToken);
+        if (granjaError != null)
         {
-            return BadRequest(new
-            {
-                error = new
-                {
-                    code = "VALIDATION_ERROR",
-                    message = "Los datos enviados no son válidos.",
-                    details = new[]
-                    {
-                        new { field = "codigoMadre", message = "Un vacuno no puede ser su propia madre." }
-                    }
-                }
-            });
+            return granjaError;
         }
 
-        long? padreId = null;
-        if (!string.IsNullOrWhiteSpace(request.CodigoPadre))
-        {
-            var padre = await db.vacunos.FirstOrDefaultAsync(v => v.codigo == request.CodigoPadre.Trim()
-                && v.deleted_at == null
-                && !db.v_vacuno_estado_vigentes.Any(e => e.vacuno_id == v.id && e.estado_code == "MUERTO"), cancellationToken);
-            if (padre == null)
-            {
-                return BadRequest(new
-                {
-                    error = new
-                    {
-                        code = "VALIDATION_ERROR",
-                        message = "Los datos enviados no son válidos.",
-                        details = new[]
-                        {
-                            new { field = "codigoPadre", message = "El vacuno padre especificado no existe." }
-                        }
-                    }
-                });
-            }
-            if (!IsMaleSexCode(padre.sexo_code))
-            {
-                return BadRequest(new
-                {
-                    error = new
-                    {
-                        code = "VALIDATION_ERROR",
-                        message = "Los datos enviados no son validos.",
-                        details = new[]
-                        {
-                            new { field = "codigoPadre", message = "El padre debe ser un vacuno macho activo." }
-                        }
-                    }
-                });
-            }
-            padreId = padre.id;
-        }
+        var behaviorPipeline = _updateVacunoBehaviorPipelineFactory.Create();
 
-        long? madreId = null;
-        if (!string.IsNullOrWhiteSpace(request.CodigoMadre))
-        {
-            var madre = await db.vacunos.FirstOrDefaultAsync(v => v.codigo == request.CodigoMadre.Trim()
-                && v.deleted_at == null
-                && !db.v_vacuno_estado_vigentes.Any(e => e.vacuno_id == v.id && e.estado_code == "MUERTO"), cancellationToken);
-            if (madre == null)
-            {
-                return BadRequest(new
-                {
-                    error = new
-                    {
-                        code = "VALIDATION_ERROR",
-                        message = "Los datos enviados no son válidos.",
-                        details = new[]
-                        {
-                            new { field = "codigoMadre", message = "El vacuno madre especificado no existe." }
-                        }
-                    }
-                });
-            }
-            if (!IsFemaleSexCode(madre.sexo_code))
-            {
-                return BadRequest(new
-                {
-                    error = new
-                    {
-                        code = "VALIDATION_ERROR",
-                        message = "Los datos enviados no son validos.",
-                        details = new[]
-                        {
-                            new { field = "codigoMadre", message = "La madre debe ser un vacuno hembra activo." }
-                        }
-                    }
-                });
-            }
-            madreId = madre.id;
-        }
-
-        long granjaId = 0;
-        if (request.GranjaId.HasValue && request.GranjaId.Value > 0)
-        {
-            var granjaExiste = await db.granjas.AnyAsync(g => g.id == request.GranjaId.Value && g.activo, cancellationToken);
-            if (!granjaExiste)
-            {
-                return BadRequest(new
-                {
-                    error = new
-                    {
-                        code = "VALIDATION_ERROR",
-                        message = "Los datos enviados no son válidos.",
-                        details = new[]
-                        {
-                            new { field = "granjaId", message = "La granja seleccionada no existe o no está activa." }
-                        }
-                    }
-                });
-            }
-            granjaId = request.GranjaId.Value;
-        }
-        else
-        {
-            var granjaNombre = request.Granja?.Trim();
-            var distritoCodigo = request.CodigoDistrito?.Trim();
-            if (!string.IsNullOrWhiteSpace(granjaNombre) && !string.IsNullOrWhiteSpace(distritoCodigo))
-            {
-                var distritoExists = await db.geo_distritos.AnyAsync(d => d.codigo == distritoCodigo, cancellationToken);
-                if (!distritoExists)
-                {
-                    return BadRequest(new
-                    {
-                        error = new
-                        {
-                            code = "VALIDATION_ERROR",
-                            message = "Los datos enviados no son válidos.",
-                            details = new[]
-                            {
-                                new { field = "codigoDistrito", message = "El distrito especificado no es válido o no está registrado." }
-                            }
-                        }
-                    });
-                }
-
-                var granja = await db.granjas.FirstOrDefaultAsync(g => g.nombre == granjaNombre && g.distrito_codigo == distritoCodigo, cancellationToken);
-                if (granja == null)
-                {
-                    granja = new ZooTech.Infrastructure.Persistence.Entities.granja
-                    {
-                        nombre = granjaNombre,
-                        distrito_codigo = distritoCodigo,
-                        activo = true,
-                        created_at = DateTime.UtcNow,
-                        updated_at = DateTime.UtcNow
-                    };
-                    db.granjas.Add(granja);
-                    await db.SaveChangesAsync(cancellationToken);
-                }
-                granjaId = granja.id;
-            }
-        }
-
-        if (granjaId <= 0)
-        {
-            return BadRequest(new
-            {
-                error = new
-                {
-                    code = "VALIDATION_ERROR",
-                    message = "Los datos enviados no son válidos.",
-                    details = new[]
-                    {
-                        new { field = "granjaId", message = "La granja seleccionada no es válida o no ha sido especificada." }
-                    }
-                }
-            });
-        }
-
-        var command = VacunoMapper.ToCommand(request, padreId, madreId, granjaId);
-        var output = await _updateInputPort.HandleAsync(id, command, cancellationToken);
+        var command = VacunoMapper.ToCommand(id, request, padreId, madreId, granjaId);
+        var output = await behaviorPipeline.Execute(command, cancellationToken);
         var response = await EnrichResponseAsync(output.Data, db, cancellationToken);
         return Ok(GeneralResponseDTO<VacunoResponse>.Ok(response));
     }
@@ -556,8 +233,10 @@ public sealed class VacunoController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete([FromRoute] string identifier, [FromBody] DeleteVacunoRequest request, CancellationToken cancellationToken)
     {
+        var behaviorPipeline = _deleteVacunoBehaviorPipelineFactory.Create();
+
         long id = await ResolveIdAsync(identifier, cancellationToken);
-        await _deleteInputPort.HandleAsync(id, VacunoMapper.ToCommand(request), cancellationToken);
+        await behaviorPipeline.Execute(VacunoMapper.ToCommand(id, request), cancellationToken);
         return NoContent();
     }
 
@@ -601,7 +280,9 @@ public sealed class VacunoController : ControllerBase
         [FromQuery] ListadoVacunosRequest request,
         CancellationToken cancellationToken)
     {
-        var response = await _listarVacunosReporteUseCase.HandleAsync(
+        var behaviorPipeline = _listarVacunosReporteBehaviorPipelineFactory.Create();
+
+        var response = await behaviorPipeline.Execute(
             RegistroVacunoReporteMapper.ToApplicationQuery(request),
             cancellationToken);
 
@@ -632,7 +313,12 @@ public sealed class VacunoController : ControllerBase
         [FromServices] GanaderiaDbContext db,
         CancellationToken cancellationToken)
     {
-        var output = await _getByIdInputPort.HandleAsync(vacunoId, cancellationToken);
+        var behaviorPipeline = _getVacunoByIdBehaviorPipelineFactory.Create();
+
+        var output = await behaviorPipeline.Execute(
+            new GetVacunoByIdCommand(vacunoId), 
+            cancellationToken
+        );
         var response = await EnrichResponseAsync(output.Data, db, cancellationToken);
         var normalizedFormato = NormalizeFormat(formato);
         var detalle = await BuildRegistroVacunoDetalleAsync(response, db, cancellationToken);
@@ -854,6 +540,140 @@ public sealed class VacunoController : ControllerBase
             || string.Equals(sexoCode, "H", StringComparison.OrdinalIgnoreCase)
             || string.Equals(sexoCode, "F", StringComparison.OrdinalIgnoreCase);
 
+    private IActionResult ValidationErrorResponse(
+        string field,
+        string message,
+        string topMessage = "Los datos enviados no son válidos.")
+    {
+        return BadRequest(new
+        {
+            error = new
+            {
+                code = "VALIDATION_ERROR",
+                message = topMessage,
+                details = new[]
+                {
+                    new { field, message }
+                }
+            }
+        });
+    }
+
+    private async Task<(long? PadreId, long? MadreId, IActionResult? Error)> ResolveParentsAsync(
+        string? codigoPadre,
+        string? codigoMadre,
+        string ownCodigo,
+        GanaderiaDbContext db,
+        CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrWhiteSpace(codigoPadre) && codigoPadre.Trim() == ownCodigo)
+        {
+            return (null, null, ValidationErrorResponse("codigoPadre", "Un vacuno no puede ser su propio padre."));
+        }
+
+        if (!string.IsNullOrWhiteSpace(codigoMadre) && codigoMadre.Trim() == ownCodigo)
+        {
+            return (null, null, ValidationErrorResponse("codigoMadre", "Un vacuno no puede ser su propia madre."));
+        }
+
+        long? padreId = null;
+        if (!string.IsNullOrWhiteSpace(codigoPadre))
+        {
+            var padre = await db.vacunos.FirstOrDefaultAsync(v => v.codigo == codigoPadre.Trim()
+                && v.deleted_at == null
+                && !db.v_vacuno_estado_vigentes.Any(e => e.vacuno_id == v.id && e.estado_code == "MUERTO"), cancellationToken);
+            if (padre == null)
+            {
+                return (null, null, ValidationErrorResponse("codigoPadre", "El vacuno padre especificado no existe."));
+            }
+            if (!IsMaleSexCode(padre.sexo_code))
+            {
+                return (null, null, ValidationErrorResponse(
+                    "codigoPadre",
+                    "El padre debe ser un vacuno macho activo.",
+                    "Los datos enviados no son validos."));
+            }
+            padreId = padre.id;
+        }
+
+        long? madreId = null;
+        if (!string.IsNullOrWhiteSpace(codigoMadre))
+        {
+            var madre = await db.vacunos.FirstOrDefaultAsync(v => v.codigo == codigoMadre.Trim()
+                && v.deleted_at == null
+                && !db.v_vacuno_estado_vigentes.Any(e => e.vacuno_id == v.id && e.estado_code == "MUERTO"), cancellationToken);
+            if (madre == null)
+            {
+                return (null, null, ValidationErrorResponse("codigoMadre", "El vacuno madre especificado no existe."));
+            }
+            if (!IsFemaleSexCode(madre.sexo_code))
+            {
+                return (null, null, ValidationErrorResponse(
+                    "codigoMadre",
+                    "La madre debe ser un vacuno hembra activo.",
+                    "Los datos enviados no son validos."));
+            }
+            madreId = madre.id;
+        }
+
+        return (padreId, madreId, null);
+    }
+
+    private async Task<(long GranjaId, IActionResult? Error)> ResolveGranjaAsync(
+        long? granjaIdRequest,
+        string? granjaNombreRequest,
+        string? codigoDistritoRequest,
+        GanaderiaDbContext db,
+        CancellationToken cancellationToken)
+    {
+        long granjaId = 0;
+        if (granjaIdRequest.HasValue && granjaIdRequest.Value > 0)
+        {
+            var granjaExiste = await db.granjas.AnyAsync(g => g.id == granjaIdRequest.Value && g.activo, cancellationToken);
+            if (!granjaExiste)
+            {
+                return (0, ValidationErrorResponse("granjaId", "La granja seleccionada no existe o no está activa."));
+            }
+            granjaId = granjaIdRequest.Value;
+        }
+        else
+        {
+            var granjaNombre = granjaNombreRequest?.Trim();
+            var distritoCodigo = codigoDistritoRequest?.Trim();
+            if (!string.IsNullOrWhiteSpace(granjaNombre) && !string.IsNullOrWhiteSpace(distritoCodigo))
+            {
+                var distritoExists = await db.geo_distritos.AnyAsync(d => d.codigo == distritoCodigo, cancellationToken);
+                if (!distritoExists)
+                {
+                    return (0, ValidationErrorResponse("codigoDistrito", "El distrito especificado no es válido o no está registrado."));
+                }
+
+                var granja = await db.granjas.FirstOrDefaultAsync(g => g.nombre == granjaNombre && g.distrito_codigo == distritoCodigo, cancellationToken);
+                if (granja == null)
+                {
+                    granja = new ZooTech.Infrastructure.Persistence.Entities.granja
+                    {
+                        nombre = granjaNombre,
+                        distrito_codigo = distritoCodigo,
+                        activo = true,
+                        created_at = DateTime.UtcNow,
+                        updated_at = DateTime.UtcNow
+                    };
+                    db.granjas.Add(granja);
+                    await db.SaveChangesAsync(cancellationToken);
+                }
+                granjaId = granja.id;
+            }
+        }
+
+        if (granjaId <= 0)
+        {
+            return (0, ValidationErrorResponse("granjaId", "La granja seleccionada no es válida o no ha sido especificada."));
+        }
+
+        return (granjaId, null);
+    }
+
     private async Task<object> BuildRegistroVacunoDetalleAsync(
         VacunoResponse response,
         GanaderiaDbContext db,
@@ -933,8 +753,10 @@ public sealed class VacunoController : ControllerBase
 
         for (var page = 1; page <= totalPages; page++)
         {
+            var behaviorPipeline = _listarVacunosReporteBehaviorPipelineFactory.Create();
+
             var pageRequest = CloneListadoRequest(request, page, exportPageSize);
-            var pageResponse = await _listarVacunosReporteUseCase.HandleAsync(
+            var pageResponse = await behaviorPipeline.Execute(
                 RegistroVacunoReporteMapper.ToApplicationQuery(pageRequest),
                 cancellationToken);
 

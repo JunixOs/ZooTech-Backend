@@ -22,8 +22,15 @@ public class GenerateOrdeniosPdfInteractorTests
             comparativeGenerator,
             new FakeDateTimeProvider(now));
 
-        var result = await interactor.HandleAsync(
-            new GenerateOrdeniosComparationPdfQuery(1, "ACTIVO", now.AddDays(-1), now, false),
+        var result = await interactor.Handle(
+            new GenerateOrdeniosComparationPdfQuery
+            {
+                VacunoId = 1,
+                EstadoOrdenioCode = "ACTIVO",
+                FechaDesde = now.AddDays(-1),
+                FechaHasta = now,
+                Comparativo = false
+            },
             CancellationToken.None);
 
         Assert.True(standardGenerator.WasCalled);
@@ -48,8 +55,15 @@ public class GenerateOrdeniosPdfInteractorTests
             comparativeGenerator,
             new FakeDateTimeProvider(now));
 
-        var result = await interactor.HandleAsync(
-            new GenerateOrdeniosComparationPdfQuery(null, null, null, null, true),
+        var result = await interactor.Handle(
+            new GenerateOrdeniosComparationPdfQuery
+            {
+                VacunoId = null,
+                EstadoOrdenioCode = null,
+                FechaDesde = null,
+                FechaHasta = null,
+                Comparativo = true
+            },
             CancellationToken.None);
 
         Assert.False(standardGenerator.WasCalled);

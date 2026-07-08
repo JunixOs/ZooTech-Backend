@@ -12,22 +12,23 @@ public sealed class GetAllTriajesInteractor : IGetAllTriajesInputPort
         _repository = repository;
     }
 
-    public async Task<GetAllTriajesOutput> HandleAsync(GetAllTriajesQuery query, CancellationToken cancellationToken = default)
+    public async Task<GetAllTriajesOutput> Handle(GetAllTriajesQuery query, CancellationToken cancellationToken = default)
     {
         var pagina = query.Pagina <= 0 ? 1 : query.Pagina;
         var tamano = query.Tamano <= 0 ? 10 : Math.Min(query.Tamano, 100);
 
         var (triajes, total) = await _repository.GetAllAsync(
-    pagina: pagina,
-    tamano: tamano,
-    fecha: query.Fecha,
-    fechaDesde: query.FechaDesde,
-    fechaHasta: query.FechaHasta,
-    codigo: query.Codigo,
-    nombre: query.Nombre,
-    tipoPeso: query.TipoPeso,
-    pesoKg: query.PesoKg,
-    cancellationToken: cancellationToken);
+            pagina: pagina,
+            tamano: tamano,
+            fecha: query.Fecha,
+            fechaDesde: query.FechaDesde,
+            fechaHasta: query.FechaHasta,
+            codigo: query.Codigo,
+            nombre: query.Nombre,
+            tipoPeso: query.TipoPeso,
+            pesoKg: query.PesoKg,
+            cancellationToken: cancellationToken
+        );
 
         var items = triajes.Select(TriajeMapper.ToOutput).ToList();
 

@@ -1,25 +1,27 @@
-using FluentValidation;
 using ZooTech.Application.Common.Exceptions;
+using ZooTech.Application.Common.Models;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
+using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.DeleteOrdenio;
 
 public sealed class DeleteOrdenioInteractor : IDeleteOrdenioInputPort
 {
     private readonly IOrdenioRepository _repository;
-    private readonly IValidator<DeleteOrdenioCommand> _validator;
 
-    public DeleteOrdenioInteractor(IOrdenioRepository repository, IValidator<DeleteOrdenioCommand> validator)
+    public DeleteOrdenioInteractor(IOrdenioRepository repository)
     {
         _repository = repository;
-        _validator = validator;
     }
 
-    public async Task HandleAsync(long id, DeleteOrdenioCommand command, CancellationToken cancellationToken)
+    public async Task<EmptyOutput> Handle(DeleteOrdenioCommand command, CancellationToken cancellationToken)
     {
-        await _validator.ValidateAndThrowAsync(command, cancellationToken);
-        var existing = await _repository.GetByIdAsync(id, cancellationToken)
-            ?? throw new NotFoundException("No se encontró el ordeño solicitado.");
+        var existing = await _repository.GetByIdAsync(command.Id, cancellationToken)
+            ?? throw new NotFoundException(
+                ScopeName.Application,
+                ModuleName.Produccion_Leche,
+                "No se encontró el ordeño solicitado."
+            );
 
         try
         {
@@ -27,9 +29,15 @@ public sealed class DeleteOrdenioInteractor : IDeleteOrdenioInputPort
         }
         catch (ArgumentException ex)
         {
-            throw new ConflictException(ex.Message);
+            throw new ConflictException(
+                ScopeName.Application,
+                ModuleName.Produccion_Leche,
+                message: ex.Message
+            );
         }
 
         _ = await _repository.UpdateAsync(existing, cancellationToken);
+
+        return EmptyOutput.Value;
     }
 }

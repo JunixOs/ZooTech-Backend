@@ -13,10 +13,10 @@ public sealed class GetVacunoByIdInteractor : IGetVacunoByIdInputPort
         _repository = repository;
     }
 
-    public async Task<GetVacunoByIdOutput> HandleAsync(long id, CancellationToken cancellationToken)
+    public async Task<GetVacunoByIdOutput> HandleAsync(GetVacunoByIdCommand cmd, CancellationToken cancellationToken)
     {
-        var vacuno = await _repository.GetByIdAsync(id, cancellationToken)
-            ?? throw new VacunoNotFoundException($"No existe un vacuno con el ID {id}.");
+        var vacuno = await _repository.GetByIdAsync(cmd.Id, cancellationToken)
+            ?? throw new VacunoNotFoundException($"No existe un vacuno con el ID {cmd.Id}.");
         return new GetVacunoByIdOutput(VacunoAppMapper.ToOutput(vacuno));
     }
 }

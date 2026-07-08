@@ -3,6 +3,6 @@ namespace ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.G
 
 public interface IGetOrdeniosPdfInputPort
 {
-    Task<GenerateOrdeniosPdfOutput> HandleAsync(GenerateOrdeniosComparationPdfQuery query, CancellationToken cancellationToken);
+    Task<GenerateOrdeniosPdfOutput> Handle(GenerateOrdeniosComparationPdfQuery query, CancellationToken cancellationToken);
 
 }

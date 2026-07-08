@@ -2,5 +2,5 @@ namespace ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.G
 
 public interface IGetOrdenioByIdInputPort
 {
-    Task<GetOrdenioByIdOutput> HandleAsync(long id, CancellationToken cancellationToken);
+    Task<GetOrdenioByIdOutput> Handle(GetOrdenioByIdCommand cmd, CancellationToken cancellationToken);
 }

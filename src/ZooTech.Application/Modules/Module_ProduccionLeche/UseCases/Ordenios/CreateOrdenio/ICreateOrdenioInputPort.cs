@@ -2,5 +2,5 @@ namespace ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.C
 
 public interface ICreateOrdenioInputPort
 {
-    Task<CreateOrdenioOutput> HandleAsync(CreateOrdenioCommand command, CancellationToken cancellationToken);
+    Task<CreateOrdenioOutput> Handle(CreateOrdenioCommand command, CancellationToken cancellationToken);
 }

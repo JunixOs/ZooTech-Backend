@@ -8,9 +8,9 @@ public sealed class ListadoVacunosReporteReadRepository : IListadoVacunosReporte
 {
     private readonly GanaderiaDbContext _context;
 
-    public ListadoVacunosReporteReadRepository(GanaderiaDbContext context)
+    public ListadoVacunosReporteReadRepository(IGanaderiaDbContextFactory ganaderiaDbContextFactory)
     {
-        _context = context;
+        _context = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
     }
 
     public async Task<ListadoVacunosReporteReadResult> ListarAsync(

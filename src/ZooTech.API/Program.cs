@@ -1,5 +1,5 @@
+using Microsoft.EntityFrameworkCore;
 using ZooTech.Application;
-using ZooTech.Application.Common.Gateway.Services;
 using ZooTech.Infrastructure;
 using ZooTech.InterfaceAdapters;
 using ZooTech.InterfaceAdapters.Controllers;
@@ -7,6 +7,9 @@ using ZooTech.InterfaceAdapters.Middleware;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.Controllers;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Controllers;
+using ZooTech.Infrastructure.Persistence.Context;
+using ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers;
+
 using QuestPDF.Infrastructure;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services
@@ -15,6 +18,11 @@ builder.Services
     .AddApplicationPart(typeof(CeloController).Assembly)
     .AddApplicationPart(typeof(VacunoController).Assembly)
     .AddApplicationPart(typeof(ProduccionLecheController).Assembly);
+
+// ======= Configuracion Swagger =======
+builder.Services
+    .AddControllers()
+    .AddApplicationPart(typeof(TenancingController).Assembly);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -34,10 +42,27 @@ builder.Services.AddSwaggerGen(options =>
         Version = "v1"
     });
 });
-builder.Services
-    .AddApplication()
-    .AddInfrastructure(builder.Configuration)
-    .AddInterfaceAdapters();
+
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddInterfaceAdapters();
+
+// ======= Configuracion Context BD Tenant Principal =======
+builder.Services.AddDbContext<TenantCatalogDb>(options =>
+{
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("TenantCatalogConnection"));
+});
+// ======= Configuracion Context BD Tenant Principal =======
+
+// ======= Configuracion DI =======
+builder.Services.AddMemoryCache();
+// ======= Configuracion DI =======
+
+var frontendPort = builder.Configuration["Frontend:FrontendPort"] ?? "5000";
+var frontendIP = builder.Configuration["Frontend:FrontendIP"] ?? "localhost";
+var frontendProtocol = builder.Configuration["Frontend:FrontendProtocol"] ?? "http";
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
@@ -60,6 +85,19 @@ builder.Services.AddCors(options =>
 });
 QuestPDF.Settings.License = LicenseType.Community;
 var app = builder.Build();
+
+// ===== Configurar Middlewares =====
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseMiddleware<TenantResolutionMiddleware>();
+// ===== Configurar Middlewares =====
+
+// ===== Configurar JWT =====
+app.UseAuthentication();
+app.UseAuthorization();
+// ===== Configurar JWT =====
+
+
+// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -79,6 +117,9 @@ if (app.Environment.IsDevelopment())
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
+
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
+
+public partial class Program { }

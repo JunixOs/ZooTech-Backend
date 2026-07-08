@@ -1,4 +1,3 @@
-using FluentValidation;
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.DeleteOrdenio;
 using ZooTech.Domain.Module_ProduccionLeche.Entities;
@@ -14,10 +13,9 @@ public class DeleteOrdenioInteractorTests
         var fecha = new DateTime(2026, 6, 18, 8, 0, 0, DateTimeKind.Utc);
         var existing = CreateOrdenio(fecha);
         var repository = new FakeOrdenioRepository(existing);
-        var validator = new InlineValidator<DeleteOrdenioCommand>();
-        var interactor = new DeleteOrdenioInteractor(repository, validator);
+        var interactor = new DeleteOrdenioInteractor(repository);
 
-        await interactor.HandleAsync(10, new DeleteOrdenioCommand("Registro duplicado"), CancellationToken.None);
+        await interactor.Handle(new DeleteOrdenioCommand { Id = 10, MotivoEliminacion = "Registro duplicado" }, CancellationToken.None);
 
         Assert.True(repository.UpdateWasCalled);
         Assert.True(existing.IsDeleted);
@@ -28,10 +26,9 @@ public class DeleteOrdenioInteractorTests
     public async Task HandleAsync_WhenOrdenioDoesNotExist_ThrowsNotFoundException()
     {
         var repository = new FakeOrdenioRepository(null);
-        var validator = new InlineValidator<DeleteOrdenioCommand>();
-        var interactor = new DeleteOrdenioInteractor(repository, validator);
+        var interactor = new DeleteOrdenioInteractor(repository);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => interactor.HandleAsync(99, new DeleteOrdenioCommand("Motivo"), CancellationToken.None));
+        await Assert.ThrowsAsync<NotFoundException>(() => interactor.Handle(new DeleteOrdenioCommand { Id = 99, MotivoEliminacion = "Motivo" }, CancellationToken.None));
     }
 
     private static Ordenio CreateOrdenio(DateTime fecha)

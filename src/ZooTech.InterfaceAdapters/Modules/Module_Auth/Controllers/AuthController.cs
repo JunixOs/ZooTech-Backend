@@ -1,117 +1,77 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
-using ZooTech.InterfaceAdapters.DTOs.Responses;
+using ZooTech.Application.Common.Behaviors;
+using ZooTech.Application.Common.Behaviors.Module_Auth.AdminLogin;
+using ZooTech.Application.Common.Behaviors.Module_Auth.RegularLogin;
+using ZooTech.Domain.Shared.Enums;
+using ZooTech.InterfaceAdapters.Filters;
+using ZooTech.InterfaceAdapters.Modules.Module_Auth.DTOs;
+using ZooTech.InterfaceAdapters.Modules.Module_Auth.Mappers;
 
-namespace ZooTech.InterfaceAdapters.Modules.Module_Auth.Controllers;
-
-[ApiController]
-[AllowAnonymous]
-[Route("api/v1/auth")]
-public sealed class AuthController : ControllerBase
+namespace ZooTech.InterfaceAdapters.Modules.Module_Auth
 {
-    private const string DemoEmail = "admin@zootech.com";
-    private const string DemoPassword = "Zootech2026!";
-
-    private readonly IConfiguration _configuration;
-
-    public AuthController(IConfiguration configuration)
+    [ApiController]
+    [Route("api/v1/auth")]
+    [ApiExplorerSettings(GroupName = "auth")]
+    public class AuthController : ControllerBase
     {
-        _configuration = configuration;
-    }
+        private readonly IAdminLoginBehaviorPipelineFactory _adminLoginBehaviorPipelineFactory;
+        private readonly IRegularLoginBehaviorPipelineFactory _regularLoginBehaviorPipelineFactory;
 
-    [HttpPost("login")]
-    [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
-    public IActionResult Login([FromBody] LoginRequest request)
-    {
-        if (!string.Equals(request.Email?.Trim(), DemoEmail, StringComparison.OrdinalIgnoreCase) ||
-            request.Password != DemoPassword)
+        public AuthController(
+            IAdminLoginBehaviorPipelineFactory adminLoginBehaviorPipelineFactory,
+            IRegularLoginBehaviorPipelineFactory regularLoginBehaviorPipelineFactory
+        )
         {
-            return Unauthorized(ErrorResponse.Create(
-                "INVALID_CREDENTIALS",
-                "Credenciales invalidas."));
+            _adminLoginBehaviorPipelineFactory = adminLoginBehaviorPipelineFactory;
+            _regularLoginBehaviorPipelineFactory = regularLoginBehaviorPipelineFactory;
         }
 
-        var expiresAt = DateTime.UtcNow.AddHours(GetExpirationHours());
-
-        return Ok(new LoginResponse
+        [AllowAnonymous]
+        [ServiceFilter(typeof(AnonymousOnlyFilter))]
+        [ServiceFilter(typeof(TenantHeaderFilter))]
+        [RestrictTenantType(Domain.Shared.Enums.TenantType.Tenant)]
+        [HttpPost("user/login")]
+        public async Task<IActionResult> LoginRegularUsers(
+            [FromBody] RegularLoginRequestDTO request,
+            CancellationToken cancellationToken = default
+        )
         {
-            Token = CreateJwt(expiresAt),
-            TokenType = "Bearer",
-            ExpiresAt = expiresAt,
-            User = new AuthUserResponse
-            {
-                Id = 1,
-                Nombre = "Administrador Zootech",
-                Email = DemoEmail,
-                Rol = "Administrador"
-            }
-        });
-    }
+            var behaviorPipeline = _regularLoginBehaviorPipelineFactory.Create();
 
-    private string CreateJwt(DateTime expiresAt)
-    {
-        var issuer = GetRequiredConfiguration("Jwt:Issuer");
-        var audience = GetRequiredConfiguration("Jwt:Audience");
-        var signingKey = GetRequiredConfiguration("Jwt:SigningKey");
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKey));
-        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            var result = await behaviorPipeline.Execute(
+                RegularLoginMapper.ToCommand(request),
+                cancellationToken
+            );
 
-        var claims = new[]
+            return Ok(result);
+        }
+
+        [AllowAnonymous]
+        [ServiceFilter(typeof(AnonymousOnlyFilter))]
+        [ServiceFilter(typeof(TenantHeaderFilter))]
+        [RestrictTenantType(Domain.Shared.Enums.TenantType.Admin)]
+        [HttpPost("admin/login")]
+        public async Task<IActionResult> LoginAdminUsers(
+            [FromBody] AdminLoginRequestDTO requestDto,
+            CancellationToken cancellationToken = default
+        )
         {
-            new Claim(JwtRegisteredClaimNames.Sub, "1"),
-            new Claim(JwtRegisteredClaimNames.Email, DemoEmail),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new Claim(ClaimTypes.NameIdentifier, "1"),
-            new Claim(ClaimTypes.Name, "Administrador Zootech"),
-            new Claim(ClaimTypes.Email, DemoEmail),
-            new Claim(ClaimTypes.Role, "Administrador")
-        };
+            var behaviorPipeline = _adminLoginBehaviorPipelineFactory.Create();
 
-        var token = new JwtSecurityToken(
-            issuer: issuer,
-            audience: audience,
-            claims: claims,
-            expires: expiresAt,
-            signingCredentials: credentials);
+            var result = await behaviorPipeline.Execute(
+                AdminLoginMapper.ToCommand(requestDto),
+                cancellationToken
+            );
 
-        return new JwtSecurityTokenHandler().WriteToken(token);
+            return Ok(result);
+        }
+
+        [ServiceFilter(typeof(TenantHeaderFilter))]
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout(CancellationToken cancellationToken = default)
+        {
+            return Ok();
+        }
     }
-
-    private double GetExpirationHours()
-        => double.TryParse(_configuration["Jwt:ExpirationHours"], out var hours) && hours > 0
-            ? hours
-            : 8;
-
-    private string GetRequiredConfiguration(string key)
-        => _configuration[key]
-            ?? throw new InvalidOperationException($"{key} no esta configurado.");
-}
-
-public sealed class LoginRequest
-{
-    public string? Email { get; set; }
-    public string? Password { get; set; }
-}
-
-public sealed class LoginResponse
-{
-    public string Token { get; set; } = default!;
-    public string TokenType { get; set; } = default!;
-    public DateTime ExpiresAt { get; set; }
-    public AuthUserResponse User { get; set; } = default!;
-}
-
-public sealed class AuthUserResponse
-{
-    public int Id { get; set; }
-    public string Nombre { get; set; } = default!;
-    public string Email { get; set; } = default!;
-    public string Rol { get; set; } = default!;
 }

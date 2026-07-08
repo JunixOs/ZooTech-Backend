@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using ZooTech.Application.Common.Configuration;
-using ZooTech.Domain.Module_Fecundacion.Interfaces;
+﻿using ZooTech.Domain.Module_Fecundacion.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_Fecundacion.UseCases.ListarFecundacion;
 
@@ -13,12 +9,11 @@ public sealed class ListarFecundacionInteractor : IListarFecundacionInputPort
     private const int MaxPageSize = 100;
 
     private readonly IFecundacionRepository _fecundacionRepository;
-    private readonly IVacunosConfiguration _settings;
-
-    public ListarFecundacionInteractor(IFecundacionRepository fecundacionRepository, IVacunosConfiguration settings)
+    public ListarFecundacionInteractor(
+        IFecundacionRepository fecundacionRepository
+    )
     {
         _fecundacionRepository = fecundacionRepository;
-        _settings = settings;
     }
 
     public async Task<ListarFecundacionOutput> HandleAsync(
@@ -26,7 +21,7 @@ public sealed class ListarFecundacionInteractor : IListarFecundacionInputPort
     {
         var page = command.Page <= 0 ? DefaultPage : command.Page;
         var pageSize = command.Limit <= 0 ? DefaultPageSize : Math.Min(command.Limit, MaxPageSize);
-
+        
         var (items, totalCount) = await _fecundacionRepository.GetPagedAsync(
             command.Query,
             command.FechaDesde,

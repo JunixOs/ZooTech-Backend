@@ -24,7 +24,7 @@ public sealed class GenerateOrdeniosPdfInteractor : IGetOrdeniosPdfInputPort
         _dateTimeProvider = dateTimeProvider;
     }
 
-    public async Task<GenerateOrdeniosPdfOutput> HandleAsync(
+    public async Task<GenerateOrdeniosPdfOutput> Handle(
         GenerateOrdeniosComparationPdfQuery query,
         CancellationToken cancellationToken)
     {
@@ -56,6 +56,4 @@ public sealed class GenerateOrdeniosPdfInteractor : IGetOrdeniosPdfInputPort
             "application/pdf",
             $"{fileNamePrefix}-{document.GeneratedAtUtc:yyyyMMddHHmmss}.pdf");
     }
-
-   
 }

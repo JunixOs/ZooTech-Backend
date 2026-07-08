@@ -1,6 +1,8 @@
+using ZooTech.Application.Common.Models;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetReporteCelos;
 using ZooTech.Domain.Module_Celo.Entities;
 using ZooTech.Domain.Module_Celo.Interfaces;
+using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.UnitTests.Modules.Module_Celo.UseCases.GetReporteCelos;
 
@@ -28,7 +30,7 @@ public sealed class GetReporteCelosInteractorTests
         };
         var interactor = new GetReporteCelosInteractor(repository);
 
-        var output = await interactor.HandleAsync(CancellationToken.None);
+        var output = await interactor.HandleAsync(EmptyCommand.Value(AuditEventType.Read, "Get reporte celos"), CancellationToken.None);
 
         var item = Assert.Single(output.Items);
         Assert.Equal("CEL-001", item.CodigoRegistro);
@@ -59,7 +61,7 @@ public sealed class GetReporteCelosInteractorTests
         var repository = new FakeCeloReporteRepository { Celos = [celo] };
         var interactor = new GetReporteCelosInteractor(repository);
 
-        var output = await interactor.HandleAsync(CancellationToken.None);
+        var output = await interactor.HandleAsync(EmptyCommand.Value(AuditEventType.Read, "Get reporte celos"), CancellationToken.None);
 
         var item = Assert.Single(output.Items);
         Assert.Equal(1, item.VecesEnCelo);

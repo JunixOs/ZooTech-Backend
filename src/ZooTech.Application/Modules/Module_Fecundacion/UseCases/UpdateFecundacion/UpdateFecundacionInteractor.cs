@@ -1,5 +1,3 @@
-using FluentValidation;
-using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Modules.Module_Fecundacion.Exceptions;
 using ZooTech.Domain.Module_Fecundacion.Interfaces;
 
@@ -8,22 +6,18 @@ namespace ZooTech.Application.Modules.Module_Fecundacion.UseCases.UpdateFecundac
 public sealed class UpdateFecundacionInteractor : IUpdateFecundacionInputPort
 {
     private readonly IFecundacionRepository _repository;
-    private readonly IValidator<UpdateFecundacionCommand> _validator;
 
     public UpdateFecundacionInteractor(
-        IFecundacionRepository repository,
-        IValidator<UpdateFecundacionCommand> validator)
+        IFecundacionRepository repository
+    )
     {
         _repository = repository;
-        _validator = validator;
     }
 
     public async Task<UpdateFecundacionOutput> HandleAsync(
         UpdateFecundacionCommand command,
         CancellationToken cancellationToken = default)
     {
-        await _validator.ValidateAndThrowAsync(command, cancellationToken);
-
         var existing = await _repository.GetForEditAsync(command.Id, cancellationToken);
         if (existing is null)
             throw new FecundacionNotFoundException();

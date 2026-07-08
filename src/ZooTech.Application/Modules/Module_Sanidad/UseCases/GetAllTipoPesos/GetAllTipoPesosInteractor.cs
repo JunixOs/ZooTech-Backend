@@ -1,3 +1,4 @@
+using ZooTech.Application.Common.Models;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllTipoPesos;
@@ -11,7 +12,10 @@ public sealed class GetAllTipoPesosInteractor : IGetAllTipoPesosInputPort
         _repository = repository;
     }
 
-    public async Task<GetAllTipoPesosOutput> HandleAsync(CancellationToken cancellationToken = default)
+    public async Task<GetAllTipoPesosOutput> Handle(
+        EmptyCommand emptyCommand,
+        CancellationToken cancellationToken = default
+    )
     {
         var tipos = await _repository.GetAllAsync(cancellationToken);
         var items = tipos.Select(t => new TipoPesoItemOutput(t.Code, t.Nombre)).ToList();

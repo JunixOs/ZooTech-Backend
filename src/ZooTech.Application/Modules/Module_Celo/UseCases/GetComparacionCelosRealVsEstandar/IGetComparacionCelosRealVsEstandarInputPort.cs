@@ -3,7 +3,6 @@
 public interface IGetComparacionCelosRealVsEstandarInputPort
 {
     Task<GetComparacionCelosRealVsEstandarOutput> HandleAsync(
-        DateTime? fechaInicio,
-        DateTime? fechaFin,
+        GetComparacionCelosRealVsEstandarCommand cmd,
         CancellationToken cancellationToken = default);
 }

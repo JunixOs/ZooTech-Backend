@@ -1,4 +1,5 @@
 using ZooTech.Application.Common.Pagination;
+using ZooTech.Application.Modules.Module_Celo.Models;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetReporteCelos;
 using ZooTech.Domain.Module_Celo.Interfaces;
 
@@ -14,26 +15,21 @@ public sealed class ListReporteCeloGeneralInteractor : IListReporteCeloGeneralIn
     }
 
     public async Task<ListReporteCeloGeneralOutput> HandleAsync(
-        string? search,
-        int page,
-        int pageSize,
-        DateTime? fechaInicio = null,
-        DateTime? fechaFin = null,
-        IReadOnlyDictionary<string, string>? columnFilters = null,
+        ListReporteCeloGeneralCommand cmd,
         CancellationToken cancellationToken = default)
     {
-        var currentPage = page <= 0 ? 1 : page;
-        var currentPageSize = pageSize <= 0
+        var currentPage = cmd.Page <= 0 ? 1 : cmd.Page;
+        var currentPageSize = cmd.PageSize <= 0
             ? CeloPaginationDefaults.DefaultPageSize
-            : Math.Min(pageSize, CeloPaginationDefaults.MaxPageSize);
+            : Math.Min(cmd.PageSize, CeloPaginationDefaults.MaxPageSize);
 
         var (celos, totalCount) = await _celoRepository.GetPagedForReporteAsync(
-            search,
+            cmd.Search,
             currentPage,
             currentPageSize,
-            fechaInicio,
-            fechaFin,
-            columnFilters,
+            cmd.FechaInicio,
+            cmd.FechaFin,
+            cmd.ColumnFilters,
             cancellationToken);
 
         var counts = await _celoRepository.GetVecesEnCeloCountsAsync(cancellationToken);

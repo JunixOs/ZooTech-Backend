@@ -3,7 +3,7 @@ namespace ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.G
 
 public interface IGetOrdeniosExcelInputPort
 {
-    Task<GenerateOrdeniosExcelOutput> HandleAsync(GenerateOrdeniosComparationExcelQuery query, CancellationToken cancellationToken);
+    Task<GenerateOrdeniosExcelOutput> Handle(GenerateOrdeniosComparationExcelQuery query, CancellationToken cancellationToken);
 }
 
 

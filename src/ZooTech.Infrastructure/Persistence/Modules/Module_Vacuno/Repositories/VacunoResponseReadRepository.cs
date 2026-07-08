@@ -9,9 +9,9 @@ public sealed class VacunoResponseReadRepository : IVacunoResponseReadRepository
 {
     private readonly GanaderiaDbContext _context;
 
-    public VacunoResponseReadRepository(GanaderiaDbContext context)
+    public VacunoResponseReadRepository(IGanaderiaDbContextFactory ganaderiaDbContextFactory)
     {
-        _context = context;
+        _context = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
     }
 
     public async Task<Dictionary<long, string>> GetActiveCodesByIdsAsync(

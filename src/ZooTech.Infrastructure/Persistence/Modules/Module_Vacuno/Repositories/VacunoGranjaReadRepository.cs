@@ -9,9 +9,9 @@ public sealed class VacunoGranjaReadRepository : IVacunoGranjaReadRepository
 {
     private readonly GanaderiaDbContext _context;
 
-    public VacunoGranjaReadRepository(GanaderiaDbContext context)
+    public VacunoGranjaReadRepository(IGanaderiaDbContextFactory ganaderiaDbContextFactory)
     {
-        _context = context;
+        _context = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
     }
 
     public async Task<IReadOnlyList<VacunoGranjaListItem>> ListarActivasAsync(

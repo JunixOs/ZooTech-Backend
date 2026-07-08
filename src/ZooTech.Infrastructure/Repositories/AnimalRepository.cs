@@ -8,9 +8,9 @@ public sealed class AnimalRepository : IAnimalRepository
 {
     private readonly GanaderiaDbContext context;
 
-    public AnimalRepository(GanaderiaDbContext context)
+    public AnimalRepository(IGanaderiaDbContextFactory ganaderiaDbContextFactory)
     {
-        this.context = context;
+        this.context = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
     }
 
     public async Task<AnimalDeleteCandidate?> GetByIdAsync(

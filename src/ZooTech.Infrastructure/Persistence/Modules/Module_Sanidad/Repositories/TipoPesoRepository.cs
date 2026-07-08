@@ -7,16 +7,18 @@ namespace ZooTech.Infrastructure.Persistence.Modules.Module_Sanidad.Repositories
 
 public sealed class TipoPesoRepository : ITipoPesoRepository
 {
-    private readonly GanaderiaDbContext _context;
+    private readonly GanaderiaDbContext _ganaderiaDbContext;
 
-    public TipoPesoRepository(GanaderiaDbContext context)
+    public TipoPesoRepository(
+        IGanaderiaDbContextFactory ganaderiaDbContextFactory
+    )
     {
-        _context = context;
+        _ganaderiaDbContext = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
     }
 
     public async Task<IEnumerable<TipoPeso>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        return await _context.cat_tipo_pesos
+        return await _ganaderiaDbContext.cat_tipo_pesos
             .AsNoTracking()
             .Where(t => t.activo)
             .Select(t => new TipoPeso { Code = t.code, Nombre = t.nombre })

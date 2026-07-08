@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
 using ZooTech.Domain.Module_Vacuno.Entities.GetArbolGenealogico;
 

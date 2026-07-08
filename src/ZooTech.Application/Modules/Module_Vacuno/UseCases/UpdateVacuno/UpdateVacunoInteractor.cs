@@ -1,27 +1,23 @@
-using FluentValidation;
 using ZooTech.Application.Modules.Module_Vacuno.Exceptions;
 using ZooTech.Application.Modules.Module_Vacuno.Common;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
+using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.UpdateVacuno;
 
 public sealed class UpdateVacunoInteractor : IUpdateVacunoInputPort
 {
     private readonly IVacunoRepository _repository;
-    private readonly IValidator<UpdateVacunoCommand> _validator;
 
-    public UpdateVacunoInteractor(IVacunoRepository repository, IValidator<UpdateVacunoCommand> validator)
+    public UpdateVacunoInteractor(IVacunoRepository repository)
     {
         _repository = repository;
-        _validator = validator;
     }
 
-    public async Task<UpdateVacunoOutput> HandleAsync(long id, UpdateVacunoCommand command, CancellationToken cancellationToken)
+    public async Task<UpdateVacunoOutput> HandleAsync(UpdateVacunoCommand command, CancellationToken cancellationToken)
     {
-        await _validator.ValidateAndThrowAsync(command, cancellationToken);
-
-        var existing = await _repository.GetByIdAsync(id, cancellationToken)
-            ?? throw new VacunoNotFoundException($"No existe el vacuno con el ID {id}.");
+        var existing = await _repository.GetByIdAsync(command.Id, cancellationToken)
+            ?? throw new VacunoNotFoundException($"No existe el vacuno con el ID {command.Id}.");
 
         // Validaciones de inmutabilidad (PDF pág 8: "No se permite editar: codigo, fechaNacimiento, adquisicionPor")
         if (existing.FechaNacimiento != command.FechaNacimiento)
@@ -52,7 +48,11 @@ public sealed class UpdateVacunoInteractor : IUpdateVacunoInputPort
         }
         catch (ArgumentException ex)
         {
-            throw new VacunoException(ex.Message, "BAD_REQUEST", 400);
+            throw new VacunoException(
+                ErrorType.Validation,
+                "BAD_REQUEST", 
+                message: ex.Message
+            );
         }
 
         var updated = await _repository.UpdateAsync(existing, command.PrecioCompra, command.AptoPara, cancellationToken);

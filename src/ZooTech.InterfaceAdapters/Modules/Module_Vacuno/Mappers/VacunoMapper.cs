@@ -41,8 +41,9 @@ internal static class VacunoMapper
             request.PrecioCompra,
             NormalizeAptoPara(request.AptoPara));
 
-    internal static UpdateVacunoCommand ToCommand(UpdateVacunoRequest request, long? padreId, long? madreId, long granjaId)
+    internal static UpdateVacunoCommand ToCommand(long id, UpdateVacunoRequest request, long? padreId, long? madreId, long granjaId)
         => new(
+            id,
             request.Nombre,
             request.FechaNacimiento,
             NormalizeCatalogCode(request.TipoAdquisicionCode),
@@ -56,8 +57,8 @@ internal static class VacunoMapper
             request.PrecioCompra,
             NormalizeAptoPara(request.AptoPara));
 
-    internal static DeleteVacunoCommand ToCommand(DeleteVacunoRequest request)
-        => new(request.MotivoEliminacion);
+    internal static DeleteVacunoCommand ToCommand(long id, DeleteVacunoRequest request)
+        => new(id, request.MotivoEliminacion);
 
     internal static VacunoResponse ToResponse(CreateVacunoOutput output)
         => ToVacunoResponse(output.Data);

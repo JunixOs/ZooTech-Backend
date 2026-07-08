@@ -16,18 +16,17 @@ public sealed class GetVacasEnCeloInteractor : IGetVacasEnCeloInputPort
     }
 
     public async Task<GetVacasEnCeloOutput> HandleAsync(
-        DateTime? fechaInicio,
-        DateTime? fechaFin,
+        GetVacasEnCeloCommand cmd,
         CancellationToken cancellationToken = default)
     {
         var celos = await _celoRepository.GetAllAsync(cancellationToken);
         var counts = await _celoRepository.GetVecesEnCeloCountsAsync(cancellationToken);
         var criasCounts = await _celoRepository.GetCriasCountsAsync(cancellationToken);
 
-        var fechaFinInclusive = fechaFin?.Date.AddDays(1).AddTicks(-1);
+        var fechaFinInclusive = cmd.FechaFin?.Date.AddDays(1).AddTicks(-1);
 
         var filtrados = celos.Where(c =>
-            (!fechaInicio.HasValue || c.FechaHora >= fechaInicio.Value) &&
+            (!cmd.FechaInicio.HasValue || c.FechaHora >= cmd.FechaInicio.Value) &&
             (!fechaFinInclusive.HasValue || c.FechaHora <= fechaFinInclusive.Value));
 
         var hoy = DateTime.UtcNow.Date;

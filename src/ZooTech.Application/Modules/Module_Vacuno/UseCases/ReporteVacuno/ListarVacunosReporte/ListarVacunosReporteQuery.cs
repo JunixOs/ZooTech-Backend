@@ -1,3 +1,6 @@
+using ZooTech.Application.Common.Gateway.Auditing;
+using ZooTech.Domain.Shared.Enums;
+
 namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ListarVacunosReporte;
 
 public sealed record ListarVacunosReporteQuery(
@@ -16,4 +19,9 @@ public sealed record ListarVacunosReporteQuery(
     string? Formato,
     string? Page,
     string? PageSize,
-    string? Limit);
+    string? Limit) : IAuditableRequest
+{
+    public AuditEventType EventType => AuditEventType.Read;
+
+    public string Action => "Listar vacunos reporte";
+}

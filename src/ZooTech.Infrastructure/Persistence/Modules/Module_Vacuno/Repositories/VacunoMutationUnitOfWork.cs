@@ -9,9 +9,9 @@ public sealed class VacunoMutationUnitOfWork : IVacunoMutationUnitOfWork
 {
     private readonly GanaderiaDbContext _context;
 
-    public VacunoMutationUnitOfWork(GanaderiaDbContext context)
+    public VacunoMutationUnitOfWork(IGanaderiaDbContextFactory ganaderiaDbContextFactory)
     {
-        _context = context;
+        _context = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
     }
 
     public async Task<T> ExecuteInTransactionAsync<T>(
