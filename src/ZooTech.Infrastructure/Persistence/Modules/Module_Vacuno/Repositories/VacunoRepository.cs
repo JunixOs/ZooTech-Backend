@@ -10,18 +10,19 @@ namespace ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Repositories;
 
 public sealed class VacunoRepository : IVacunoRepository
 {
-    private readonly GanaderiaDbContext _ganaderiaDbContext;
+    private readonly IGanaderiaDbContextFactory _ganaderiaDbContextFactory;
 
     public VacunoRepository(
         IGanaderiaDbContextFactory ganaderiaDbContextFactory
     )
     {
-        _ganaderiaDbContext = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
+        _ganaderiaDbContextFactory = ganaderiaDbContextFactory;
     }
 
     public async Task<List<Vacuno>> ListAllAsync(CancellationToken cancellationToken = default)
     {
-        var entities = await _ganaderiaDbContext.vacunos
+        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
+        var entities = await context.vacunos
             .AsNoTracking()
             .Where(v => v.deleted_at == null)
             .OrderBy(v => v.codigo)
@@ -33,7 +34,8 @@ public sealed class VacunoRepository : IVacunoRepository
 
     public async Task<List<Vacuno>> ListAllWithDeletedAsync(CancellationToken cancellationToken = default)
     {
-        var entities = await _ganaderiaDbContext.vacunos
+        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
+        var entities = await context.vacunos
             .AsNoTracking()
             .OrderBy(v => v.codigo)
             .ToListAsync(cancellationToken);
@@ -43,7 +45,8 @@ public sealed class VacunoRepository : IVacunoRepository
 
     public async Task<List<(Vacuno Vacuno, string? Procedencia)>> ListAllForDisplayAsync(CancellationToken cancellationToken = default)
     {
-        var entities = await _ganaderiaDbContext.vacunos
+        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
+        var entities = await context.vacunos
             .AsNoTracking()
             .Include(v => v.granja)
                 .ThenInclude(g => g.distrito_codigoNavigation)
@@ -71,7 +74,8 @@ public sealed class VacunoRepository : IVacunoRepository
 
     public async Task<Vacuno?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
     {
-        var entity = await _ganaderiaDbContext.vacunos
+        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
+        var entity = await context.vacunos
             .AsNoTracking()
             .FirstOrDefaultAsync(v => v.id == id && v.deleted_at == null, cancellationToken);
 
@@ -80,28 +84,36 @@ public sealed class VacunoRepository : IVacunoRepository
 
     public async Task<Vacuno?> GetByCodigoAsync(string codigo, CancellationToken cancellationToken = default)
     {
-        var entity = await _ganaderiaDbContext.vacunos
+        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
+        var entity = await context.vacunos
             .AsNoTracking()
             .FirstOrDefaultAsync(v => v.codigo == codigo.Trim() && v.deleted_at == null, cancellationToken);
 
         return entity is null ? null : ToDomain(entity);
     }
 
-    public async Task<bool> ExistsAsync(long id, CancellationToken cancellationToken = default) => 
-            await _ganaderiaDbContext.vacunos
-                .AnyAsync(v => v.id == id && v.deleted_at == null, cancellationToken);
+    public async Task<bool> ExistsAsync(long id, CancellationToken cancellationToken = default)
+    {
+        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
+        return await context.vacunos
+            .AnyAsync(v => v.id == id && v.deleted_at == null, cancellationToken);
+    }
 
     public Task<bool> ExistsCodigoAsync(string codigo, CancellationToken cancellationToken = default)
-        => _ganaderiaDbContext.vacunos.AnyAsync(v => v.codigo == codigo.Trim(), cancellationToken);
+    {
+        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
+        return context.vacunos.AnyAsync(v => v.codigo == codigo.Trim(), cancellationToken);
+    }
 
     public async Task<Vacuno> AddAsync(Vacuno vacuno, decimal? precioCompra, string? aptoPara, CancellationToken cancellationToken = default)
     {
-        await using var transaction = await _ganaderiaDbContext.Database.BeginTransactionAsync(cancellationToken);
+        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
+        await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
         var entity = ToEntity(vacuno);
-        _ganaderiaDbContext.vacunos.Add(entity);
+        context.vacunos.Add(entity);
 
         var now = DateTime.UtcNow;
-        await _ganaderiaDbContext.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
 
         if (precioCompra.HasValue)
         {
@@ -113,7 +125,7 @@ public sealed class VacunoRepository : IVacunoRepository
                 precio_compra = precioCompra.Value,
                 created_at = now
             };
-            _ganaderiaDbContext.vacuno_adquisicions.Add(adq);
+            context.vacuno_adquisicions.Add(adq);
         }
 
         if (!string.IsNullOrEmpty(aptoPara))
@@ -124,7 +136,7 @@ public sealed class VacunoRepository : IVacunoRepository
                 tipo_utilizacion_code = aptoPara,
                 created_at = now
             };
-            _ganaderiaDbContext.vacuno_utilizacion_historials.Add(util);
+            context.vacuno_utilizacion_historials.Add(util);
         }
 
         var est = new ZooTech.Infrastructure.Persistence.Entities.vacuno_estado_historial
@@ -134,16 +146,17 @@ public sealed class VacunoRepository : IVacunoRepository
             fecha_estado = DateOnly.FromDateTime(now),
             created_at = now
         };
-        _ganaderiaDbContext.vacuno_estado_historials.Add(est);
+        context.vacuno_estado_historials.Add(est);
 
-        await _ganaderiaDbContext.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return ToDomain(entity);
     }
 
     public async Task<Vacuno> UpdateAsync(Vacuno vacuno, decimal? precioCompra, string? aptoPara, CancellationToken cancellationToken = default)
     {
-        var entity = await _ganaderiaDbContext.vacunos
+        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
+        var entity = await context.vacunos
             .FirstOrDefaultAsync(v => v.id == vacuno.Id, cancellationToken)
             ?? throw new InvalidOperationException("No se encontró el vacuno para actualizar.");
 
@@ -165,7 +178,7 @@ public sealed class VacunoRepository : IVacunoRepository
 
         var now = DateTime.UtcNow;
 
-        var existingAdq = await _ganaderiaDbContext.vacuno_adquisicions.FirstOrDefaultAsync(a => a.vacuno_id == entity.id, cancellationToken);
+        var existingAdq = await context.vacuno_adquisicions.FirstOrDefaultAsync(a => a.vacuno_id == entity.id, cancellationToken);
         if (existingAdq != null)
         {
             existingAdq.precio_compra = precioCompra;
@@ -181,10 +194,10 @@ public sealed class VacunoRepository : IVacunoRepository
                 precio_compra = precioCompra.Value,
                 created_at = now
             };
-            _ganaderiaDbContext.vacuno_adquisicions.Add(adq);
+            context.vacuno_adquisicions.Add(adq);
         }
 
-        var currentUtil = await _ganaderiaDbContext.vacuno_utilizacion_historials
+        var currentUtil = await context.vacuno_utilizacion_historials
             .Where(u => u.vacuno_id == entity.id)
             .OrderByDescending(u => u.created_at)
             .FirstOrDefaultAsync(cancellationToken);
@@ -199,13 +212,13 @@ public sealed class VacunoRepository : IVacunoRepository
                     tipo_utilizacion_code = aptoPara,
                     created_at = now
                 };
-                _ganaderiaDbContext.vacuno_utilizacion_historials.Add(util);
+                context.vacuno_utilizacion_historials.Add(util);
             }
         }
 
         if (vacuno.IsDeleted)
         {
-            var existingDeletedState = await _ganaderiaDbContext.vacuno_estado_historials
+            var existingDeletedState = await context.vacuno_estado_historials
                 .AnyAsync(eh => eh.vacuno_id == entity.id && eh.estado_code == "MUERTO", cancellationToken);
 
             if (!existingDeletedState)
@@ -217,11 +230,11 @@ public sealed class VacunoRepository : IVacunoRepository
                     fecha_estado = DateOnly.FromDateTime(now),
                     created_at = now
                 };
-                _ganaderiaDbContext.vacuno_estado_historials.Add(est);
+                context.vacuno_estado_historials.Add(est);
             }
         }
 
-        await _ganaderiaDbContext.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
         return ToDomain(entity);
     }
 
@@ -229,7 +242,8 @@ public sealed class VacunoRepository : IVacunoRepository
     string? query, DateTime? fechaDesde, DateTime? fechaHasta, string? estado,
     int page, int limit, CancellationToken cancellationToken = default)
     {
-        var q = _ganaderiaDbContext.vacunos
+        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
+        var q = context.vacunos
             .AsNoTracking()
             .AsQueryable();
 
@@ -306,6 +320,7 @@ public sealed class VacunoRepository : IVacunoRepository
     public async Task<List<VacunoGenealogiaNode>> GetArbolGenealogicoAsync(
     long id, int maxNiveles, CancellationToken cancellationToken = default)
     {
+        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
         var nivelPorId = new Dictionary<long, int>();
         var resultado = new List<VacunoGenealogiaNode>();
         var idsNivelActual = new List<long> { id };
@@ -313,7 +328,7 @@ public sealed class VacunoRepository : IVacunoRepository
 
         while (idsNivelActual.Count > 0 && nivel <= maxNiveles)
         {
-            var entidadesNivel = await _ganaderiaDbContext.vacunos
+            var entidadesNivel = await context.vacunos
                 .AsNoTracking()
                 .Include(v => v.granja)
                     .ThenInclude(g => g.distrito_codigoNavigation)
@@ -358,10 +373,11 @@ public sealed class VacunoRepository : IVacunoRepository
 
     public async Task<List<VacunoReferenceItem>> ListReferencesAsync(CancellationToken cancellationToken = default)
     {
-        return await _ganaderiaDbContext.vacunos
+        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
+        return await context.vacunos
             .AsNoTracking()
             .Where(v => v.deleted_at == null
-                && !_ganaderiaDbContext.v_vacuno_estado_vigentes
+                && !context.v_vacuno_estado_vigentes
                     .Any(e => e.vacuno_id == v.id && e.estado_code == "MUERTO"))
             .OrderBy(v => v.codigo)
             .Select(v => new VacunoReferenceItem(
@@ -369,7 +385,7 @@ public sealed class VacunoRepository : IVacunoRepository
                 v.codigo,
                 v.nombre,
                 v.sexo_code,
-                _ganaderiaDbContext.v_vacuno_estado_vigentes
+                context.v_vacuno_estado_vigentes
                     .Where(e => e.vacuno_id == v.id)
                     .Select(e => e.estado_code)
                     .FirstOrDefault()))
@@ -378,31 +394,32 @@ public sealed class VacunoRepository : IVacunoRepository
 
     public async Task<VacunoCatalogs> GetCatalogsAsync(CancellationToken cancellationToken = default)
     {
-        var tiposAdquisicion = await _ganaderiaDbContext.cat_tipo_adquisicions
+        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
+        var tiposAdquisicion = await context.cat_tipo_adquisicions
             .AsNoTracking().Where(item => item.activo).OrderBy(item => item.nombre)
             .Select(item => new VacunoCatalogOption(item.code, item.nombre)).ToListAsync(cancellationToken);
 
-        var razas = await _ganaderiaDbContext.cat_razas
+        var razas = await context.cat_razas
             .AsNoTracking().Where(item => item.activo).OrderBy(item => item.nombre)
             .Select(item => new VacunoCatalogOption(item.code, item.nombre)).ToListAsync(cancellationToken);
 
-        var colores = await _ganaderiaDbContext.cat_colors
+        var colores = await context.cat_colors
             .AsNoTracking().Where(item => item.activo).OrderBy(item => item.nombre)
             .Select(item => new VacunoCatalogOption(item.code, item.nombre)).ToListAsync(cancellationToken);
 
-        var sexos = await _ganaderiaDbContext.cat_sexos
+        var sexos = await context.cat_sexos
             .AsNoTracking().OrderBy(item => item.nombre)
             .Select(item => new VacunoCatalogOption(item.code, item.nombre)).ToListAsync(cancellationToken);
 
-        var estados = await _ganaderiaDbContext.cat_estado_vacunos
+        var estados = await context.cat_estado_vacunos
             .AsNoTracking().OrderBy(item => item.nombre)
             .Select(item => new VacunoCatalogOption(item.code, item.nombre)).ToListAsync(cancellationToken);
 
-        var utilizaciones = await _ganaderiaDbContext.cat_tipo_utilizacions
+        var utilizaciones = await context.cat_tipo_utilizacions
             .AsNoTracking().Where(item => item.activo).OrderBy(item => item.nombre)
             .Select(item => new VacunoCatalogOption(item.code, item.nombre)).ToListAsync(cancellationToken);
 
-        var granjas = await _ganaderiaDbContext.granjas
+        var granjas = await context.granjas
             .AsNoTracking().Where(item => item.activo).OrderBy(item => item.nombre)
             .Select(item => new GranjaCatalogOption(item.id, item.nombre)).ToListAsync(cancellationToken);
 

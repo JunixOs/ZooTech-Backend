@@ -7,17 +7,18 @@ namespace ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Repositories;
 
 public sealed class VacunoGranjaReadRepository : IVacunoGranjaReadRepository
 {
-    private readonly GanaderiaDbContext _context;
+    private readonly IGanaderiaDbContextFactory _ganaderiaDbContextFactory;
 
     public VacunoGranjaReadRepository(IGanaderiaDbContextFactory ganaderiaDbContextFactory)
     {
-        _context = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
+        _ganaderiaDbContextFactory = ganaderiaDbContextFactory;
     }
 
     public async Task<IReadOnlyList<VacunoGranjaListItem>> ListarActivasAsync(
         CancellationToken cancellationToken = default)
     {
-        return await _context.granjas
+        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
+        return await context.granjas
             .AsNoTracking()
             .Where(g => g.activo)
             .OrderBy(g => g.nombre)
