@@ -1,25 +1,26 @@
 using Moq;
 using FluentAssertions;
-using Xunit;
-using ZooTech.Application.Common.Configuration;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
 using ZooTech.Domain.Module_Vacuno.Entities.ListarVacuno;
+using ZooTech.Application.Common.Gateway.Parametrization;
+using MongoDB.Driver;
+using ZooTech.Domain.Configuration;
 
 namespace ZooTech.Application.UnitTests.Modules.Module_Vacuno.UseCases;
 
 public class ListarVacunosInteractorTests
 {
     private readonly Mock<IVacunoRepository> _vacunoRepositoryMock;
-    private readonly Mock<IVacunosConfiguration> _settingsMock;
+    private readonly Mock<ITenantConfigurationProvider> _settingsMock;
     private readonly ListarVacunosInteractor _interactor;
 
     public ListarVacunosInteractorTests()
     {
         _vacunoRepositoryMock = new Mock<IVacunoRepository>();
-        _settingsMock = new Mock<IVacunosConfiguration>();
+        _settingsMock = new Mock<ITenantConfigurationProvider>();
         
-        _settingsMock.Setup(x => x.DefaultFilterDays).Returns(30);
+        _settingsMock.Setup(x => x.GetSettingAsync(Settings.Vacunos.VacunosDefaultFilterDays)).ReturnsAsync(30);
 
         _interactor = new ListarVacunosInteractor(_vacunoRepositoryMock.Object, _settingsMock.Object);
     }

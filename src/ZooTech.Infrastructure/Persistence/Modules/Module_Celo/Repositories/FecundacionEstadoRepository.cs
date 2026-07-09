@@ -17,10 +17,11 @@ public sealed class FecundacionEstadoRepository : IFecundacionEstadoRepository
     private readonly IDateTimeProvider dateTimeProvider;
 
     public FecundacionEstadoRepository(
-        GanaderiaDbContext context,
-        IDateTimeProvider dateTimeProvider)
+        IGanaderiaDbContextFactory ganaderiaDbContextFactory,
+        IDateTimeProvider dateTimeProvider
+    )
     {
-        this.context = context;
+        this.context = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
         this.dateTimeProvider = dateTimeProvider;
     }
 

@@ -1,5 +1,6 @@
 
-using ZooTech.Application.Common.Configuration;
+using ZooTech.Application.Common.Gateway.Parametrization;
+using ZooTech.Domain.Configuration;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
@@ -11,12 +12,15 @@ public sealed class ListarVacunosInteractor : IListarVacunosInputPort
     private const int MaxPageSize = 100;
 
     private readonly IVacunoRepository _vacunoRepository;
-    private readonly IVacunosConfiguration _settings;
+    private readonly ITenantConfigurationProvider _tenantConfigurationProvider;
 
-    public ListarVacunosInteractor(IVacunoRepository vacunoRepository, IVacunosConfiguration settings)
+    public ListarVacunosInteractor(
+        IVacunoRepository vacunoRepository, 
+        ITenantConfigurationProvider tenantConfigurationProvider
+    )
     {
         _vacunoRepository = vacunoRepository;
-        _settings = settings;
+        _tenantConfigurationProvider = tenantConfigurationProvider;
     }
 
     public async Task<ListarVacunosOutput> HandleAsync(ListarVacunosCommand command, CancellationToken cancellationToken = default)
@@ -24,7 +28,11 @@ public sealed class ListarVacunosInteractor : IListarVacunosInputPort
         var fechaDesde = command.FechaDesde;
         if (!fechaDesde.HasValue && !command.FechaHasta.HasValue)
         {
-            fechaDesde = DateTime.UtcNow.AddDays(-_settings.DefaultFilterDays);
+            var defaultFilterDays = await _tenantConfigurationProvider.GetSettingAsync(
+                Settings.Vacunos.VacunosDefaultFilterDays
+            );
+
+            fechaDesde = DateTime.UtcNow.AddDays(-defaultFilterDays);
         }
 
         var page = command.Page <= 0 ? DefaultPage : command.Page;

@@ -1,6 +1,8 @@
+using ZooTech.Application.Common.Models;
+
 namespace ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllTipoPesos;
 
 public interface IGetAllTipoPesosInputPort
 {
-    Task<GetAllTipoPesosOutput> HandleAsync(CancellationToken cancellationToken = default);
+    Task<GetAllTipoPesosOutput> Handle(EmptyCommand emptyCommand, CancellationToken cancellationToken = default);
 }

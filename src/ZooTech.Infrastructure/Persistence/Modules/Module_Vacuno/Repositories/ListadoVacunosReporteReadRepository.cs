@@ -6,18 +6,19 @@ namespace ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Repositories;
 
 public sealed class ListadoVacunosReporteReadRepository : IListadoVacunosReporteReadRepository
 {
-    private readonly GanaderiaDbContext _context;
+    private readonly IGanaderiaDbContextFactory _ganaderiaDbContextFactory;
 
-    public ListadoVacunosReporteReadRepository(GanaderiaDbContext context)
+    public ListadoVacunosReporteReadRepository(IGanaderiaDbContextFactory ganaderiaDbContextFactory)
     {
-        _context = context;
+        _ganaderiaDbContextFactory = ganaderiaDbContextFactory;
     }
 
     public async Task<ListadoVacunosReporteReadResult> ListarAsync(
         ListadoVacunosReporteReadQuery query,
         CancellationToken cancellationToken = default)
     {
-        var source = _context.vacunos
+        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
+        var source = context.vacunos
             .AsNoTracking()
             .Select(v => new ListadoVacunosReporteProjection
             {

@@ -7,18 +7,19 @@ namespace ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Repositories;
 
 public sealed class VacunoMutationUnitOfWork : IVacunoMutationUnitOfWork
 {
-    private readonly GanaderiaDbContext _context;
+    private readonly IGanaderiaDbContextFactory _ganaderiaDbContextFactory;
 
-    public VacunoMutationUnitOfWork(GanaderiaDbContext context)
+    public VacunoMutationUnitOfWork(IGanaderiaDbContextFactory ganaderiaDbContextFactory)
     {
-        _context = context;
+        _ganaderiaDbContextFactory = ganaderiaDbContextFactory;
     }
 
     public async Task<T> ExecuteInTransactionAsync<T>(
         Func<CancellationToken, Task<T>> operation,
         CancellationToken cancellationToken = default)
     {
-        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
+        await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
         var result = await operation(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return result;
@@ -29,7 +30,8 @@ public sealed class VacunoMutationUnitOfWork : IVacunoMutationUnitOfWork
         string codigoDistrito,
         CancellationToken cancellationToken = default)
     {
-        var granjaExistente = await _context.granjas
+        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
+        var granjaExistente = await context.granjas
             .Where(g => g.nombre == nombre && g.distrito_codigo == codigoDistrito)
             .Select(g => (long?)g.id)
             .FirstOrDefaultAsync(cancellationToken);
@@ -49,8 +51,8 @@ public sealed class VacunoMutationUnitOfWork : IVacunoMutationUnitOfWork
             updated_at = now
         };
 
-        _context.granjas.Add(granja);
-        await _context.SaveChangesAsync(cancellationToken);
+        context.granjas.Add(granja);
+        await context.SaveChangesAsync(cancellationToken);
 
         return granja.id;
     }

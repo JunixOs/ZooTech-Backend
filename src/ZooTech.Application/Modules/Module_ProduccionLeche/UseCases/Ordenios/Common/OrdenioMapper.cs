@@ -5,16 +5,34 @@ namespace ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.C
 internal static class OrdenioMapper
 {
     public static OrdenioOutput ToOutput(Ordenio ordenio)
-        => new(
+        => new (
             ordenio.Id,
             ordenio.Codigo,
             ordenio.FechaHora,
             ordenio.VacunoId,
             ordenio.NombreVacuno,
             ordenio.EncargadoUsuarioId,
+            ordenio.NombreCompleto, 
             ordenio.Litros,
             ordenio.EstadoOrdenioCode,
             ordenio.Observaciones,
             ordenio.CreatedAt,
             ordenio.UpdatedAt);
+
+    public static OrdenioOutput ToOutput(OrdenioList ordenio)
+        => new (
+            ordenio.Id,
+            ordenio.Codigo,
+            ordenio.FechaHora,
+            ordenio.VacunoId,
+            ordenio.NombreVacuno,
+            ordenio.EncargadoUsuarioId,
+            ordenio.NombreCompleto,
+            ordenio.Litros,
+            ordenio.EstadoOrdenioCode,
+            ordenio.Observaciones,
+            ordenio.CreatedAt,
+            ordenio.UpdatedAt);
+
+
 }

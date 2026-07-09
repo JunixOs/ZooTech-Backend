@@ -1,6 +1,4 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
+using ZooTech.Application.Common.Models;
 using ZooTech.Application.Modules.Module_Fecundacion.Exceptions;
 using ZooTech.Domain.Module_Fecundacion.Interfaces;
 
@@ -15,26 +13,28 @@ public sealed class DeleteFecundacionInteractor : IDeleteFecundacionInputPort
         _repository = repository;
     }
 
-    public async Task HandleAsync(long id, DeleteFecundacionCommand command, CancellationToken cancellationToken)
+    public async Task<EmptyOutput> HandleAsync(DeleteFecundacionCommand command, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(command.Razon))
         {
             throw new ArgumentException("Falta razón de eliminación o datos inválidos.");
         }
 
-        var existing = await _repository.GetForEditAsync(id, cancellationToken);
+        var existing = await _repository.GetForEditAsync(command.Id, cancellationToken);
         if (existing is null)
         {
             throw new FecundacionNotFoundException();
         }
 
         // Validar si tiene crías vinculadas en trazabilidad
-        var hasCria = await _repository.HasCriaAsync(id, cancellationToken);
+        var hasCria = await _repository.HasCriaAsync(command.Id, cancellationToken);
         if (hasCria)
         {
             throw new FecundacionHasDependenciesException();
         }
 
-        await _repository.DeleteAsync(id, command.Razon, cancellationToken);
+        await _repository.DeleteAsync(command.Id, command.Razon, cancellationToken);
+
+        return EmptyOutput.Value;
     }
 }

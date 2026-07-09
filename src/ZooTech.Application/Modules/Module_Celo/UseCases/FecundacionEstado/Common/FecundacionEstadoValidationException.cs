@@ -1,12 +1,21 @@
+using ZooTech.Application.Common.Exceptions;
+using ZooTech.Domain.Shared.Enums;
+
 namespace ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.Common;
 
-public sealed class FecundacionEstadoValidationException : Exception
+public sealed class FecundacionEstadoValidationException : AppApplicationException
 {
-    public FecundacionEstadoValidationException(IReadOnlyDictionary<string, string> errors)
-        : base("La solicitud de estado de fecundacion contiene errores de validacion.")
+    public FecundacionEstadoValidationException(
+        List<string>? errors = null,
+        string? message = null
+    ) : base(
+        "",
+        ErrorType.Validation,
+        ScopeName.Application,
+        message ?? "La solicitud de estado de fecundacion contiene errores de validacion.",
+        Domain.Shared.Enums.ModuleName.Fecundacion,
+        errors
+    )
     {
-        Errors = errors;
     }
-
-    public IReadOnlyDictionary<string, string> Errors { get; }
 }

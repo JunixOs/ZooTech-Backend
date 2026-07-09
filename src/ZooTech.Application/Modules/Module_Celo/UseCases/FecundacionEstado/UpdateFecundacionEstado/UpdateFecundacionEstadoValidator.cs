@@ -1,39 +1,38 @@
+using ZooTech.Application.Common.Validator;
 using ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.Common;
+using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.UpdateFecundacionEstado;
 
-public sealed class UpdateFecundacionEstadoValidator
+public sealed class UpdateFecundacionEstadoValidator : ICommandValidator<UpdateFecundacionEstadoCommand>
 {
-    public string ValidateAndNormalize(UpdateFecundacionEstadoCommand command)
+    public ModuleName ModuleName => ModuleName.Celo;
+
+    public List<string> Validate(UpdateFecundacionEstadoCommand request)
     {
-        Dictionary<string, string> errors = [];
+        List<string> errors = new List<string>();
 
-        if (command.FecundacionId <= 0)
+        if (request.FecundacionId <= 0)
         {
-            errors["fecundacionId"] = "El identificador de fecundacion debe ser mayor a cero.";
+            errors.Add("CELO-UPDATE-FECUNDACION-ID-INVALID");
         }
 
-        if (string.IsNullOrWhiteSpace(command.EstadoFecundacion))
+        if (string.IsNullOrWhiteSpace(request.EstadoFecundacion))
         {
-            errors["estadoFecundacion"] = "El estado de fecundacion es obligatorio.";
+            errors.Add("CELO-UPDATE-FECUNDACION_ESTADO-NULL");
         }
 
-        if (!command.UpdatedBy.HasValue || command.UpdatedBy.Value <= 0)
+        if (!request.UpdatedBy.HasValue || request.UpdatedBy.Value <= 0)
         {
-            errors["updatedBy"] = "El usuario responsable de la actualizacion es obligatorio y debe ser mayor a cero.";
+            errors.Add("CELO-UPDATE-FECUNDACION_UPDATED_BY-INVALID");
         }
 
-        var estado = command.EstadoFecundacion?.Trim() ?? string.Empty;
+        var estado = request.EstadoFecundacion?.Trim() ?? string.Empty;
         if (!string.IsNullOrWhiteSpace(estado) && !FecundacionEstadoConstants.IsKnownEstado(estado))
         {
-            errors["estadoFecundacion"] = "El estado de fecundacion indicado no esta permitido.";
+            errors.Add("CELO-UPDATE-FECUNDACION_ESTADO-INVALID");
         }
 
-        if (errors.Count > 0)
-        {
-            throw new FecundacionEstadoValidationException(errors);
-        }
-
-        return estado;
+        return errors;
     }
 }

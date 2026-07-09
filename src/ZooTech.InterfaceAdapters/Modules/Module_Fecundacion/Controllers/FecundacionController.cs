@@ -1,5 +1,13 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using ZooTech.Application.Common.Behaviors.Module_Fecundacion.CreateFecundacion;
+using ZooTech.Application.Common.Behaviors.Module_Fecundacion.DeleteFecundacion;
+using ZooTech.Application.Common.Behaviors.Module_Fecundacion.GetFecundacionForEdit;
+using ZooTech.Application.Common.Behaviors.Module_Fecundacion.GetFecundacionOptions;
+using ZooTech.Application.Common.Behaviors.Module_Fecundacion.ListarFecundacion;
+using ZooTech.Application.Common.Behaviors.Module_Fecundacion.SearchFecundacionVacunos;
+using ZooTech.Application.Common.Behaviors.Module_Fecundacion.UpdateFecundacion;
+using ZooTech.Application.Common.Models;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.CreateFecundacion;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.DeleteFecundacion;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.GetFecundacionForEdit;
@@ -7,6 +15,7 @@ using ZooTech.Application.Modules.Module_Fecundacion.UseCases.GetFecundacionOpti
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.ListarFecundacion;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.SearchFecundacionVacunos;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.UpdateFecundacion;
+using ZooTech.Domain.Shared.Enums;
 using ZooTech.InterfaceAdapters.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.DTOs.Responses;
@@ -20,30 +29,31 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.Controllers;
 [ApiExplorerSettings(GroupName = "public")]
 public sealed class FecundacionController : ControllerBase
 {
-    private readonly ICreateFecundacionInputPort _createInputPort;
-    private readonly IListarFecundacionInputPort _listarFecundacionInputPort;
-    private readonly IGetFecundacionForEditInputPort _getForEditInputPort;
-    private readonly IGetFecundacionOptionsInputPort _getOptionsInputPort;
-    private readonly ISearchFecundacionVacunosInputPort _searchVacunosInputPort;
-    private readonly IUpdateFecundacionInputPort _updateInputPort;
-    private readonly IDeleteFecundacionInputPort _deleteInputPort;
+    private readonly ICreateFecundacionBehaviorPipelineFactory _createFecundacionBehaviorPipelineFactory;
+    private readonly IListarFecundacionBehaviorPipelineFactory _listarFecundacionBehaviorPipelineFactory;
+    private readonly IGetFecundacionForEditBehaviorPipelineFactory _getFecundacionForEditBehaviorPipelineFactory;
+    private readonly IGetFecundacionOptionsBehaviorPipelineFactory _getFecundacionOptionsBehaviorPipelineFactory;
+    private readonly ISearchFecundacionVacunosBehaviorPipelineFactory _searchFecundacionVacunosBehaviorPipelineFactory;
+    private readonly IUpdateFecundacionBehaviorPipelineFactory _updateFecundacionBehaviorPipelineFactory;
+    private readonly IDeleteFecundacionBehaviorPipelineFactory _deleteFecundacionBehaviorPipelineFactory;
 
     public FecundacionController(
-        ICreateFecundacionInputPort createInputPort,
-        IListarFecundacionInputPort listarFecundacionInputPort,
-        IGetFecundacionForEditInputPort getForEditInputPort,
-        IGetFecundacionOptionsInputPort getOptionsInputPort,
-        ISearchFecundacionVacunosInputPort searchVacunosInputPort,
-        IUpdateFecundacionInputPort updateInputPort,
-        IDeleteFecundacionInputPort deleteInputPort)
+        ICreateFecundacionBehaviorPipelineFactory createFecundacionBehaviorPipelineFactory,
+        IListarFecundacionBehaviorPipelineFactory listarFecundacionBehaviorPipelineFactory,
+        IGetFecundacionForEditBehaviorPipelineFactory getFecundacionForEditBehaviorPipelineFactory,
+        IGetFecundacionOptionsBehaviorPipelineFactory getFecundacionOptionsBehaviorPipelineFactory,
+        ISearchFecundacionVacunosBehaviorPipelineFactory searchFecundacionVacunosBehaviorPipelineFactory,
+        IUpdateFecundacionBehaviorPipelineFactory updateFecundacionBehaviorPipelineFactory,
+        IDeleteFecundacionBehaviorPipelineFactory deleteFecundacionBehaviorPipelineFactory
+    )
     {
-        _createInputPort = createInputPort;
-        _listarFecundacionInputPort = listarFecundacionInputPort;
-        _getForEditInputPort = getForEditInputPort;
-        _getOptionsInputPort = getOptionsInputPort;
-        _searchVacunosInputPort = searchVacunosInputPort;
-        _updateInputPort = updateInputPort;
-        _deleteInputPort = deleteInputPort;
+        _createFecundacionBehaviorPipelineFactory = createFecundacionBehaviorPipelineFactory;
+        _listarFecundacionBehaviorPipelineFactory = listarFecundacionBehaviorPipelineFactory;
+        _getFecundacionForEditBehaviorPipelineFactory = getFecundacionForEditBehaviorPipelineFactory;
+        _getFecundacionOptionsBehaviorPipelineFactory = getFecundacionOptionsBehaviorPipelineFactory;
+        _searchFecundacionVacunosBehaviorPipelineFactory = searchFecundacionVacunosBehaviorPipelineFactory;
+        _updateFecundacionBehaviorPipelineFactory = updateFecundacionBehaviorPipelineFactory;
+        _deleteFecundacionBehaviorPipelineFactory = deleteFecundacionBehaviorPipelineFactory;
     }
 
     // ===== TUYO — sin cambios =====
@@ -73,7 +83,9 @@ public sealed class FecundacionController : ControllerBase
             Page: currentPage,
             Limit: currentPageSize);
 
-        var output = await _listarFecundacionInputPort.HandleAsync(command, cancellationToken);
+        var behaviorPipeline = _listarFecundacionBehaviorPipelineFactory.Create();
+
+        var output = await behaviorPipeline.Execute(command, cancellationToken);
         var response = output.Items.Select(FecundacionMapper.ToListItemResponse).ToList();
         return Ok(PagedResponse<List<FecundacionItemResponse>>.OkPaged(response, currentPage, currentPageSize, output.TotalCount));
     }
@@ -87,8 +99,10 @@ public sealed class FecundacionController : ControllerBase
         [FromBody] CreateFecundacionRequest request,
         CancellationToken cancellationToken)
     {
+        var behaviorPipeline = _createFecundacionBehaviorPipelineFactory.Create();
+
         var command = FecundacionMapper.ToCommand(request, GetUserIdFromHeader());
-        var output = await _createInputPort.HandleAsync(command, cancellationToken);
+        var output = await behaviorPipeline.Execute(command, cancellationToken);
         var response = FecundacionMapper.ToResponse(output);
 
         return StatusCode(StatusCodes.Status201Created, GeneralResponseDTO<CreateFecundacionResponse>.Ok(response));
@@ -99,7 +113,12 @@ public sealed class FecundacionController : ControllerBase
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(long fecundacionId, CancellationToken cancellationToken)
     {
-        var output = await _getForEditInputPort.HandleAsync(fecundacionId, cancellationToken);
+        var behaviorPipeline = _getFecundacionForEditBehaviorPipelineFactory.Create();
+
+        var output = await behaviorPipeline.Execute(
+            new GetFecundacionForEditCommand(fecundacionId), 
+            cancellationToken
+        );
         return Ok(GeneralResponseDTO<FecundacionEditResponse>.Ok(FecundacionMapper.ToResponse(output)));
     }
 
@@ -107,7 +126,15 @@ public sealed class FecundacionController : ControllerBase
     [ProducesResponseType(typeof(GeneralResponseDTO<FecundacionOptionsResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetOptions(CancellationToken cancellationToken)
     {
-        var output = await _getOptionsInputPort.HandleAsync(cancellationToken);
+        var behaviorPipeline = _getFecundacionOptionsBehaviorPipelineFactory.Create();
+
+        var output = await behaviorPipeline.Execute(
+            EmptyCommand.Value(
+                AuditEventType.Read,
+                "Get fecundacion options"
+            ),
+            cancellationToken
+        );
         return Ok(GeneralResponseDTO<FecundacionOptionsResponse>.Ok(FecundacionMapper.ToResponse(output)));
     }
 
@@ -120,7 +147,9 @@ public sealed class FecundacionController : ControllerBase
         [FromQuery] long? excluirFecundacionId = null,
         CancellationToken cancellationToken = default)
     {
-        var output = await _searchVacunosInputPort.HandleAsync(
+        var behaviorPipeline = _searchFecundacionVacunosBehaviorPipelineFactory.Create();
+
+        var output = await behaviorPipeline.Execute(
             new SearchFecundacionVacunosQuery(sexo, query, soloDisponibles, excluirFecundacionId),
             cancellationToken);
 
@@ -138,8 +167,15 @@ public sealed class FecundacionController : ControllerBase
         [FromBody] UpdateFecundacionRequest request,
         CancellationToken cancellationToken)
     {
-        var current = await _getForEditInputPort.HandleAsync(fecundacionId, cancellationToken);
-        var output = await _updateInputPort.HandleAsync(
+        var behaviorPipelineGetForEdit = _getFecundacionForEditBehaviorPipelineFactory.Create();
+        var behaviorPipelineUpdate = _updateFecundacionBehaviorPipelineFactory.Create();
+
+
+        var current = await behaviorPipelineGetForEdit.Execute(
+            new GetFecundacionForEditCommand(fecundacionId), 
+            cancellationToken
+        );
+        var output = await behaviorPipelineUpdate.Execute(
             FecundacionMapper.ToCommand(request, current, fecundacionId),
             cancellationToken);
 
@@ -156,8 +192,10 @@ public sealed class FecundacionController : ControllerBase
         [FromBody] DeleteFecundacionRequest request,
         CancellationToken cancellationToken)
     {
-        var command = new DeleteFecundacionCommand(request.Razon);
-        await _deleteInputPort.HandleAsync(id, command, cancellationToken);
+        var behaviorPipeline = _deleteFecundacionBehaviorPipelineFactory.Create();
+
+        var command = new DeleteFecundacionCommand(id, request.Razon);
+        await behaviorPipeline.Execute(command, cancellationToken);
         return NoContent();
     }
 

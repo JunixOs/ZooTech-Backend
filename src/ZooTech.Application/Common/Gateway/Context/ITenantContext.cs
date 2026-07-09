@@ -1,7 +1,17 @@
-namespace ZooTech.Application.Common.Gateway.Context;
+using ZooTech.Domain.Shared.Enums;
 
-public interface ITenantContext
+namespace ZooTech.Application.Common.Gateway.Context
 {
-    Guid TenantId { get; }
-    string DatabaseName { get; }
+    public interface ITenantContext
+    {
+        int TenantId { get; }
+        string Code { get; }
+        string SubDomain { get; }
+        string LegalName { get; }
+        string DisplayName { get; }
+        TenantType Type { get; }
+        string DatabaseName { get; }
+
+        void SetTenant(int id, string code, string legalName, string displayName, TenantType type, string subDomain, string databaseName);
+    }
 }

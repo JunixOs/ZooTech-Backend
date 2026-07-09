@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using ZooTech.Application.Common.Behaviors.Module_Celo.FecundacionEstado.GetFecundacionEstado;
+using ZooTech.Application.Common.Behaviors.Module_Celo.FecundacionEstado.UpdateFecundacionEstado;
 using ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.GetFecundacionEstado;
 using ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.UpdateFecundacionEstado;
 using ZooTech.InterfaceAdapters.DTOs;
@@ -12,19 +14,20 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Celo.Controllers;
 
 [ApiController]
 [Route("api/reproduccion/fecundacion/estado")]
-[ApiExplorerSettings(GroupName = "public")]
+[ApiExplorerSettings(GroupName = "celo - fecundacion_estado")]
 public sealed class FecundacionEstadoController : ControllerBase
 {
     private const string UpdatedByHeaderName = "X-User-Id";
-    private readonly IGetFecundacionEstadoInputPort getInputPort;
-    private readonly IUpdateFecundacionEstadoInputPort updateInputPort;
+    private readonly IGetFecundacionEstadoBehaviorPipelineFactory _getFecundacionEstadoBehaviorPipelineFactory;
+    private readonly IUpdateFecundacionEstadoBehaviorPipelineFactory _updateFecundacionEstadoBehaviorPipelineFactory;
 
     public FecundacionEstadoController(
-        IGetFecundacionEstadoInputPort getInputPort,
-        IUpdateFecundacionEstadoInputPort updateInputPort)
+        IGetFecundacionEstadoBehaviorPipelineFactory getFecundacionEstadoBehaviorPipelineFactory,
+        IUpdateFecundacionEstadoBehaviorPipelineFactory updateFecundacionEstadoBehaviorPipelineFactory
+    )
     {
-        this.getInputPort = getInputPort;
-        this.updateInputPort = updateInputPort;
+        _getFecundacionEstadoBehaviorPipelineFactory = getFecundacionEstadoBehaviorPipelineFactory;
+        _updateFecundacionEstadoBehaviorPipelineFactory = updateFecundacionEstadoBehaviorPipelineFactory;
     }
 
     [HttpGet("{vacunoId:long}")]
@@ -37,7 +40,9 @@ public sealed class FecundacionEstadoController : ControllerBase
         [FromRoute] long vacunoId,
         CancellationToken cancellationToken)
     {
-        var output = await getInputPort.HandleAsync(
+        var behaviorPipeline = _getFecundacionEstadoBehaviorPipelineFactory.Create();
+
+        var output = await behaviorPipeline.Execute(
             new GetFecundacionEstadoCommand(vacunoId),
             cancellationToken);
 
@@ -56,7 +61,9 @@ public sealed class FecundacionEstadoController : ControllerBase
         [FromBody] UpdateFecundacionEstadoRequest? request,
         CancellationToken cancellationToken)
     {
-        var output = await updateInputPort.HandleAsync(
+        var behaviorPipeline = _updateFecundacionEstadoBehaviorPipelineFactory.Create();
+
+        var output = await behaviorPipeline.Execute(
             new UpdateFecundacionEstadoCommand(
                 fecundacionId,
                 request?.EstadoFecundacion,

@@ -1,5 +1,6 @@
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
+using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte;
 
@@ -37,7 +38,11 @@ public sealed class ObtenerRegistroVacunoReporteUseCase : IObtenerRegistroVacuno
 
         if (domainEntity is null)
         {
-            throw new NotFoundException("No existe un vacuno con el ID enviado.");
+            throw new NotFoundException(
+                ScopeName.Application,
+                ModuleName.Vacuno,
+                "No existe un vacuno con el ID enviado."
+            );
         }
 
         var v = domainEntity;

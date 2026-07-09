@@ -1,160 +1,92 @@
 using System.Text.Json;
-using FluentValidation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using ZooTech.Application.Common.Exceptions;
-using ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.Common;
-using ZooTech.Application.Modules.Module_Vacuno.Exceptions;
-using ZooTech.Application.Modules.Module_Fecundacion.Exceptions;
-using ZooTech.InterfaceAdapters.DTOs.Responses;
+using ZooTech.Application.Common.Gateway.Auditing;
+using ZooTech.Domain.Shared.Enums;
+using ZooTech.Domain.Shared.Exceptions;
+using ZooTech.InterfaceAdapters.Models;
+using ZooTech.InterfaceAdapters.Utils;
 
-
-namespace ZooTech.InterfaceAdapters.Middleware;
-
-public sealed class ExceptionHandlingMiddleware
+namespace ZooTech.InterfaceAdapters.Middleware
 {
-    private readonly RequestDelegate _next;
-    private readonly ILogger<ExceptionHandlingMiddleware> _logger;
-
-    public ExceptionHandlingMiddleware(
-        RequestDelegate next,
-        ILogger<ExceptionHandlingMiddleware> logger)
+    public class ExceptionHandlingMiddleware
     {
-        _next = next;
-        _logger = logger;
-    }
+        private readonly RequestDelegate _next;
+        private readonly ILogger<ExceptionHandlingMiddleware> _logger;
 
-    public async Task InvokeAsync(HttpContext context)
-    {
-        try
+        public ExceptionHandlingMiddleware(
+            RequestDelegate next, 
+            ILogger<ExceptionHandlingMiddleware> logger
+        )
         {
-            await _next(context);
+            _next = next;
+            _logger = logger;
         }
-        catch (ValidationException ex)
+
+        public async Task InvokeAsync(
+            HttpContext context,
+            IAppAuditService appAuditService
+        )
         {
-            var details = ex.Errors.Select(error => new ErrorDetail
+            try
             {
-                Field = error.PropertyName,
-                Message = error.ErrorMessage
-            });
-
-            await WriteErrorAsync(
-                context,
-                StatusCodes.Status400BadRequest,
-                "VALIDATION_ERROR",
-                "Los datos enviados no son validos.",
-                details);
-        }
-        catch (FecundacionEstadoValidationException ex)
-        {
-            var details = ex.Errors.Select(error => new ErrorDetail
+                await _next(context);
+            }
+            catch (AppDomainException ex)
             {
-                Field = error.Key,
-                Message = error.Value
-            });
+                _logger.LogWarning(ex, "ZooTechException: {Code} - {Type} - {Message} - {Scope}", ex.ErrorCode.ToString(), ex.ErrorType.ToString(), ex.Message.ToString(), ex.ScopeName.ToString());
+                
+                await appAuditService.SaveLogAsync(
+                    new AuditModel
+                    {
+                        EventType = AuditEventType.ZooTechException,
+                        Action =  $"ZooTechException: {ex.ErrorCode.ToString()} - {ex.ErrorType.ToString()} - {ex.Message.ToString()} - {ex.ScopeName.ToString()}",
+                    }
+                );
+                
+                context.Response.ContentType = "application/json";
 
-            await WriteErrorAsync(
-                context,
-                StatusCodes.Status400BadRequest,
-                "VALIDATION_ERROR",
-                "Los datos enviados no son validos.",
-                details);
-        }
-        catch (VacunoException ex)
-        {
-            await WriteErrorAsync(
-                context,
-                ex.StatusCode,
-                ex.ErrorCode,
-                ex.Message);
-        }
-        catch (FecundacionException ex)
-        {
-            await WriteErrorAsync(
-                context,
-                ex.StatusCode,
-                ex.ErrorCode,
-                ex.Message);
-        }
-        catch (NotFoundException ex)
-        {
-            await WriteErrorAsync(
-                context,
-                StatusCodes.Status404NotFound,
-                "NOT_FOUND",
-                ex.Message);
-        }
-        catch (ConflictException ex)
-        {
-            await WriteErrorAsync(
-                context,
-                StatusCodes.Status409Conflict,
-                "CONFLICT",
-                ex.Message);
-        }
-        catch (BusinessException ex)
-        {
-            await WriteErrorAsync(
-                context,
-                StatusCodes.Status400BadRequest,
-                ex.Code,
-                ex.Message);
-        }
-        catch (ArgumentException ex)
-        {
-            await WriteErrorAsync(
-                context,
-                StatusCodes.Status400BadRequest,
-                "BAD_REQUEST",
-                ex.Message);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            await WriteErrorAsync(
-                context,
-                StatusCodes.Status401Unauthorized,
-                "UNAUTHORIZED",
-                ex.Message);
-        }
-        catch (OperationCanceledException)
-        {
-            await WriteErrorAsync(
-                context,
-                499,
-                "REQUEST_CANCELED",
-                "La solicitud fue cancelada.");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error no controlado procesando la solicitud.");
+                context.Response.StatusCode = (int)ToHttpStatusCode.Convert(ex.ErrorType);
 
-            await WriteErrorAsync(
-                context,
-                StatusCodes.Status500InternalServerError,
-                "INTERNAL_SERVER_ERROR",
-                "Ocurrio un error inesperado.");
+                var response = new ErrorResponseModel
+                {
+                    Error = new ErrorContent
+                    {
+                        ErrorCode = ex.CompleteErrorCode,
+                        Message = ex.Message,
+                        Details = ex.Details
+                    }
+                };
+
+                await context.Response.WriteAsync(JsonSerializer.Serialize(response));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unhandled exception");
+
+                await appAuditService.SaveLogAsync(
+                    new AuditModel
+                    {
+                        EventType = AuditEventType.UnhandledException,
+                        Action =  "Unhandled exception",
+                    }
+                );
+
+                context.Response.ContentType = "application/json";
+                context.Response.StatusCode = 500;
+
+                var response = new ErrorResponseModel
+                {
+                    Error = new ErrorContent
+                    {
+                        ErrorCode = "INTERNAL_SERVER_ERROR",
+                        Message = "Ocurrio un error interno",
+                        Details = []
+                    }
+                };
+
+                await context.Response.WriteAsync(JsonSerializer.Serialize(response));
+            }
         }
-    }
-
-    private static async Task WriteErrorAsync(
-        HttpContext context,
-        int statusCode,
-        string code,
-        string message,
-        IEnumerable<ErrorDetail>? details = null)
-    {
-        if (context.Response.HasStarted)
-        {
-            return;
-        }
-
-        context.Response.StatusCode = statusCode;
-        context.Response.ContentType = "application/json";
-
-        var body = JsonSerializer.Serialize(
-            ErrorResponse.Create(code, message, details),
-            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
-
-        await context.Response.WriteAsync(body);
     }
 }

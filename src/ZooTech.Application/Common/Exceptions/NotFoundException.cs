@@ -1,9 +1,21 @@
-namespace ZooTech.Application.Common.Exceptions;
+using ZooTech.Domain.Shared.Enums;
 
-public sealed class NotFoundException : Exception
+namespace ZooTech.Application.Common.Exceptions
 {
-    public NotFoundException(string message)
-        : base(message)
+    public class NotFoundException : AppApplicationException
     {
+        public NotFoundException(
+            ScopeName scopeName,
+            ModuleName? moduleName = null,
+            string? message = null
+        ) : base(
+            "NOT_FOUND_ERROR",
+            ErrorType.NotFound,
+            scopeName,
+            message ?? "Some elements cannot be founded.",
+            moduleName
+        )
+        {
+        }
     }
 }

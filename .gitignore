@@ -210,3 +210,13 @@ BenchmarkDotNet.Artifacts/
 copilot/
 .ai/
 .zed/
+
+# Local Pi runtime state
+.atl/
+.pi/
+
+# IA 
+
+.codex-run-logs/
+.antigravitycli/
+.claude/
