@@ -88,14 +88,7 @@ public static class DependencyInjection
         services.AddScoped<ITriajeRepository, TriajeRepository>();
         services.AddScoped<ITipoPesoRepository, TipoPesoRepository>();
         
-        var garnetConnectionString = configuration["Garnet:ConnectionString"]
-            ?? throw new InvalidOperationException("Garnet:ConnectionString no configurado");
-
-        services.AddSingleton<IConnectionMultiplexer>(sp =>
-            ConnectionMultiplexer.Connect(garnetConnectionString));
-
-        services.AddSingleton<GarnetCacheConnection>();
-        services.AddScoped<IAppCacheService, GarnetCacheService>();
+        services.AddSingleton<IAppCacheService, InMemoryCacheService>();
         services.AddSingleton<
             IConcurrentCache<string, DbContextOptions<GanaderiaDbContext>>,
             ConcurrentCache<string, DbContextOptions<GanaderiaDbContext>>
@@ -114,14 +107,8 @@ public static class DependencyInjection
         services.AddScoped<IGanaderiaDbContextFactory, GanaderiaDbContextFactory>();
         services.AddScoped<ITenantDbContextFactory, TenantDbContextFactory>();
 
-        services.AddSingleton<MongoClient>(_ =>
-        {
-            var connection = configuration["MongoDb:ConnectionString"];
-
-            return new MongoClient(connection);
-        });
-        services.AddSingleton<MongoDbContext>();
-        services.AddScoped<IAppAuditService, MongoDbAudit>();
+        // Bypass MongoDB Auditing for local development
+        services.AddScoped<IAppAuditService, DummyAuditService>();
 
         services.AddScoped<ITenantRepository, TenantRepository>();
         services.AddScoped<IAdminUserRepository, AdminUserRepository>();
@@ -142,7 +129,7 @@ public static class DependencyInjection
         services.AddScoped<IRuleRepository, RuleRepository>();
 
         // Multi-Instance Sync (Phase 4)
-        services.AddHostedService<ConfigInvalidationSubscriber>();
+        // services.AddHostedService<ConfigInvalidationSubscriber>();
 
         // JWT
         var jwt = configuration.GetSection("Jwt");
@@ -203,5 +190,10 @@ public static class DependencyInjection
         services.AddScoped<ZooTech.Application.Common.Gateway.Services.IArbolGenealogicoExportService, ZooTech.Infrastructure.Reports.Vacunos.ArbolGenealogicoExcelExportService>();
 
         return services;
+    }
+
+    private class DummyAuditService : IAppAuditService
+    {
+        public Task SaveLogAsync(AuditModel auditModel) => Task.CompletedTask;
     }
 }

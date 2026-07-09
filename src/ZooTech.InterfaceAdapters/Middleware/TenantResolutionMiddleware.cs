@@ -72,6 +72,7 @@ namespace ZooTech.InterfaceAdapters.Middleware
 
         private string? ExtractSubDomain(string host)
         {
+
             if (!host.EndsWith("." + _baseDomain))
             {
                 return null;
