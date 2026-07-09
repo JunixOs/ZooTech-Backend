@@ -7,19 +7,18 @@ namespace ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Repositories;
 
 public sealed class VacunoReferenceReadRepository : IVacunoReferenceReadRepository
 {
-    private readonly IGanaderiaDbContextFactory _ganaderiaDbContextFactory;
+    private readonly GanaderiaDbContext _context;
 
     public VacunoReferenceReadRepository(IGanaderiaDbContextFactory ganaderiaDbContextFactory)
     {
-        _ganaderiaDbContextFactory = ganaderiaDbContextFactory;
+        _context = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
     }
 
     public Task<VacunoCodeLookup?> GetActiveByIdAsync(
         long id,
         CancellationToken cancellationToken = default)
     {
-        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
-        return context.vacunos
+        return _context.vacunos
             .AsNoTracking()
             .Where(v => v.id == id && v.deleted_at == null)
             .Select(v => new VacunoCodeLookup(v.id, v.codigo))
@@ -30,8 +29,7 @@ public sealed class VacunoReferenceReadRepository : IVacunoReferenceReadReposito
         string codigo,
         CancellationToken cancellationToken = default)
     {
-        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
-        return context.vacunos
+        return _context.vacunos
             .AsNoTracking()
             .Where(v => v.codigo == codigo && v.deleted_at == null)
             .Select(v => new VacunoCodeLookup(v.id, v.codigo))
@@ -42,8 +40,7 @@ public sealed class VacunoReferenceReadRepository : IVacunoReferenceReadReposito
         long granjaId,
         CancellationToken cancellationToken = default)
     {
-        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
-        return context.granjas
+        return _context.granjas
             .AsNoTracking()
             .AnyAsync(g => g.id == granjaId && g.activo, cancellationToken);
     }
@@ -52,8 +49,7 @@ public sealed class VacunoReferenceReadRepository : IVacunoReferenceReadReposito
         string codigoDistrito,
         CancellationToken cancellationToken = default)
     {
-        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
-        return context.geo_distritos
+        return _context.geo_distritos
             .AsNoTracking()
             .AnyAsync(d => d.codigo == codigoDistrito, cancellationToken);
     }
@@ -63,8 +59,7 @@ public sealed class VacunoReferenceReadRepository : IVacunoReferenceReadReposito
         string codigoDistrito,
         CancellationToken cancellationToken = default)
     {
-        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
-        return context.granjas
+        return _context.granjas
             .AsNoTracking()
             .Where(g => g.nombre == nombre && g.distrito_codigo == codigoDistrito)
             .Select(g => (long?)g.id)

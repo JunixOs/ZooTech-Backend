@@ -7,19 +7,18 @@ namespace ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Repositories;
 
 public sealed class VacunoMutationUnitOfWork : IVacunoMutationUnitOfWork
 {
-    private readonly IGanaderiaDbContextFactory _ganaderiaDbContextFactory;
+    private readonly GanaderiaDbContext _context;
 
     public VacunoMutationUnitOfWork(IGanaderiaDbContextFactory ganaderiaDbContextFactory)
     {
-        _ganaderiaDbContextFactory = ganaderiaDbContextFactory;
+        _context = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
     }
 
     public async Task<T> ExecuteInTransactionAsync<T>(
         Func<CancellationToken, Task<T>> operation,
         CancellationToken cancellationToken = default)
     {
-        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
-        await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
+        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
         var result = await operation(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return result;
@@ -30,8 +29,7 @@ public sealed class VacunoMutationUnitOfWork : IVacunoMutationUnitOfWork
         string codigoDistrito,
         CancellationToken cancellationToken = default)
     {
-        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
-        var granjaExistente = await context.granjas
+        var granjaExistente = await _context.granjas
             .Where(g => g.nombre == nombre && g.distrito_codigo == codigoDistrito)
             .Select(g => (long?)g.id)
             .FirstOrDefaultAsync(cancellationToken);
@@ -51,8 +49,8 @@ public sealed class VacunoMutationUnitOfWork : IVacunoMutationUnitOfWork
             updated_at = now
         };
 
-        context.granjas.Add(granja);
-        await context.SaveChangesAsync(cancellationToken);
+        _context.granjas.Add(granja);
+        await _context.SaveChangesAsync(cancellationToken);
 
         return granja.id;
     }
