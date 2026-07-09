@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 using System.Net;
 using System.Text;
-using ZooTech.Application.Modules.Animals.UseCases.ReportAnimalList;
+// Removed obsolete Animals import
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.CreateVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetArbolGenealogico;
@@ -14,12 +14,13 @@ using ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ListarVac
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.UpdateVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarArbolGenealogico;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
-using ZooTech.Infrastructure.Persistence.Context;
+// Removed GanaderiaDbContext dependency
 using ZooTech.InterfaceAdapters.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Mappers;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Mappers.ReporteVacuno;
+using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Services;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.ListarVacunos;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.CreateVacuno;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.GetVacunoById;
@@ -45,8 +46,6 @@ public sealed class VacunoController : ControllerBase
     private readonly IListarVacunosReporteBehaviorPipelineFactory _listarVacunosReporteBehaviorPipelineFactory;
     private readonly IGetArbolGenealogicoBehaviorPipelineFactory _getArbolGenealogicoBehaviorPipelineFactory;
     private readonly IVacunoRepository _vacunoRepository;
-    private readonly IAnimalReportExcelService _animalReportExcelService;
-    private readonly IAnimalReportPdfService _animalReportPdfService;
 
     public VacunoController(
         IListarVacunosBehaviorPipelineFactory listarVacunosBehaviorPipelineFactory,
@@ -57,9 +56,7 @@ public sealed class VacunoController : ControllerBase
         IExportarArbolGenealogicoBehaviorPipelineFactory exportarArbolGenealogicoBehaviorPipelineFactory,
         IListarVacunosReporteBehaviorPipelineFactory listarVacunosReporteBehaviorPipelineFactory,
         IGetArbolGenealogicoBehaviorPipelineFactory getArbolGenealogicoBehaviorPipelineFactory,
-        IVacunoRepository vacunoRepository,
-        IAnimalReportExcelService animalReportExcelService,
-        IAnimalReportPdfService animalReportPdfService)
+        IVacunoRepository vacunoRepository)
     {
         _listarVacunosBehaviorPipelineFactory = listarVacunosBehaviorPipelineFactory;
         _createVacunoBehaviorPipelineFactory = createVacunoBehaviorPipelineFactory;
@@ -71,8 +68,6 @@ public sealed class VacunoController : ControllerBase
         _getArbolGenealogicoBehaviorPipelineFactory = getArbolGenealogicoBehaviorPipelineFactory;
 
         _vacunoRepository = vacunoRepository;
-        _animalReportExcelService = animalReportExcelService;
-        _animalReportPdfService = animalReportPdfService;
     }
 
     [HttpGet]
@@ -142,28 +137,31 @@ public sealed class VacunoController : ControllerBase
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Create(
         [FromBody] CreateVacunoRequest request,
-        [FromServices] GanaderiaDbContext db,
+        [FromServices] IVacunoReferenceResolver referenceResolver,
+        [FromServices] IVacunoMutationUnitOfWork mutationUnitOfWork,
+        [FromServices] IVacunoResponseReadRepository responseReadRepository,
         CancellationToken cancellationToken)
     {
-        var (padreId, madreId, parentError) = await ResolveParentsAsync(
-            request.CodigoPadre, request.CodigoMadre, request.Codigo.Trim(), db, cancellationToken);
-        if (parentError != null)
+        var resolution = await referenceResolver.ResolveForCreateAsync(request, cancellationToken);
+        if (!resolution.Success)
         {
-            return parentError;
+            return ValidationErrorResponse(resolution.Error!.Field ?? string.Empty, resolution.Error.Message);
         }
 
-        var (granjaId, granjaError) = await ResolveGranjaAsync(
-            request.GranjaId, request.Granja, request.CodigoDistrito, db, cancellationToken);
-        if (granjaError != null)
+        long granjaId = resolution.GranjaId ?? 0;
+        if (resolution.GranjaToCreate is not null)
         {
-            return granjaError;
+            granjaId = await mutationUnitOfWork.EnsureGranjaAsync(
+                resolution.GranjaToCreate.Nombre,
+                resolution.GranjaToCreate.CodigoDistrito,
+                cancellationToken);
         }
 
         var behaviorPipeline = _createVacunoBehaviorPipelineFactory.Create();
 
-        var command = VacunoMapper.ToCommand(request, padreId, madreId, granjaId);
+        var command = VacunoMapper.ToCommand(request, resolution.PadreId, resolution.MadreId, granjaId);
         var output = await behaviorPipeline.Execute(command, cancellationToken);
-        var response = await EnrichResponseAsync(output.Data, db, cancellationToken);
+        var response = await EnrichResponseAsync(output.Data, responseReadRepository, cancellationToken);
         return Created($"/api/v1/vacuno/{response.Id}", GeneralResponseDTO<VacunoResponse>.Ok(response));
     }
 
@@ -172,7 +170,7 @@ public sealed class VacunoController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(
         [FromRoute] string identifier,
-        [FromServices] GanaderiaDbContext db,
+        [FromServices] IVacunoResponseReadRepository responseReadRepository,
         CancellationToken cancellationToken)
     {
         var behaviorPipeline = _getVacunoByIdBehaviorPipelineFactory.Create();
@@ -182,7 +180,7 @@ public sealed class VacunoController : ControllerBase
             new GetVacunoByIdCommand(id),
             cancellationToken
         );
-        var response = await EnrichResponseAsync(output.Data, db, cancellationToken);
+        var response = await EnrichResponseAsync(output.Data, responseReadRepository, cancellationToken);
         return Ok(GeneralResponseDTO<VacunoResponse>.Ok(response));
     }
 
@@ -193,37 +191,41 @@ public sealed class VacunoController : ControllerBase
     public async Task<IActionResult> Update(
         [FromRoute] string identifier,
         [FromBody] UpdateVacunoRequest request,
-        [FromServices] GanaderiaDbContext db,
+        [FromServices] IVacunoReferenceResolver referenceResolver,
+        [FromServices] IVacunoMutationUnitOfWork mutationUnitOfWork,
+        [FromServices] IVacunoResponseReadRepository responseReadRepository,
         CancellationToken cancellationToken)
     {
         long id = await ResolveIdAsync(identifier, cancellationToken);
-        var existingVacuno = await db.vacunos.FirstOrDefaultAsync(v => v.id == id && v.deleted_at == null, cancellationToken);
-        if (existingVacuno == null)
+        if (id <= 0)
         {
             return NotFound(GeneralResponseDTO<object>.Fail("El vacuno no existe."));
         }
 
-        var ownCodigo = existingVacuno.codigo;
-
-        var (padreId, madreId, parentError) = await ResolveParentsAsync(
-            request.CodigoPadre, request.CodigoMadre, ownCodigo, db, cancellationToken);
-        if (parentError != null)
+        var resolution = await referenceResolver.ResolveForUpdateAsync(id, request, cancellationToken);
+        if (!resolution.Success)
         {
-            return parentError;
+            if (resolution.Error!.Kind == VacunoReferenceErrorKind.NotFound)
+            {
+                return NotFound(GeneralResponseDTO<object>.Fail(resolution.Error.Message));
+            }
+            return ValidationErrorResponse(resolution.Error.Field ?? string.Empty, resolution.Error.Message);
         }
 
-        var (granjaId, granjaError) = await ResolveGranjaAsync(
-            request.GranjaId, request.Granja, request.CodigoDistrito, db, cancellationToken);
-        if (granjaError != null)
+        long granjaId = resolution.GranjaId ?? 0;
+        if (resolution.GranjaToCreate is not null)
         {
-            return granjaError;
+            granjaId = await mutationUnitOfWork.EnsureGranjaAsync(
+                resolution.GranjaToCreate.Nombre,
+                resolution.GranjaToCreate.CodigoDistrito,
+                cancellationToken);
         }
 
         var behaviorPipeline = _updateVacunoBehaviorPipelineFactory.Create();
 
-        var command = VacunoMapper.ToCommand(id, request, padreId, madreId, granjaId);
+        var command = VacunoMapper.ToCommand(id, request, resolution.PadreId, resolution.MadreId, granjaId);
         var output = await behaviorPipeline.Execute(command, cancellationToken);
-        var response = await EnrichResponseAsync(output.Data, db, cancellationToken);
+        var response = await EnrichResponseAsync(output.Data, responseReadRepository, cancellationToken);
         return Ok(GeneralResponseDTO<VacunoResponse>.Ok(response));
     }
 
@@ -310,7 +312,8 @@ public sealed class VacunoController : ControllerBase
     public async Task<IActionResult> ReporteIndividual(
         [FromRoute] long vacunoId,
         [FromQuery] string? formato,
-        [FromServices] GanaderiaDbContext db,
+        [FromServices] IRegistroVacunoReadRepository registroReadRepository,
+        [FromServices] IVacunoResponseReadRepository responseReadRepository,
         CancellationToken cancellationToken)
     {
         var behaviorPipeline = _getVacunoByIdBehaviorPipelineFactory.Create();
@@ -319,9 +322,9 @@ public sealed class VacunoController : ControllerBase
             new GetVacunoByIdCommand(vacunoId), 
             cancellationToken
         );
-        var response = await EnrichResponseAsync(output.Data, db, cancellationToken);
+        var response = await EnrichResponseAsync(output.Data, responseReadRepository, cancellationToken);
         var normalizedFormato = NormalizeFormat(formato);
-        var detalle = await BuildRegistroVacunoDetalleAsync(response, db, cancellationToken);
+        var detalle = await BuildRegistroVacunoDetalleAsync(response, registroReadRepository, cancellationToken);
 
         string? downloadUrl = null;
         if (normalizedFormato is "excel" or "pdf")
@@ -362,30 +365,21 @@ public sealed class VacunoController : ControllerBase
     [HttpGet("granjas")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> ListarGranjas(
-        [FromServices] GanaderiaDbContext db,
+        [FromServices] IVacunoGranjaReadRepository granjaReadRepository,
         CancellationToken cancellationToken)
     {
-        var granjas = await db.granjas
-            .Where(g => g.activo)
-            .Include(g => g.distrito_codigoNavigation)
-                .ThenInclude(d => d.provincia_codigoNavigation)
-                    .ThenInclude(p => p.departamento_codigoNavigation)
-            .OrderBy(g => g.nombre)
-            .Select(g => new
-            {
-                id = g.id,
-                nombre = g.nombre,
-                codigoDistrito = g.distrito_codigo,
-                distrito = g.distrito_codigoNavigation != null ? g.distrito_codigoNavigation.nombre : null,
-                provincia = g.distrito_codigoNavigation != null && g.distrito_codigoNavigation.provincia_codigoNavigation != null
-                    ? g.distrito_codigoNavigation.provincia_codigoNavigation.nombre : null,
-                departamento = g.distrito_codigoNavigation != null && g.distrito_codigoNavigation.provincia_codigoNavigation != null
-                    && g.distrito_codigoNavigation.provincia_codigoNavigation.departamento_codigoNavigation != null
-                    ? g.distrito_codigoNavigation.provincia_codigoNavigation.departamento_codigoNavigation.nombre : null
-            })
-            .ToListAsync(cancellationToken);
+        var granjas = await granjaReadRepository.ListarActivasAsync(cancellationToken);
+        var response = granjas.Select(g => new
+        {
+            id = g.Id,
+            nombre = g.Nombre,
+            codigoDistrito = g.CodigoDistrito,
+            distrito = g.Distrito,
+            provincia = g.Provincia,
+            departamento = g.Departamento
+        });
 
-        return Ok(granjas);
+        return Ok(response);
     }
 
     [HttpGet("estadisticas/actividad")]
@@ -439,26 +433,16 @@ public sealed class VacunoController : ControllerBase
 
     private async Task<VacunoResponse> EnrichResponseAsync(
         ZooTech.Application.Modules.Module_Vacuno.Common.VacunoOutput dto,
-        GanaderiaDbContext db,
+        IVacunoResponseReadRepository responseReadRepository,
         CancellationToken cancellationToken)
     {
-        string? codigoPadre = null;
-        if (dto.PadreId.HasValue)
-        {
-            codigoPadre = await db.vacunos
-                .Where(v => v.id == dto.PadreId.Value && v.deleted_at == null)
-                .Select(v => v.codigo)
-                .FirstOrDefaultAsync(cancellationToken);
-        }
+        var idsToResolve = new List<long>();
+        if (dto.PadreId.HasValue) idsToResolve.Add(dto.PadreId.Value);
+        if (dto.MadreId.HasValue) idsToResolve.Add(dto.MadreId.Value);
 
-        string? codigoMadre = null;
-        if (dto.MadreId.HasValue)
-        {
-            codigoMadre = await db.vacunos
-                .Where(v => v.id == dto.MadreId.Value && v.deleted_at == null)
-                .Select(v => v.codigo)
-                .FirstOrDefaultAsync(cancellationToken);
-        }
+        var codes = await responseReadRepository.GetActiveCodesByIdsAsync(idsToResolve, cancellationToken);
+        string? codigoPadre = dto.PadreId.HasValue ? codes.GetValueOrDefault(dto.PadreId.Value) : null;
+        string? codigoMadre = dto.MadreId.HasValue ? codes.GetValueOrDefault(dto.MadreId.Value) : null;
 
         string? granjaNombre = null;
         string? distritoNombre = null;
@@ -466,27 +450,17 @@ public sealed class VacunoController : ControllerBase
         string? departamentoNombre = null;
         string? codigoDistrito = null;
 
-        var granja = await db.granjas
-            .Include(g => g.distrito_codigoNavigation)
-                .ThenInclude(d => d.provincia_codigoNavigation)
-                    .ThenInclude(p => p.departamento_codigoNavigation)
-            .FirstOrDefaultAsync(g => g.id == dto.GranjaId, cancellationToken);
-
+        var granja = await responseReadRepository.GetGranjaDetailsAsync(dto.GranjaId, cancellationToken);
         if (granja != null)
         {
-            granjaNombre = granja.nombre;
-            codigoDistrito = granja.distrito_codigo;
-            distritoNombre = granja.distrito_codigoNavigation?.nombre;
-            provinciaNombre = granja.distrito_codigoNavigation?.provincia_codigoNavigation?.nombre;
-            departamentoNombre = granja.distrito_codigoNavigation?.provincia_codigoNavigation?.departamento_codigoNavigation?.nombre;
+            granjaNombre = granja.Nombre;
+            codigoDistrito = granja.CodigoDistrito;
+            distritoNombre = granja.Distrito;
+            provinciaNombre = granja.Provincia;
+            departamentoNombre = granja.Departamento;
         }
 
-        var utilizacion = await db.vacuno_utilizacion_historials
-            .AsNoTracking()
-            .Where(u => u.vacuno_id == dto.Id)
-            .OrderByDescending(u => u.created_at)
-            .Select(u => new { u.tipo_utilizacion_code, u.created_at })
-            .FirstOrDefaultAsync(cancellationToken);
+        var utilizacion = await responseReadRepository.GetLatestUtilizacionAsync(dto.Id, cancellationToken);
 
         return new VacunoResponse(
             dto.Id,
@@ -511,8 +485,8 @@ public sealed class VacunoController : ControllerBase
             provinciaNombre,
             departamentoNombre,
             codigoDistrito,
-            utilizacion?.tipo_utilizacion_code,
-            utilizacion?.created_at);
+            utilizacion?.TipoUtilizacionCode,
+            utilizacion?.CreatedAt);
     }
 
     private async Task<long> ResolveIdAsync(string identifier, CancellationToken cancellationToken)
@@ -530,15 +504,6 @@ public sealed class VacunoController : ControllerBase
 
         return -1;
     }
-
-    private static bool IsMaleSexCode(string? sexoCode)
-        => string.Equals(sexoCode, "macho", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(sexoCode, "M", StringComparison.OrdinalIgnoreCase);
-
-    private static bool IsFemaleSexCode(string? sexoCode)
-        => string.Equals(sexoCode, "hembra", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(sexoCode, "H", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(sexoCode, "F", StringComparison.OrdinalIgnoreCase);
 
     private IActionResult ValidationErrorResponse(
         string field,
@@ -559,124 +524,9 @@ public sealed class VacunoController : ControllerBase
         });
     }
 
-    private async Task<(long? PadreId, long? MadreId, IActionResult? Error)> ResolveParentsAsync(
-        string? codigoPadre,
-        string? codigoMadre,
-        string ownCodigo,
-        GanaderiaDbContext db,
-        CancellationToken cancellationToken)
-    {
-        if (!string.IsNullOrWhiteSpace(codigoPadre) && codigoPadre.Trim() == ownCodigo)
-        {
-            return (null, null, ValidationErrorResponse("codigoPadre", "Un vacuno no puede ser su propio padre."));
-        }
-
-        if (!string.IsNullOrWhiteSpace(codigoMadre) && codigoMadre.Trim() == ownCodigo)
-        {
-            return (null, null, ValidationErrorResponse("codigoMadre", "Un vacuno no puede ser su propia madre."));
-        }
-
-        long? padreId = null;
-        if (!string.IsNullOrWhiteSpace(codigoPadre))
-        {
-            var padre = await db.vacunos.FirstOrDefaultAsync(v => v.codigo == codigoPadre.Trim()
-                && v.deleted_at == null
-                && !db.v_vacuno_estado_vigentes.Any(e => e.vacuno_id == v.id && e.estado_code == "MUERTO"), cancellationToken);
-            if (padre == null)
-            {
-                return (null, null, ValidationErrorResponse("codigoPadre", "El vacuno padre especificado no existe."));
-            }
-            if (!IsMaleSexCode(padre.sexo_code))
-            {
-                return (null, null, ValidationErrorResponse(
-                    "codigoPadre",
-                    "El padre debe ser un vacuno macho activo.",
-                    "Los datos enviados no son validos."));
-            }
-            padreId = padre.id;
-        }
-
-        long? madreId = null;
-        if (!string.IsNullOrWhiteSpace(codigoMadre))
-        {
-            var madre = await db.vacunos.FirstOrDefaultAsync(v => v.codigo == codigoMadre.Trim()
-                && v.deleted_at == null
-                && !db.v_vacuno_estado_vigentes.Any(e => e.vacuno_id == v.id && e.estado_code == "MUERTO"), cancellationToken);
-            if (madre == null)
-            {
-                return (null, null, ValidationErrorResponse("codigoMadre", "El vacuno madre especificado no existe."));
-            }
-            if (!IsFemaleSexCode(madre.sexo_code))
-            {
-                return (null, null, ValidationErrorResponse(
-                    "codigoMadre",
-                    "La madre debe ser un vacuno hembra activo.",
-                    "Los datos enviados no son validos."));
-            }
-            madreId = madre.id;
-        }
-
-        return (padreId, madreId, null);
-    }
-
-    private async Task<(long GranjaId, IActionResult? Error)> ResolveGranjaAsync(
-        long? granjaIdRequest,
-        string? granjaNombreRequest,
-        string? codigoDistritoRequest,
-        GanaderiaDbContext db,
-        CancellationToken cancellationToken)
-    {
-        long granjaId = 0;
-        if (granjaIdRequest.HasValue && granjaIdRequest.Value > 0)
-        {
-            var granjaExiste = await db.granjas.AnyAsync(g => g.id == granjaIdRequest.Value && g.activo, cancellationToken);
-            if (!granjaExiste)
-            {
-                return (0, ValidationErrorResponse("granjaId", "La granja seleccionada no existe o no está activa."));
-            }
-            granjaId = granjaIdRequest.Value;
-        }
-        else
-        {
-            var granjaNombre = granjaNombreRequest?.Trim();
-            var distritoCodigo = codigoDistritoRequest?.Trim();
-            if (!string.IsNullOrWhiteSpace(granjaNombre) && !string.IsNullOrWhiteSpace(distritoCodigo))
-            {
-                var distritoExists = await db.geo_distritos.AnyAsync(d => d.codigo == distritoCodigo, cancellationToken);
-                if (!distritoExists)
-                {
-                    return (0, ValidationErrorResponse("codigoDistrito", "El distrito especificado no es válido o no está registrado."));
-                }
-
-                var granja = await db.granjas.FirstOrDefaultAsync(g => g.nombre == granjaNombre && g.distrito_codigo == distritoCodigo, cancellationToken);
-                if (granja == null)
-                {
-                    granja = new ZooTech.Infrastructure.Persistence.Entities.granja
-                    {
-                        nombre = granjaNombre,
-                        distrito_codigo = distritoCodigo,
-                        activo = true,
-                        created_at = DateTime.UtcNow,
-                        updated_at = DateTime.UtcNow
-                    };
-                    db.granjas.Add(granja);
-                    await db.SaveChangesAsync(cancellationToken);
-                }
-                granjaId = granja.id;
-            }
-        }
-
-        if (granjaId <= 0)
-        {
-            return (0, ValidationErrorResponse("granjaId", "La granja seleccionada no es válida o no ha sido especificada."));
-        }
-
-        return (granjaId, null);
-    }
-
     private async Task<object> BuildRegistroVacunoDetalleAsync(
         VacunoResponse response,
-        GanaderiaDbContext db,
+        IRegistroVacunoReadRepository registroReadRepository,
         CancellationToken cancellationToken)
     {
         string? codigoAbuelo = null;
@@ -684,24 +534,18 @@ public sealed class VacunoController : ControllerBase
 
         if (response.PadreId.HasValue)
         {
-            var padre = await db.vacunos
-                .AsNoTracking()
-                .FirstOrDefaultAsync(v => v.id == response.PadreId.Value, cancellationToken);
+            var padre = await registroReadRepository.ObtenerRegistroAsync(response.PadreId.Value, cancellationToken);
 
-            if (padre?.padre_id is not null)
+            if (padre?.PadreId is not null)
             {
-                codigoAbuelo = await db.vacunos
-                    .Where(v => v.id == padre.padre_id.Value)
-                    .Select(v => v.codigo)
-                    .FirstOrDefaultAsync(cancellationToken);
+                var codigos = await registroReadRepository.ObtenerCodigosVacunoBatchAsync(new[] { padre.PadreId.Value }, cancellationToken);
+                codigoAbuelo = codigos.GetValueOrDefault(padre.PadreId.Value);
             }
 
-            if (padre?.madre_id is not null)
+            if (padre?.MadreId is not null)
             {
-                codigoAbuela = await db.vacunos
-                    .Where(v => v.id == padre.madre_id.Value)
-                    .Select(v => v.codigo)
-                    .FirstOrDefaultAsync(cancellationToken);
+                var codigos = await registroReadRepository.ObtenerCodigosVacunoBatchAsync(new[] { padre.MadreId.Value }, cancellationToken);
+                codigoAbuela = codigos.GetValueOrDefault(padre.MadreId.Value);
             }
         }
 
@@ -791,7 +635,7 @@ public sealed class VacunoController : ControllerBase
         };
     }
 
-    private async Task<string> GenerateListadoReportFileAsync(
+    private Task<string> GenerateListadoReportFileAsync(
         IReadOnlyCollection<VacunoListadoReporteItem> rows,
         string formato,
         DateOnly? fechaDesde,
@@ -799,26 +643,7 @@ public sealed class VacunoController : ControllerBase
         string? keyword,
         CancellationToken cancellationToken)
     {
-        var fileName = $"reporte_listado_vacunos_{DateTime.UtcNow:yyyyMMddHHmmss}.{(formato == "pdf" ? "pdf" : "xlsx")}";
-        var path = Path.Combine(GetReportOutputDirectory(), fileName);
-        var output = BuildAnimalListReportOutput(rows, fechaDesde, fechaHasta, keyword);
-
-        if (formato == "pdf")
-        {
-            await System.IO.File.WriteAllBytesAsync(
-                path,
-                _animalReportPdfService.GenerateAnimalListPdf(output),
-                cancellationToken);
-        }
-        else
-        {
-            await System.IO.File.WriteAllBytesAsync(
-                path,
-                _animalReportExcelService.GenerateAnimalListExcel(output),
-                cancellationToken);
-        }
-
-        return $"/api/v1/vacunos/reportes/descargas/{Uri.EscapeDataString(fileName)}";
+        throw new NotSupportedException("El formato de reporte en PDF o Excel del listado general no está soportado temporalmente.");
     }
 
     private async Task<string> GenerateRegistroReportFileAsync(
@@ -841,42 +666,6 @@ public sealed class VacunoController : ControllerBase
         }
 
         return $"/api/v1/vacunos/reportes/descargas/{Uri.EscapeDataString(fileName)}";
-    }
-
-    private static ReportAnimalListOutput BuildAnimalListReportOutput(
-        IReadOnlyCollection<VacunoListadoReporteItem> rows,
-        DateOnly? fechaDesde,
-        DateOnly? fechaHasta,
-        string? keyword)
-    {
-        var items = rows
-            .Select(item => new ReportAnimalListItem(
-                item.Codigo,
-                item.Nombre,
-                item.FechaNacimiento,
-                item.TipoAdquisicion ?? string.Empty,
-                item.Raza ?? string.Empty,
-                item.Color ?? string.Empty,
-                item.Sexo ?? string.Empty,
-                item.Granja ?? item.Procedencia ?? string.Empty,
-                item.Estado,
-                item.FechaRegistro))
-            .ToList();
-
-        var dates = items.Select(item => item.FechaRegistro).ToList();
-        var fallbackDate = DateOnly.FromDateTime(DateTime.UtcNow);
-
-        return new ReportAnimalListOutput(
-            fechaDesde ?? (dates.Count > 0 ? dates.Min() : fallbackDate),
-            fechaHasta ?? (dates.Count > 0 ? dates.Max() : fallbackDate),
-            string.IsNullOrWhiteSpace(keyword) ? null : keyword.Trim(),
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            items);
     }
 
     private static string BuildRegistroReportContent(object detalle)

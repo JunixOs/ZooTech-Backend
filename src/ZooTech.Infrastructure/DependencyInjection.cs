@@ -51,11 +51,9 @@ using ZooTech.Infrastructure.Caching.ConcurrentCache;
 using ZooTech.Domain.Module_Fecundacion.Interfaces;
 using ZooTech.Infrastructure.Persistence.Modules.Module_Fecundacion.Repositories;
 using ZooTech.Infrastructure.Persistence.Repositories;
-using ZooTech.Infrastructure.Repositories;
 using ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.Common;
 using ZooTech.Infrastructure.Reports;
-using ZooTech.Application.Modules.Animals.UseCases.DeleteAnimal;
-using ZooTech.Application.Modules.Animals.UseCases.ReportAnimalList;
+// Removed Animals references
 
 namespace ZooTech.Infrastructure;
 
@@ -178,10 +176,7 @@ public static class DependencyInjection
 
         services.AddScoped<IEstadoRegistroRepository, EstadoRegistroRepository>();
 
-        services.AddScoped<IAnimalRepository, AnimalRepository>();
-        services.AddScoped<IAnimalReportRepository, AnimalReportRepository>();
-        services.AddScoped<IAnimalReportExcelService, AnimalReportExcelService>();
-        services.AddScoped<IAnimalReportPdfService, AnimalReportPdfService>();
+        // Removed Animals Repository and Reports
 
         // Repositorios Fecundación
         services.AddScoped<IFecundacionRepository, FecundacionRepository>();
