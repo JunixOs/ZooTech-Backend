@@ -13,7 +13,7 @@ public class DeleteOrdenioInteractorTests
         var fecha = new DateTime(2026, 6, 18, 8, 0, 0, DateTimeKind.Utc);
         var existing = CreateOrdenio(fecha);
         var repository = new FakeOrdenioRepository(existing);
-        var interactor = new DeleteOrdenioInteractor(repository);
+        var interactor = new DeleteOrdenioInteractor(new FakeOrdenioUnitOfWork(repository));
 
         await interactor.Handle(new DeleteOrdenioCommand { Id = 10, MotivoEliminacion = "Registro duplicado" }, CancellationToken.None);
 
@@ -26,7 +26,7 @@ public class DeleteOrdenioInteractorTests
     public async Task HandleAsync_WhenOrdenioDoesNotExist_ThrowsNotFoundException()
     {
         var repository = new FakeOrdenioRepository(null);
-        var interactor = new DeleteOrdenioInteractor(repository);
+        var interactor = new DeleteOrdenioInteractor(new FakeOrdenioUnitOfWork(repository));
 
         await Assert.ThrowsAsync<NotFoundException>(() => interactor.Handle(new DeleteOrdenioCommand { Id = 99, MotivoEliminacion = "Motivo" }, CancellationToken.None));
     }
@@ -69,6 +69,7 @@ public class DeleteOrdenioInteractorTests
         public Task<bool> ExistsUsuarioAsync(long usuarioId, CancellationToken cancellationToken) => Task.FromResult(true);
         public Task<bool> ExistsEstadoAsync(string estadoOrdenioCode, CancellationToken cancellationToken) => Task.FromResult(true);
         public Task<Ordenio?> GetByIdAsync(long id, CancellationToken cancellationToken) => Task.FromResult(_ordenio);
+        public Task<Ordenio?> GetByCodigoAsync(string codigo, CancellationToken cancellationToken) => Task.FromResult(_ordenio);
         public Task<(IReadOnlyList<OrdenioList> Items, int TotalCount)> ListAsync(long? vacunoId, string? estadoOrdenioCode, DateTime? fechaDesde, DateTime? fechaHasta, int page, int pageSize, CancellationToken cancellationToken) => Task.FromResult<(IReadOnlyList<OrdenioList> Items, int TotalCount)>((Array.Empty<OrdenioList>(), 0));
         public Task<IReadOnlyList<OrdenioList>> ListReportAsync(long? vacunoId, string? estadoOrdenioCode, DateTime? fechaDesde, DateTime? fechaHasta, CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<OrdenioList>>(Array.Empty<OrdenioList>());
         public Task<Ordenio> AddAsync(Ordenio ordenio, CancellationToken cancellationToken) => Task.FromResult(ordenio);
@@ -77,6 +78,31 @@ public class DeleteOrdenioInteractorTests
         {
             UpdateWasCalled = true;
             return Task.FromResult(ordenio);
+        }
+    }
+
+    private sealed class FakeOrdenioUnitOfWork : IOrdenioUnitOfWork
+    {
+        public FakeOrdenioUnitOfWork(IOrdenioRepository repository)
+        {
+            Repository = repository;
+        }
+
+        public IOrdenioRepository Repository { get; }
+
+        public Task<T> ExecuteInTransactionAsync<T>(
+            Func<CancellationToken, Task<T>> operation,
+            CancellationToken cancellationToken = default,
+            Func<T, CancellationToken, Task<T>>? afterSave = null)
+            => ExecuteAsync(operation, cancellationToken, afterSave);
+
+        private static async Task<T> ExecuteAsync<T>(
+            Func<CancellationToken, Task<T>> operation,
+            CancellationToken cancellationToken,
+            Func<T, CancellationToken, Task<T>>? afterSave)
+        {
+            var result = await operation(cancellationToken);
+            return afterSave is null ? result : await afterSave(result, cancellationToken);
         }
     }
 }

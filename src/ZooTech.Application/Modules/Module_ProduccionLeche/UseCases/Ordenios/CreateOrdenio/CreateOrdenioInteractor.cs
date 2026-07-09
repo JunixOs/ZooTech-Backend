@@ -8,11 +8,11 @@ namespace ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.C
 
 public sealed class CreateOrdenioInteractor : ICreateOrdenioInputPort
 {
-    private readonly IOrdenioRepository _repository;
+    private readonly IOrdenioUnitOfWork _unitOfWork;
 
-    public CreateOrdenioInteractor(IOrdenioRepository repository)
+    public CreateOrdenioInteractor(IOrdenioUnitOfWork unitOfWork)
     {
-        _repository = repository;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<CreateOrdenioOutput> Handle(
@@ -20,14 +20,16 @@ public sealed class CreateOrdenioInteractor : ICreateOrdenioInputPort
         CancellationToken cancellationToken
     )
     {
+        var repository = _unitOfWork.Repository;
+
         await OrdenioReferenceValidator.EnsureReferencesExistAsync(
-            _repository,
+            repository,
             command.VacunoId,
             command.EncargadoUsuarioId,
             command.EstadoOrdenioCode,
             cancellationToken);
 
-        if (await _repository.ExistsCodigoAsync(command.Codigo, cancellationToken))
+        if (await repository.ExistsCodigoAsync(command.Codigo, cancellationToken))
         {
             throw new ConflictException(
                 ScopeName.Application,
@@ -39,7 +41,7 @@ public sealed class CreateOrdenioInteractor : ICreateOrdenioInputPort
             );
         }
 
-        if (await _repository.ExistsVacunoFechaAsync(command.VacunoId, command.FechaHora, null, cancellationToken))
+        if (await repository.ExistsVacunoFechaAsync(command.VacunoId, command.FechaHora, null, cancellationToken))
         {
             throw new ConflictException(
                 ScopeName.Application,
@@ -74,7 +76,11 @@ public sealed class CreateOrdenioInteractor : ICreateOrdenioInputPort
             );
         }
 
-        var saved = await _repository.AddAsync(ordenio, cancellationToken);
+        var saved = await _unitOfWork.ExecuteInTransactionAsync(
+            ct => repository.AddAsync(ordenio, ct),
+            cancellationToken,
+            async (_, ct) => await repository.GetByCodigoAsync(command.Codigo, ct)
+                ?? throw new InvalidOperationException("No se pudo recuperar el ordeño creado."));
         return new CreateOrdenioOutput(OrdenioMapper.ToOutput(saved));
     }
 }

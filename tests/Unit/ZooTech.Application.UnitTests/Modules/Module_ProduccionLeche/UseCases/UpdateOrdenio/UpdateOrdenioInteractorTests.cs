@@ -35,7 +35,7 @@ public class UpdateOrdenioInteractorTests
             ExistsUsuarioResult = true,
             ExistsEstadoResult = true
         };
-        var interactor = new UpdateOrdenioInteractor(repository);
+        var interactor = new UpdateOrdenioInteractor(new FakeOrdenioUnitOfWork(repository));
         var nuevaFecha = fecha.AddHours(2);
 
         var command = new UpdateOrdenioCommand
@@ -92,6 +92,9 @@ public class UpdateOrdenioInteractorTests
         public Task<Ordenio?> GetByIdAsync(long id, CancellationToken cancellationToken)
             => Task.FromResult<Ordenio?>(_existing);
 
+        public Task<Ordenio?> GetByCodigoAsync(string codigo, CancellationToken cancellationToken)
+            => Task.FromResult<Ordenio?>(_existing);
+
         public Task<(IReadOnlyList<OrdenioList> Items, int TotalCount)> ListAsync(
             long? vacunoId,
             string? estadoOrdenioCode,
@@ -115,6 +118,31 @@ public class UpdateOrdenioInteractorTests
 
         public Task<Ordenio> UpdateAsync(Ordenio ordenio, CancellationToken cancellationToken)
             => Task.FromResult(ordenio);
+    }
+
+    private sealed class FakeOrdenioUnitOfWork : IOrdenioUnitOfWork
+    {
+        public FakeOrdenioUnitOfWork(IOrdenioRepository repository)
+        {
+            Repository = repository;
+        }
+
+        public IOrdenioRepository Repository { get; }
+
+        public Task<T> ExecuteInTransactionAsync<T>(
+            Func<CancellationToken, Task<T>> operation,
+            CancellationToken cancellationToken = default,
+            Func<T, CancellationToken, Task<T>>? afterSave = null)
+            => ExecuteAsync(operation, cancellationToken, afterSave);
+
+        private static async Task<T> ExecuteAsync<T>(
+            Func<CancellationToken, Task<T>> operation,
+            CancellationToken cancellationToken,
+            Func<T, CancellationToken, Task<T>>? afterSave)
+        {
+            var result = await operation(cancellationToken);
+            return afterSave is null ? result : await afterSave(result, cancellationToken);
+        }
     }
 }
 

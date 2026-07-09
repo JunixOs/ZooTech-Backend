@@ -84,6 +84,7 @@ public static class DependencyInjection
 
         services.AddScoped<ICeloRepository, CeloRepository>();
         services.AddScoped<IOrdenioRepository, OrdenioRepository>();
+        services.AddScoped<IOrdenioUnitOfWork, OrdenioUnitOfWork>();
         services.AddScoped<IVacunoRepository, VacunoRepository>();
         services.AddScoped<ITriajeRepository, TriajeRepository>();
         services.AddScoped<ITipoPesoRepository, TipoPesoRepository>();
