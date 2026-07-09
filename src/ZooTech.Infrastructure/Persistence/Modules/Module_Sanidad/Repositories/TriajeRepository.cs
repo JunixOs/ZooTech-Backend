@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 using ZooTech.Application.Common.Gateway.Time;
 using ZooTech.Domain.Module_Sanidad.Entities;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
@@ -9,18 +10,21 @@ namespace ZooTech.Infrastructure.Persistence.Modules.Module_Sanidad.Repositories
 
 public class TriajeRepository : ITriajeRepository
 {
-    private readonly GanaderiaDbContext _context;
+    private readonly GanaderiaDbContext _ganaderiaDbContext;
     private readonly IDateTimeProvider _dateTimeProvider;
 
-    public TriajeRepository(GanaderiaDbContext context, IDateTimeProvider dateTimeProvider)
+    public TriajeRepository(
+        IGanaderiaDbContextFactory ganaderiaDbContextFactory, 
+        IDateTimeProvider dateTimeProvider
+    )
     {
-        _context = context;
+        _ganaderiaDbContext = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
         _dateTimeProvider = dateTimeProvider;
     }
 
     public async Task<Triaje?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
     {
-        var entity = await _context.triajes
+        var entity = await _ganaderiaDbContext.triajes
             .Include(t => t.vacuno)
             .AsNoTracking()
             .FirstOrDefaultAsync(t => t.id == id && t.deleted_at == null, cancellationToken);
@@ -32,17 +36,23 @@ public class TriajeRepository : ITriajeRepository
         int pagina,
         int tamano,
         string? fecha = null,
+        string? fechaDesde = null,
+        string? fechaHasta = null,
         string? codigo = null,
         string? nombre = null,
         string? tipoPeso = null,
         decimal? pesoKg = null,
+        long? vacunoId = null,
         CancellationToken cancellationToken = default)
     {
-        var query = _context.triajes
+        var query = _ganaderiaDbContext.triajes
             .AsNoTracking()
             .Include(t => t.vacuno)
             .Where(t => t.deleted_at == null)
             .AsQueryable();
+
+        if (vacunoId.HasValue)
+            query = query.Where(t => t.vacuno_id == vacunoId.Value);
 
         if (!string.IsNullOrEmpty(codigo))
             query = query.Where(t => t.codigo.Contains(codigo));
@@ -50,14 +60,33 @@ public class TriajeRepository : ITriajeRepository
         if (!string.IsNullOrEmpty(nombre))
             query = query.Where(t => t.vacuno.nombre.Contains(nombre));
 
+        if (!string.IsNullOrEmpty(fecha) &&
+    DateTime.TryParseExact(fecha, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var fechaExacta))
+        {
+            var desdeExacta = fechaExacta.Date;
+            var hastaExacta = desdeExacta.AddDays(1);
+            query = query.Where(t => t.fecha_hora >= desdeExacta && t.fecha_hora < hastaExacta);
+        }
+
+        if (!string.IsNullOrEmpty(fechaDesde) &&
+            DateTime.TryParseExact(fechaDesde, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var desde))
+        {
+            query = query.Where(t => t.fecha_hora >= desde.Date);
+        }
+
+        if (!string.IsNullOrEmpty(fechaHasta) &&
+            DateTime.TryParseExact(fechaHasta, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var hasta))
+        {
+            query = query.Where(t => t.fecha_hora < hasta.Date.AddDays(1));
+        }
+
         if (!string.IsNullOrEmpty(tipoPeso))
             query = query.Where(t => t.tipo_peso_code == tipoPeso);
 
         if (pesoKg.HasValue)
             query = query.Where(t => t.peso_kg == pesoKg);
 
-        if (!string.IsNullOrEmpty(fecha) && DateTime.TryParse(fecha, out var fechaParsed))
-            query = query.Where(t => t.fecha_hora.Date == fechaParsed.Date);
+
 
         query = query.OrderByDescending(t => t.fecha_hora);
 
@@ -76,8 +105,8 @@ public class TriajeRepository : ITriajeRepository
         try
         {
             var entity = ToEntity(triaje);
-            _context.triajes.Add(entity);
-            await _context.SaveChangesAsync(cancellationToken);
+            _ganaderiaDbContext.triajes.Add(entity);
+            await _ganaderiaDbContext.SaveChangesAsync(cancellationToken);
             return ToTriaje(entity);
         }
         catch (DbUpdateException)
@@ -86,16 +115,17 @@ public class TriajeRepository : ITriajeRepository
         }
     }
 
-    public async Task UpdateAsync(Triaje triaje, CancellationToken cancellationToken = default)
+    public async Task<Triaje> UpdateAsync(Triaje triaje, CancellationToken cancellationToken = default)
     {
         var entity = ToEntity(triaje);
-        _context.triajes.Update(entity);
-        await _context.SaveChangesAsync(cancellationToken);
+        _ganaderiaDbContext.triajes.Update(entity);
+        await _ganaderiaDbContext.SaveChangesAsync(cancellationToken);
+        return ToTriaje(entity);
     }
 
     public async Task DeleteAsync(long id, CancellationToken cancellationToken = default)
     {
-        var entity = await _context.triajes
+        var entity = await _ganaderiaDbContext.triajes
             .FirstOrDefaultAsync(t => t.id == id && t.deleted_at == null, cancellationToken);
 
         if (entity is null) return;
@@ -104,12 +134,12 @@ public class TriajeRepository : ITriajeRepository
         entity.deleted_at = now;
         entity.updated_at = now;
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _ganaderiaDbContext.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<string> GenerateCodigoAsync(CancellationToken cancellationToken = default)
     {
-        var codigos = await _context.triajes
+        var codigos = await _ganaderiaDbContext.triajes
             .Where(t => t.codigo.StartsWith("TRI"))
             .Select(t => t.codigo)
             .ToListAsync(cancellationToken);
@@ -123,18 +153,95 @@ public class TriajeRepository : ITriajeRepository
         return $"TRI{maxNumber + 1:D3}";
     }
 
-    public async Task<IEnumerable<TriajeHistorialItem>> GetHistorialByVacunoIdAsync(long vacunoId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<TriajeHistorialItem>> GetHistorialByVacunoIdAsync(long vacunoId, string? fechaDesde = null, string? fechaHasta = null, CancellationToken cancellationToken = default)
     {
-        return await _context.triajes
+        var query = _ganaderiaDbContext.triajes
             .AsNoTracking()
-            .Where(t => t.vacuno_id == vacunoId && t.deleted_at == null)
-            .OrderByDescending(t => t.fecha_hora)
+            .Where(t => t.vacuno_id == vacunoId && t.deleted_at == null);
+
+        if (!string.IsNullOrEmpty(fechaDesde) &&
+            DateTime.TryParseExact(fechaDesde, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var desde))
+        {
+            query = query.Where(t => t.fecha_hora >= desde.Date);
+        }
+
+        if (!string.IsNullOrEmpty(fechaHasta) &&
+            DateTime.TryParseExact(fechaHasta, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var hasta))
+        {
+            query = query.Where(t => t.fecha_hora < hasta.Date.AddDays(1));
+        }
+
+        return await query
+            .OrderBy(t => t.fecha_hora)
             .Select(t => new TriajeHistorialItem
             {
                 Id = t.id,
                 FechaHora = t.fecha_hora,
                 TipoPesoCode = t.tipo_peso_code,
                 PesoKg = t.peso_kg
+            })
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IEnumerable<TriajeHistorialItem>> GetHistorialGeneralAsync(string? fechaDesde = null, string? fechaHasta = null, CancellationToken cancellationToken = default)
+    {
+        var query = _ganaderiaDbContext.triajes
+            .AsNoTracking()
+            .Where(t => t.deleted_at == null);
+
+        if (!string.IsNullOrEmpty(fechaDesde) &&
+            DateTime.TryParseExact(fechaDesde, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var desde))
+        {
+            query = query.Where(t => t.fecha_hora >= desde.Date);
+        }
+
+        if (!string.IsNullOrEmpty(fechaHasta) &&
+            DateTime.TryParseExact(fechaHasta, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var hasta))
+        {
+            query = query.Where(t => t.fecha_hora < hasta.Date.AddDays(1));
+        }
+
+        return await query
+            .OrderBy(t => t.fecha_hora)
+            .Select(t => new TriajeHistorialItem
+            {
+                Id = t.id,
+                FechaHora = t.fecha_hora,
+                TipoPesoCode = t.tipo_peso_code,
+                PesoKg = t.peso_kg
+            })
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<bool> ExistsVacunoAsync(long vacunoId, CancellationToken cancellationToken = default)
+    {
+        return await _ganaderiaDbContext.vacunos.AnyAsync(v => v.id == vacunoId, cancellationToken);
+    }
+
+    public async Task<bool> ExistsUsuarioAsync(long usuarioId, CancellationToken cancellationToken = default)
+    {
+        return await _ganaderiaDbContext.usuarios.AnyAsync(u => u.id == usuarioId, cancellationToken);
+    }
+
+    public async Task<bool> ExistsTipoPesoAsync(string tipoPesoCode, CancellationToken cancellationToken = default)
+    {
+        return await _ganaderiaDbContext.cat_tipo_pesos.AnyAsync(tp => tp.code == tipoPesoCode, cancellationToken);
+    }
+
+    public async Task<IEnumerable<TriajeDetallePorVacunoItem>> GetDetallesByVacunoIdAsync(long vacunoId, CancellationToken cancellationToken = default)
+    {
+        return await _ganaderiaDbContext.triajes
+            .AsNoTracking()
+            .Include(t => t.tipo_peso_codeNavigation)
+            .Where(t => t.vacuno_id == vacunoId && t.deleted_at == null)
+            .OrderByDescending(t => t.fecha_hora)
+            .Select(t => new TriajeDetallePorVacunoItem
+            {
+                CodigoRegistro = t.codigo,
+                FechaHora = t.fecha_hora,
+                TipoPesoMedido = t.tipo_peso_codeNavigation.nombre,
+                PesoKg = t.peso_kg,
+                Observaciones = t.observaciones
             })
             .ToListAsync(cancellationToken);
     }

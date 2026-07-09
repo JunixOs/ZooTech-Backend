@@ -20,6 +20,7 @@ public static class RegistroVacunoReporteMapper
         return new ListarVacunosReporteQuery(
             request.FechaDesde,
             request.FechaHasta,
+            Normalize(request.Search),
             request.Q,
             request.Codigo,
             request.FechaRegistro,
@@ -31,6 +32,7 @@ public static class RegistroVacunoReporteMapper
             request.AptoPara,
             request.Formato,
             request.Page,
+            request.PageSize,
             request.Limit);
     }
 
@@ -62,7 +64,10 @@ public static class RegistroVacunoReporteMapper
                 response.Filtros.EstadoRegistro,
                 response.Filtros.AptoPara,
                 response.Filtros.Formato),
-            response.DownloadUrl);
+            response.DownloadUrl,
+            response.TotalCount,
+            response.Page,
+            response.PageSize);
     }
 
     public static RegistroVacunoReporteResponse ToResponse(AppRegistroVacunoReporteResponse response)
@@ -114,5 +119,8 @@ public static class RegistroVacunoReporteMapper
             response.Historial,
             response.DownloadUrl);
     }
+
+    private static string? Normalize(string? value)
+        => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }
 

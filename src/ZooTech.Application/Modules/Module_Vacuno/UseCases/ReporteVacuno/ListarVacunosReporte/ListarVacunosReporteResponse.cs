@@ -4,14 +4,22 @@ public sealed record ListarVacunosReporteResponse(
     IReadOnlyCollection<VacunoListadoReporteItem> Data,
     ReporteVacunoListadoResumen Resumen,
     ReporteVacunoListadoFiltros Filtros,
-    string? DownloadUrl);
+    string? DownloadUrl,
+    int TotalCount,
+    int Page,
+    int PageSize);
 
 public sealed record VacunoListadoReporteItem(
     long Id,
     string Codigo,
+    DateOnly FechaNacimiento,
     DateOnly FechaRegistro,
     string Nombre,
+    string? TipoAdquisicion,
     string? Raza,
+    string? Color,
+    string? Sexo,
+    string? Granja,
     string? Procedencia,
     string Estado,
     string EstadoRegistro);

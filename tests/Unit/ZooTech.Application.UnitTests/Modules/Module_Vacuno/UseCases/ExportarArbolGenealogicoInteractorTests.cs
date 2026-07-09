@@ -5,7 +5,7 @@ using ZooTech.Application.Common.Gateway.Services;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarArbolGenealogico;
 using ZooTech.Domain.Module_Vacuno.Entities;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
-using ZooTech.Domain.Module_Vacuno.ReadModels.GetArbolGenealogico;
+using ZooTech.Domain.Module_Vacuno.Entities.GetArbolGenealogico;
 using ZooTech.Application.Common.Exceptions;
 
 namespace ZooTech.Application.UnitTests.Modules.Module_Vacuno.UseCases;
@@ -28,7 +28,7 @@ public class ExportarArbolGenealogicoInteractorTests
     {
         // Arrange
         var vacunoId = 1L;
-        var command = new ExportarArbolGenealogicoCommand(4);
+        var command = new ExportarArbolGenealogicoCommand(vacunoId, 4);
         var raiz = Vacuno.Rehydrate(vacunoId, "V1", "Estrella", new DateOnly(2020, 1, 1), "COMPRA", "HOLSTEIN", "BLANCO_NEGRO", "HEMBRA", null, null, 1, null, new DateOnly(2020, 1, 1), DateTime.UtcNow, DateTime.UtcNow, null, null, null, null, null);
         var arbol = new List<VacunoGenealogiaNode> { new VacunoGenealogiaNode(raiz, 1, null) };
         var expectedBytes = new byte[] { 0x01, 0x02 };
@@ -38,10 +38,10 @@ public class ExportarArbolGenealogicoInteractorTests
         _exportServiceMock.GenerateExcelAsync(arbol, raiz, Arg.Any<CancellationToken>()).Returns(expectedBytes);
 
         // Act
-        var result = await _interactor.HandleAsync(vacunoId, command);
+        var result = await _interactor.HandleAsync(command);
 
         // Assert
-        result.Should().BeEquivalentTo(expectedBytes);
+        result.excel.Should().BeEquivalentTo(expectedBytes);
         await _vacunoRepositoryMock.Received(1).GetArbolGenealogicoAsync(vacunoId, command.Niveles, Arg.Any<CancellationToken>());
         await _exportServiceMock.Received(1).GenerateExcelAsync(arbol, raiz, Arg.Any<CancellationToken>());
     }
@@ -51,12 +51,12 @@ public class ExportarArbolGenealogicoInteractorTests
     {
         // Arrange
         var vacunoId = 99L;
-        var command = new ExportarArbolGenealogicoCommand(4);
+        var command = new ExportarArbolGenealogicoCommand(vacunoId, 4);
 
         _vacunoRepositoryMock.GetByIdAsync(vacunoId, Arg.Any<CancellationToken>()).Returns((Vacuno?)null);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<NotFoundException>(() => _interactor.HandleAsync(vacunoId, command));
+        var exception = await Assert.ThrowsAsync<NotFoundException>(() => _interactor.HandleAsync(command));
         exception.Message.Should().Contain(vacunoId.ToString());
 
         await _vacunoRepositoryMock.DidNotReceive().GetArbolGenealogicoAsync(Arg.Any<long>(), Arg.Any<int>(), Arg.Any<CancellationToken>());

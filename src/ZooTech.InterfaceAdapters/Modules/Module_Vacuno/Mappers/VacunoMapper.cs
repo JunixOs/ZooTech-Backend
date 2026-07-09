@@ -4,10 +4,10 @@ using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetVacunoById;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.UpdateVacuno;
-using ZooTech.Domain.Module_Vacuno.ReadModels.ListarVacuno;
+using ZooTech.Domain.Module_Vacuno.Entities.ListarVacuno;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Requests;
 using ZooTech.Domain.Module_Vacuno.Models;
-using ZooTech.Domain.Module_Vacuno.ReadModels;
+using ZooTech.Domain.Module_Vacuno.Entities;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Mappers;
@@ -41,8 +41,9 @@ internal static class VacunoMapper
             request.PrecioCompra,
             NormalizeAptoPara(request.AptoPara));
 
-    internal static UpdateVacunoCommand ToCommand(UpdateVacunoRequest request, long? padreId, long? madreId, long granjaId)
+    internal static UpdateVacunoCommand ToCommand(long id, UpdateVacunoRequest request, long? padreId, long? madreId, long granjaId)
         => new(
+            id,
             request.Nombre,
             request.FechaNacimiento,
             NormalizeCatalogCode(request.TipoAdquisicionCode),
@@ -56,8 +57,8 @@ internal static class VacunoMapper
             request.PrecioCompra,
             NormalizeAptoPara(request.AptoPara));
 
-    internal static DeleteVacunoCommand ToCommand(DeleteVacunoRequest request)
-        => new(request.MotivoEliminacion);
+    internal static DeleteVacunoCommand ToCommand(long id, DeleteVacunoRequest request)
+        => new(id, request.MotivoEliminacion);
 
     internal static VacunoResponse ToResponse(CreateVacunoOutput output)
         => ToVacunoResponse(output.Data);

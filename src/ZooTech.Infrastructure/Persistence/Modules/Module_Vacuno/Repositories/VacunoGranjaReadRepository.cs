@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
-using ZooTech.Domain.Module_Vacuno.ReadModels;
+using ZooTech.Domain.Module_Vacuno.Entities;
 using ZooTech.Infrastructure.Persistence.Context;
 
 namespace ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Repositories;
@@ -9,9 +9,9 @@ public sealed class VacunoGranjaReadRepository : IVacunoGranjaReadRepository
 {
     private readonly GanaderiaDbContext _context;
 
-    public VacunoGranjaReadRepository(GanaderiaDbContext context)
+    public VacunoGranjaReadRepository(IGanaderiaDbContextFactory ganaderiaDbContextFactory)
     {
-        _context = context;
+        _context = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
     }
 
     public async Task<IReadOnlyList<VacunoGranjaListItem>> ListarActivasAsync(

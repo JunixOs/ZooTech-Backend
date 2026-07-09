@@ -1,3 +1,4 @@
+using ZooTech.Application.Common.Models;
 using ZooTech.Domain.Module_Fecundacion.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_Fecundacion.UseCases.GetFecundacionOptions;
@@ -11,7 +12,10 @@ public sealed class GetFecundacionOptionsInteractor : IGetFecundacionOptionsInpu
         _repository = repository;
     }
 
-    public async Task<GetFecundacionOptionsOutput> HandleAsync(CancellationToken cancellationToken = default)
+    public async Task<GetFecundacionOptionsOutput> HandleAsync(
+        EmptyCommand emptyCommand,
+        CancellationToken cancellationToken = default
+    )
     {
         var data = await _repository.GetOptionsAsync(cancellationToken);
 

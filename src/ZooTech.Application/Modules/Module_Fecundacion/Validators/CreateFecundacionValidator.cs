@@ -1,40 +1,74 @@
-using FluentValidation;
+using ZooTech.Application.Common.Validator;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.CreateFecundacion;
+using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Fecundacion.Validators;
 
-public sealed class CreateFecundacionValidator : AbstractValidator<CreateFecundacionCommand>
+public sealed class CreateFecundacionValidator : ICommandValidator<CreateFecundacionCommand>
 {
-    public CreateFecundacionValidator()
+    public ModuleName ModuleName => ModuleName.Fecundacion;
+
+    public List<string> Validate(CreateFecundacionCommand request)
     {
-        RuleFor(x => x.VacunoReceptorId)
-            .GreaterThan(0).WithMessage("El ID del vacuno receptor debe ser mayor que cero.");
+        var errors = new List<string>();
 
-        RuleFor(x => x.TipoFecundacionCode)
-            .NotEmpty().WithMessage("El tipo de fecundación es obligatorio.");
+        if (request.VacunoReceptorId <= 0)
+        {
+            errors.Add("FECUNDACION-FECUNDACION-CREATE-VACUNO_RECEPTOR_ID-INVALID");
+        }
 
-        RuleFor(x => x.ResultadoCode)
-            .NotEmpty().WithMessage("El resultado de la fecundación es obligatorio.");
+        if (string.IsNullOrWhiteSpace(request.TipoFecundacionCode))
+        {
+            errors.Add("FECUNDACION-FECUNDACION-CREATE-TIPO_FECUNDACION_CODE-NULL");
+        }
 
-        RuleFor(x => x.ResponsableName)
-            .NotEmpty().WithMessage("El nombre del responsable es obligatorio.")
-            .MaximumLength(100).WithMessage("El nombre del responsable no puede superar los 100 caracteres.");
+        if (string.IsNullOrWhiteSpace(request.ResultadoCode))
+        {
+            errors.Add("FECUNDACION-FECUNDACION-CREATE-RESULTADO_CODE-NULL");
+        }
 
-        RuleFor(x => x.ObservacionesVeterinarias)
-            .MaximumLength(250).When(x => x.ObservacionesVeterinarias is not null)
-            .WithMessage("Las observaciones veterinarias no pueden superar los 250 caracteres.");
+        if (string.IsNullOrWhiteSpace(request.ResponsableName))
+        {
+            errors.Add("FECUNDACION-FECUNDACION-CREATE-RESPONSABLE_NAME-NULL");
+        }
+        else if (request.ResponsableName.Length > 100)
+        {
+            errors.Add("FECUNDACION-FECUNDACION-CREATE-RESPONSABLE_NAME-INVALID");
+        }
 
-        RuleFor(x => x.FechaProcedimiento)
-            .NotEmpty().WithMessage("La fecha del procedimiento es obligatoria.");
+        if (!string.IsNullOrWhiteSpace(request.ObservacionesVeterinarias) &&
+            request.ObservacionesVeterinarias.Length > 250)
+        {
+            errors.Add("FECUNDACION-FECUNDACION-CREATE-OBSERVACIONES_VETERINARIAS-INVALID");
+        }
 
-        RuleFor(x => x.MachoExternoNombre)
-            .NotEmpty().When(x => x.MachoExterno)
-            .WithMessage("El nombre del macho externo es obligatorio si se indica que es macho externo.");
+        if (request.FechaProcedimiento == default)
+        {
+            errors.Add("FECUNDACION-FECUNDACION-CREATE-FECHA_PROCEDIMIENTO-NULL");
+        }
 
-        RuleFor(x => x.VacunoDonanteId)
-            .NotNull().When(x => !x.MachoExterno)
-            .WithMessage("Debe seleccionar un vacuno donante si no es macho externo.")
-            .GreaterThan(0).When(x => !x.MachoExterno && x.VacunoDonanteId.HasValue)
-            .WithMessage("El ID del vacuno donante debe ser mayor que cero.");
+        if (request.MachoExterno)
+        {
+            if (string.IsNullOrWhiteSpace(request.MachoExternoNombre))
+            {
+                errors.Add("FECUNDACION-FECUNDACION-CREATE-MACHO_EXTERNO_NOMBRE-NULL");
+            }
+        }
+        else
+        {
+            if (!request.VacunoDonanteId.HasValue)
+            {
+                errors.Add("FECUNDACION-FECUNDACION-CREATE-VACUNO_DONANTE_ID-NULL");
+            }
+            else if (request.VacunoDonanteId.Value <= 0)
+            {
+                errors.Add("FECUNDACION-FECUNDACION-CREATE-VACUNO_DONANTE_ID-INVALID");
+            }
+        }
+
+        FecundacionCommonValidationRules.ValidateCodigoSemenAndEmbrion(
+            errors, "CREATE", request.TipoFecundacionCode, request.CodigoSemen, request.CodigoEmbrion);
+
+        return errors;
     }
 }

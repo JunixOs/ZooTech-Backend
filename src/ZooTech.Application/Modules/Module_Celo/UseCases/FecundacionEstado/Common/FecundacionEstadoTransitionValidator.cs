@@ -39,11 +39,12 @@ public sealed class FecundacionEstadoTransitionValidator
             !nextStates.Contains(next))
         {
             throw new FecundacionEstadoValidationException(
-                new Dictionary<string, string>
+                new List<string>
                 {
-                    ["estadoFecundacion"] =
-                        $"No se permite cambiar el estado de '{currentEstado}' a '{nextEstado}'."
-                });
+                    "FECUNDACION-FECUNDACION_ESTADO-INVALID",
+                },
+                $"No se permite cambiar el estado de '{currentEstado}' a '{nextEstado}'."
+            );
         }
     }
 }

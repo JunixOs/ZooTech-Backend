@@ -1,18 +1,26 @@
 
-using ZooTech.Application.Common.Configuration;
+using ZooTech.Application.Common.Gateway.Parametrization;
+using ZooTech.Domain.Configuration;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
 
 public sealed class ListarVacunosInteractor : IListarVacunosInputPort
 {
-    private readonly IVacunoRepository _vacunoRepository;
-    private readonly IVacunosConfiguration _settings;
+    private const int DefaultPage = 1;
+    private const int DefaultPageSize = 20;
+    private const int MaxPageSize = 100;
 
-    public ListarVacunosInteractor(IVacunoRepository vacunoRepository, IVacunosConfiguration settings)
+    private readonly IVacunoRepository _vacunoRepository;
+    private readonly ITenantConfigurationProvider _tenantConfigurationProvider;
+
+    public ListarVacunosInteractor(
+        IVacunoRepository vacunoRepository, 
+        ITenantConfigurationProvider tenantConfigurationProvider
+    )
     {
         _vacunoRepository = vacunoRepository;
-        _settings = settings;
+        _tenantConfigurationProvider = tenantConfigurationProvider;
     }
 
     public async Task<ListarVacunosOutput> HandleAsync(ListarVacunosCommand command, CancellationToken cancellationToken = default)
@@ -20,16 +28,23 @@ public sealed class ListarVacunosInteractor : IListarVacunosInputPort
         var fechaDesde = command.FechaDesde;
         if (!fechaDesde.HasValue && !command.FechaHasta.HasValue)
         {
-            fechaDesde = DateTime.UtcNow.AddDays(-_settings.DefaultFilterDays);
+            var defaultFilterDays = await _tenantConfigurationProvider.GetSettingAsync(
+                Settings.Vacunos.VacunosDefaultFilterDays
+            );
+
+            fechaDesde = DateTime.UtcNow.AddDays(-defaultFilterDays);
         }
+
+        var page = command.Page <= 0 ? DefaultPage : command.Page;
+        var pageSize = command.Limit <= 0 ? DefaultPageSize : Math.Min(command.Limit, MaxPageSize);
 
         var (items, totalCount) = await _vacunoRepository.GetPagedAsync(
             command.Query,
             fechaDesde,
             command.FechaHasta,
             command.Estado,
-            command.Page,
-            command.Limit,
+            page,
+            pageSize,
             cancellationToken);
 
         return new ListarVacunosOutput(items, totalCount);

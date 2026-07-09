@@ -1,53 +1,40 @@
-using System;
-using FluentValidation;
+using ZooTech.Application.Common.Validator;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.CreateVacuno;
+using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.Validators;
 
-internal sealed class CreateVacunoValidator : AbstractValidator<CreateVacunoCommand>
+internal sealed class CreateVacunoValidator : ICommandValidator<CreateVacunoCommand>
 {
-    public CreateVacunoValidator()
+
+    public ModuleName ModuleName => ModuleName.Vacuno;
+
+    public List<string> Validate(CreateVacunoCommand request)
     {
-        RuleFor(x => x.Codigo)
-            .NotEmpty().WithMessage("El código del vacuno es obligatorio.")
-            .MaximumLength(10).WithMessage("El código no puede superar los 10 caracteres.")
-            .Matches("^[A-Z0-9]+$").WithMessage("El código debe estar en mayúsculas y contener solo letras y números.");
+        var errors = new List<string>();
 
-        RuleFor(x => x.Codigo)
-            .Matches("^VAC[0-9]+$").WithMessage("El codigo debe iniciar con VAC y continuar solo con numeros.");
+        if (string.IsNullOrWhiteSpace(request.Codigo))
+        {
+            errors.Add("VACUNO-VACUNO-CREATE-CODIGO-NULL");
+        }
+        else if (!System.Text.RegularExpressions.Regex.IsMatch(request.Codigo, @"^VAC[0-9]+$"))
+        {
+            errors.Add("VACUNO-VACUNO-CREATE-CODIGO-INVALID");
+        }
 
-        RuleFor(x => x.Nombre)
-            .NotEmpty().WithMessage("El nombre del vacuno es obligatorio.")
-            .MaximumLength(15).WithMessage("El nombre no puede superar los 15 caracteres.");
+        VacunoCommonValidationRules.ValidateCommonFields(
+            errors,
+            "CREATE",
+            request.Nombre,
+            request.FechaNacimiento,
+            request.TipoAdquisicionCode,
+            request.RazaCode,
+            request.ColorCode,
+            request.SexoCode,
+            request.GranjaId,
+            request.Observaciones,
+            request.PrecioCompra);
 
-        RuleFor(x => x.FechaNacimiento)
-            .NotEmpty().WithMessage("La fecha de nacimiento es obligatoria.");
-
-        RuleFor(x => x.TipoAdquisicionCode)
-            .NotEmpty().WithMessage("El tipo de adquisición es obligatorio.")
-            .MaximumLength(30).WithMessage("El código de tipo de adquisición no puede superar los 30 caracteres.");
-
-        RuleFor(x => x.RazaCode)
-            .NotEmpty().WithMessage("La raza es obligatoria.")
-            .MaximumLength(30).WithMessage("El código de raza no puede superar los 30 caracteres.");
-
-        RuleFor(x => x.ColorCode)
-            .NotEmpty().WithMessage("El color es obligatorio.")
-            .MaximumLength(30).WithMessage("El código de color no puede superar los 30 caracteres.");
-
-        RuleFor(x => x.SexoCode)
-            .NotEmpty().WithMessage("El sexo es obligatorio.")
-            .MaximumLength(10).WithMessage("El código de sexo no puede superar los 10 caracteres.");
-
-        RuleFor(x => x.GranjaId)
-            .GreaterThan(0).WithMessage("El ID de la granja debe ser mayor que cero.");
-
-        RuleFor(x => x.Observaciones)
-            .MaximumLength(150).When(x => x.Observaciones is not null).WithMessage("Las observaciones no pueden superar los 150 caracteres.")
-            .Must(obs => obs == null || obs.Split(new[] { ' ', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).Length <= 30)
-            .WithMessage("Las observaciones no pueden superar las 30 palabras.");
-
-        RuleFor(x => x.PrecioCompra)
-            .NotEmpty().When(x => x.TipoAdquisicionCode == "COMPRA").WithMessage("El precio de compra es obligatorio si la adquisición es por compra.");
+        return errors;
     }
 }

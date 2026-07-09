@@ -8,9 +8,9 @@ public sealed class ListadoVacunosReporteReadRepository : IListadoVacunosReporte
 {
     private readonly GanaderiaDbContext _context;
 
-    public ListadoVacunosReporteReadRepository(GanaderiaDbContext context)
+    public ListadoVacunosReporteReadRepository(IGanaderiaDbContextFactory ganaderiaDbContextFactory)
     {
-        _context = context;
+        _context = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
     }
 
     public async Task<ListadoVacunosReporteReadResult> ListarAsync(
@@ -23,10 +23,17 @@ public sealed class ListadoVacunosReporteReadRepository : IListadoVacunosReporte
             {
                 Id = v.id,
                 Codigo = v.codigo,
+                FechaNacimiento = v.fecha_nacimiento,
                 FechaRegistro = v.fecha_registro,
                 Nombre = v.nombre,
+                TipoAdquisicionCode = v.tipo_adquisicion_code,
+                TipoAdquisicionNombre = v.tipo_adquisicion_codeNavigation.nombre,
                 RazaCode = v.raza_code,
                 RazaNombre = v.raza_codeNavigation.nombre,
+                ColorCode = v.color_code,
+                ColorNombre = v.color_codeNavigation.nombre,
+                SexoCode = v.sexo_code,
+                SexoNombre = v.sexo_codeNavigation.nombre,
                 Granja = v.granja.nombre,
                 Distrito = v.granja.distrito_codigoNavigation.nombre,
                 Provincia = v.granja.distrito_codigoNavigation.provincia_codigoNavigation.nombre,
@@ -108,8 +115,22 @@ public sealed class ListadoVacunosReporteReadRepository : IListadoVacunosReporte
 
         if (!string.IsNullOrWhiteSpace(query.Estado))
         {
-            var estado = query.Estado.Trim().ToUpperInvariant();
-            source = source.Where(v => v.EstadoCode == estado);
+            var estado = query.Estado.Trim();
+            var estadoLower = estado.ToLowerInvariant();
+
+            if (estadoLower == "vivo")
+            {
+                source = source.Where(v => v.DeletedAt == null && v.EstadoCode != "MUERTO");
+            }
+            else if (estadoLower == "muerto")
+            {
+                source = source.Where(v => v.DeletedAt != null || v.EstadoCode == "MUERTO");
+            }
+            else
+            {
+                var estadoCode = estado.ToUpperInvariant();
+                source = source.Where(v => v.EstadoCode == estadoCode);
+            }
         }
 
         if (!string.IsNullOrWhiteSpace(query.EstadoRegistro))
@@ -142,11 +163,16 @@ public sealed class ListadoVacunosReporteReadRepository : IListadoVacunosReporte
             .Select(v => new VacunoListadoReporteReadItem(
                 v.Id,
                 v.Codigo,
+                v.FechaNacimiento,
                 v.FechaRegistro,
                 v.Nombre,
+                v.TipoAdquisicionNombre ?? v.TipoAdquisicionCode,
                 v.RazaNombre ?? v.RazaCode,
+                v.ColorNombre ?? v.ColorCode,
+                v.SexoNombre ?? v.SexoCode,
+                v.Granja,
                 BuildProcedencia(v.Granja, v.Distrito, v.Provincia, v.Departamento),
-                v.EstadoCode ?? "SANO",
+                v.DeletedAt != null || v.EstadoCode == "MUERTO" ? "muerto" : "vivo",
                 v.DeletedAt is null ? "activo" : "eliminado"))
             .ToList();
 
@@ -166,10 +192,17 @@ public sealed class ListadoVacunosReporteReadRepository : IListadoVacunosReporte
     {
         public long Id { get; init; }
         public string Codigo { get; init; } = string.Empty;
+        public DateOnly FechaNacimiento { get; init; }
         public DateOnly FechaRegistro { get; init; }
         public string Nombre { get; init; } = string.Empty;
+        public string TipoAdquisicionCode { get; init; } = string.Empty;
+        public string? TipoAdquisicionNombre { get; init; }
         public string RazaCode { get; init; } = string.Empty;
         public string? RazaNombre { get; init; }
+        public string ColorCode { get; init; } = string.Empty;
+        public string? ColorNombre { get; init; }
+        public string SexoCode { get; init; } = string.Empty;
+        public string? SexoNombre { get; init; }
         public string? Granja { get; init; }
         public string? Distrito { get; init; }
         public string? Provincia { get; init; }

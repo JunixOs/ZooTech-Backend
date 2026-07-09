@@ -1,21 +1,19 @@
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.Common;
+using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.UpdateFecundacionEstado;
 
 public sealed class UpdateFecundacionEstadoInteractor : IUpdateFecundacionEstadoInputPort
 {
     private readonly IFecundacionEstadoRepository repository;
-    private readonly UpdateFecundacionEstadoValidator validator;
     private readonly FecundacionEstadoTransitionValidator transitionValidator;
 
     public UpdateFecundacionEstadoInteractor(
         IFecundacionEstadoRepository repository,
-        UpdateFecundacionEstadoValidator validator,
         FecundacionEstadoTransitionValidator transitionValidator)
     {
         this.repository = repository;
-        this.validator = validator;
         this.transitionValidator = transitionValidator;
     }
 
@@ -23,41 +21,58 @@ public sealed class UpdateFecundacionEstadoInteractor : IUpdateFecundacionEstado
         UpdateFecundacionEstadoCommand command,
         CancellationToken cancellationToken = default)
     {
-        var nextEstado = validator.ValidateAndNormalize(command);
+        var estadoFecundacionNormalized = command.EstadoFecundacion?.Trim() ?? string.Empty;
 
         var current = await repository.GetByFecundacionIdAsync(command.FecundacionId, cancellationToken)
-            ?? throw new NotFoundException("No se encontro la fecundacion solicitada.");
+            ?? throw new NotFoundException(
+                ScopeName.Application,
+                ModuleName.Fecundacion,
+                "No se encontro la fecundacion solicitada."
+            );
 
         if (!current.EsHembra)
         {
-            throw new ConflictException("El estado de fecundacion solo aplica a vacunos hembra.");
+            throw new ConflictException(
+                ScopeName.Application,
+                ModuleName.Fecundacion,
+                message:  "El estado de fecundacion solo aplica a vacunos hembra."
+            );
         }
 
         if (current.EstadoActual == FecundacionEstadoConstants.SinEstado)
         {
             throw new FecundacionEstadoValidationException(
-                new Dictionary<string, string>
+                new List<string>
                 {
-                    ["estadoFecundacion"] = "La fecundacion no tiene un estado actual para actualizar."
-                });
+                    "FECUNDACION-UPDATE-FECUNDACION_ESTADO-INVALID"
+                },
+                "La fecundacion no tiene un estado actual para actualizar."
+            );
         }
 
-        transitionValidator.ValidateTransition(current.EstadoActual, nextEstado);
+        transitionValidator.ValidateTransition(current.EstadoActual, estadoFecundacionNormalized);
 
-        if (FecundacionEstadoConstants.IsActive(nextEstado) &&
+        if (FecundacionEstadoConstants.IsActive(estadoFecundacionNormalized) &&
             await repository.HasOtherActiveFecundacionAsync(
                 current.VacunoId,
                 command.FecundacionId,
                 cancellationToken))
         {
             throw new ConflictException(
-                "La hembra ya tiene una fecundacion activa en estado Pendiente o En proceso.");
+                ScopeName.Application,
+                ModuleName.Fecundacion,
+                message: "La hembra ya tiene una fecundacion activa en estado Pendiente o En proceso."
+            );
         }
 
-        var estadoCode = await repository.GetEstadoCodeByNameAsync(nextEstado, cancellationToken);
+        var estadoCode = await repository.GetEstadoCodeByNameAsync(estadoFecundacionNormalized, cancellationToken);
         if (estadoCode is null)
         {
-            throw new ConflictException("El estado de fecundacion indicado no existe en la parametrizacion.");
+            throw new ConflictException(
+                ScopeName.Application,
+                ModuleName.Fecundacion,
+                message: "El estado de fecundacion indicado no existe en la parametrizacion."
+            );
         }
 
         await repository.UpdateEstadoAsync(
@@ -67,7 +82,11 @@ public sealed class UpdateFecundacionEstadoInteractor : IUpdateFecundacionEstado
             cancellationToken);
 
         var updated = await repository.GetByFecundacionIdAsync(command.FecundacionId, cancellationToken)
-            ?? throw new NotFoundException("No se encontro la fecundacion solicitada.");
+            ?? throw new NotFoundException(
+                ScopeName.Application,
+                ModuleName.Fecundacion,
+                "No se encontro la fecundacion solicitada."
+            );
 
         return new UpdateFecundacionEstadoOutput(
             updated.VacunoId,

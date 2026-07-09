@@ -10,9 +10,9 @@ public sealed class RegistroVacunoReadRepository : IRegistroVacunoReadRepository
 {
     private readonly GanaderiaDbContext _context;
 
-    public RegistroVacunoReadRepository(GanaderiaDbContext context)
+    public RegistroVacunoReadRepository(IGanaderiaDbContextFactory ganaderiaDbContextFactory)
     {
-        _context = context;
+        _context = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
     }
 
     public async Task<Vacuno?> ObtenerRegistroAsync(long vacunoId, CancellationToken cancellationToken = default)

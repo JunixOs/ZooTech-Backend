@@ -29,9 +29,14 @@ public sealed record ListadoVacunosReporteReadResult(
 public sealed record VacunoListadoReporteReadItem(
     long Id,
     string Codigo,
+    DateOnly FechaNacimiento,
     DateOnly FechaRegistro,
     string Nombre,
+    string? TipoAdquisicion,
     string? Raza,
+    string? Color,
+    string? Sexo,
+    string? Granja,
     string? Procedencia,
     string Estado,
     string EstadoRegistro);

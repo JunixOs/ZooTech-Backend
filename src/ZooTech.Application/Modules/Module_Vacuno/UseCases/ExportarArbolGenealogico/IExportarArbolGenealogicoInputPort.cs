@@ -2,5 +2,5 @@ namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarArbolGeneal
 
 public interface IExportarArbolGenealogicoInputPort
 {
-    Task<byte[]> HandleAsync(long vacunoId, ExportarArbolGenealogicoCommand command, CancellationToken cancellationToken = default);
+    Task<ExportarArbolGenealogicoOutput> HandleAsync(ExportarArbolGenealogicoCommand command, CancellationToken cancellationToken = default);
 }

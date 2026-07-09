@@ -1,48 +1,28 @@
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ZooTech.Application;
 using ZooTech.Infrastructure;
 using ZooTech.InterfaceAdapters;
 using ZooTech.InterfaceAdapters.Controllers;
-using ZooTech.InterfaceAdapters.DTOs.Responses;
 using ZooTech.InterfaceAdapters.Middleware;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.Controllers;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Controllers;
+using ZooTech.Infrastructure.Persistence.Context;
+using ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers;
+using QuestPDF.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Logging.ClearProviders();
-builder.Logging.AddConsole();
-builder.Logging.AddDebug();
 
+// ======= Configuracion Controllers =======
 builder.Services
     .AddControllers()
     .AddApplicationPart(typeof(HomeController).Assembly)
     .AddApplicationPart(typeof(CeloController).Assembly)
     .AddApplicationPart(typeof(VacunoController).Assembly)
-    .AddApplicationPart(typeof(ProduccionLecheController).Assembly);
+    .AddApplicationPart(typeof(ProduccionLecheController).Assembly)
+    .AddApplicationPart(typeof(TenancingController).Assembly);
 
-builder.Services.Configure<ApiBehaviorOptions>(options =>
-{
-    options.InvalidModelStateResponseFactory = context =>
-    {
-        var details = context.ModelState
-            .Where(entry => entry.Value?.Errors.Count > 0)
-            .SelectMany(entry => entry.Value!.Errors.Select(error => new ErrorDetail
-            {
-                Field = entry.Key,
-                Message = string.IsNullOrWhiteSpace(error.ErrorMessage)
-                    ? "El valor enviado no es valido."
-                    : error.ErrorMessage
-            }));
-
-        return new BadRequestObjectResult(ErrorResponse.Create(
-            "VALIDATION_ERROR",
-            "Los datos enviados no son validos.",
-            details));
-    };
-});
-
+// ======= Configuracion Swagger =======
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen(options =>
@@ -66,27 +46,91 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-builder.Services
-    .AddApplication()
-    .AddInfrastructure(builder.Configuration)
-    .AddInterfaceAdapters();
+// ======= Configuracion Capas =======
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddInterfaceAdapters();
 
+// ======= Configuracion Context BD Tenant Principal =======
+builder.Services.AddDbContext<TenantCatalogDb>(options =>
+{
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("TenantCatalogConnection"));
+});
+
+// ======= Configuracion DI =======
+builder.Services.AddMemoryCache();
+
+// ======= Configuracion CORS =======
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        var frontendPort = builder.Configuration["Frontend:FrontendPort"];
-        var frontendIP = builder.Configuration["Frontend:FrontendIP"];
-        var frontendProtocol = builder.Configuration["Frontend:FrontendProtocol"];
+        policy
+            .SetIsOriginAllowed(origin =>
+            {
+                if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+                    return false;
 
-        policy.WithOrigins($"{frontendProtocol}://{frontendIP}:{frontendPort}")
+                // Produccion: permite zentrycorp.dev y todos sus subdominios
+                var isZentryDomain =
+                    uri.Scheme == "https" &&
+                    (
+                        uri.Host == "zentrycorp.dev" ||
+                        uri.Host.EndsWith(".zentrycorp.dev")
+                    );
+
+                // Desarrollo local
+                var isLocal =
+                    uri.Scheme == "http" &&
+                    uri.Port == 4200 &&
+                    (
+                        uri.Host == "admin.zentrycorp.local" ||
+                        uri.Host == "zootecniaunas.zentrycorp.local" ||
+                        uri.Host == "elroble.zentrycorp.local" ||
+                        uri.Host == "lacteosdelvalle.zentrycorp.local" ||
+                        uri.Host == "losandes.zentrycorp.local" ||
+                        uri.Host == "localhost" ||
+                        uri.Host == "127.0.0.1"
+                    );
+
+                return isZentryDomain || isLocal;
+            })
             .AllowAnyHeader()
-            .AllowAnyMethod();
+            .AllowAnyMethod()
+            .WithExposedHeaders(
+                "X-Tenant-Id",
+                "X-Tenant-Name",
+                "X-Tenant-Legal-Name",
+                "X-Tenant-Type");
     });
 });
 
+QuestPDF.Settings.License = LicenseType.Community;
+
 var app = builder.Build();
 
+// ======= Middleware global de errores =======
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+// ======= HTTPS =======
+app.UseHttpsRedirection();
+
+// ======= Routing =======
+app.UseRouting();
+
+// ======= CORS =======
+// IMPORTANTE: debe ir antes de TenantResolution, Authentication y Authorization.
+app.UseCors("AllowFrontend");
+
+// ======= Tenant Middleware =======
+app.UseMiddleware<TenantResolutionMiddleware>();
+
+// ======= JWT =======
+app.UseAuthentication();
+app.UseAuthorization();
+
+// ======= Swagger =======
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -107,75 +151,8 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseMiddleware<ExceptionHandlingMiddleware>();
-
-var storagePath = Path.Combine(AppContext.BaseDirectory, "storage");
-if (!Directory.Exists(storagePath))
-{
-    Directory.CreateDirectory(storagePath);
-}
-
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(storagePath),
-    RequestPath = "/api/v1/storage"
-});
-
-if (!app.Environment.IsDevelopment())
-{
-    app.UseHttpsRedirection();
-}
-
-app.UseCors("AllowFrontend");
-
-app.Use(async (context, next) =>
-{
-    var logger = context.RequestServices.GetRequiredService<ILoggerFactory>()
-        .CreateLogger("TenantMiddleware");
-
-    if (context.Request.Headers.TryGetValue("X-Tenant-Id", out var tenantHeader))
-    {
-        logger.LogInformation("Tenant recibido por header: {TenantId}", tenantHeader.ToString());
-    }
-    else
-    {
-        logger.LogInformation("Sin header X-Tenant-Id, usando DefaultTenantId del appsettings");
-    }
-
-    await next();
-});
-
+// ======= Controllers =======
 app.MapControllers();
-
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    var logger = services.GetRequiredService<ILoggerFactory>().CreateLogger("WarmUp");
-
-    try
-    {
-        logger.LogInformation("Iniciando calentamiento del modelo de Entity Framework Core...");
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-
-        var db = services.GetRequiredService<ZooTech.Infrastructure.Persistence.Context.GanaderiaDbContext>();
-
-        if (await db.Database.CanConnectAsync())
-        {
-            await db.vacunos.AnyAsync();
-            sw.Stop();
-            logger.LogInformation("Calentamiento de Entity Framework completado en {ElapsedMs}ms.", sw.ElapsedMilliseconds);
-        }
-        else
-        {
-            sw.Stop();
-            logger.LogWarning("No se pudo establecer conexion con la base de datos durante el calentamiento. Duracion: {ElapsedMs}ms.", sw.ElapsedMilliseconds);
-        }
-    }
-    catch (Exception ex)
-    {
-        logger.LogError(ex, "Error inesperado al calentar Entity Framework.");
-    }
-}
 
 app.Run();
 

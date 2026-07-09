@@ -1,5 +1,5 @@
 using ZooTech.Domain.Module_Fecundacion.Entities;
-using ZooTech.Domain.Module_Fecundacion.ReadModels;
+using ZooTech.Domain.Module_Fecundacion.Entities;
 
 namespace ZooTech.Domain.Module_Fecundacion.Interfaces;
 
@@ -20,7 +20,12 @@ public interface IFecundacionRepository
 
     Task<FecundacionEditData?> GetForEditAsync(long id, CancellationToken cancellationToken = default);
     Task<FecundacionOptionsData> GetOptionsAsync(CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<FecundacionVacunoOptionData>> SearchVacunosAsync(string? sexo, string? query, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<FecundacionVacunoOptionData>> SearchVacunosAsync(
+        string? sexo,
+        string? query,
+        bool soloDisponibles = false,
+        long? excluirFecundacionId = null,
+        CancellationToken cancellationToken = default);
     Task<FecundacionUpdateData?> UpdateAsync(long id, FecundacionUpdateValues values, CancellationToken cancellationToken = default);
     Task DeleteAsync(long id, string razon, CancellationToken cancellationToken = default);
     Task<bool> HasCriaAsync(long id, CancellationToken cancellationToken = default);

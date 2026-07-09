@@ -1,26 +1,45 @@
 using FluentValidation;
+using ZooTech.Application.Common.Validator;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.UpdateTriaje;
+using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Sanidad.Validators;
 
-internal sealed class UpdateTriajeValidator : AbstractValidator<UpdateTriajeCommand>
+internal sealed class UpdateTriajeValidator : ICommandValidator<UpdateTriajeCommand>
 {
-    public UpdateTriajeValidator()
+    public ModuleName ModuleName => ModuleName.Triaje;
+
+    public List<string> Validate(UpdateTriajeCommand request)
     {
-        RuleFor(x => x.VacunoId)
-            .GreaterThan(0).WithMessage("El ID del vacuno debe ser mayor que cero.");
+        var errors = new List<string>();
 
-        RuleFor(x => x.TipoPesoCode)
-            .NotEmpty().WithMessage("El tipo de peso es obligatorio.");
+        if (request.Id <= 0)
+        {
+            errors.Add("SANIDAD-TRIAJE-UPDATE-ID-INVALID");
+        }
 
-        RuleFor(x => x.PesoKg)
-            .GreaterThan(0).WithMessage("El peso debe ser mayor que cero.");
+        if (string.IsNullOrWhiteSpace(request.TipoPesoCode))
+        {
+            errors.Add("SANIDAD-TRIAJE-UPDATE-TIPO_PESO_CODE-NULL");
+        }
 
-        RuleFor(x => x.EstadoRegistroCode)
-            .NotEmpty().WithMessage("El estado de registro es obligatorio.");
+        if (request.PesoKg <= 0)
+        {
+            errors.Add("SANIDAD-TRIAJE-UPDATE-PESO_KG-INVALID");
+        }
 
-        RuleFor(x => x.Observaciones)
-            .MaximumLength(500).When(x => x.Observaciones is not null)
-            .WithMessage("Las observaciones no pueden superar los 500 caracteres.");
+        if (!string.IsNullOrWhiteSpace(request.Observaciones) &&
+            request.Observaciones.Length > 500)
+        {
+            errors.Add("SANIDAD-TRIAJE-UPDATE-OBSERVACIONES-INVALID");
+        }
+
+        if (request.EncargadoUsuarioId.HasValue &&
+            request.EncargadoUsuarioId.Value <= 0)
+        {
+            errors.Add("SANIDAD-TRIAJE-UPDATE-ENCARGADO_USUARIO_ID-INVALID");
+        }
+
+        return errors;
     }
 }
