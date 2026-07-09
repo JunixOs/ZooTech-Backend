@@ -1,7 +1,5 @@
 using FluentAssertions;
-using ZooTech.Domain.Entities;
-using ZooTech.Domain.Enums;
-using ZooTech.Domain.ValueObjects;
+// Removed obsolete namespaces
 using ZooTech.Infrastructure.Persistence.Entities;
 using ZooTech.Infrastructure.Persistence.Mappers;
 
