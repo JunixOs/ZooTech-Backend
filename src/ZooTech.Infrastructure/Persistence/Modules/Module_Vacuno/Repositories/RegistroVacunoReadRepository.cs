@@ -8,17 +8,16 @@ namespace ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Repositories;
 
 public sealed class RegistroVacunoReadRepository : IRegistroVacunoReadRepository
 {
-    private readonly IGanaderiaDbContextFactory _ganaderiaDbContextFactory;
+    private readonly GanaderiaDbContext _context;
 
     public RegistroVacunoReadRepository(IGanaderiaDbContextFactory ganaderiaDbContextFactory)
     {
-        _ganaderiaDbContextFactory = ganaderiaDbContextFactory;
+        _context = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
     }
 
     public async Task<Vacuno?> ObtenerRegistroAsync(long vacunoId, CancellationToken cancellationToken = default)
     {
-        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
-        var entity = await context.vacunos
+        var entity = await _context.vacunos
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.id == vacunoId, cancellationToken);
 
@@ -38,8 +37,7 @@ public sealed class RegistroVacunoReadRepository : IRegistroVacunoReadRepository
         var idList = ids.Distinct().ToList();
         if (idList.Count == 0) return new Dictionary<long, string>();
 
-        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
-        return await context.vacunos
+        return await _context.vacunos
             .AsNoTracking()
             .Where(x => idList.Contains(x.id))
             .ToDictionaryAsync(x => x.id, x => x.codigo, cancellationToken);
@@ -47,8 +45,7 @@ public sealed class RegistroVacunoReadRepository : IRegistroVacunoReadRepository
 
     public async Task<(string Nombre, string? Distrito, string? Provincia, string? Departamento)?> ObtenerDetallesGranjaAsync(long granjaId, CancellationToken cancellationToken = default)
     {
-        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
-        var granja = await context.granjas
+        var granja = await _context.granjas
             .AsNoTracking()
             .Include(g => g.distrito_codigoNavigation)
                 .ThenInclude(d => d.provincia_codigoNavigation)
@@ -68,8 +65,7 @@ public sealed class RegistroVacunoReadRepository : IRegistroVacunoReadRepository
 
     public async Task<(decimal? PrecioCompra, string? Proveedor, DateOnly? FechaAdquisicion)?> ObtenerDetallesAdquisicionAsync(long vacunoId, CancellationToken cancellationToken = default)
     {
-        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
-        var adq = await context.vacuno_adquisicions
+        var adq = await _context.vacuno_adquisicions
             .AsNoTracking()
             .Where(a => a.vacuno_id == vacunoId)
             .FirstOrDefaultAsync(cancellationToken);
@@ -81,8 +77,7 @@ public sealed class RegistroVacunoReadRepository : IRegistroVacunoReadRepository
 
     public async Task<(string? EstadoCode, string? EstadoNombre, DateOnly? FechaEstado, string? Motivo)?> ObtenerEstadoActualAsync(long vacunoId, CancellationToken cancellationToken = default)
     {
-        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
-        var est = await context.vacuno_estado_historials
+        var est = await _context.vacuno_estado_historials
             .AsNoTracking()
             .Include(x => x.estado_codeNavigation)
             .Where(x => x.vacuno_id == vacunoId)
@@ -100,21 +95,19 @@ public sealed class RegistroVacunoReadRepository : IRegistroVacunoReadRepository
         var codigoList = codigos.Where(c => !string.IsNullOrWhiteSpace(c)).Distinct().ToList();
         if (codigoList.Count == 0) return new Dictionary<string, string>();
 
-        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
         return tipoCatalogo.ToLowerInvariant() switch
         {
-            CatalogoRaza => await context.cat_razas.Where(x => codigoList.Contains(x.code)).ToDictionaryAsync(x => x.code, x => x.nombre, cancellationToken),
-            CatalogoSexo => await context.cat_sexos.Where(x => codigoList.Contains(x.code)).ToDictionaryAsync(x => x.code, x => x.nombre, cancellationToken),
-            CatalogoColor => await context.cat_colors.Where(x => codigoList.Contains(x.code)).ToDictionaryAsync(x => x.code, x => x.nombre, cancellationToken),
-            CatalogoTipoAdquisicion => await context.cat_tipo_adquisicions.Where(x => codigoList.Contains(x.code)).ToDictionaryAsync(x => x.code, x => x.nombre, cancellationToken),
+            CatalogoRaza => await _context.cat_razas.Where(x => codigoList.Contains(x.code)).ToDictionaryAsync(x => x.code, x => x.nombre, cancellationToken),
+            CatalogoSexo => await _context.cat_sexos.Where(x => codigoList.Contains(x.code)).ToDictionaryAsync(x => x.code, x => x.nombre, cancellationToken),
+            CatalogoColor => await _context.cat_colors.Where(x => codigoList.Contains(x.code)).ToDictionaryAsync(x => x.code, x => x.nombre, cancellationToken),
+            CatalogoTipoAdquisicion => await _context.cat_tipo_adquisicions.Where(x => codigoList.Contains(x.code)).ToDictionaryAsync(x => x.code, x => x.nombre, cancellationToken),
             _ => new Dictionary<string, string>()
         };
     }
 
     public async Task<string?> ObtenerUtilizacionActualAsync(long vacunoId, CancellationToken cancellationToken = default)
     {
-        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
-        var uti = await context.vacuno_utilizacion_historials
+        var uti = await _context.vacuno_utilizacion_historials
             .AsNoTracking()
             .Include(x => x.tipo_utilizacion_codeNavigation)
             .Where(x => x.vacuno_id == vacunoId)
@@ -127,8 +120,7 @@ public sealed class RegistroVacunoReadRepository : IRegistroVacunoReadRepository
 
     public async Task<(long? Id, string? NombreOriginal, string? NombreAlmacenado, string? RutaArchivo, string? Extension, long? TamanoBytes)?> ObtenerFotoPrincipalAsync(long vacunoId, CancellationToken cancellationToken = default)
     {
-        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
-        var foto = await context.vacuno_fotos
+        var foto = await _context.vacuno_fotos
             .AsNoTracking()
             .Include(x => x.archivo)
             .Where(x => x.vacuno_id == vacunoId)
@@ -142,8 +134,7 @@ public sealed class RegistroVacunoReadRepository : IRegistroVacunoReadRepository
     public async Task<string?> ObtenerNombreUsuarioAsync(long? usuarioId, CancellationToken cancellationToken = default)
     {
         if (usuarioId is null) return null;
-        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
-        return await context.usuarios
+        return await _context.usuarios
             .Where(u => u.id == usuarioId)
             .Select(u => u.nombre_completo)
             .FirstOrDefaultAsync(cancellationToken);

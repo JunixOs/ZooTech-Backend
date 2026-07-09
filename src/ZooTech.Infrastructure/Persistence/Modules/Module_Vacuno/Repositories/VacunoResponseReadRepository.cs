@@ -7,11 +7,11 @@ namespace ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Repositories;
 
 public sealed class VacunoResponseReadRepository : IVacunoResponseReadRepository
 {
-    private readonly IGanaderiaDbContextFactory _ganaderiaDbContextFactory;
+    private readonly GanaderiaDbContext _context;
 
     public VacunoResponseReadRepository(IGanaderiaDbContextFactory ganaderiaDbContextFactory)
     {
-        _ganaderiaDbContextFactory = ganaderiaDbContextFactory;
+        _context = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
     }
 
     public async Task<Dictionary<long, string>> GetActiveCodesByIdsAsync(
@@ -24,8 +24,7 @@ public sealed class VacunoResponseReadRepository : IVacunoResponseReadRepository
             return new Dictionary<long, string>();
         }
 
-        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
-        return await context.vacunos
+        return await _context.vacunos
             .AsNoTracking()
             .Where(v => idList.Contains(v.id) && v.deleted_at == null)
             .ToDictionaryAsync(v => v.id, v => v.codigo, cancellationToken);
@@ -35,8 +34,7 @@ public sealed class VacunoResponseReadRepository : IVacunoResponseReadRepository
         long granjaId,
         CancellationToken cancellationToken = default)
     {
-        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
-        return context.granjas
+        return _context.granjas
             .AsNoTracking()
             .Where(g => g.id == granjaId)
             .Select(g => new VacunoGranjaDetails(
@@ -58,8 +56,7 @@ public sealed class VacunoResponseReadRepository : IVacunoResponseReadRepository
         long vacunoId,
         CancellationToken cancellationToken = default)
     {
-        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
-        var adquisicion = await context.vacuno_adquisicions
+        var adquisicion = await _context.vacuno_adquisicions
             .AsNoTracking()
             .Where(a => a.vacuno_id == vacunoId)
             .Select(a => new { a.precio_compra })
@@ -72,8 +69,7 @@ public sealed class VacunoResponseReadRepository : IVacunoResponseReadRepository
         long vacunoId,
         CancellationToken cancellationToken = default)
     {
-        var context = _ganaderiaDbContextFactory.CreateDbContextByTenantContext();
-        return context.vacuno_utilizacion_historials
+        return _context.vacuno_utilizacion_historials
             .AsNoTracking()
             .Where(u => u.vacuno_id == vacunoId)
             .OrderByDescending(u => u.created_at)
