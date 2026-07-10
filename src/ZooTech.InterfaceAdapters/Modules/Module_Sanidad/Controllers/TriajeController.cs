@@ -88,6 +88,7 @@ public sealed class TriajeController : ControllerBase
         [FromQuery] string? nombre = null,
         [FromQuery] string? tipoPeso = null,
         [FromQuery] decimal? pesoKg = null,
+        [FromQuery] long? vacunoId = null,
         CancellationToken cancellationToken = default)
     {
         var behaviorPipeline = _getAllTriajesBehaviorPipelineFactory.Create();
