@@ -2,21 +2,22 @@ using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Common.Models;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
 using ZooTech.Domain.Shared.Enums;
+using ZooTech.Domain.Shared.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.DeleteOrdenio;
 
 public sealed class DeleteOrdenioInteractor : IDeleteOrdenioInputPort
 {
-    private readonly IOrdenioUnitOfWork _unitOfWork;
+    private readonly IGanaderiaUnitOfWork _unitOfWork;
 
-    public DeleteOrdenioInteractor(IOrdenioUnitOfWork unitOfWork)
+    public DeleteOrdenioInteractor(IGanaderiaUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
     }
 
     public async Task<EmptyOutput> Handle(DeleteOrdenioCommand command, CancellationToken cancellationToken)
     {
-        var repository = _unitOfWork.Repository;
+        var repository = _unitOfWork.Ordenios;
 
         var existing = await repository.GetByIdAsync(command.Id, cancellationToken)
             ?? throw new NotFoundException(

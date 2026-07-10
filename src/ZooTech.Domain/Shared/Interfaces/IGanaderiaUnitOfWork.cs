@@ -1,8 +1,10 @@
-namespace ZooTech.Domain.Module_ProduccionLeche.Interfaces;
+using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
 
-public interface IOrdenioUnitOfWork
+namespace ZooTech.Domain.Shared.Interfaces;
+
+public interface IGanaderiaUnitOfWork
 {
-    IOrdenioRepository Repository { get; }
+    IOrdenioRepository Ordenios { get; }
 
     Task<T> ExecuteInTransactionAsync<T>(
         Func<CancellationToken, Task<T>> operation,

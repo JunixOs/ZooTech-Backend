@@ -3,14 +3,15 @@ using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Commo
 using ZooTech.Domain.Module_ProduccionLeche.Entities;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
 using ZooTech.Domain.Shared.Enums;
+using ZooTech.Domain.Shared.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.CreateOrdenio;
 
 public sealed class CreateOrdenioInteractor : ICreateOrdenioInputPort
 {
-    private readonly IOrdenioUnitOfWork _unitOfWork;
+    private readonly IGanaderiaUnitOfWork _unitOfWork;
 
-    public CreateOrdenioInteractor(IOrdenioUnitOfWork unitOfWork)
+    public CreateOrdenioInteractor(IGanaderiaUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
     }
@@ -20,7 +21,7 @@ public sealed class CreateOrdenioInteractor : ICreateOrdenioInputPort
         CancellationToken cancellationToken
     )
     {
-        var repository = _unitOfWork.Repository;
+        var repository = _unitOfWork.Ordenios;
 
         await OrdenioReferenceValidator.EnsureReferencesExistAsync(
             repository,

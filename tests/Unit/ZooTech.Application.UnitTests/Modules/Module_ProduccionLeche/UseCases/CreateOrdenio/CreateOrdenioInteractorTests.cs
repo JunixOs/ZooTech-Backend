@@ -2,6 +2,7 @@ using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.CreateOrdenio;
 using ZooTech.Domain.Module_ProduccionLeche.Entities;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
+using ZooTech.Domain.Shared.Interfaces;
 
 namespace ZooTech.Application.UnitTests.Modules.Module_ProduccionLeche.UseCases.CreateOrdenio;
 
@@ -92,14 +93,14 @@ public class CreateOrdenioInteractorTests
             => Task.FromResult(ordenio);
     }
 
-    private sealed class FakeOrdenioUnitOfWork : IOrdenioUnitOfWork
+    private sealed class FakeOrdenioUnitOfWork : IGanaderiaUnitOfWork
     {
         public FakeOrdenioUnitOfWork(IOrdenioRepository repository)
         {
-            Repository = repository;
+            Ordenios = repository;
         }
 
-        public IOrdenioRepository Repository { get; }
+        public IOrdenioRepository Ordenios { get; }
 
         public Task<T> ExecuteInTransactionAsync<T>(
             Func<CancellationToken, Task<T>> operation,

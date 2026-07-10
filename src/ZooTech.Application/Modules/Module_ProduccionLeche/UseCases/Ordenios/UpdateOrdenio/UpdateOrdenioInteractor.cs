@@ -2,21 +2,22 @@ using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Common;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
 using ZooTech.Domain.Shared.Enums;
+using ZooTech.Domain.Shared.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.UpdateOrdenio;
 
 public sealed class UpdateOrdenioInteractor : IUpdateOrdenioInputPort
 {
-    private readonly IOrdenioUnitOfWork _unitOfWork;
+    private readonly IGanaderiaUnitOfWork _unitOfWork;
 
-    public UpdateOrdenioInteractor(IOrdenioUnitOfWork unitOfWork)
+    public UpdateOrdenioInteractor(IGanaderiaUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
     }
 
     public async Task<UpdateOrdenioOutput> Handle(UpdateOrdenioCommand command, CancellationToken cancellationToken)
     {
-        var repository = _unitOfWork.Repository;
+        var repository = _unitOfWork.Ordenios;
 
         var existing = await repository.GetByIdAsync(command.Id, cancellationToken)
             ?? throw new NotFoundException(
