@@ -1,29 +1,33 @@
-using FluentValidation;
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Domain.Module_Celo.Entities;
 using ZooTech.Domain.Module_Celo.Interfaces;
+using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Celo.UseCases.CreateCelo;
 
 public sealed class CreateCeloInteractor : ICreateCeloInputPort
 {
     private readonly ICeloRepository _celoRepository;
-    private readonly IValidator<CreateCeloCommand> _validator;
 
-    public CreateCeloInteractor(ICeloRepository celoRepository, IValidator<CreateCeloCommand> validator)
+    public CreateCeloInteractor(ICeloRepository celoRepository)
     {
         _celoRepository = celoRepository;
-        _validator = validator;
     }
 
-    public async Task<CreateCeloOutput> HandleAsync(
+    public async Task<CreateCeloOutput> Handle(
         CreateCeloCommand command,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
-        await _validator.ValidateAndThrowAsync(command, cancellationToken);
-
         if (!await _celoRepository.ExistsVacunoAsync(command.VacunoId, cancellationToken))
-            throw new ConflictException($"El vacuno con ID {command.VacunoId} no existe.");
+            throw new ConflictException(
+                ScopeName.Application,
+                ModuleName.Celo,
+                new List<string>()
+                {
+                    "CELO-VACUNO-ID-NOT_EXISTS",
+                }
+            );
 
         var codigo = $"C{DateTime.UtcNow:yyMMddHHmmss}";
         if (await _celoRepository.ExistsCodigoAsync(codigo, cancellationToken))
@@ -33,7 +37,7 @@ public sealed class CreateCeloInteractor : ICreateCeloInputPort
 
         var celo = Celo.CreateNew(
             codigo: codigo,
-            fechaHora: command.FechaHora,
+            fechaHora: command.FechaHora.GetValueOrDefault(),
             vacunoId: command.VacunoId,
             encargadoUsuarioId: command.EncargadoUsuarioId,
             observaciones: command.Observaciones,

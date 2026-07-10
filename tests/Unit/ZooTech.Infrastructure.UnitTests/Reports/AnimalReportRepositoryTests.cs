@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using ZooTech.Application.Modules.Animals.UseCases.ReportAnimalList;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Persistence.Entities;
@@ -13,7 +14,7 @@ public class AnimalReportRepositoryTests
     {
         await using var context = CreateContext();
         Seed(context);
-        var repository = new AnimalReportRepository(context);
+        var repository = CreateRepository(context);
 
         var items = await repository.GetAnimalListAsync(CreateFilter(razaCode: "HOL"));
 
@@ -26,7 +27,7 @@ public class AnimalReportRepositoryTests
     {
         await using var context = CreateContext();
         Seed(context);
-        var repository = new AnimalReportRepository(context);
+        var repository = CreateRepository(context);
 
         var items = await repository.GetAnimalListAsync(CreateFilter(colorCode: "CAF"));
 
@@ -39,7 +40,7 @@ public class AnimalReportRepositoryTests
     {
         await using var context = CreateContext();
         Seed(context);
-        var repository = new AnimalReportRepository(context);
+        var repository = CreateRepository(context);
 
         var items = await repository.GetAnimalListAsync(CreateFilter(sexoCode: "M"));
 
@@ -52,7 +53,7 @@ public class AnimalReportRepositoryTests
     {
         await using var context = CreateContext();
         Seed(context);
-        var repository = new AnimalReportRepository(context);
+        var repository = CreateRepository(context);
 
         var items = await repository.GetAnimalListAsync(CreateFilter(tipoAdquisicionCode: "COMPRA"));
 
@@ -65,7 +66,7 @@ public class AnimalReportRepositoryTests
     {
         await using var context = CreateContext();
         Seed(context);
-        var repository = new AnimalReportRepository(context);
+        var repository = CreateRepository(context);
 
         var items = await repository.GetAnimalListAsync(CreateFilter(granjaId: 2));
 
@@ -78,7 +79,7 @@ public class AnimalReportRepositoryTests
     {
         await using var context = CreateContext();
         Seed(context);
-        var repository = new AnimalReportRepository(context);
+        var repository = CreateRepository(context);
 
         var items = await repository.GetAnimalListAsync(CreateFilter(estadoCode: "ENFERMO"));
 
@@ -91,7 +92,7 @@ public class AnimalReportRepositoryTests
     {
         await using var context = CreateContext();
         Seed(context);
-        var repository = new AnimalReportRepository(context);
+        var repository = CreateRepository(context);
 
         var items = await repository.GetAnimalListAsync(CreateFilter(
             keyword: "Lola",
@@ -119,7 +120,7 @@ public class AnimalReportRepositoryTests
     {
         await using var context = CreateContext();
         Seed(context);
-        var repository = new AnimalReportRepository(context);
+        var repository = CreateRepository(context);
 
         var items = await repository.GetAnimalListAsync(CreateFilter(keyword: "Eliminada"));
 
@@ -145,6 +146,14 @@ public class AnimalReportRepositoryTests
             tipoAdquisicionCode,
             granjaId,
             estadoCode);
+    }
+
+    private static AnimalReportRepository CreateRepository(GanaderiaDbContext context)
+    {
+        var factoryMock = new Mock<IGanaderiaDbContextFactory>();
+        factoryMock.Setup(f => f.CreateDbContextByTenantContext()).Returns(context);
+
+        return new AnimalReportRepository(factoryMock.Object);
     }
 
     private static TestGanaderiaDbContext CreateContext()

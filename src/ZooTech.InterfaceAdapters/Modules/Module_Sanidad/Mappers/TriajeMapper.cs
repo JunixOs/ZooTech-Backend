@@ -12,12 +12,23 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Sanidad.Mappers;
 internal static class TriajeMapper
 {
     public static CreateTriajeCommand ToCreateCommand(TriajeRequest request)
-        => new(request.VacunoId, request.TipoPesoCode, request.PesoKg,
-               request.Observaciones, request.EncargadoUsuarioId, request.FechaHora);
+        => new CreateTriajeCommand
+        {
+            VacunoId = request.VacunoId, 
+            TipoPesoCode = request.TipoPesoCode, 
+            PesoKg = request.PesoKg,
+            Observaciones = request.Observaciones, 
+            FechaHora = request.FechaHora, 
+            EncargadoUsuarioId = request.EncargadoUsuarioId
+        };
 
     public static UpdateTriajeCommand ToUpdateCommand(UpdateTriajeRequest request)
-        => new(request.TipoPesoCode, request.PesoKg,
-               request.Observaciones, request.EncargadoUsuarioId);
+        => new UpdateTriajeCommand{
+            TipoPesoCode = request.TipoPesoCode, 
+            PesoKg = request.PesoKg,
+            Observaciones = request.Observaciones, 
+            EncargadoUsuarioId = request.EncargadoUsuarioId
+        };
 
     public static TriajeResponse ToResponse(CreateTriajeOutput output)
         => new(output.Id, output.Codigo, output.FechaHora, output.VacunoId,

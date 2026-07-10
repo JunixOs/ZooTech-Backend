@@ -38,7 +38,7 @@ public class CreateVacunoValidatorTests
 
         var result = validator.Validate(ValidCommand());
 
-        Assert.True(result.IsValid);
+        Assert.Empty(result);
     }
 
     [Theory]
@@ -50,7 +50,7 @@ public class CreateVacunoValidatorTests
 
         var result = validator.Validate(ValidCommand(codigo: codigo!));
 
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(CreateVacunoCommand.Codigo));
+        Assert.NotEmpty(result);
     }
 
     [Fact]
@@ -60,7 +60,7 @@ public class CreateVacunoValidatorTests
 
         var result = validator.Validate(ValidCommand(codigo: new string('A', 16)));
 
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(CreateVacunoCommand.Codigo));
+        Assert.NotEmpty(result);
     }
 
     [Fact]
@@ -70,7 +70,7 @@ public class CreateVacunoValidatorTests
 
         var result = validator.Validate(ValidCommand(nombre: string.Empty));
 
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(CreateVacunoCommand.Nombre));
+        Assert.NotEmpty(result);
     }
 
     [Fact]
@@ -80,7 +80,7 @@ public class CreateVacunoValidatorTests
 
         var result = validator.Validate(ValidCommand(nombre: new string('A', 101)));
 
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(CreateVacunoCommand.Nombre));
+        Assert.NotEmpty(result);
     }
 
     [Fact]
@@ -90,7 +90,7 @@ public class CreateVacunoValidatorTests
 
         var result = validator.Validate(ValidCommand(tipoAdquisicionCode: string.Empty));
 
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(CreateVacunoCommand.TipoAdquisicionCode));
+        Assert.NotEmpty(result);
     }
 
     [Fact]
@@ -100,7 +100,7 @@ public class CreateVacunoValidatorTests
 
         var result = validator.Validate(ValidCommand(razaCode: string.Empty));
 
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(CreateVacunoCommand.RazaCode));
+        Assert.NotEmpty(result);
     }
 
     [Fact]
@@ -110,7 +110,7 @@ public class CreateVacunoValidatorTests
 
         var result = validator.Validate(ValidCommand(colorCode: string.Empty));
 
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(CreateVacunoCommand.ColorCode));
+        Assert.NotEmpty(result);
     }
 
     [Fact]
@@ -120,7 +120,7 @@ public class CreateVacunoValidatorTests
 
         var result = validator.Validate(ValidCommand(sexoCode: string.Empty));
 
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(CreateVacunoCommand.SexoCode));
+        Assert.NotEmpty(result);
     }
 
     [Fact]
@@ -130,7 +130,7 @@ public class CreateVacunoValidatorTests
 
         var result = validator.Validate(ValidCommand(granjaId: 0));
 
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(CreateVacunoCommand.GranjaId));
+        Assert.NotEmpty(result);
     }
 
     [Fact]
@@ -140,7 +140,7 @@ public class CreateVacunoValidatorTests
 
         var result = validator.Validate(ValidCommand(observaciones: new string('A', 151)));
 
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(CreateVacunoCommand.Observaciones));
+        Assert.NotEmpty(result);
     }
 
     [Fact]
@@ -150,6 +150,6 @@ public class CreateVacunoValidatorTests
 
         var result = validator.Validate(ValidCommand(observaciones: null));
 
-        Assert.DoesNotContain(result.Errors, e => e.PropertyName == nameof(CreateVacunoCommand.Observaciones));
+        Assert.Empty(result);
     }
 }

@@ -18,27 +18,33 @@ internal static class CeloMapper
 {
     public static CreateCeloCommand ToCommand(CreateCeloRequest request)
     {
-        return new CreateCeloCommand(
-            VacunoId: request.VacunoId,
-            EncargadoUsuarioId: request.EncargadoUsuarioId,
-            FechaHora: request.FechaHora,
-            Observaciones: request.Observaciones,
-            CaracteristicaCodes: request.CaracteristicaCodes);
+        return new CreateCeloCommand
+        {
+            VacunoId = request.VacunoId,
+            EncargadoUsuarioId = request.EncargadoUsuarioId,
+            FechaHora = request.FechaHora,
+            Observaciones = request.Observaciones,
+            CaracteristicaCodes = request.CaracteristicaCodes
+        };
     }
 
     public static UpdateCeloCommand ToCommand(UpdateCeloRequest request)
     {
-        return new UpdateCeloCommand(
-            Id: request.Id,
-            Observaciones: request.Observaciones,
-            CaracteristicaCodes: request.CaracteristicaCodes);
+        return new UpdateCeloCommand
+        {
+            Id = request.Id,
+            Observaciones = request.Observaciones,
+            CaracteristicaCodes = request.CaracteristicaCodes
+        };
     }
 
     public static DeleteCeloCommand ToCommand(DeleteCeloRequest request, long id)
     {
-        return new DeleteCeloCommand(
-            Id: id,
-            MotivoEliminacion: request.MotivoEliminacion);
+        return new DeleteCeloCommand
+        {
+            Id = id,
+            MotivoEliminacion = request.MotivoEliminacion
+        };
     }
 
     public static CreateCeloResponse ToResponse(CreateCeloOutput output)
@@ -109,6 +115,25 @@ internal static class CeloMapper
         };
     }
 
+    public static ListCelosCommand ToCommand(
+        string? search,
+        int page,
+        int pageSize,
+        DateTime? fechaInicio,
+        DateTime? fechaFin,
+        Dictionary<string, string>? columnFilters
+    )
+    {
+        return new ListCelosCommand
+        {
+            Search = search, 
+            Page = page, 
+            PageSize = pageSize, 
+            FechaInicio = fechaInicio, 
+            FechaFin = fechaFin, 
+            ColumnFilters = columnFilters, 
+        };
+    }
     public static ListCelosResponse ToResponse(ListCelosOutput output)
     {
         var data = output.Result.Data.Select(ToResponse).ToList();

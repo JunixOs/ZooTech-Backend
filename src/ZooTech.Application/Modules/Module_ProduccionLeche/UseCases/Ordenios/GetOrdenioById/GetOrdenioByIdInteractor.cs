@@ -1,6 +1,7 @@
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Common;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
+using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GetOrdenioById;
 
@@ -13,10 +14,14 @@ public sealed class GetOrdenioByIdInteractor : IGetOrdenioByIdInputPort
         _repository = repository;
     }
 
-    public async Task<GetOrdenioByIdOutput> HandleAsync(long id, CancellationToken cancellationToken)
+    public async Task<GetOrdenioByIdOutput> Handle(GetOrdenioByIdCommand cmd, CancellationToken cancellationToken)
     {
-        var ordenio = await _repository.GetByIdAsync(id, cancellationToken)
-            ?? throw new NotFoundException("No se encontró el ordeño solicitado.");
+        var ordenio = await _repository.GetByIdAsync(cmd.Id, cancellationToken)
+            ?? throw new NotFoundException(
+                ScopeName.Application,
+                ModuleName.Produccion_Leche,
+                "No se encontró el ordeño solicitado."
+            );
 
         return new GetOrdenioByIdOutput(OrdenioMapper.ToOutput(ordenio));
     }

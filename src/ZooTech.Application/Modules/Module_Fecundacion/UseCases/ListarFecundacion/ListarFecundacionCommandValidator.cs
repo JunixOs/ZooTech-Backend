@@ -1,17 +1,27 @@
-using FluentValidation;
+using ZooTech.Application.Common.Validator;
+using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Fecundacion.UseCases.ListarFecundacion;
 
-public sealed class ListarFecundacionCommandValidator : AbstractValidator<ListarFecundacionCommand>
+public sealed class ListarFecundacionCommandValidator : ICommandValidator<ListarFecundacionCommand>
 {
-    public ListarFecundacionCommandValidator()
-    {
-        RuleFor(x => x.Page)
-            .GreaterThanOrEqualTo(1)
-            .WithMessage("La página solicitada debe ser igual o mayor a 1.");
 
-        RuleFor(x => x.Limit)
-            .InclusiveBetween(1, 100)
-            .WithMessage("El límite de registros por página debe estar entre 1 y 100.");
-    }
+    public ModuleName ModuleName => throw new NotImplementedException();
+
+    public List<string> Validate(ListarFecundacionCommand request)
+    {
+        var errors = new List<string>();
+
+        if (request.Page < 1)
+        {
+            errors.Add("FECUNDACION-FECUNDACION-LISTAR-PAGE-INVALID");
+        }
+
+        if (request.Limit < 1 || request.Limit > 100)
+        {
+            errors.Add("FECUNDACION-FECUNDACION-LISTAR-LIMIT-INVALID");
+        }
+
+        return errors;
+        }
 }

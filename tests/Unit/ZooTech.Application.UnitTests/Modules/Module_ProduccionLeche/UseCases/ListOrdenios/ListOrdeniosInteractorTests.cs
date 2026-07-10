@@ -15,8 +15,16 @@ public class ListOrdeniosInteractorTests
         var repository = new FakeOrdenioRepository();
         var interactor = new ListOrdeniosInteractor(repository);
 
-        await interactor.HandleAsync(
-            new ListOrdeniosQuery(null, null, null, null, page, pageSize),
+        await interactor.Handle(
+            new ListOrdeniosQuery
+            {
+                VacunoId = null,
+                EstadoOrdenioCode = null,
+                FechaDesde = null,
+                FechaHasta = null,
+                Page = page,
+                PageSize = pageSize
+            },
             CancellationToken.None);
 
         Assert.Equal(expectedPage, repository.CapturedPage);

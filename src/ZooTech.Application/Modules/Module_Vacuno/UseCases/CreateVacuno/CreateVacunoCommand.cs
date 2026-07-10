@@ -1,3 +1,6 @@
+using ZooTech.Application.Common.Gateway.Auditing;
+using ZooTech.Domain.Shared.Enums;
+
 namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.CreateVacuno;
 
 public sealed record CreateVacunoCommand(
@@ -13,4 +16,9 @@ public sealed record CreateVacunoCommand(
     long GranjaId,
     string? Observaciones,
     decimal? PrecioCompra,
-    string? AptoPara);
+    string? AptoPara) : IAuditableRequest
+{
+    public AuditEventType EventType => AuditEventType.Create;
+
+    public string Action => "Create a vacuno";
+}

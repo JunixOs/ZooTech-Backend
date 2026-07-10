@@ -1,17 +1,29 @@
-using FluentValidation;
+using ZooTech.Application.Common.Validator;
 using ZooTech.Application.Modules.Module_Celo.UseCases.UpdateCelo;
+using ZooTech.Domain.Shared.Enums;
 
-namespace ZooTech.Application.Modules.Module_Celo.Validators;
-
-internal sealed class UpdateCeloValidator : AbstractValidator<UpdateCeloCommand>
+namespace ZooTech.Application.Modules.Module_Celo.Validators
 {
-    public UpdateCeloValidator()
+    public class UpdateCeloValidator : ICommandValidator<UpdateCeloCommand>
     {
-        RuleFor(x => x.Id)
-            .GreaterThan(0).WithMessage("El ID del celo debe ser mayor que cero.");
+        public ModuleName ModuleName => ModuleName.Celo;
 
-        RuleFor(x => x.Observaciones)
-            .MaximumLength(500).When(x => x.Observaciones is not null)
-            .WithMessage("Las observaciones no pueden superar los 500 caracteres.");
+        public List<string> Validate(UpdateCeloCommand request)
+        {
+            var errors = new List<string>();
+
+            if (request.Id <= 0)
+            {
+                errors.Add("CELO-CELO-UPDATE-ID-INVALID");
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Observaciones) &&
+                request.Observaciones.Length > 500)
+            {
+                errors.Add("CELO-CELO-UPDATE-OBSERVACIONES-INVALID");
+            }
+
+            return errors;
+        }
     }
 }

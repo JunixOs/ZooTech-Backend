@@ -21,9 +21,10 @@ internal sealed class GenerateOrdeniosExcelInteractor : IGetOrdeniosExcelInputPo
         _dateTimeProvider = dateTimeProvider;
     }
 
-    public async Task<GenerateOrdeniosExcelOutput> HandleAsync(
+    public async Task<GenerateOrdeniosExcelOutput> Handle(
         GenerateOrdeniosComparationExcelQuery query,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         var entities = await _repository.ListReportAsync(
             query.VacunoId,

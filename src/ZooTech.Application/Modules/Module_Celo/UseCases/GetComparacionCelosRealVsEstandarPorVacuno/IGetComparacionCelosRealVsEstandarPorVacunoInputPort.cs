@@ -3,8 +3,6 @@ namespace ZooTech.Application.Modules.Module_Celo.UseCases.GetComparacionCelosRe
 public interface IGetComparacionCelosRealVsEstandarPorVacunoInputPort
 {
     Task<GetComparacionCelosRealVsEstandarPorVacunoOutput> HandleAsync(
-        string codigoVacuno,
-        DateTime? fechaInicio,
-        DateTime? fechaFin,
+        GetComparacionCelosRealVsEstandarPorVacunoCommand cmd,
         CancellationToken cancellationToken = default);
 }

@@ -8,16 +8,18 @@ namespace ZooTech.Infrastructure.Persistence.Modules.Module_Celo.Repositories;
 
 public sealed class CeloRepository : ICeloRepository
 {
-    private readonly GanaderiaDbContext _context;
+    private readonly GanaderiaDbContext _ganaderiaDbContext;
 
-    public CeloRepository(GanaderiaDbContext context)
+    public CeloRepository(
+        IGanaderiaDbContextFactory ganaderiaDbContextFactory
+    )
     {
-        _context = context;
+        _ganaderiaDbContext  = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
     }
 
     public async Task<List<CeloListItem>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        var entities = await _context.celo_registros
+        var entities = await _ganaderiaDbContext.celo_registros
             .AsNoTracking()
             .Where(c => c.deleted_at == null)
             .Select(c => new celo_registro
@@ -46,7 +48,7 @@ public sealed class CeloRepository : ICeloRepository
 
     public async Task<List<CeloReporteItem>> GetAllForReporteAsync(CancellationToken cancellationToken = default)
     {
-        var entities = await _context.celo_registros
+        var entities = await _ganaderiaDbContext.celo_registros
             .AsNoTracking()
             .Include(c => c.caracteristica_codes)
             .Where(c => c.deleted_at == null)
@@ -81,7 +83,7 @@ public sealed class CeloRepository : ICeloRepository
         IReadOnlyDictionary<string, string>? columnFilters = null,
         CancellationToken cancellationToken = default)
     {
-        var queryable = _context.celo_registros
+        var queryable = _ganaderiaDbContext.celo_registros
             .AsNoTracking()
             .Where(c => c.deleted_at == null);
 
@@ -202,7 +204,7 @@ public sealed class CeloRepository : ICeloRepository
         IReadOnlyDictionary<string, string>? columnFilters = null,
         CancellationToken cancellationToken = default)
     {
-        var queryable = _context.celo_registros
+        var queryable = _ganaderiaDbContext.celo_registros
             .AsNoTracking()
             .Where(c => c.deleted_at == null);
 
@@ -345,7 +347,7 @@ public sealed class CeloRepository : ICeloRepository
 
     public async Task<Dictionary<long, int>> GetVecesEnCeloCountsAsync(CancellationToken cancellationToken = default)
     {
-        return await _context.celo_registros
+        return await _ganaderiaDbContext.celo_registros
             .AsNoTracking()
             .Where(c => c.deleted_at == null)
             .GroupBy(c => c.vacuno_id)
@@ -355,7 +357,7 @@ public sealed class CeloRepository : ICeloRepository
 
     public async Task<Dictionary<long, int>> GetCriasCountsAsync(CancellationToken cancellationToken = default)
     {
-        return await _context.vacunos
+        return await _ganaderiaDbContext.vacunos
             .AsNoTracking()
             .Where(v => v.deleted_at == null && v.madre_id != null)
             .GroupBy(v => v.madre_id!.Value)
@@ -365,7 +367,7 @@ public sealed class CeloRepository : ICeloRepository
 
     public async Task<Celo?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
     {
-        var entity = await _context.celo_registros
+        var entity = await _ganaderiaDbContext.celo_registros
             .AsNoTracking()
             .Include(c => c.caracteristica_codes)
             .Include(c => c.vacuno)
@@ -380,7 +382,7 @@ public sealed class CeloRepository : ICeloRepository
 
         if (celo.CaracteristicaCodes.Count > 0)
         {
-            var caracteristicas = await _context.cat_caracteristica_celos
+            var caracteristicas = await _ganaderiaDbContext.cat_caracteristica_celos
                 .Where(c => celo.CaracteristicaCodes.Contains(c.code))
                 .ToListAsync(cancellationToken);
 
@@ -390,14 +392,14 @@ public sealed class CeloRepository : ICeloRepository
             }
         }
 
-        await _context.celo_registros.AddAsync(entity, cancellationToken);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _ganaderiaDbContext.celo_registros.AddAsync(entity, cancellationToken);
+        await _ganaderiaDbContext.SaveChangesAsync(cancellationToken);
 
-        await _context.Entry(entity)
+        await _ganaderiaDbContext.Entry(entity)
             .Reference(e => e.vacuno)
             .LoadAsync(cancellationToken);
 
-        await _context.Entry(entity)
+        await _ganaderiaDbContext.Entry(entity)
             .Collection(e => e.caracteristica_codes)
             .LoadAsync(cancellationToken);
 
@@ -406,7 +408,7 @@ public sealed class CeloRepository : ICeloRepository
 
     public async Task<Celo> UpdateAsync(Celo celo, CancellationToken cancellationToken = default)
     {
-        var entity = await _context.celo_registros
+        var entity = await _ganaderiaDbContext.celo_registros
             .Include(c => c.caracteristica_codes)
             .FirstOrDefaultAsync(c => c.id == celo.Id && c.deleted_at == null, cancellationToken);
 
@@ -420,7 +422,7 @@ public sealed class CeloRepository : ICeloRepository
         entity.caracteristica_codes.Clear();
         if (celo.CaracteristicaCodes.Count > 0)
         {
-            var caracteristicas = await _context.cat_caracteristica_celos
+            var caracteristicas = await _ganaderiaDbContext.cat_caracteristica_celos
                 .Where(c => celo.CaracteristicaCodes.Contains(c.code))
                 .ToListAsync(cancellationToken);
 
@@ -432,26 +434,26 @@ public sealed class CeloRepository : ICeloRepository
         entity.deleted_by = celo.DeletedBy;
         entity.motivo_eliminacion = celo.MotivoEliminacion;
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _ganaderiaDbContext.SaveChangesAsync(cancellationToken);
 
         return ToDomain(entity);
     }
 
     public async Task<bool> ExistsVacunoAsync(long vacunoId, CancellationToken cancellationToken = default)
     {
-        return await _context.vacunos
+        return await _ganaderiaDbContext.vacunos
             .AnyAsync(v => v.id == vacunoId, cancellationToken);
     }
 
     public async Task<bool> HasActiveRecordsByVacunoAsync(long vacunoId, CancellationToken cancellationToken = default)
     {
-        return await _context.celo_registros
+        return await _ganaderiaDbContext.celo_registros
             .AnyAsync(c => c.vacuno_id == vacunoId && c.deleted_at == null, cancellationToken);
     }
 
     public async Task<bool> ExistsCodigoAsync(string codigo, CancellationToken cancellationToken = default)
     {
-        return await _context.celo_registros
+        return await _ganaderiaDbContext.celo_registros
             .AnyAsync(c => c.codigo == codigo && c.deleted_at == null, cancellationToken);
     }
 
@@ -460,7 +462,7 @@ public sealed class CeloRepository : ICeloRepository
         DateTime? fechaFin,
         CancellationToken cancellationToken = default)
     {
-        var query = _context.celo_registros
+        var query = _ganaderiaDbContext.celo_registros
             .AsNoTracking()
             .Where(c => c.deleted_at == null);
 

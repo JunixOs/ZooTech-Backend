@@ -214,3 +214,9 @@ copilot/
 # Local Pi runtime state
 .atl/
 .pi/
+
+# IA 
+
+.codex-run-logs/
+.antigravitycli/
+.claude/

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using ZooTech.Application.Common.Gateway.Time;
 using ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.Common;
 using ZooTech.Infrastructure.Persistence.Context;
@@ -68,7 +69,10 @@ public class FecundacionEstadoRepositoryTests
 
     private static FecundacionEstadoRepository CreateRepository(GanaderiaDbContext context)
     {
-        return new FecundacionEstadoRepository(context, new FakeDateTimeProvider());
+        var factoryMock = new Mock<IGanaderiaDbContextFactory>();
+        factoryMock.Setup(f => f.CreateDbContextByTenantContext()).Returns(context);
+
+        return new FecundacionEstadoRepository(factoryMock.Object, new FakeDateTimeProvider());
     }
 
     private static GanaderiaDbContext CreateContext()

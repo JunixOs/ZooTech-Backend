@@ -1,7 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using ZooTech.Application.Common.Gateway.Auditing;
+using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.GetArbolGenealogico;
 
-public record GetArbolGenealogicoCommand(long Id, int Niveles);
+public record GetArbolGenealogicoCommand(long Id, int Niveles) : IAuditableRequest
+{
+    public AuditEventType EventType => AuditEventType.Read;
+
+    public string Action => "Get arbol genealogico";
+}

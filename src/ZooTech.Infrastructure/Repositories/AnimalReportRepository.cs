@@ -9,9 +9,9 @@ public sealed class AnimalReportRepository : IAnimalReportRepository
     private const string DefaultText = "No especificado";
     private readonly GanaderiaDbContext context;
 
-    public AnimalReportRepository(GanaderiaDbContext context)
+    public AnimalReportRepository(IGanaderiaDbContextFactory ganaderiaDbContextFactory)
     {
-        this.context = context;
+        this.context = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
     }
 
     public async Task<IReadOnlyCollection<ReportAnimalListItem>> GetAnimalListAsync(

@@ -1,29 +1,29 @@
-using FluentValidation;
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Domain.Module_Celo.Interfaces;
+using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Celo.UseCases.UpdateCelo;
 
 public sealed class UpdateCeloInteractor : IUpdateCeloInputPort
 {
     private readonly ICeloRepository _celoRepository;
-    private readonly IValidator<UpdateCeloCommand> _validator;
 
-    public UpdateCeloInteractor(ICeloRepository celoRepository, IValidator<UpdateCeloCommand> validator)
+    public UpdateCeloInteractor(ICeloRepository celoRepository)
     {
         _celoRepository = celoRepository;
-        _validator = validator;
     }
 
-    public async Task<UpdateCeloOutput> HandleAsync(
+    public async Task<UpdateCeloOutput> Handle(
         UpdateCeloCommand command,
         CancellationToken cancellationToken = default)
     {
-        await _validator.ValidateAndThrowAsync(command, cancellationToken);
-
         var celo = await _celoRepository.GetByIdAsync(command.Id, cancellationToken);
         if (celo is null)
-            throw new NotFoundException($"No se encontró el registro de celo con ID {command.Id}.");
+            throw new NotFoundException(
+                ScopeName.Application,
+                ModuleName.Celo,
+                $"No se encontró el registro de celo con ID {command.Id}."
+            );
 
         celo.Update(
             observaciones: command.Observaciones,

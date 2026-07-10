@@ -9,9 +9,9 @@ public sealed class VacunoReferenceReadRepository : IVacunoReferenceReadReposito
 {
     private readonly GanaderiaDbContext _context;
 
-    public VacunoReferenceReadRepository(GanaderiaDbContext context)
+    public VacunoReferenceReadRepository(IGanaderiaDbContextFactory ganaderiaDbContextFactory)
     {
-        _context = context;
+        _context = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
     }
 
     public Task<VacunoCodeLookup?> GetActiveByIdAsync(

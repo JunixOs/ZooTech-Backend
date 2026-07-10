@@ -1,10 +1,7 @@
-using FluentValidation;
 using Moq;
 using Xunit;
-using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Modules.Module_Fecundacion.Exceptions;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.CreateFecundacion;
-using ZooTech.Application.Modules.Module_Fecundacion.Validators;
 using ZooTech.Domain.Module_Fecundacion.Entities;
 using ZooTech.Domain.Module_Fecundacion.Interfaces;
 
@@ -13,14 +10,12 @@ namespace ZooTech.Application.UnitTests.Modules.Module_Fecundacion.UseCases.Crea
 public sealed class CreateFecundacionInteractorTests
 {
     private readonly Mock<IFecundacionRepository> _repositoryMock;
-    private readonly IValidator<CreateFecundacionCommand> _validator;
     private readonly CreateFecundacionInteractor _interactor;
 
     public CreateFecundacionInteractorTests()
     {
         _repositoryMock = new Mock<IFecundacionRepository>();
-        _validator = new CreateFecundacionValidator();
-        _interactor = new CreateFecundacionInteractor(_repositoryMock.Object, _validator);
+        _interactor = new CreateFecundacionInteractor(_repositoryMock.Object);
     }
 
     [Fact]
@@ -76,28 +71,6 @@ public sealed class CreateFecundacionInteractorTests
         Assert.NotNull(result);
         Assert.Equal("FEC-123456", result.Codigo);
         _repositoryMock.Verify(r => r.AddAsync(It.IsAny<Fecundacion>(), It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Fact]
-    public async Task HandleAsync_DebeLanzarValidationException_CuandoNombreDeResponsableEsVacio()
-    {
-        // Arrange
-        var command = new CreateFecundacionCommand(
-            TipoFecundacionCode: "MN",
-            VacunoReceptorId: 1,
-            CeloRegistroId: null,
-            FechaProcedimiento: DateTime.UtcNow,
-            ResponsableName: "",
-            ResultadoCode: "pendiente",
-            ObservacionesVeterinarias: "Ninguna",
-            MachoExterno: false,
-            MachoExternoNombre: null,
-            VacunoDonanteId: 2,
-            CreatedById: 1
-        );
-
-        // Act & Assert
-        await Assert.ThrowsAsync<ValidationException>(() => _interactor.HandleAsync(command));
     }
 
     [Fact]

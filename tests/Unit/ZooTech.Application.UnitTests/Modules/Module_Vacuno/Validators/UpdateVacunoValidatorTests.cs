@@ -6,6 +6,7 @@ namespace ZooTech.Application.UnitTests.Modules.Module_Vacuno.Validators;
 public class UpdateVacunoValidatorTests
 {
     private static UpdateVacunoCommand ValidCommand(
+        long id = 1,
         string codigo = "VAC001",
         string nombre = "Lola",
         string tipoAdquisicionCode = "COMPRA",
@@ -16,6 +17,7 @@ public class UpdateVacunoValidatorTests
         string? observaciones = null)
     {
         return new UpdateVacunoCommand(
+            Id: id,
             Nombre: nombre,
             FechaNacimiento: new DateOnly(2020, 1, 1),
             TipoAdquisicionCode: tipoAdquisicionCode,
@@ -37,7 +39,7 @@ public class UpdateVacunoValidatorTests
 
         var result = validator.Validate(ValidCommand());
 
-        Assert.True(result.IsValid);
+        Assert.Empty(result);
     }
 
     [Fact]
@@ -47,7 +49,7 @@ public class UpdateVacunoValidatorTests
 
         var result = validator.Validate(ValidCommand(nombre: string.Empty));
 
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(UpdateVacunoCommand.Nombre));
+        Assert.NotEmpty(result);
     }
 
     [Fact]
@@ -57,7 +59,7 @@ public class UpdateVacunoValidatorTests
 
         var result = validator.Validate(ValidCommand(nombre: new string('A', 101)));
 
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(UpdateVacunoCommand.Nombre));
+        Assert.NotEmpty(result);
     }
 
     [Fact]
@@ -67,7 +69,7 @@ public class UpdateVacunoValidatorTests
 
         var result = validator.Validate(ValidCommand(tipoAdquisicionCode: string.Empty));
 
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(UpdateVacunoCommand.TipoAdquisicionCode));
+        Assert.NotEmpty(result);
     }
 
     [Fact]
@@ -77,7 +79,7 @@ public class UpdateVacunoValidatorTests
 
         var result = validator.Validate(ValidCommand(razaCode: string.Empty));
 
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(UpdateVacunoCommand.RazaCode));
+        Assert.NotEmpty(result);
     }
 
     [Fact]
@@ -87,7 +89,7 @@ public class UpdateVacunoValidatorTests
 
         var result = validator.Validate(ValidCommand(colorCode: string.Empty));
 
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(UpdateVacunoCommand.ColorCode));
+        Assert.NotEmpty(result);
     }
 
     [Fact]
@@ -97,7 +99,7 @@ public class UpdateVacunoValidatorTests
 
         var result = validator.Validate(ValidCommand(sexoCode: string.Empty));
 
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(UpdateVacunoCommand.SexoCode));
+        Assert.NotEmpty(result);
     }
 
     [Fact]
@@ -107,7 +109,7 @@ public class UpdateVacunoValidatorTests
 
         var result = validator.Validate(ValidCommand(granjaId: 0));
 
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(UpdateVacunoCommand.GranjaId));
+        Assert.NotEmpty(result);
     }
 
     [Fact]
@@ -117,7 +119,7 @@ public class UpdateVacunoValidatorTests
 
         var result = validator.Validate(ValidCommand(observaciones: new string('A', 151)));
 
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(UpdateVacunoCommand.Observaciones));
+        Assert.NotEmpty(result);
     }
 
     [Fact]
@@ -127,6 +129,6 @@ public class UpdateVacunoValidatorTests
 
         var result = validator.Validate(ValidCommand(observaciones: null));
 
-        Assert.DoesNotContain(result.Errors, e => e.PropertyName == nameof(UpdateVacunoCommand.Observaciones));
+        Assert.Empty(result);
     }
 }

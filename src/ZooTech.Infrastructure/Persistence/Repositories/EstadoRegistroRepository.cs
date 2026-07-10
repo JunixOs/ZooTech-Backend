@@ -8,9 +8,9 @@ public sealed class EstadoRegistroRepository : IEstadoRegistroRepository
 {
     private readonly GanaderiaDbContext _context;
 
-    public EstadoRegistroRepository(GanaderiaDbContext context)
+    public EstadoRegistroRepository(IGanaderiaDbContextFactory ganaderiaDbContextFactory)
     {
-        _context = context;
+        _context = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
     }
 
     public async Task<string> GetActiveCodeAsync(CancellationToken cancellationToken = default)

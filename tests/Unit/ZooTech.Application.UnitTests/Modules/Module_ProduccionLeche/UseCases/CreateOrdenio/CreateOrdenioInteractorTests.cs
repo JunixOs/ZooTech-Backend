@@ -1,4 +1,3 @@
-using FluentValidation;
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.CreateOrdenio;
 using ZooTech.Domain.Module_ProduccionLeche.Entities;
@@ -18,19 +17,20 @@ public class CreateOrdenioInteractorTests
             ExistsUsuarioResult = true,
             ExistsEstadoResult = true
         };
-        var validator = new InlineValidator<CreateOrdenioCommand>();
-        var interactor = new CreateOrdenioInteractor(repository, validator);
+        var interactor = new CreateOrdenioInteractor(repository);
 
-        var command = new CreateOrdenioCommand(
-            Codigo: "ORD-001",
-            FechaHora: DateTime.UtcNow,
-            VacunoId: 1,
-            EncargadoUsuarioId: 2,
-            Litros: 10,
-            EstadoOrdenioCode: "ACTIVO",
-            Observaciones: null);
+        var command = new CreateOrdenioCommand
+        {
+            Codigo = "ORD-001",
+            FechaHora = DateTime.UtcNow,
+            VacunoId = 1,
+            EncargadoUsuarioId = 2,
+            Litros = 10,
+            EstadoOrdenioCode = "ACTIVO",
+            Observaciones = null
+        };
 
-        var action = () => interactor.HandleAsync(command, CancellationToken.None);
+        var action = () => interactor.Handle(command, CancellationToken.None);
 
         await Assert.ThrowsAsync<ConflictException>(action);
     }

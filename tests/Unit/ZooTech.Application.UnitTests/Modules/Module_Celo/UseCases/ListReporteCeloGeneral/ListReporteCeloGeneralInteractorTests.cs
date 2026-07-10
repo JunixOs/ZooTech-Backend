@@ -30,9 +30,7 @@ public sealed class ListReporteCeloGeneralInteractorTests
         var interactor = new ListReporteCeloGeneralInteractor(repository);
 
         var output = await interactor.HandleAsync(
-            search: "Lola",
-            page: 1,
-            pageSize: 20,
+            new ListReporteCeloGeneralCommand { Search = "Lola", Page = 1, PageSize = 20 },
             cancellationToken: CancellationToken.None);
 
         var item = Assert.Single(output.Result.Data);
@@ -52,7 +50,7 @@ public sealed class ListReporteCeloGeneralInteractorTests
         var repository = new FakeCeloReporteRepository();
         var interactor = new ListReporteCeloGeneralInteractor(repository);
 
-        var output = await interactor.HandleAsync(search: null, page: page, pageSize: 20);
+        var output = await interactor.HandleAsync(new ListReporteCeloGeneralCommand { Search = null, Page = page, PageSize = 20 });
 
         Assert.Equal(expectedPage, output.Result.Page);
     }
@@ -65,7 +63,7 @@ public sealed class ListReporteCeloGeneralInteractorTests
         var repository = new FakeCeloReporteRepository();
         var interactor = new ListReporteCeloGeneralInteractor(repository);
 
-        var output = await interactor.HandleAsync(search: null, page: 1, pageSize: pageSize);
+        var output = await interactor.HandleAsync(new ListReporteCeloGeneralCommand { Search = null, Page = 1, PageSize = pageSize });
 
         Assert.Equal(expectedPageSize, output.Result.PageSize);
     }

@@ -1,3 +1,4 @@
+using ZooTech.Application.Common.Models;
 using ZooTech.Domain.Module_Vacuno.Interfaces;
 using ZooTech.Domain.Module_Vacuno.Models;
 
@@ -12,6 +13,6 @@ public sealed class GetVacunoCatalogsInteractor : IGetVacunoCatalogsInputPort
         _repository = repository;
     }
 
-    public Task<VacunoCatalogs> HandleAsync(CancellationToken cancellationToken = default)
+    public Task<VacunoCatalogs> HandleAsync(EmptyCommand emptyCommand, CancellationToken cancellationToken = default)
         => _repository.GetCatalogsAsync(cancellationToken);
 }

@@ -1,23 +1,43 @@
-using FluentValidation;
+using ZooTech.Application.Common.Validator;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.UpdateOrdenio;
+using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_ProduccionLeche.Validators;
 
-internal sealed class UpdateOrdenioValidator : AbstractValidator<UpdateOrdenioCommand>
+internal sealed class UpdateOrdenioValidator : ICommandValidator<UpdateOrdenioCommand>
 {
-    public UpdateOrdenioValidator()
+    public ModuleName ModuleName => ModuleName.Produccion_Leche;
+
+    public List<string> Validate(UpdateOrdenioCommand request)
     {
-        RuleFor(x => x.EncargadoUsuarioId)
-            .GreaterThan(0).WithMessage("El ID del encargado debe ser mayor que cero.");
+        var errors = new List<string>();
 
-        RuleFor(x => x.Litros)
-            .GreaterThan(0).WithMessage("Los litros deben ser mayor que cero.");
+        if (request.Id <= 0)
+        {
+            errors.Add("PRODUCCION_LECHE-ORDENIO-UPDATE-ID-INVALID");
+        }
 
-        RuleFor(x => x.EstadoOrdenioCode)
-            .NotEmpty().WithMessage("El estado del ordeño es obligatorio.");
+        if (request.EncargadoUsuarioId <= 0)
+        {
+            errors.Add("PRODUCCION_LECHE-ORDENIO-UPDATE-ENCARGADO_USUARIO_ID-INVALID");
+        }
 
-        RuleFor(x => x.Observaciones)
-            .MaximumLength(150).When(x => x.Observaciones is not null)
-            .WithMessage("Las observaciones no pueden superar los 150 caracteres.");
+        if (request.Litros <= 0)
+        {
+            errors.Add("PRODUCCION_LECHE-ORDENIO-UPDATE-LITROS-INVALID");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.EstadoOrdenioCode))
+        {
+            errors.Add("PRODUCCION_LECHE-ORDENIO-UPDATE-ESTADO_ORDENIO_CODE-NULL");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Observaciones) &&
+            request.Observaciones.Length > 150)
+        {
+            errors.Add("PRODUCCION_LECHE-ORDENIO-UPDATE-OBSERVACIONES-INVALID");
+        }
+
+        return errors;
     }
 }

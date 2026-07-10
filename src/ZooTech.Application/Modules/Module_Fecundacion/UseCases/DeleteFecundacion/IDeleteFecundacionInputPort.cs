@@ -1,9 +1,8 @@
-using System.Threading;
-using System.Threading.Tasks;
+using ZooTech.Application.Common.Models;
 
 namespace ZooTech.Application.Modules.Module_Fecundacion.UseCases.DeleteFecundacion;
 
 public interface IDeleteFecundacionInputPort
 {
-    Task HandleAsync(long id, DeleteFecundacionCommand command, CancellationToken cancellationToken);
+    Task<EmptyOutput> HandleAsync(DeleteFecundacionCommand command, CancellationToken cancellationToken);
 }

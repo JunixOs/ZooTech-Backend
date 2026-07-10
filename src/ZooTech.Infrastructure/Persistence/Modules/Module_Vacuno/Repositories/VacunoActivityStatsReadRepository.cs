@@ -8,9 +8,9 @@ public sealed class VacunoActivityStatsReadRepository : IVacunoActivityStatsRead
 {
     private readonly GanaderiaDbContext _context;
 
-    public VacunoActivityStatsReadRepository(GanaderiaDbContext context)
+    public VacunoActivityStatsReadRepository(IGanaderiaDbContextFactory ganaderiaDbContextFactory)
     {
-        _context = context;
+        _context = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
     }
 
     public async Task<IReadOnlyList<VacunoActivityStatsReadItem>> ListarHastaAsync(
