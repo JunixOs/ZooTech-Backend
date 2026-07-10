@@ -1,5 +1,5 @@
-using ZooTech.Domain.Module_Sanidad.Interfaces;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.Common;
+using ZooTech.Domain.Module_Sanidad.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllTriajes;
 
@@ -27,6 +27,8 @@ public sealed class GetAllTriajesInteractor : IGetAllTriajesInputPort
             nombre: query.Nombre,
             tipoPeso: query.TipoPeso,
             pesoKg: query.PesoKg,
+            vacunoId: query.VacunoId,
+            uniqueVacuno: query.UniqueVacuno,
             cancellationToken: cancellationToken
         );
 

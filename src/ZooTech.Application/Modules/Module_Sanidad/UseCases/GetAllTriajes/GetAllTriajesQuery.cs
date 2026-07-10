@@ -17,4 +17,6 @@ public class GetAllTriajesQuery : IAuditableRequest
     public string? Nombre { get; set; }
     public string? TipoPeso { get; set; }
     public decimal? PesoKg { get; set; }
+    public long? VacunoId { get; set; }
+    public bool? UniqueVacuno { get; set; }
 }

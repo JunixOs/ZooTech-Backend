@@ -1,5 +1,5 @@
-using Microsoft.EntityFrameworkCore;
 using System.Globalization;
+using Microsoft.EntityFrameworkCore;
 using ZooTech.Application.Common.Gateway.Time;
 using ZooTech.Domain.Module_Sanidad.Entities;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
@@ -14,7 +14,7 @@ public class TriajeRepository : ITriajeRepository
     private readonly IDateTimeProvider _dateTimeProvider;
 
     public TriajeRepository(
-        IGanaderiaDbContextFactory ganaderiaDbContextFactory, 
+        IGanaderiaDbContextFactory ganaderiaDbContextFactory,
         IDateTimeProvider dateTimeProvider
     )
     {
@@ -43,6 +43,7 @@ public class TriajeRepository : ITriajeRepository
         string? tipoPeso = null,
         decimal? pesoKg = null,
         long? vacunoId = null,
+        bool? uniqueVacuno = null,
         CancellationToken cancellationToken = default)
     {
         var query = _ganaderiaDbContext.triajes
@@ -85,6 +86,15 @@ public class TriajeRepository : ITriajeRepository
 
         if (pesoKg.HasValue)
             query = query.Where(t => t.peso_kg == pesoKg);
+
+        if (uniqueVacuno == true)
+        {
+            query = query.Where(t => t.id == _ganaderiaDbContext.triajes
+                .Where(inner => inner.vacuno_id == t.vacuno_id && inner.deleted_at == null)
+                .OrderByDescending(inner => inner.fecha_hora)
+                .Select(inner => inner.id)
+                .FirstOrDefault());
+        }
 
 
 

@@ -34,6 +34,7 @@ public class GetAllTriajesUseCaseTests
                 It.IsAny<string?>(),
                 It.IsAny<decimal?>(),
                 It.IsAny<long?>(),
+                It.IsAny<bool?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync((triajes, triajes.Count));
         var useCase = new GetAllTriajesInteractor(_repositoryMock.Object);
@@ -63,6 +64,7 @@ public class GetAllTriajesUseCaseTests
                 It.IsAny<string?>(),
                 It.IsAny<decimal?>(),
                 It.IsAny<long?>(),
+                It.IsAny<bool?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync((new List<Triaje>(), 0));
         var useCase = new GetAllTriajesInteractor(_repositoryMock.Object);

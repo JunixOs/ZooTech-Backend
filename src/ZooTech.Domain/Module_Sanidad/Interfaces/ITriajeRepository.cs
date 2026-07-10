@@ -16,6 +16,7 @@ public interface ITriajeRepository
         string? tipoPeso = null,
         decimal? pesoKg = null,
         long? vacunoId = null,
+        bool? uniqueVacuno = null,
         CancellationToken cancellationToken = default);
     Task<Triaje> AddAsync(Triaje triaje, CancellationToken cancellationToken = default);
     Task<Triaje> UpdateAsync(Triaje triaje, CancellationToken cancellationToken = default);
@@ -25,7 +26,7 @@ public interface ITriajeRepository
     Task<IEnumerable<TriajeHistorialItem>> GetHistorialByVacunoIdAsync(long vacunoId, string? fechaDesde = null, string? fechaHasta = null, CancellationToken cancellationToken = default);
     Task<IEnumerable<TriajeDetallePorVacunoItem>> GetDetallesByVacunoIdAsync(long vacunoId, CancellationToken cancellationToken = default);
     Task<IEnumerable<TriajeHistorialItem>> GetHistorialGeneralAsync(string? fechaDesde = null, string? fechaHasta = null, CancellationToken cancellationToken = default);
-     
+
     Task<bool> ExistsVacunoAsync(long vacunoId, CancellationToken cancellationToken = default);
     Task<bool> ExistsUsuarioAsync(long usuarioId, CancellationToken cancellationToken = default);
     Task<bool> ExistsTipoPesoAsync(string tipoPesoCode, CancellationToken cancellationToken = default);
