@@ -8,9 +8,9 @@ using ZooTech.Domain.Common.Interfaces;
 using ZooTech.Domain.Module_Celo.Interfaces;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
-using ZooTech.Domain.Module_Vacuno.Interfaces;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
 using ZooTech.Infrastructure.Common.Export;
-using ZooTech.Infrastructure.Common.Time;
+using ZooTech.Infrastructure.Time;
 using ZooTech.Infrastructure.Common.Services.PdfGenerator;
 using ZooTech.Infrastructure.Common.Services.ExcelGenerator;
 using ZooTech.Infrastructure.Persistence.Context;
@@ -48,11 +48,12 @@ using ZooTech.Infrastructure.Tenant;
 using ZooTech.Infrastructure.Context;
 using MongoDB.Driver;
 using ZooTech.Infrastructure.Caching.ConcurrentCache;
-using ZooTech.Domain.Module_Fecundacion.Interfaces;
+using ZooTech.Domain.Ganaderia.Module_Fecundacion.Interfaces;
 using ZooTech.Infrastructure.Persistence.Modules.Module_Fecundacion.Repositories;
 using ZooTech.Infrastructure.Persistence.Repositories;
 using ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.Common;
 using ZooTech.Infrastructure.Reports;
+using ZooTech.Infrastructure.Reports.Vacunos;
 // Removed Animals references
 
 namespace ZooTech.Infrastructure;

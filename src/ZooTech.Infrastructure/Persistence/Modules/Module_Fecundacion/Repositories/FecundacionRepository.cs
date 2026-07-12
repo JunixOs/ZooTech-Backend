@@ -1,10 +1,10 @@
 using Microsoft.EntityFrameworkCore;
-using ZooTech.Domain.Module_Fecundacion.Entities;
-using ZooTech.Domain.Module_Fecundacion.Interfaces;
+using ZooTech.Domain.Ganaderia.Module_Fecundacion.Entities;
+using ZooTech.Domain.Ganaderia.Module_Fecundacion.Interfaces;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Persistence.Entities;
 using ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.Common;
-using ZooTech.Domain.Module_Fecundacion.Rules;
+using ZooTech.Domain.Ganaderia.Module_Fecundacion.Rules;
 
 namespace ZooTech.Infrastructure.Persistence.Modules.Module_Fecundacion.Repositories;
 

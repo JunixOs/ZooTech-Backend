@@ -24,7 +24,6 @@ public class VacunoControllerTests : IClassFixture<WebApplicationFactory<Program
     public async Task ListarVacunos_ReturnsOk_AndPagedResponse()
     {
         var response = await _client.GetAsync("/api/v1/vacunos?page=1&limit=5");
-        var response = await _client.GetAsync("/api/v1/vacunos?page=1&limit=5");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         

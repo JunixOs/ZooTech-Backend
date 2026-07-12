@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using ZooTech.Application;
 using ZooTech.Infrastructure;
 using ZooTech.InterfaceAdapters;
-using ZooTech.InterfaceAdapters.Controllers;
+using ZooTech.InterfaceAdapters.Modules.Shared.Controllers;
 using ZooTech.InterfaceAdapters.Middleware;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.Controllers;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
@@ -81,17 +81,29 @@ builder.Services.AddCors(options =>
                     );
 
                 // Desarrollo local
-                var isLocalhost =
-                    (uri.Scheme == "http" || uri.Scheme == "https") &&
+                var isLocal =
+                    uri.Scheme == "http" &&
+                    uri.Port == 4200 &&
                     (
+                        uri.Host == "admin.zentrycorp.local" ||
+                        uri.Host == "zootecniaunas.zentrycorp.local" ||
+                        uri.Host == "elroble.zentrycorp.local" ||
+                        uri.Host == "lacteosdelvalle.zentrycorp.local" ||
+                        uri.Host == "losandes.zentrycorp.local" ||
                         uri.Host == "localhost" ||
                         uri.Host == "127.0.0.1"
                     );
 
-                return isZentryDomain || isLocalhost;
+                return isZentryDomain || isLocal;
             })
             .AllowAnyHeader()
-            .AllowAnyMethod();
+            .AllowAnyMethod()
+            .WithExposedHeaders(
+                "X-Tenant-Id",
+                "X-Tenant-Name",
+                "X-Tenant-Legal-Name",
+                "X-Tenant-Type"
+            );
     });
 });
 

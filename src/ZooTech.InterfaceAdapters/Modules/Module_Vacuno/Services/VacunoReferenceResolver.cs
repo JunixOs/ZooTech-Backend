@@ -1,4 +1,4 @@
-using ZooTech.Domain.Module_Vacuno.Interfaces;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Requests;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Services;
