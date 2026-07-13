@@ -14,13 +14,17 @@ namespace ZooTech.Infrastructure.Auditing.MongoDb
             IConfiguration configuration
         )
         {
-            var databaseName = configuration["MongoDb:DatabaseName"] ?? throw new UndefinedConfigurationValue(
-                message: "Missing configuration: MongoDb:DatabaseName"
-            );
+            var databaseName = configuration["MongoDb:DatabaseName"];
+            if (string.IsNullOrWhiteSpace(databaseName))
+            {
+                databaseName = "zootech_audit";
+            }
             
-            _auditCollectionName = configuration["MongoDb:AuditCollectionName"] ?? throw new UndefinedConfigurationValue(
-                message: "Missing configuration: MongoDb:AuditCollectionName"
-            );
+            _auditCollectionName = configuration["MongoDb:AuditCollectionName"];
+            if (string.IsNullOrWhiteSpace(_auditCollectionName))
+            {
+                _auditCollectionName = "audit_logs";
+            }
         
             _mongoDatabase = client.GetDatabase(databaseName);
         }
