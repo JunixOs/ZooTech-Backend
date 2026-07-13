@@ -10,28 +10,32 @@ namespace ZooTech.Infrastructure.Persistence.Repositories.MainTenantsDb
 {
     public class AdminUserRepository : IAdminUserRepository
     {
-        private readonly TenantCatalogDb _tenantDbContext;
+        private readonly ITenantDbContextFactory _tenantDbContextFactory;
 
         public AdminUserRepository(
             ITenantDbContextFactory tenantDbContextFactory
         )
         {
-            _tenantDbContext = tenantDbContextFactory.CreateDbContextByTenantContext();
+            _tenantDbContextFactory = tenantDbContextFactory;
         }
 
         public async Task Create(AdminUserDomainEntity adminUserDomainEntity)
         {
-            await _tenantDbContext.admin_users.AddAsync(
+            var tenantDbContext = _tenantDbContextFactory.CreateDbContextByTenantContext();
+
+            await tenantDbContext.admin_users.AddAsync(
                 AdminUserMapper.ToOrm(adminUserDomainEntity)
             );
 
-            await _tenantDbContext.SaveChangesAsync();
+            await tenantDbContext.SaveChangesAsync();
         }
 
         public async Task<AdminUserDomainEntity?> GetById(int id)
         {
-            var adminUserOrm = await _tenantDbContext.admin_users.FindAsync(id);
-            
+            var tenantDbContext = _tenantDbContextFactory.CreateDbContextByTenantContext();
+
+            var adminUserOrm = await tenantDbContext.admin_users.FindAsync(id);
+
             if(adminUserOrm is null)
             {
                 return null;
@@ -42,7 +46,9 @@ namespace ZooTech.Infrastructure.Persistence.Repositories.MainTenantsDb
 
         public async Task<string?> GetPasswordHashByEmail(string email)
         {
-            return await _tenantDbContext.admin_users
+            var tenantDbContext = _tenantDbContextFactory.CreateDbContextByTenantContext();
+
+            return await tenantDbContext.admin_users
                 .Where(au => au.email == email)
                 .Select(au => au.password_hash)
                 .FirstOrDefaultAsync();
@@ -50,15 +56,31 @@ namespace ZooTech.Infrastructure.Persistence.Repositories.MainTenantsDb
 
         public async Task Update(AdminUserDomainEntity adminUserDomainEntity)
         {
-            var adminUserOrm = AdminUserMapper.ToOrm(adminUserDomainEntity);
-            _tenantDbContext.admin_users.Update(adminUserOrm);
+            var tenantDbContext = _tenantDbContextFactory.CreateDbContextByTenantContext();
 
-            await _tenantDbContext.SaveChangesAsync();
+            var orm = await tenantDbContext.admin_users
+                .FirstAsync(x => x.id == adminUserDomainEntity.Id);
+
+            orm.email = adminUserDomainEntity.Email;
+            orm.username = adminUserDomainEntity.UserName;
+            orm.password_hash = adminUserDomainEntity.PasswordHash;
+            orm.first_name = adminUserDomainEntity.FirstName;
+            orm.last_name = adminUserDomainEntity.LastName;
+            orm.is_active = adminUserDomainEntity.IsActive;
+            orm.last_login_at = adminUserDomainEntity.LastLoginAt;
+            orm.metadata = adminUserDomainEntity.Metadata;
+            orm.updated_at = adminUserDomainEntity.UpdatedAt;
+            orm.created_at = adminUserDomainEntity.CreatedAt;
+            orm.deleted_at = adminUserDomainEntity.DeletedAt;
+
+            await tenantDbContext.SaveChangesAsync();
         }
 
         public async Task<AdminUserDomainEntity?> GetByEmail(string email)
         {
-            var adminUserOrm = await _tenantDbContext.admin_users
+            var tenantDbContext = _tenantDbContextFactory.CreateDbContextByTenantContext();
+
+            var adminUserOrm = await tenantDbContext.admin_users
                 .Where(au => au.email == email)
                 .FirstOrDefaultAsync();
 
@@ -72,7 +94,9 @@ namespace ZooTech.Infrastructure.Persistence.Repositories.MainTenantsDb
 
         public async Task<List<ListAdminUsersOutput>> FindAll()
         {
-            return await _tenantDbContext.admin_users
+            var tenantDbContext = _tenantDbContextFactory.CreateDbContextByTenantContext();
+
+            return await tenantDbContext.admin_users
                 .Select(au => new ListAdminUsersOutput
                 {
                     Id = au.id,
@@ -88,11 +112,13 @@ namespace ZooTech.Infrastructure.Persistence.Repositories.MainTenantsDb
 
         public async Task DeleteById(int id)
         {
-            await _tenantDbContext.admin_users
+            var tenantDbContext = _tenantDbContextFactory.CreateDbContextByTenantContext();
+
+            await tenantDbContext.admin_users
                 .Where(au => au.id == id)
                 .ExecuteDeleteAsync();
 
-            await _tenantDbContext.SaveChangesAsync();
+            await tenantDbContext.SaveChangesAsync();
         }
     }
 }

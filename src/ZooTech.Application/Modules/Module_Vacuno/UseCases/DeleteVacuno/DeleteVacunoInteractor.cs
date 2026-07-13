@@ -1,5 +1,5 @@
 using ZooTech.Application.Modules.Module_Vacuno.Exceptions;
-using ZooTech.Domain.Module_Vacuno.Interfaces;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
 using ZooTech.Domain.Module_Celo.Interfaces;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;

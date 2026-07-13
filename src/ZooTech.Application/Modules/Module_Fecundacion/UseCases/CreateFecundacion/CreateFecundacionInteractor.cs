@@ -1,7 +1,7 @@
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Modules.Module_Fecundacion.Exceptions;
-using ZooTech.Domain.Module_Fecundacion.Entities;
-using ZooTech.Domain.Module_Fecundacion.Interfaces;
+using ZooTech.Domain.Ganaderia.Module_Fecundacion.Entities;
+using ZooTech.Domain.Ganaderia.Module_Fecundacion.Interfaces;
 using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Fecundacion.UseCases.CreateFecundacion;

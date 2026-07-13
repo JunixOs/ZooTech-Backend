@@ -1,5 +1,5 @@
-using ZooTech.Domain.Module_Vacuno.Interfaces;
-using ZooTech.Domain.Module_Vacuno.Entities.GetArbolGenealogico;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities.GetArbolGenealogico;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.GetArbolGenealogico;
 

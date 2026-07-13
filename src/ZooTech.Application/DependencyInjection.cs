@@ -2,8 +2,7 @@ using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
-using ZooTech.Application.Modules.Animals.UseCases.DeleteAnimal;
-using ZooTech.Application.Modules.Animals.UseCases.ReportAnimalList;
+// Removed Animals references
 using ZooTech.Application.Modules.Module_Celo.UseCases.CreateCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.DeleteCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.Common;
@@ -252,13 +251,7 @@ public static class DependencyInjection
         services.AddScoped<UpdateFecundacionEstadoValidator>();
         services.AddScoped<FecundacionEstadoTransitionValidator>();
 
-        // ============================================
-        // Use Cases - Animals
-        // ============================================
-        services.AddScoped<DeleteAnimalValidator>();
-        services.AddScoped<IDeleteAnimalInputPort, DeleteAnimalInteractor>();
-        services.AddScoped<ReportAnimalListValidator>();
-        services.AddScoped<IReportAnimalListInputPort, ReportAnimalListInteractor>();
+        // Removed Animals Use Cases
 
         // ============================================
         // Use Cases - Module_Fecundacion

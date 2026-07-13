@@ -8,20 +8,22 @@ namespace ZooTech.Infrastructure.Persistence.Repositories.MainTenantsDb
 {
     public class RefreshTokenRepository : IRefreshTokenRepository
     {
-        public readonly TenantCatalogDb _tenantDbContext;
+        private readonly ITenantDbContextFactory _tenantDbContextFactory;
 
         public RefreshTokenRepository(
             ITenantDbContextFactory tenantDbContextFactory
         )
         {
-            _tenantDbContext = tenantDbContextFactory.CreateDbContextByTenantContext();
+            _tenantDbContextFactory = tenantDbContextFactory;
         }
 
         public async Task DeleteByAdminUserIdAndToken(int adminUserId, string unhashedToken)
         {
-            await _tenantDbContext.refresh_tokens
-                .Where(rt => 
-                    rt.admin_user_id == adminUserId && 
+            var tenantDbContext = _tenantDbContextFactory.CreateDbContextByTenantContext();
+
+            await tenantDbContext.refresh_tokens
+                .Where(rt =>
+                    rt.admin_user_id == adminUserId &&
                     rt.token == unhashedToken
                 )
                 .ExecuteDeleteAsync();

@@ -2,8 +2,8 @@ using Moq;
 using Xunit;
 using ZooTech.Application.Modules.Module_Fecundacion.Exceptions;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.CreateFecundacion;
-using ZooTech.Domain.Module_Fecundacion.Entities;
-using ZooTech.Domain.Module_Fecundacion.Interfaces;
+using ZooTech.Domain.Ganaderia.Module_Fecundacion.Entities;
+using ZooTech.Domain.Ganaderia.Module_Fecundacion.Interfaces;
 
 namespace ZooTech.Application.UnitTests.Modules.Module_Fecundacion.UseCases.CreateFecundacion;
 
