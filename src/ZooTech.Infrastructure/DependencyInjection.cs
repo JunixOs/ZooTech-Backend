@@ -120,7 +120,7 @@ public static class DependencyInjection
 
             return new MongoClient(connection);
         });
-        services.AddSingleton<MongoDbContext>();
+        services.AddSingleton<MongoDbContextFactory>();
         services.AddScoped<IAppAuditService, MongoDbAudit>();
 
         services.AddScoped<ITenantRepository, TenantRepository>();

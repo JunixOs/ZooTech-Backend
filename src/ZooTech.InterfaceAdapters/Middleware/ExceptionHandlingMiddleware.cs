@@ -36,7 +36,7 @@ namespace ZooTech.InterfaceAdapters.Middleware
             {
                 _logger.LogWarning(ex, "ZooTechException: {Code} - {Type} - {Message} - {Scope}", ex.ErrorCode.ToString(), ex.ErrorType.ToString(), ex.Message.ToString(), ex.ScopeName.ToString());
                 
-                await appAuditService.SaveLogAsync(
+                await appAuditService.AuditErrorAsync(
                     new AuditModel
                     {
                         EventType = AuditEventType.ZooTechException,
@@ -64,7 +64,7 @@ namespace ZooTech.InterfaceAdapters.Middleware
             {
                 _logger.LogError(ex, "Unhandled exception");
 
-                await appAuditService.SaveLogAsync(
+                await appAuditService.AuditErrorAsync(
                     new AuditModel
                     {
                         EventType = AuditEventType.UnhandledException,

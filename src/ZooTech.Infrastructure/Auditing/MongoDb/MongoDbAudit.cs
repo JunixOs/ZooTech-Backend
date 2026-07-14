@@ -6,12 +6,13 @@ using MongoDB.Bson.Serialization;
 using ZooTech.Application.Common.Gateway.Auditing;
 using ZooTech.Application.Common.Gateway.Context;
 using ZooTech.Application.Common.Gateway.Identity;
+using ZooTech.Infrastructure.Auditing.MongoDb.Models;
 
 namespace ZooTech.Infrastructure.Auditing.MongoDb
 {
     public class MongoDbAudit : IAppAuditService
     {
-        private readonly MongoDbContext _mongoDbContext;
+        private readonly MongoDbContextFactory _mongoDbContext;
         private readonly ITenantContext _tenantContext;
         private readonly ICurrentUserService _currentUserService;
         private readonly IJwtService _jwtService;
@@ -38,7 +39,7 @@ namespace ZooTech.Infrastructure.Auditing.MongoDb
         private readonly ILogger<MongoDbAudit> _logger;
 
         public MongoDbAudit(
-            MongoDbContext mongoDbContext , 
+            MongoDbContextFactory mongoDbContext , 
             ITenantContext tenantContext,
             ICurrentUserService currentUserService,
             IJwtService jwtService,
@@ -60,23 +61,23 @@ namespace ZooTech.Infrastructure.Auditing.MongoDb
             MaxDepth = config.GetValue<int>("Auditing:MaxDepth", 3);
         }
 
-        public async Task SaveLogAsync(AuditModel auditModel)
+        public async Task AuditEventAsync(AuditModel auditModel)
         {
             try
             {
-                var mongoDbCollection = _mongoDbContext.GetCollection<MongoDbAuditModel>();
+                var mongoDbCollection = _mongoDbContext.GetEventCollection<MongoDbEventModel>();
 
-                var newLog = new MongoDbAuditModel
+                var newLog = new MongoDbEventModel
                 {
                     Id = Guid.NewGuid(),
                     TenantId = _tenantContext.TenantId,
                     TenantCode = _tenantContext.Code,
-                    EventType = auditModel.EventType.ToString(),
+                    EventType = auditModel.EventType,
                     Action = auditModel.Action,
                     User = new AuditUser
                     {
                         Id = _currentUserService.UserId,
-                        Name = _currentUserService.UserName
+                        UserName = _currentUserService.UserName
                     },
                     RequestValues =
                         auditModel.RequestValues is null
@@ -87,7 +88,7 @@ namespace ZooTech.Infrastructure.Auditing.MongoDb
                         auditModel.ResponseValues is null
                             ? null
                             : Normalize(SerializeToBson(auditModel.ResponseValues)!),
-                    CreatedAt = DateTime.UtcNow
+                    RegisteredAt = DateTime.UtcNow
                 };
 
                 await mongoDbCollection.InsertOneAsync(newLog);
@@ -101,6 +102,13 @@ namespace ZooTech.Infrastructure.Auditing.MongoDb
                     auditModel.EventType);
             }
 
+        }
+
+        public async Task AuditErrorAsync(AuditModel auditModel)
+        {
+            var mongoDbCollection = _mongoDbContext.GetErrorCollection<MongoDbErrorModel>();
+
+            
         }
     
         private static BsonValue? SerializeToBson(object? value)

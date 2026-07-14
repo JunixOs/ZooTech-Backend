@@ -33,7 +33,7 @@ namespace ZooTech.Application.Common.Behaviors
             {
                 auditModel.ResponseValues = response;
 
-                await _appAuditService.SaveLogAsync(auditModel);
+                await _appAuditService.AuditEventAsync(auditModel);
             }
 
             return response;
