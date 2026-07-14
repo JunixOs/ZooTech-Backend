@@ -82,26 +82,16 @@ builder.Services.AddCors(options =>
 
                 // Desarrollo local
                 var isLocalhost =
-                        uri.Scheme == "http" &&
-                        uri.Port == 4200 &&
-                        (
-                            uri.Host == "admin.zentrycorp.local" ||
-                            uri.Host == "zootecniaunas.zentrycorp.local" ||
-                            uri.Host == "elroble.zentrycorp.local" ||
-                            uri.Host == "lacteosdelvalle.zentrycorp.local" ||
-                            uri.Host == "losandes.zentrycorp.local" ||
-                            uri.Host == "localhost" ||
-                            uri.Host == "127.0.0.1"
-                        );
+                    (uri.Scheme == "http" || uri.Scheme == "https") &&
+                    (
+                        uri.Host == "localhost" ||
+                        uri.Host == "127.0.0.1"
+                    );
 
+                return isZentryDomain || isLocalhost;
             })
             .AllowAnyHeader()
-            .AllowAnyMethod()
-            .WithExposedHeaders(
-            "X-Tenant-Id",
-            "X-Tenant-Name",
-            "X-Tenant-Legal-Name",
-            "X-Tenant-Type");
+            .AllowAnyMethod();
     });
 });
 
