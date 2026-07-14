@@ -1,4 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
+using ZooTech.Application.Common.Behaviors;
+using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.CreateOrdenio;
+using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.DeleteOrdenio;
+using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.GenerateOrdeniosExcel;
+using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.GenerateOrdeniosPdf;
+using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.GetOrdenioById;
+using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.ListOrdenios;
+using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.UpdateOrdenio;
+using ZooTech.Application.Common.Behaviors.Module_Vacuno.ListarVacunos;
+using ZooTech.Application.Common.Models;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Common;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.CreateOrdenio;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.DeleteOrdenio;
@@ -31,7 +41,7 @@ public class ProduccionLecheControllerTests
     [Fact]
     public async Task List_WhenPagingIsNull_UsesDefaultPagingAndReturnsOk()
     {
-        var listInputPort = new FakeListOrdeniosInputPort();
+        var listInputPort = new FakeListOrdeniosBehaviorPipelineFactory();
         var controller = CreateController(listInputPort: listInputPort);
 
         var result = await controller.List(
@@ -57,7 +67,7 @@ public class ProduccionLecheControllerTests
     [Fact]
     public async Task Create_MapsRequestToCommandAndReturnsCreated()
     {
-        var createInputPort = new FakeCreateOrdenioInputPort();
+        var createInputPort = new FakeCreateOrdenioBehaviorPipelineFactory();
         var controller = CreateController(createInputPort: createInputPort);
         var request = new CreateOrdenioRequest(
             "ORD-001",
@@ -84,23 +94,23 @@ public class ProduccionLecheControllerTests
     }
 
     private static ProduccionLecheController CreateController(
-        IListarVacunosInputPort? listarVacunosInputPort = null,
-        ICreateOrdenioInputPort? createInputPort = null,
-        IGetOrdenioByIdInputPort? getByIdInputPort = null,
-        IGetOrdeniosPdfInputPort? getOrdeniosPdfInputPort = null,
-        IGetOrdeniosExcelInputPort? getOrdeniosExcelInputPort = null,
-        IListOrdeniosInputPort? listInputPort = null,
-        IUpdateOrdenioInputPort? updateInputPort = null,
-        IDeleteOrdenioInputPort? deleteInputPort = null)
+        IListarVacunosBehaviorPipelineFactory? listarVacunosInputPort = null,
+        ICreateOrdenioBehaviorPipelineFactory? createInputPort = null,
+        IGetOrdenioByIdBehaviorPipelineFactory? getByIdInputPort = null,
+        IGenerateOrdeniosPdfBehaviorPipelineFactory? getOrdeniosPdfInputPort = null,
+        IGenerateOrdeniosExcelBehaviorPipelineFactory? getOrdeniosExcelInputPort = null,
+        IListOrdeniosBehaviorPipelineFactory? listInputPort = null,
+        IUpdateOrdenioBehaviorPipelineFactory? updateInputPort = null,
+        IDeleteOrdenioBehaviorPipelineFactory? deleteInputPort = null)
         => new(
-            listarVacunosInputPort ?? new FakeListarVacunosInputPort(),
-            createInputPort ?? new FakeCreateOrdenioInputPort(),
-            getByIdInputPort ?? new FakeGetOrdenioByIdInputPort(),
-            getOrdeniosPdfInputPort ?? new FakeGetOrdeniosPdfInputPort(),
-            getOrdeniosExcelInputPort ?? new FakeGetOrdeniosExcelInputPort(),
-            listInputPort ?? new FakeListOrdeniosInputPort(),
-            updateInputPort ?? new FakeUpdateOrdenioInputPort(),
-            deleteInputPort ?? new FakeDeleteOrdenioInputPort());
+            listarVacunosInputPort ?? new FakeListarVacunosBehaviorPipelineFactory(),
+            createInputPort ?? new FakeCreateOrdenioBehaviorPipelineFactory(),
+            getByIdInputPort ?? new FakeGetOrdenioByIdBehaviorPipelineFactory(),
+            getOrdeniosPdfInputPort ?? new FakeGetOrdeniosPdfBehaviorPipelineFactory(),
+            getOrdeniosExcelInputPort ?? new FakeGetOrdeniosExcelBehaviorPipelineFactory(),
+            listInputPort ?? new FakeListOrdeniosBehaviorPipelineFactory(),
+            updateInputPort ?? new FakeUpdateOrdenioBehaviorPipelineFactory(),
+            deleteInputPort ?? new FakeDeleteOrdenioBehaviorPipelineFactory());
 
     private static T AssertGeneralResponseData<T>(object? value)
     {
@@ -151,61 +161,79 @@ public class ProduccionLecheControllerTests
             now);
     }
 
-    private sealed class FakeListarVacunosInputPort : IListarVacunosInputPort
+    private sealed class FakeListarVacunosBehaviorPipelineFactory : IListarVacunosBehaviorPipelineFactory
     {
-        public Task<ListarVacunosOutput> HandleAsync(ListarVacunosCommand command, CancellationToken cancellationToken = default)
-            => Task.FromResult(new ListarVacunosOutput(Array.Empty<VacunoListItem>(), TotalCount: 0));
+        public BehaviorPipeline<ListarVacunosCommand, ListarVacunosOutput> Create()
+            => new(
+                Array.Empty<IBehavior<ListarVacunosCommand, ListarVacunosOutput>>(),
+                (_, _) => Task.FromResult(new ListarVacunosOutput(Array.Empty<VacunoListItem>(), TotalCount: 0)));
     }
 
-    private sealed class FakeCreateOrdenioInputPort : ICreateOrdenioInputPort
+    private sealed class FakeCreateOrdenioBehaviorPipelineFactory : ICreateOrdenioBehaviorPipelineFactory
     {
         public CreateOrdenioCommand? CapturedCommand { get; private set; }
 
-        public Task<CreateOrdenioOutput> HandleAsync(CreateOrdenioCommand command, CancellationToken cancellationToken)
-        {
-            CapturedCommand = command;
-            return Task.FromResult(new CreateOrdenioOutput(CreateOrdenioOutput()));
-        }
+        public BehaviorPipeline<CreateOrdenioCommand, CreateOrdenioOutput> Create()
+            => new(
+                Array.Empty<IBehavior<CreateOrdenioCommand, CreateOrdenioOutput>>(),
+                (command, _) =>
+                {
+                    CapturedCommand = command;
+                    return Task.FromResult(new CreateOrdenioOutput(CreateOrdenioOutput()));
+                });
     }
 
-    private sealed class FakeGetOrdenioByIdInputPort : IGetOrdenioByIdInputPort
+    private sealed class FakeGetOrdenioByIdBehaviorPipelineFactory : IGetOrdenioByIdBehaviorPipelineFactory
     {
-        public Task<GetOrdenioByIdOutput> HandleAsync(long id, CancellationToken cancellationToken)
-            => Task.FromResult(new GetOrdenioByIdOutput(CreateOrdenioOutput()));
+        public BehaviorPipeline<GetOrdenioByIdCommand, GetOrdenioByIdOutput> Create()
+            => new(
+                Array.Empty<IBehavior<GetOrdenioByIdCommand, GetOrdenioByIdOutput>>(),
+                (_, _) => Task.FromResult(new GetOrdenioByIdOutput(CreateOrdenioOutput())));
     }
 
-    private sealed class FakeGetOrdeniosPdfInputPort : IGetOrdeniosPdfInputPort
+    private sealed class FakeGetOrdeniosPdfBehaviorPipelineFactory : IGenerateOrdeniosPdfBehaviorPipelineFactory
     {
-        public Task<GenerateOrdeniosPdfOutput> HandleAsync(GenerateOrdeniosComparationPdfQuery query, CancellationToken cancellationToken)
-            => Task.FromResult(new GenerateOrdeniosPdfOutput(new byte[] { 1 }, "application/pdf", "ordenios.pdf"));
+        public BehaviorPipeline<GenerateOrdeniosComparationPdfQuery, GenerateOrdeniosPdfOutput> Create()
+            => new(
+                Array.Empty<IBehavior<GenerateOrdeniosComparationPdfQuery, GenerateOrdeniosPdfOutput>>(),
+                (_, _) => Task.FromResult(new GenerateOrdeniosPdfOutput(new byte[] { 1 }, "application/pdf", "ordenios.pdf")));
     }
 
-    private sealed class FakeGetOrdeniosExcelInputPort : IGetOrdeniosExcelInputPort
+    private sealed class FakeGetOrdeniosExcelBehaviorPipelineFactory : IGenerateOrdeniosExcelBehaviorPipelineFactory
     {
-        public Task<GenerateOrdeniosExcelOutput> HandleAsync(GenerateOrdeniosComparationExcelQuery query, CancellationToken cancellationToken)
-            => Task.FromResult(new GenerateOrdeniosExcelOutput(new byte[] { 1 }, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "ordenios.xlsx"));
+        public BehaviorPipeline<GenerateOrdeniosComparationExcelQuery, GenerateOrdeniosExcelOutput> Create()
+            => new(
+                Array.Empty<IBehavior<GenerateOrdeniosComparationExcelQuery, GenerateOrdeniosExcelOutput>>(),
+                (_, _) => Task.FromResult(new GenerateOrdeniosExcelOutput(new byte[] { 1 }, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "ordenios.xlsx")));
     }
 
-    private sealed class FakeListOrdeniosInputPort : IListOrdeniosInputPort
+    private sealed class FakeListOrdeniosBehaviorPipelineFactory : IListOrdeniosBehaviorPipelineFactory
     {
         public ListOrdeniosQuery? CapturedQuery { get; private set; }
 
-        public Task<ListOrdeniosOutput> HandleAsync(ListOrdeniosQuery query, CancellationToken cancellationToken)
-        {
-            CapturedQuery = query;
-            return Task.FromResult(new ListOrdeniosOutput(new[] { CreateOrdenioListOutput() }, TotalCount: 1));
-        }
+        public BehaviorPipeline<ListOrdeniosQuery, ListOrdeniosOutput> Create()
+            => new(
+                Array.Empty<IBehavior<ListOrdeniosQuery, ListOrdeniosOutput>>(),
+                (query, _) =>
+                {
+                    CapturedQuery = query;
+                    return Task.FromResult(new ListOrdeniosOutput(new[] { CreateOrdenioListOutput() }, TotalCount: 1));
+                });
     }
 
-    private sealed class FakeUpdateOrdenioInputPort : IUpdateOrdenioInputPort
+    private sealed class FakeUpdateOrdenioBehaviorPipelineFactory : IUpdateOrdenioBehaviorPipelineFactory
     {
-        public Task<UpdateOrdenioOutput> HandleAsync(long id, UpdateOrdenioCommand command, CancellationToken cancellationToken)
-            => Task.FromResult(new UpdateOrdenioOutput(CreateOrdenioOutput()));
+        public BehaviorPipeline<UpdateOrdenioCommand, UpdateOrdenioOutput> Create()
+            => new(
+                Array.Empty<IBehavior<UpdateOrdenioCommand, UpdateOrdenioOutput>>(),
+                (_, _) => Task.FromResult(new UpdateOrdenioOutput(CreateOrdenioOutput())));
     }
 
-    private sealed class FakeDeleteOrdenioInputPort : IDeleteOrdenioInputPort
+    private sealed class FakeDeleteOrdenioBehaviorPipelineFactory : IDeleteOrdenioBehaviorPipelineFactory
     {
-        public Task HandleAsync(long id, DeleteOrdenioCommand command, CancellationToken cancellationToken)
-            => Task.CompletedTask;
+        public BehaviorPipeline<DeleteOrdenioCommand, EmptyOutput> Create()
+            => new(
+                Array.Empty<IBehavior<DeleteOrdenioCommand, EmptyOutput>>(),
+                (_, _) => Task.FromResult(EmptyOutput.Value));
     }
 }
