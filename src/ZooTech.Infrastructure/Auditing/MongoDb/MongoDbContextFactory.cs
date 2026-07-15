@@ -4,8 +4,8 @@ using ZooTech.Infrastructure.Exceptions;
 
 namespace ZooTech.Infrastructure.Auditing.MongoDb
 {
-    public class MongoDbContextFactory
-    {        
+    public class MongoDbContextFactory : IMongoDbContextFactory
+    {
         private readonly IMongoDatabase _mongoDatabase;
         private readonly string _auditEventCollectionName;
         private readonly string _auditErrorCollectionName;

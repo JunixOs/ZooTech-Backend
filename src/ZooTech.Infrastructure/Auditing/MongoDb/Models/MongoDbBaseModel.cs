@@ -19,9 +19,6 @@ namespace ZooTech.Infrastructure.Auditing.MongoDb.Models
         [BsonElement("event_type")]
         public AuditEventType EventType { get; set; } = default!;
 
-        [BsonElement("action")]
-        public string Action { get; set; } = default!;
-
         [BsonElement("user")]
         public AuditUser User { get; set; } = default!;
 

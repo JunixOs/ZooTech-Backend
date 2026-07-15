@@ -15,11 +15,11 @@ namespace ZooTech.Application.Common.Behaviors
         
         public async Task<TResponse> Handle(TRequest request, Func<Task<TResponse>> next)
         {
-            AuditModel? auditModel = null;
+            AuditEventInfo? auditEventInfo = null;
             
             if(request is IAuditableRequest auditable)
             {
-                auditModel = new AuditModel
+                auditEventInfo = new AuditEventInfo
                 {
                     EventType = auditable.EventType,
                     Action = auditable.Action,
@@ -29,11 +29,11 @@ namespace ZooTech.Application.Common.Behaviors
 
             var response = await next();
 
-            if(auditModel is not null)
+            if(auditEventInfo is not null)
             {
-                auditModel.ResponseValues = response;
+                auditEventInfo.ResponseValues = response;
 
-                await _appAuditService.AuditEventAsync(auditModel);
+                await _appAuditService.AuditEventAsync(auditEventInfo);
             }
 
             return response;

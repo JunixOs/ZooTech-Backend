@@ -32,6 +32,10 @@ namespace ZooTech.Infrastructure.Auditing.MongoDb.Models
 {
     public class MongoDbEventModel : MongoDbBaseModel
     {
+
+        [BsonElement("action")]
+        public string? Action { get; set; } = default!;
+
         [BsonElement("request_values")]
         public BsonValue? RequestValues { get; set; }
 
