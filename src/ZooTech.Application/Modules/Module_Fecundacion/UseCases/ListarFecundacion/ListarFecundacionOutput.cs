@@ -1,7 +1,7 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using ZooTech.Domain.Module_Fecundacion.Entities;
+using ZooTech.Domain.Ganaderia.Module_Fecundacion.Entities;
 
 namespace ZooTech.Application.Modules.Module_Fecundacion.UseCases.ListarFecundacion;
 

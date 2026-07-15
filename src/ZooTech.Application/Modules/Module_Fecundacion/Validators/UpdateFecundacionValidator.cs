@@ -1,6 +1,6 @@
-using ZooTech.Application.Common.Validator;
+﻿using ZooTech.Application.Common.Validator;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.UpdateFecundacion;
-using ZooTech.Domain.Module_Fecundacion.Rules;
+using ZooTech.Domain.Ganaderia.Module_Fecundacion.Rules;
 using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Fecundacion.Validators;

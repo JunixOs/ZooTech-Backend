@@ -1,7 +1,7 @@
-using ClosedXML.Excel;
+﻿using ClosedXML.Excel;
 using ZooTech.Application.Common.Gateway.Services;
-using ZooTech.Domain.Module_Vacuno.Entities;
-using ZooTech.Domain.Module_Vacuno.Entities.GetArbolGenealogico;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities.GetArbolGenealogico;
 
 namespace ZooTech.Infrastructure.Reports.Vacunos;
 

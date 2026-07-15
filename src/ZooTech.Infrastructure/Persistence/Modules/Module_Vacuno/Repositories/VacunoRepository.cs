@@ -1,10 +1,10 @@
-using Microsoft.EntityFrameworkCore;
-using ZooTech.Domain.Module_Vacuno.Entities;
-using ZooTech.Domain.Module_Vacuno.Interfaces;
-using ZooTech.Domain.Module_Vacuno.Entities.GetArbolGenealogico;
-using ZooTech.Domain.Module_Vacuno.Entities.ListarVacuno;
+﻿using Microsoft.EntityFrameworkCore;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities.GetArbolGenealogico;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities.ListarVacuno;
 using ZooTech.Infrastructure.Persistence.Context;
-using ZooTech.Domain.Module_Vacuno.Models;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Models;
 
 namespace ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Repositories;
 

@@ -1,10 +1,9 @@
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 using System.Net;
 using System.Text;
-// Removed obsolete Animals import
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.CreateVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetArbolGenealogico;
@@ -13,7 +12,7 @@ using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ListarVacunosReporte;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.UpdateVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarArbolGenealogico;
-using ZooTech.Domain.Module_Vacuno.Interfaces;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
 // Removed GanaderiaDbContext dependency
 using ZooTech.InterfaceAdapters.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Requests;
@@ -241,7 +240,6 @@ public sealed class VacunoController : ControllerBase
         await behaviorPipeline.Execute(VacunoMapper.ToCommand(id, request), cancellationToken);
         return NoContent();
     }
-
 
     [HttpGet("reportes")]
     [ProducesResponseType(StatusCodes.Status200OK)]

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using ZooTech.Domain.Module_Vacuno.Entities;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities;
 
 namespace ZooTech.Domain.Module_ProduccionLeche.Entities;
 

@@ -1,8 +1,8 @@
-using Moq;
+﻿using Moq;
 using FluentAssertions;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
-using ZooTech.Domain.Module_Vacuno.Interfaces;
-using ZooTech.Domain.Module_Vacuno.Entities.ListarVacuno;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities.ListarVacuno;
 using ZooTech.Application.Common.Gateway.Parametrization;
 using MongoDB.Driver;
 using ZooTech.Domain.Configuration;

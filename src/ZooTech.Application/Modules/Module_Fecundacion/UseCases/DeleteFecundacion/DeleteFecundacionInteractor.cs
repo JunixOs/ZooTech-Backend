@@ -1,6 +1,6 @@
-using ZooTech.Application.Common.Models;
+﻿using ZooTech.Application.Common.Models;
 using ZooTech.Application.Modules.Module_Fecundacion.Exceptions;
-using ZooTech.Domain.Module_Fecundacion.Interfaces;
+using ZooTech.Domain.Ganaderia.Module_Fecundacion.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_Fecundacion.UseCases.DeleteFecundacion;
 

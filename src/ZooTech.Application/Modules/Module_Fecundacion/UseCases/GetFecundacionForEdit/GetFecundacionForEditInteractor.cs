@@ -1,5 +1,5 @@
-using ZooTech.Application.Common.Exceptions;
-using ZooTech.Domain.Module_Fecundacion.Interfaces;
+﻿using ZooTech.Application.Common.Exceptions;
+using ZooTech.Domain.Ganaderia.Module_Fecundacion.Interfaces;
 using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Fecundacion.UseCases.GetFecundacionForEdit;

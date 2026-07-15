@@ -1,5 +1,5 @@
-using ZooTech.Application.Common.Models;
-using ZooTech.Domain.Module_Vacuno.Interfaces;
+﻿using ZooTech.Application.Common.Models;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllVacunosSanidad;
 

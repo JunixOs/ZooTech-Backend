@@ -1,8 +1,8 @@
-using FluentValidation;
+﻿using FluentValidation;
 using ZooTech.Application.Modules.Module_Vacuno.Exceptions;
 using ZooTech.Application.Modules.Module_Vacuno.Common;
-using ZooTech.Domain.Module_Vacuno.Entities;
-using ZooTech.Domain.Module_Vacuno.Interfaces;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
 using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.CreateVacuno;

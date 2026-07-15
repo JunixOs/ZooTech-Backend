@@ -1,6 +1,6 @@
-using ZooTech.Application.Common.Exceptions;
+﻿using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Common.Gateway.Services;
-using ZooTech.Domain.Module_Vacuno.Interfaces;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
 using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarArbolGenealogico;

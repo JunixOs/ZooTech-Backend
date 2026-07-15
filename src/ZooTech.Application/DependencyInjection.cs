@@ -1,8 +1,7 @@
-using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
+﻿using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
-// Removed Animals references
 using ZooTech.Application.Modules.Module_Celo.UseCases.CreateCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.DeleteCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.Common;
@@ -122,7 +121,6 @@ using ZooTech.Application.Common.Behaviors.Module_Fecundacion.GetFecundacionForE
 using ZooTech.Application.Common.Behaviors.Module_Fecundacion.GetFecundacionOptions;
 using ZooTech.Application.Common.Behaviors.Module_Fecundacion.ListarFecundacion;
 using ZooTech.Application.Common.Behaviors.Module_Fecundacion.SearchFecundacionVacunos;
-
 
 namespace ZooTech.Application;
 
@@ -251,8 +249,6 @@ public static class DependencyInjection
         services.AddScoped<UpdateFecundacionEstadoValidator>();
         services.AddScoped<FecundacionEstadoTransitionValidator>();
 
-        // Removed Animals Use Cases
-
         // ============================================
         // Use Cases - Module_Fecundacion
         // ============================================
@@ -279,7 +275,6 @@ public static class DependencyInjection
         services.AddScoped<IUpdateFecundacionInputPort, UpdateFecundacionInteractor>();
         services.AddScoped<IUpdateFecundacionEstadoBehaviorPipelineFactory, UpdateFecundacionEstadoBehaviorPipelineFactory>();
         services.AddScoped<ICommandValidator<UpdateFecundacionCommand>, UpdateFecundacionValidator>();
-
 
         // ============================================
         // Use Cases - Module_Vacuno
@@ -331,7 +326,6 @@ public static class DependencyInjection
 
         services.AddScoped<ICommandValidator<AdminLoginCommand>, AdminLoginValidator>();
         services.AddScoped<ICommandValidator<RegularLoginCommand>, RegularLoginValidator>();
-
 
         // ============================================
         // Use Cases - Module_Tenancing

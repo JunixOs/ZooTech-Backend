@@ -1,5 +1,5 @@
-using ZooTech.Application.Common.Models;
-using ZooTech.Domain.Module_Fecundacion.Interfaces;
+﻿using ZooTech.Application.Common.Models;
+using ZooTech.Domain.Ganaderia.Module_Fecundacion.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_Fecundacion.UseCases.GetFecundacionOptions;
 
