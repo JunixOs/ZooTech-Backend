@@ -13,8 +13,13 @@ public sealed class FecundacionRepository : IFecundacionRepository
     private readonly GanaderiaDbContext _context;
 
     public FecundacionRepository(IGanaderiaDbContextFactory ganaderiaDbContextFactory)
+        : this(ganaderiaDbContextFactory.CreateDbContextByTenantContext())
     {
-        _context = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
+    }
+
+    public FecundacionRepository(GanaderiaDbContext context)
+    {
+        _context = context;
     }
 
     public async Task<(List<FecundacionListItem> Items, int TotalCount)> GetPagedAsync(
@@ -746,7 +751,6 @@ public sealed class FecundacionRepository : IFecundacionRepository
         var reason = razon.Trim();
         var deleteNote = BuildDeleteNote(now, reason, entity.observaciones_veterinarias);
 
-        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
         entity.observaciones_veterinarias = deleteNote;
         entity.updated_at = now;
 
@@ -760,8 +764,7 @@ public sealed class FecundacionRepository : IFecundacionRepository
             history.motivo_eliminacion = Truncate(reason, 250);
         }
 
-        await _context.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
+        await Task.CompletedTask;
     }
 
     private static string BuildDeleteNote(DateTime date, string reason, string? originalObservations)

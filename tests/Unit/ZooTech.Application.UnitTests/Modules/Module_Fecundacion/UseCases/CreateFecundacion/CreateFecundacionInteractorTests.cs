@@ -1,5 +1,6 @@
 using Moq;
 using Xunit;
+using ZooTech.Application.Common.Gateway.Caching;
 using ZooTech.Application.Modules.Module_Fecundacion.Exceptions;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.CreateFecundacion;
 using ZooTech.Domain.Ganaderia.Module_Fecundacion.Entities;
@@ -10,12 +11,14 @@ namespace ZooTech.Application.UnitTests.Modules.Module_Fecundacion.UseCases.Crea
 public sealed class CreateFecundacionInteractorTests
 {
     private readonly Mock<IFecundacionRepository> _repositoryMock;
+    private readonly Mock<IAppCacheService> _cacheMock;
     private readonly CreateFecundacionInteractor _interactor;
 
     public CreateFecundacionInteractorTests()
     {
         _repositoryMock = new Mock<IFecundacionRepository>();
-        _interactor = new CreateFecundacionInteractor(_repositoryMock.Object);
+        _cacheMock = new Mock<IAppCacheService>();
+        _interactor = new CreateFecundacionInteractor(_repositoryMock.Object, _cacheMock.Object);
     }
 
     [Fact]
@@ -71,6 +74,7 @@ public sealed class CreateFecundacionInteractorTests
         Assert.NotNull(result);
         Assert.Equal("FEC-123456", result.Codigo);
         _repositoryMock.Verify(r => r.AddAsync(It.IsAny<Fecundacion>(), It.IsAny<CancellationToken>()), Times.Once);
+        _cacheMock.Verify(c => c.RemoveByPrefixAsync("fecundacion:listar"), Times.Once);
     }
 
     [Fact]

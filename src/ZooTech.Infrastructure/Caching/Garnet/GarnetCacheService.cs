@@ -139,6 +139,34 @@ namespace ZooTech.Infrastructure.Caching
             }
         }
 
+        public async Task RemoveByPrefixAsync(string keyPrefix)
+        {
+            var tenantPrefix = $"{_tenantContext.TenantId}:{keyPrefix}";
+
+            try
+            {
+                var multiplexer = _garnetCacheConnection.GetMultiplexer();
+                if (!multiplexer.IsConnected)
+                {
+                    return;
+                }
+
+                var database = _garnetCacheConnection.GetDatabase();
+                foreach (var endpoint in multiplexer.GetEndPoints())
+                {
+                    var server = multiplexer.GetServer(endpoint);
+                    await foreach (var key in server.KeysAsync(pattern: $"{tenantPrefix}*"))
+                    {
+                        await database.KeyDeleteAsync(key);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "RemoveByPrefixAsync failed for key prefix: {KeyPrefix}.", keyPrefix);
+            }
+        }
+
         public async Task SaveAsync<T>(
             string key,
             T valueToCaching,

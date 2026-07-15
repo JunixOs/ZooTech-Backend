@@ -16,6 +16,8 @@ namespace ZooTech.Infrastructure.Caching
 
         public Task RemoveByKeyAsync(string key) => Task.CompletedTask;
 
+        public Task RemoveByPrefixAsync(string keyPrefix) => Task.CompletedTask;
+
         public Task SaveAsync<T>(string key, T valueToCaching, TimeSpan ttl) => Task.CompletedTask;
     }
 }

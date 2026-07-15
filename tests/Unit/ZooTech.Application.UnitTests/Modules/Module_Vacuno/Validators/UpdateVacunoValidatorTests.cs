@@ -53,13 +53,13 @@ public class UpdateVacunoValidatorTests
     }
 
     [Fact]
-    public void Validate_WhenNombreExceedsMaxLength_HasError()
+    public void Validate_WhenNombreExceedsTenantLimit_HasNoBasicValidatorError()
     {
         var validator = new UpdateVacunoValidator();
 
         var result = validator.Validate(ValidCommand(nombre: new string('A', 101)));
 
-        Assert.NotEmpty(result);
+        Assert.Empty(result);
     }
 
     [Fact]
@@ -113,13 +113,13 @@ public class UpdateVacunoValidatorTests
     }
 
     [Fact]
-    public void Validate_WhenObservacionesExceedsMaxLength_HasError()
+    public void Validate_WhenObservacionesExceedsTenantLimit_HasNoBasicValidatorError()
     {
         var validator = new UpdateVacunoValidator();
 
         var result = validator.Validate(ValidCommand(observaciones: new string('A', 151)));
 
-        Assert.NotEmpty(result);
+        Assert.Empty(result);
     }
 
     [Fact]

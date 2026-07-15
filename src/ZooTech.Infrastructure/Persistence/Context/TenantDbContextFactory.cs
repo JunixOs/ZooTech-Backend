@@ -61,11 +61,16 @@ namespace ZooTech.Infrastructure.Tenant
                 throw new InvalidDbContextAccess();
             }
 
-            var options = GetConnectionOptions(_tenantContext.DatabaseName);
+            var adminDatabaseName = _config["MultiTenant:AdminDatabaseName"] ??
+                throw new UndefinedConfigurationValue(
+                    message: "Missing Configuration: MultiTenant:AdminDatabaseName"
+                );
+
+            var options = GetConnectionOptions(adminDatabaseName);
 
             var tenantDbContext = new TenantCatalogDb(options);
 
-            EnsureCanConnect(tenantDbContext, _tenantContext.DatabaseName);
+            EnsureCanConnect(tenantDbContext, adminDatabaseName);
 
             return tenantDbContext;
         }

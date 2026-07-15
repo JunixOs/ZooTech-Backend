@@ -17,10 +17,6 @@ internal sealed class CreateVacunoValidator : ICommandValidator<CreateVacunoComm
         {
             errors.Add("VACUNO-VACUNO-CREATE-CODIGO-NULL");
         }
-        else if (!System.Text.RegularExpressions.Regex.IsMatch(request.Codigo, @"^VAC[0-9]+$"))
-        {
-            errors.Add("VACUNO-VACUNO-CREATE-CODIGO-INVALID");
-        }
 
         VacunoCommonValidationRules.ValidateCommonFields(
             errors,
