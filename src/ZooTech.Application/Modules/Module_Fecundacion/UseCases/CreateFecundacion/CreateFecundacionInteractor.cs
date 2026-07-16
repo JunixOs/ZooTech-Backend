@@ -10,15 +10,15 @@ namespace ZooTech.Application.Modules.Module_Fecundacion.UseCases.CreateFecundac
 
 public sealed class CreateFecundacionInteractor : ICreateFecundacionInputPort
 {
-    private readonly IFecundacionRepository _fecundacionRepository;
+    private readonly IGanaderiaUnitOfWork _unitOfWork;
     private readonly IAppCacheService _cache;
 
     public CreateFecundacionInteractor(
-        IFecundacionRepository fecundacionRepository,
+        IGanaderiaUnitOfWork unitOfWork,
         IAppCacheService cache
     )
     {
-        _fecundacionRepository = fecundacionRepository;
+        _unitOfWork = unitOfWork;
         _cache = cache;
     }
 
@@ -26,16 +26,18 @@ public sealed class CreateFecundacionInteractor : ICreateFecundacionInputPort
         CreateFecundacionCommand command,
         CancellationToken cancellationToken = default)
     {
+        var repository = _unitOfWork.Fecundaciones;
+
         // Validar que el vacuno receptor exista
-        if (!await _fecundacionRepository.ExistsVacunoAsync(command.VacunoReceptorId, cancellationToken))
+        if (!await repository.ExistsVacunoAsync(command.VacunoReceptorId, cancellationToken))
             throw new FecundacionVacunoNotFoundException();
 
         // Validar que no tenga otra fecundación activa con resultado 'Pendiente de confirmación'
-        if (await _fecundacionRepository.HasActiveFecundacionAsync(null, command.VacunoReceptorId, cancellationToken))
+        if (await repository.HasActiveFecundacionAsync(null, command.VacunoReceptorId, cancellationToken))
             throw new FecundacionPendingActiveException();
 
         // Validar que el celo exista (si se proporcionó)
-        if (command.CeloRegistroId.HasValue && !await _fecundacionRepository.ExistsCeloAsync(command.CeloRegistroId.Value, cancellationToken))
+        if (command.CeloRegistroId.HasValue && !await repository.ExistsCeloAsync(command.CeloRegistroId.Value, cancellationToken))
             throw new ConflictException(
                 ScopeName.Application,
                 ModuleName.Fecundacion,
@@ -45,7 +47,7 @@ public sealed class CreateFecundacionInteractor : ICreateFecundacionInputPort
         // Validar que el vacuno donante exista (si no es macho externo y se proporcionó)
         if (!command.MachoExterno && command.VacunoDonanteId.HasValue)
         {
-            if (!await _fecundacionRepository.ExistsVacunoAsync(command.VacunoDonanteId.Value, cancellationToken))
+            if (!await repository.ExistsVacunoAsync(command.VacunoDonanteId.Value, cancellationToken))
                 throw new ConflictException(
                     ScopeName.Application,
                     ModuleName.Fecundacion,
@@ -54,11 +56,11 @@ public sealed class CreateFecundacionInteractor : ICreateFecundacionInputPort
         }
 
         // Obtener o crear responsable
-        var responsableId = await _fecundacionRepository.GetOrCreateResponsableByNameAsync(command.ResponsableName, cancellationToken);
+        var responsableId = await repository.GetOrCreateResponsableByNameAsync(command.ResponsableName, cancellationToken);
 
         // Generar código único para la fecundación (Límite de la base de datos: 15 caracteres)
         var codigo = $"F{DateTime.UtcNow:yyMMddHHmmss}";
-        if (await _fecundacionRepository.ExistsCodigoAsync(codigo, cancellationToken))
+        if (await repository.ExistsCodigoAsync(codigo, cancellationToken))
             codigo = $"F{DateTime.UtcNow:yyMMddHHmmssff}";
 
         var utcNow = DateTime.UtcNow;
@@ -82,7 +84,7 @@ public sealed class CreateFecundacionInteractor : ICreateFecundacionInputPort
             codigoEmbrion: command.CodigoEmbrion);
 
         // Persistir en base de datos
-        var saved = await _fecundacionRepository.AddAsync(fecundacion, cancellationToken);
+        var saved = await repository.AddAsync(fecundacion, cancellationToken);
         await _cache.RemoveByPrefixAsync(FecundacionCacheKeys.ListarPrefix);
 
         return new CreateFecundacionOutput(
