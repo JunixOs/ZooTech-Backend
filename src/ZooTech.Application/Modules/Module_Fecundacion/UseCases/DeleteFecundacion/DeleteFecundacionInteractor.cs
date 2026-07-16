@@ -1,16 +1,22 @@
+using ZooTech.Application.Common.Gateway.Caching;
 using ZooTech.Application.Common.Models;
+using ZooTech.Application.Modules.Module_Fecundacion.Common;
 using ZooTech.Application.Modules.Module_Fecundacion.Exceptions;
-using ZooTech.Domain.Ganaderia.Module_Fecundacion.Interfaces;
+using ZooTech.Domain.Shared.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_Fecundacion.UseCases.DeleteFecundacion;
 
 public sealed class DeleteFecundacionInteractor : IDeleteFecundacionInputPort
 {
-    private readonly IFecundacionRepository _repository;
+    private readonly IGanaderiaUnitOfWork _unitOfWork;
+    private readonly IAppCacheService _cache;
 
-    public DeleteFecundacionInteractor(IFecundacionRepository repository)
+    public DeleteFecundacionInteractor(
+        IGanaderiaUnitOfWork unitOfWork,
+        IAppCacheService cache)
     {
-        _repository = repository;
+        _unitOfWork = unitOfWork;
+        _cache = cache;
     }
 
     public async Task<EmptyOutput> HandleAsync(DeleteFecundacionCommand command, CancellationToken cancellationToken)
@@ -20,20 +26,28 @@ public sealed class DeleteFecundacionInteractor : IDeleteFecundacionInputPort
             throw new ArgumentException("Falta razón de eliminación o datos inválidos.");
         }
 
-        var existing = await _repository.GetForEditAsync(command.Id, cancellationToken);
+        var repository = _unitOfWork.Fecundaciones;
+        var existing = await repository.GetForEditAsync(command.Id, cancellationToken);
         if (existing is null)
         {
             throw new FecundacionNotFoundException();
         }
 
         // Validar si tiene crías vinculadas en trazabilidad
-        var hasCria = await _repository.HasCriaAsync(command.Id, cancellationToken);
+        var hasCria = await repository.HasCriaAsync(command.Id, cancellationToken);
         if (hasCria)
         {
             throw new FecundacionHasDependenciesException();
         }
 
-        await _repository.DeleteAsync(command.Id, command.Razon, cancellationToken);
+        _ = await _unitOfWork.ExecuteInTransactionAsync(
+            async ct =>
+            {
+                await repository.DeleteAsync(command.Id, command.Razon, ct);
+                return EmptyOutput.Value;
+            },
+            cancellationToken);
+        await _cache.RemoveByPrefixAsync(FecundacionCacheKeys.ListarPrefix);
 
         return EmptyOutput.Value;
     }

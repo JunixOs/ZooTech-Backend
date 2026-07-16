@@ -55,9 +55,14 @@ namespace ZooTech.Infrastructure.Auditing.MongoDb
 
             _logger = logger;
 
-            MaxArrayItems = config.GetValue<int>("Auditing:MaxArrayItems", 20);
-            MaxStringLength = config.GetValue<int>("Auditing:MaxStringLength", 1000);
-            MaxDepth = config.GetValue<int>("Auditing:MaxDepth", 3);
+            var maxArrayItemsStr = config["Auditing:MaxArrayItems"];
+            MaxArrayItems = int.TryParse(maxArrayItemsStr, out var maxArrayItemsVal) ? maxArrayItemsVal : 20;
+
+            var maxStringLengthStr = config["Auditing:MaxStringLength"];
+            MaxStringLength = int.TryParse(maxStringLengthStr, out var maxStringLengthVal) ? maxStringLengthVal : 1000;
+
+            var maxDepthStr = config["Auditing:MaxDepth"];
+            MaxDepth = int.TryParse(maxDepthStr, out var maxDepthVal) ? maxDepthVal : 3;
         }
 
         public async Task SaveLogAsync(AuditModel auditModel)

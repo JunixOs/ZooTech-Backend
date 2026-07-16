@@ -12,11 +12,14 @@ public sealed class VacunoRepository : IVacunoRepository
 {
     private readonly GanaderiaDbContext _ganaderiaDbContext;
 
-    public VacunoRepository(
-        IGanaderiaDbContextFactory ganaderiaDbContextFactory
-    )
+    public VacunoRepository(IGanaderiaDbContextFactory ganaderiaDbContextFactory)
+        : this(ganaderiaDbContextFactory.CreateDbContextByTenantContext())
     {
-        _ganaderiaDbContext = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
+    }
+
+    public VacunoRepository(GanaderiaDbContext ganaderiaDbContext)
+    {
+        _ganaderiaDbContext = ganaderiaDbContext;
     }
 
     public async Task<List<Vacuno>> ListAllAsync(CancellationToken cancellationToken = default)
@@ -96,18 +99,16 @@ public sealed class VacunoRepository : IVacunoRepository
 
     public async Task<Vacuno> AddAsync(Vacuno vacuno, decimal? precioCompra, string? aptoPara, CancellationToken cancellationToken = default)
     {
-        await using var transaction = await _ganaderiaDbContext.Database.BeginTransactionAsync(cancellationToken);
         var entity = ToEntity(vacuno);
         _ganaderiaDbContext.vacunos.Add(entity);
 
         var now = DateTime.UtcNow;
-        await _ganaderiaDbContext.SaveChangesAsync(cancellationToken);
 
         if (precioCompra.HasValue)
         {
             var adq = new ZooTech.Infrastructure.Persistence.Entities.vacuno_adquisicion
             {
-                vacuno_id = entity.id,
+                vacuno = entity,
                 tipo_adquisicion_code = entity.tipo_adquisicion_code,
                 fecha_adquisicion = DateOnly.FromDateTime(now),
                 precio_compra = precioCompra.Value,
@@ -120,7 +121,7 @@ public sealed class VacunoRepository : IVacunoRepository
         {
             var util = new ZooTech.Infrastructure.Persistence.Entities.vacuno_utilizacion_historial
             {
-                vacuno_id = entity.id,
+                vacuno = entity,
                 tipo_utilizacion_code = aptoPara,
                 created_at = now
             };
@@ -129,15 +130,14 @@ public sealed class VacunoRepository : IVacunoRepository
 
         var est = new ZooTech.Infrastructure.Persistence.Entities.vacuno_estado_historial
         {
-            vacuno_id = entity.id,
+            vacuno = entity,
             estado_code = "SANO",
             fecha_estado = DateOnly.FromDateTime(now),
             created_at = now
         };
         _ganaderiaDbContext.vacuno_estado_historials.Add(est);
 
-        await _ganaderiaDbContext.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
+        await Task.CompletedTask;
         return ToDomain(entity);
     }
 
@@ -221,7 +221,7 @@ public sealed class VacunoRepository : IVacunoRepository
             }
         }
 
-        await _ganaderiaDbContext.SaveChangesAsync(cancellationToken);
+        await Task.CompletedTask;
         return ToDomain(entity);
     }
 

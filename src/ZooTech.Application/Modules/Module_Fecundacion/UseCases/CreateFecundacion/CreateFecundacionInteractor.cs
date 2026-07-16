@@ -1,4 +1,6 @@
+using ZooTech.Application.Common.Gateway.Caching;
 using ZooTech.Application.Common.Exceptions;
+using ZooTech.Application.Modules.Module_Fecundacion.Common;
 using ZooTech.Application.Modules.Module_Fecundacion.Exceptions;
 using ZooTech.Domain.Ganaderia.Module_Fecundacion.Entities;
 using ZooTech.Domain.Ganaderia.Module_Fecundacion.Interfaces;
@@ -9,11 +11,15 @@ namespace ZooTech.Application.Modules.Module_Fecundacion.UseCases.CreateFecundac
 public sealed class CreateFecundacionInteractor : ICreateFecundacionInputPort
 {
     private readonly IFecundacionRepository _fecundacionRepository;
+    private readonly IAppCacheService _cache;
+
     public CreateFecundacionInteractor(
-        IFecundacionRepository fecundacionRepository
+        IFecundacionRepository fecundacionRepository,
+        IAppCacheService cache
     )
     {
         _fecundacionRepository = fecundacionRepository;
+        _cache = cache;
     }
 
     public async Task<CreateFecundacionOutput> HandleAsync(
@@ -77,6 +83,7 @@ public sealed class CreateFecundacionInteractor : ICreateFecundacionInputPort
 
         // Persistir en base de datos
         var saved = await _fecundacionRepository.AddAsync(fecundacion, cancellationToken);
+        await _cache.RemoveByPrefixAsync(FecundacionCacheKeys.ListarPrefix);
 
         return new CreateFecundacionOutput(
             Id: saved.Id,

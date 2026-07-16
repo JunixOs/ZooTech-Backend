@@ -84,10 +84,11 @@ public sealed class Vacuno
         long? madreId,
         long granjaId,
         string? observaciones,
+        VacunoValidationLimits validationLimits,
         long? actorUsuarioId,
         DateTime utcNow)
     {
-        Validate(codigo, nombre, razaCode, sexoCode, tipoAdquisicionCode, colorCode, granjaId, observaciones);
+        Validate(codigo, nombre, razaCode, sexoCode, tipoAdquisicionCode, colorCode, granjaId, observaciones, validationLimits);
 
         return new Vacuno(
             id: 0,
@@ -101,7 +102,7 @@ public sealed class Vacuno
             padreId: padreId,
             madreId: madreId,
             granjaId: granjaId,
-            observaciones: SanitizeObservaciones(observaciones),
+            observaciones: SanitizeObservaciones(observaciones, validationLimits.ObservacionesMaxLength),
             fechaRegistro: DateOnly.FromDateTime(utcNow),
             createdAt: utcNow,
             updatedAt: utcNow,
@@ -183,13 +184,14 @@ public sealed class Vacuno
         long? madreId,
         long granjaId,
         string? observaciones,
+        VacunoValidationLimits validationLimits,
         long? actorUsuarioId,
         DateTime utcNow)
     {
         if (IsDeleted)
             throw new InvalidOperationException("No se puede actualizar un vacuno eliminado.");
 
-        Validate(Codigo, nombre, razaCode, sexoCode, tipoAdquisicionCode, colorCode, granjaId, observaciones);
+        Validate(Codigo, nombre, razaCode, sexoCode, tipoAdquisicionCode, colorCode, granjaId, observaciones, validationLimits);
 
         Nombre = nombre.Trim();
         FechaNacimiento = fechaNacimiento;
@@ -200,7 +202,7 @@ public sealed class Vacuno
         PadreId = padreId;
         MadreId = madreId;
         GranjaId = granjaId;
-        Observaciones = SanitizeObservaciones(observaciones);
+        Observaciones = SanitizeObservaciones(observaciones, validationLimits.ObservacionesMaxLength);
         UpdatedBy = actorUsuarioId;
         UpdatedAt = utcNow;
     }
@@ -227,16 +229,20 @@ public sealed class Vacuno
         string tipoAdquisicionCode,
         string colorCode,
         long granjaId,
-        string? observaciones = null)
+        string? observaciones,
+        VacunoValidationLimits validationLimits)
     {
-        VacunoRule.ValidarCodigo(codigo);
-        VacunoRule.ValidarNombre(nombre);
-        VacunoRule.ValidarRazaCode(razaCode);
-        VacunoRule.ValidarSexoCode(sexoCode);
-        VacunoRule.ValidarTipoAdquisicionCode(tipoAdquisicionCode);
-        VacunoRule.ValidarColorCode(colorCode);
+        VacunoRule.ValidarCodigo(codigo, validationLimits.CodigoMaxLength);
+        VacunoRule.ValidarNombre(nombre, validationLimits.InputMaxLength);
+        VacunoRule.ValidarRazaCode(razaCode, validationLimits.InputMaxLength);
+        VacunoRule.ValidarSexoCode(sexoCode, validationLimits.InputMaxLength);
+        VacunoRule.ValidarTipoAdquisicionCode(tipoAdquisicionCode, validationLimits.InputMaxLength);
+        VacunoRule.ValidarColorCode(colorCode, validationLimits.InputMaxLength);
         VacunoRule.ValidarGranjaId(granjaId);
-        VacunoRule.ValidarObservaciones(observaciones);
+        VacunoRule.ValidarObservaciones(
+            observaciones,
+            validationLimits.ObservacionesMaxLength,
+            validationLimits.ObservacionesMaxWords);
     }
 
     private static void ValidateRehydrate(
@@ -265,12 +271,12 @@ public sealed class Vacuno
         VacunoRule.ValidarFechasPersistidas(fechaNacimiento, fechaRegistro, createdAt, updatedAt, deletedAt);
     }
 
-    private static string? SanitizeObservaciones(string? observaciones)
+    private static string? SanitizeObservaciones(string? observaciones, int maxLength)
     {
         if (string.IsNullOrWhiteSpace(observaciones))
             return null;
 
         var value = observaciones.Trim();
-        return value.Length > 150 ? value[..150] : value;
+        return value.Length > maxLength ? value[..maxLength] : value;
     }
 }

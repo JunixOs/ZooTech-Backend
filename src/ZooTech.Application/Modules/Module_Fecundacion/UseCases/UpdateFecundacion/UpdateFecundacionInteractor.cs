@@ -1,3 +1,5 @@
+using ZooTech.Application.Common.Gateway.Caching;
+using ZooTech.Application.Modules.Module_Fecundacion.Common;
 using ZooTech.Application.Modules.Module_Fecundacion.Exceptions;
 using ZooTech.Domain.Ganaderia.Module_Fecundacion.Interfaces;
 
@@ -6,12 +8,15 @@ namespace ZooTech.Application.Modules.Module_Fecundacion.UseCases.UpdateFecundac
 public sealed class UpdateFecundacionInteractor : IUpdateFecundacionInputPort
 {
     private readonly IFecundacionRepository _repository;
+    private readonly IAppCacheService _cache;
 
     public UpdateFecundacionInteractor(
-        IFecundacionRepository repository
+        IFecundacionRepository repository,
+        IAppCacheService cache
     )
     {
         _repository = repository;
+        _cache = cache;
     }
 
     public async Task<UpdateFecundacionOutput> HandleAsync(
@@ -47,6 +52,8 @@ public sealed class UpdateFecundacionInteractor : IUpdateFecundacionInputPort
 
         var detail = await _repository.GetForEditAsync(command.Id, cancellationToken)
             ?? throw new FecundacionNotFoundException();
+
+        await _cache.RemoveByPrefixAsync(FecundacionCacheKeys.ListarPrefix);
 
         return new UpdateFecundacionOutput(
             detail.Id,

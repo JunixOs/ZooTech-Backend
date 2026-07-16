@@ -1,4 +1,5 @@
 using ZooTech.Application.Common.Exceptions;
+using ZooTech.Application.UnitTests.Modules.Module_ProduccionLeche.UseCases;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.CreateOrdenio;
 using ZooTech.Domain.Module_ProduccionLeche.Entities;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
@@ -17,7 +18,7 @@ public class CreateOrdenioInteractorTests
             ExistsUsuarioResult = true,
             ExistsEstadoResult = true
         };
-        var interactor = new CreateOrdenioInteractor(repository);
+        var interactor = new CreateOrdenioInteractor(new FakeGanaderiaUnitOfWork(repository));
 
         var command = new CreateOrdenioCommand
         {
@@ -62,6 +63,9 @@ public class CreateOrdenioInteractorTests
             => Task.FromResult(ExistsEstadoResult);
 
         public Task<Ordenio?> GetByIdAsync(long id, CancellationToken cancellationToken)
+            => Task.FromResult<Ordenio?>(null);
+
+        public Task<Ordenio?> GetByCodigoAsync(string codigo, CancellationToken cancellationToken)
             => Task.FromResult<Ordenio?>(null);
 
         public Task<(IReadOnlyList<OrdenioList> Items, int TotalCount)> ListAsync(
