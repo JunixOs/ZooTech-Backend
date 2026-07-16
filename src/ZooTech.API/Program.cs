@@ -81,7 +81,6 @@ builder.Services.AddCors(options =>
                     );
 
                 // Desarrollo local
-
                 var isLocal =
                     uri.Scheme == "http" &&
                     uri.Port == 4200 &&

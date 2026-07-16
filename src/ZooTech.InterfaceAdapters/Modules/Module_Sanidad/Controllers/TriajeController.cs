@@ -30,7 +30,7 @@ namespace ZooTech.InterfaceAdapters.Module_Sanidad.Controllers;
 
 [ApiController]
 [Route("api/v1/triaje")]
-[ApiExplorerSettings(GroupName = "triaje")]
+[ApiExplorerSettings(GroupName = "public")]
 public sealed class TriajeController : ControllerBase
 {
     private readonly IGetAllTriajesBehaviorPipelineFactory _getAllTriajesBehaviorPipelineFactory;
