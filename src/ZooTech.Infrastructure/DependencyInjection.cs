@@ -80,10 +80,10 @@ public static class DependencyInjection
         services.AddScoped<IOrdeniosComparationPdfGeneratorService, PdfGenerateComparationService>();
 
         services.AddScoped<IExcelGeneratorService, ExcelGeneratorService>();
+
         // ============================================
         // Repositories
         // ============================================
-
         services.AddScoped<ICeloRepository, CeloRepository>();
         services.AddScoped<IOrdenioRepository, OrdenioRepository>();
         services.AddScoped<IGanaderiaUnitOfWork, GanaderiaUnitOfWork>();
@@ -123,8 +123,9 @@ public static class DependencyInjection
 
             return new MongoClient(connection);
         });
-        services.AddSingleton<MongoDbContext>();
-        services.AddScoped<IAppAuditService, MongoDbAudit>();
+        services.AddSingleton<IMongoDbContextFactory , MongoDbContextFactory>();
+        services.AddScoped<IAppAuditService, MongoDbAuditService>();
+        services.AddScoped<MongoDbLogNormalizer>();
 
         services.AddScoped<ITenantRepository, TenantRepository>();
         services.AddScoped<IAdminUserRepository, AdminUserRepository>();

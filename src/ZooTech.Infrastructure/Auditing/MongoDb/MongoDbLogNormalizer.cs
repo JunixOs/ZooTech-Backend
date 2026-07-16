@@ -1,19 +1,11 @@
-using System.Text.Json;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
-using MongoDB.Bson.Serialization;
-using ZooTech.Application.Common.Gateway.Auditing;
-using ZooTech.Application.Common.Gateway.Context;
 using ZooTech.Application.Common.Gateway.Identity;
 
 namespace ZooTech.Infrastructure.Auditing.MongoDb
 {
-    public class MongoDbAudit : IAppAuditService
+    public class MongoDbLogNormalizer
     {
-        private readonly MongoDbContext _mongoDbContext;
-        private readonly ITenantContext _tenantContext;
-        private readonly ICurrentUserService _currentUserService;
         private readonly IJwtService _jwtService;
 
         private static readonly HashSet<string> SensitiveKeys =
@@ -35,85 +27,22 @@ namespace ZooTech.Infrastructure.Auditing.MongoDb
         private int MaxStringLength;
         private int MaxDepth;
 
-        private readonly ILogger<MongoDbAudit> _logger;
-
-        public MongoDbAudit(
-            MongoDbContext mongoDbContext , 
-            ITenantContext tenantContext,
-            ICurrentUserService currentUserService,
+        public MongoDbLogNormalizer(
             IJwtService jwtService,
 
-            IConfiguration config,
-
-            ILogger<MongoDbAudit> logger
+            IConfiguration config
         )
         {
-            _mongoDbContext = mongoDbContext;
-            _tenantContext = tenantContext;
-            _currentUserService = currentUserService;
             _jwtService = jwtService;
 
-            _logger = logger;
-
+            // Asi obtienes un valor de un archivo de configuracion pero especificando el tipo de valor
+            // y el valor que se dara por defecto
             MaxArrayItems = config.GetValue<int>("Auditing:MaxArrayItems", 20);
             MaxStringLength = config.GetValue<int>("Auditing:MaxStringLength", 1000);
             MaxDepth = config.GetValue<int>("Auditing:MaxDepth", 3);
         }
 
-        public async Task SaveLogAsync(AuditModel auditModel)
-        {
-            try
-            {
-                var mongoDbCollection = _mongoDbContext.GetCollection<MongoDbAuditModel>();
-
-                var newLog = new MongoDbAuditModel
-                {
-                    Id = Guid.NewGuid(),
-                    TenantId = _tenantContext.TenantId,
-                    TenantCode = _tenantContext.Code,
-                    EventType = auditModel.EventType.ToString(),
-                    Action = auditModel.Action,
-                    User = new AuditUser
-                    {
-                        Id = _currentUserService.UserId,
-                        Name = _currentUserService.UserName
-                    },
-                    RequestValues =
-                        auditModel.RequestValues is null
-                            ? null
-                            : Normalize(SerializeToBson(auditModel.RequestValues)!),
-
-                    ResponseValues =
-                        auditModel.ResponseValues is null
-                            ? null
-                            : Normalize(SerializeToBson(auditModel.ResponseValues)!),
-                    CreatedAt = DateTime.UtcNow
-                };
-
-                await mongoDbCollection.InsertOneAsync(newLog);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(
-                    ex,
-                    "ZooTechException: Failed to save audit log to MongoDB. Tenant: {TenantId}, Event: {EventType}",
-                    _tenantContext.TenantId,
-                    auditModel.EventType);
-            }
-
-        }
-    
-        private static BsonValue? SerializeToBson(object? value)
-        {
-            if (value is null)
-                return BsonNull.Value;
-
-            var json = JsonSerializer.Serialize(value);
-
-            return BsonSerializer.Deserialize<BsonValue>(json);
-        }
-
-        private BsonValue Normalize(
+        public BsonValue Normalize(
             string key,
             BsonValue value,
             int depth)
@@ -124,7 +53,10 @@ namespace ZooTech.Infrastructure.Auditing.MongoDb
             return Normalize(value, depth);
         }
 
-        private BsonValue Normalize(BsonValue value, int depth = 0)
+        public BsonValue Normalize(
+            BsonValue value, 
+            int depth = 0
+        )
         {
             if (depth >= MaxDepth)
                 return new BsonDocument

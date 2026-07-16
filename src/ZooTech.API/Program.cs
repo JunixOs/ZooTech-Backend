@@ -64,7 +64,7 @@ builder.Services.AddMemoryCache();
 // ======= Configuracion CORS =======
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowFrontend", policy =>
+    options.AddPolicy("ProductionCorsPolicy", policy =>
     {
         policy
             .SetIsOriginAllowed(origin =>
@@ -93,6 +93,37 @@ builder.Services.AddCors(options =>
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
+
+    options.AddPolicy("DevelopmentCorsPolicy", policy =>
+    {
+        policy
+            .SetIsOriginAllowed(origin =>
+            {
+                var uri = new Uri(origin);
+
+                var isZentryDomain =
+                    uri.Host.EndsWith(".zentrycorp.local");
+
+                var isLocal =
+                    uri.Scheme == "http" &&
+                    uri.Port == 4200 &&
+                    (
+                        uri.Host == "localhost" ||
+                        uri.Host == "127.0.0.1" ||
+                        uri.Host.EndsWith(".zentrycorp.local")
+                    );
+
+                return isZentryDomain || isLocal;
+            })
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials()
+            .WithExposedHeaders(
+                "X-Tenant-Id",
+                "X-Tenant-Name",
+                "X-Tenant-Legal-Name",
+                "X-Tenant-Type");
+    });
 });
 
 QuestPDF.Settings.License = LicenseType.Community;
@@ -108,16 +139,6 @@ app.UseHttpsRedirection();
 // ======= Routing =======
 app.UseRouting();
 
-// ======= CORS =======
-// IMPORTANTE: debe ir antes de TenantResolution, Authentication y Authorization.
-app.UseCors("AllowFrontend");
-
-// ======= Tenant Middleware =======
-app.UseMiddleware<TenantResolutionMiddleware>();
-
-// ======= JWT =======
-app.UseAuthentication();
-app.UseAuthorization();
 
 // ======= Swagger =======
 if (app.Environment.IsDevelopment())
@@ -138,7 +159,22 @@ if (app.Environment.IsDevelopment())
             "/swagger/users/swagger.json",
             "Users API");
     });
+
+    // ======= CORS =======
+    // IMPORTANTE: debe ir antes de TenantResolution, Authentication y Authorization.
+    app.UseCors("DevelopmentCorsPolicy");
 }
+if(app.Environment.IsProduction())
+{
+    app.UseCors("ProductionCorsPolicy");
+}
+
+// ======= Tenant Middleware =======
+app.UseMiddleware<TenantResolutionMiddleware>();
+
+// ======= JWT =======
+app.UseAuthentication();
+app.UseAuthorization();
 
 // ======= Controllers =======
 app.MapControllers();

@@ -35,12 +35,30 @@ namespace ZooTech.InterfaceAdapters.Middleware
             catch (AppDomainException ex)
             {
                 _logger.LogWarning(ex, "ZooTechException: {Code} - {Type} - {Message} - {Scope}", ex.ErrorCode.ToString(), ex.ErrorType.ToString(), ex.Message.ToString(), ex.ScopeName.ToString());
+
+                var rootException = ex.GetBaseException();
                 
-                await appAuditService.SaveLogAsync(
-                    new AuditModel
+                await appAuditService.AuditErrorAsync(
+                    new AuditErrorInfo
                     {
                         EventType = AuditEventType.ZooTechException,
-                        Action =  $"ZooTechException: {ex.ErrorCode.ToString()} - {ex.ErrorType.ToString()} - {ex.Message.ToString()} - {ex.ScopeName.ToString()}",
+                        CustomMessage =  $"ZooTechException: {ex.ErrorCode} - {ex.ScopeName} - {ex.ErrorType} - {ex.Message}",
+
+                        Type = rootException.GetType().Name,
+                        Message = ExceptionExtensions.ToAuditMessage(rootException),
+                        Source = rootException.Source,
+                        Method = rootException.TargetSite?.Name,
+
+                        AppInformation = new ErrorAppInformation
+                        {
+                            ErrorCode = ex.ErrorCode,
+                            ScopeName = ex.ScopeName,
+                            ModuleName = ex.ModuleName,
+                            Details = ex.Details,
+                            CompleteErrorCode = ex.CompleteErrorCode
+                        },
+
+                        StackTrace = rootException.StackTrace
                     }
                 );
                 
@@ -62,13 +80,22 @@ namespace ZooTech.InterfaceAdapters.Middleware
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unhandled exception");
+                var rootException = ex.GetBaseException();
 
-                await appAuditService.SaveLogAsync(
-                    new AuditModel
+                _logger.LogError(rootException, "Unhandled exception");
+
+                await appAuditService.AuditErrorAsync(
+                    new AuditErrorInfo
                     {
                         EventType = AuditEventType.UnhandledException,
-                        Action =  "Unhandled exception",
+                        CustomMessage =  "Unhandled exception",
+
+                        Type = rootException.GetType().Name,
+                        Message = ExceptionExtensions.ToAuditMessage(rootException),
+                        Source = rootException.Source,
+                        Method = rootException.TargetSite?.Name,
+
+                        StackTrace = rootException.StackTrace
                     }
                 );
 
@@ -88,5 +115,7 @@ namespace ZooTech.InterfaceAdapters.Middleware
                 await context.Response.WriteAsync(JsonSerializer.Serialize(response));
             }
         }
+
+
     }
 }
