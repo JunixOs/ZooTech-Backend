@@ -2,6 +2,7 @@ using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
 using ZooTech.Domain.Shared.Interfaces;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Persistence.Modules.Module_ProduccionLeche.Repositories;
+using Zootech.Infrastructure.Persistence.Module_Vacuno.Repositories;
 
 namespace ZooTech.Infrastructure.Persistence;
 
@@ -13,9 +14,12 @@ public sealed class GanaderiaUnitOfWork : IGanaderiaUnitOfWork, IAsyncDisposable
     {
         _context = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
         Ordenios = new OrdenioRepository(_context);
+        Vacunos = new VacunoRepository(_context);
     }
 
     public IOrdenioRepository Ordenios { get; }
+    public IVacunoRepository Vacunos { get; }
+
 
     public async Task<T> ExecuteInTransactionAsync<T>(
         Func<CancellationToken, Task<T>> operation,

@@ -4,23 +4,26 @@ using ZooTech.Application.Modules.Module_Vacuno.Common;
 using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities;
 using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
 using ZooTech.Domain.Shared.Enums;
+using ZooTech.Domain.Shared.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.CreateVacuno;
 
 public sealed class CreateVacunoInteractor : ICreateVacunoInputPort
 {
-    private readonly IVacunoRepository _repository;
+    private readonly IGanaderiaUnitOfWork _unitOfWork;
 
     public CreateVacunoInteractor(
-        IVacunoRepository repository
+        IGanaderiaUnitOfWork unitOfWork
     )
     {
-        _repository = repository;
+        _unitOfWork = unitOfWork;
     }
+
+    var repository =_unitOfWork.Vacunos;
 
     public async Task<CreateVacunoOutput> HandleAsync(CreateVacunoCommand command, CancellationToken cancellationToken)
     {
-        if (await _repository.ExistsCodigoAsync(command.Codigo, cancellationToken))
+        if (await repository.ExistsCodigoAsync(command.Codigo, cancellationToken))
             throw new VacunoAlreadyExistsException("Ya existe un vacuno con ese código o datos repetidos.");
 
         Vacuno vacuno;
@@ -50,7 +53,11 @@ public sealed class CreateVacunoInteractor : ICreateVacunoInputPort
             );
         }
 
-        var saved = await _repository.AddAsync(vacuno, command.PrecioCompra, command.AptoPara, cancellationToken);
+         var saved = await _unitOfWork.ExecuteInTransactionAsync(
+            ct => repository.AddAsync(vacuno,command.PrecioCompra, command.AptoPara, ct),
+            cancellationToken,
+            async (_, ct) => await repository.GetByCodigoAsync(command.Codigo, ct)
+                ?? throw new InvalidOperationException("No se pudo recuperar el ordeño creado."));
         return new CreateVacunoOutput(VacunoAppMapper.ToOutput(saved));
     }
 }

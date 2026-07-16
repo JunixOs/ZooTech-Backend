@@ -2,6 +2,7 @@
 using ZooTech.Application.Modules.Module_Vacuno.Common;
 using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
 using ZooTech.Domain.Shared.Enums;
+using ZooTech.Domain.Shared.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.UpdateVacuno;
 
