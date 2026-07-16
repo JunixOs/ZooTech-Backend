@@ -6,19 +6,24 @@ using ZooTech.Application.Modules.Module_Fecundacion.UseCases.CreateFecundacion;
 using ZooTech.Domain.Ganaderia.Module_Fecundacion.Entities;
 using ZooTech.Domain.Ganaderia.Module_Fecundacion.Interfaces;
 
+using ZooTech.Domain.Shared.Interfaces;
+
 namespace ZooTech.Application.UnitTests.Modules.Module_Fecundacion.UseCases.CreateFecundacion;
 
 public sealed class CreateFecundacionInteractorTests
 {
     private readonly Mock<IFecundacionRepository> _repositoryMock;
+    private readonly Mock<IGanaderiaUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IAppCacheService> _cacheMock;
     private readonly CreateFecundacionInteractor _interactor;
 
     public CreateFecundacionInteractorTests()
     {
         _repositoryMock = new Mock<IFecundacionRepository>();
+        _unitOfWorkMock = new Mock<IGanaderiaUnitOfWork>();
+        _unitOfWorkMock.Setup(u => u.Fecundaciones).Returns(_repositoryMock.Object);
         _cacheMock = new Mock<IAppCacheService>();
-        _interactor = new CreateFecundacionInteractor(_repositoryMock.Object, _cacheMock.Object);
+        _interactor = new CreateFecundacionInteractor(_unitOfWorkMock.Object, _cacheMock.Object);
     }
 
     [Fact]
