@@ -80,10 +80,10 @@ public static class DependencyInjection
         services.AddScoped<IOrdeniosComparationPdfGeneratorService, PdfGenerateComparationService>();
 
         services.AddScoped<IExcelGeneratorService, ExcelGeneratorService>();
+
         // ============================================
         // Repositories
         // ============================================
-
         services.AddScoped<ICeloRepository, CeloRepository>();
         services.AddScoped<IOrdenioRepository, OrdenioRepository>();
         services.AddScoped<IGanaderiaUnitOfWork, GanaderiaUnitOfWork>();
@@ -110,8 +110,15 @@ public static class DependencyInjection
         services.AddScoped<IGanaderiaDbContextFactory, GanaderiaDbContextFactory>();
         services.AddScoped<ITenantDbContextFactory, TenantDbContextFactory>();
 
-        // Bypass MongoDB Auditing for local development
-        services.AddScoped<IAppAuditService, DummyAuditService>();
+        services.AddSingleton<MongoClient>(_ =>
+        {
+            var connection = configuration["MongoDb:ConnectionString"];
+
+            return new MongoClient(connection);
+        });
+        services.AddSingleton<IMongoDbContextFactory , MongoDbContextFactory>();
+        services.AddScoped<IAppAuditService, MongoDbAuditService>();
+        services.AddScoped<MongoDbLogNormalizer>();
 
         services.AddScoped<ITenantRepository, TenantRepository>();
         services.AddScoped<IAdminUserRepository, AdminUserRepository>();
@@ -193,10 +200,5 @@ public static class DependencyInjection
         services.AddScoped<ZooTech.Application.Common.Gateway.Services.IArbolGenealogicoExportService, ZooTech.Infrastructure.Reports.Vacunos.ArbolGenealogicoExcelExportService>();
 
         return services;
-    }
-
-    private class DummyAuditService : IAppAuditService
-    {
-        public Task SaveLogAsync(AuditModel auditModel) => Task.CompletedTask;
     }
 }
