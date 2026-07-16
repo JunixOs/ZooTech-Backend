@@ -33,6 +33,10 @@ namespace ZooTech.Infrastructure.UnitTests.Persistence.Context
                 {
                     "ConnectionStrings:TenantTemplate",
                     "Server=.;TrustServerCertificate=True;User Id=userfalse;Password=123456;MultipleActiveResultSets=true"
+                },
+                {
+                    "MultiTenant:AdminDatabaseName",
+                    "ZooTech_Admin_Test"
                 }
             };
 
