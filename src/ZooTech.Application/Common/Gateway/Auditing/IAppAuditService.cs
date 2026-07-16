@@ -2,6 +2,7 @@ namespace ZooTech.Application.Common.Gateway.Auditing
 {
     public interface IAppAuditService
     {
-        Task SaveLogAsync(AuditModel auditModel);
+        Task AuditEventAsync(AuditEventInfo auditEventInfo);
+        Task AuditErrorAsync(AuditErrorInfo auditErrorInfo);
     }
 }
