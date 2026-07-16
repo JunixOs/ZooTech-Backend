@@ -2,7 +2,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Common.Gateway.Auditing
 {
-    public class AuditModel
+    public class AuditEventInfo
     {
         public AuditEventType EventType { get; set; } = default!;
         public string Action { get; set; } = default!;
