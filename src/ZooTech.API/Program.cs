@@ -124,13 +124,6 @@ app.UseRouting();
 // IMPORTANTE: debe ir antes de TenantResolution, Authentication y Authorization.
 app.UseCors("AllowFrontend");
 
-// ======= Tenant Middleware =======
-app.UseMiddleware<TenantResolutionMiddleware>();
-
-// ======= JWT =======
-app.UseAuthentication();
-app.UseAuthorization();
-
 // ======= Swagger =======
 if (app.Environment.IsDevelopment())
 {
@@ -151,6 +144,14 @@ if (app.Environment.IsDevelopment())
             "Users API");
     });
 }
+
+// ======= Tenant Middleware =======
+app.UseMiddleware<TenantResolutionMiddleware>();
+
+// ======= JWT =======
+app.UseAuthentication();
+app.UseAuthorization();
+
 
 // ======= Controllers =======
 app.MapControllers();
