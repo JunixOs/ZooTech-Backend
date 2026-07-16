@@ -146,6 +146,9 @@ public class GenerateOrdeniosPdfInteractorTests
         public Task<Ordenio?> GetByIdAsync(long id, CancellationToken cancellationToken)
             => Task.FromResult<Ordenio?>(null);
 
+        public Task<Ordenio?> GetByCodigoAsync(string codigo, CancellationToken cancellationToken)
+            => Task.FromResult<Ordenio?>(null);
+
         public Task<(IReadOnlyList<OrdenioList> Items, int TotalCount)> ListAsync(long? vacunoId, string? estadoOrdenioCode, DateTime? fechaDesde, DateTime? fechaHasta, int page, int pageSize, CancellationToken cancellationToken)
             => Task.FromResult<(IReadOnlyList<OrdenioList> Items, int TotalCount)>((Array.Empty<OrdenioList>(), 0));
 
@@ -161,6 +164,7 @@ public class GenerateOrdeniosPdfInteractorTests
                 fechaHora: fecha,
                 vacunoId: 1,
                 nombreVacuno: "Luna",
+                vacunoCodigo: "VAC-001",
                 encargadoUsuarioId: 2,
                 nombreCompleto: "Juan Perez",
                 litros: 12,
