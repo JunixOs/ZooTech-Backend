@@ -28,7 +28,7 @@ public sealed class ListOrdeniosInteractor : IListOrdeniosInputPort
             pageSize,
             cancellationToken);
 
-        var items = entities.Select(OrdenioMapper.ToOutput).ToList();
+        var items = entities.Select(OrdenioMapper.ToOutputList).ToList();
      
         return new ListOrdeniosOutput(items, totalCount);
     }

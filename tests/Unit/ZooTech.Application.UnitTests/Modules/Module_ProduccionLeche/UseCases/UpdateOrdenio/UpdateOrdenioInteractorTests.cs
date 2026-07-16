@@ -1,6 +1,7 @@
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.UpdateOrdenio;
 using ZooTech.Domain.Module_ProduccionLeche.Entities;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
+using ZooTech.Domain.Shared.Interfaces;
 
 namespace ZooTech.Application.UnitTests.Modules.Module_ProduccionLeche.UseCases.UpdateOrdenio;
 
@@ -35,7 +36,7 @@ public class UpdateOrdenioInteractorTests
             ExistsUsuarioResult = true,
             ExistsEstadoResult = true
         };
-        var interactor = new UpdateOrdenioInteractor(repository);
+        var interactor = new UpdateOrdenioInteractor(new FakeOrdenioUnitOfWork(repository));
         var nuevaFecha = fecha.AddHours(2);
 
         var command = new UpdateOrdenioCommand
@@ -92,6 +93,9 @@ public class UpdateOrdenioInteractorTests
         public Task<Ordenio?> GetByIdAsync(long id, CancellationToken cancellationToken)
             => Task.FromResult<Ordenio?>(_existing);
 
+        public Task<Ordenio?> GetByCodigoAsync(string codigo, CancellationToken cancellationToken)
+            => Task.FromResult<Ordenio?>(_existing);
+
         public Task<(IReadOnlyList<OrdenioList> Items, int TotalCount)> ListAsync(
             long? vacunoId,
             string? estadoOrdenioCode,
@@ -115,6 +119,31 @@ public class UpdateOrdenioInteractorTests
 
         public Task<Ordenio> UpdateAsync(Ordenio ordenio, CancellationToken cancellationToken)
             => Task.FromResult(ordenio);
+    }
+
+    private sealed class FakeOrdenioUnitOfWork : IGanaderiaUnitOfWork
+    {
+        public FakeOrdenioUnitOfWork(IOrdenioRepository repository)
+        {
+            Ordenios = repository;
+        }
+
+        public IOrdenioRepository Ordenios { get; }
+
+        public Task<T> ExecuteInTransactionAsync<T>(
+            Func<CancellationToken, Task<T>> operation,
+            CancellationToken cancellationToken = default,
+            Func<T, CancellationToken, Task<T>>? afterSave = null)
+            => ExecuteAsync(operation, cancellationToken, afterSave);
+
+        private static async Task<T> ExecuteAsync<T>(
+            Func<CancellationToken, Task<T>> operation,
+            CancellationToken cancellationToken,
+            Func<T, CancellationToken, Task<T>>? afterSave)
+        {
+            var result = await operation(cancellationToken);
+            return afterSave is null ? result : await afterSave(result, cancellationToken);
+        }
     }
 }
 

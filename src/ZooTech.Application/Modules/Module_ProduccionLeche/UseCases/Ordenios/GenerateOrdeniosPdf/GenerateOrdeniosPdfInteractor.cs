@@ -36,7 +36,7 @@ public sealed class GenerateOrdeniosPdfInteractor : IGetOrdeniosPdfInputPort
             cancellationToken);
 
         var document = new GenerateOrdeniosPdfDocument(
-            entities.Select(OrdenioMapper.ToOutput).ToList(),
+            entities.Select(OrdenioMapper.ToOutputList).ToList(),
             query.VacunoId,
             query.EstadoOrdenioCode,
             query.FechaDesde,
