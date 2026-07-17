@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -77,7 +78,7 @@ public static class DependencyInjection
         services.AddScoped<IPdfDocumentGenerator, PdfDocumentGenerator>();
         services.AddScoped<IPdfGeneratorService, PdfGeneratorService>();
         services.AddScoped<IOrdeniosComparationPdfGeneratorService, PdfGenerateComparationService>();
-
+        
         services.AddScoped<IExcelGeneratorService, ExcelGeneratorService>();
 
         // ============================================

@@ -122,6 +122,7 @@ using ZooTech.Application.Common.Behaviors.Module_Fecundacion.GetFecundacionForE
 using ZooTech.Application.Common.Behaviors.Module_Fecundacion.GetFecundacionOptions;
 using ZooTech.Application.Common.Behaviors.Module_Fecundacion.ListarFecundacion;
 using ZooTech.Application.Common.Behaviors.Module_Fecundacion.SearchFecundacionVacunos;
+using ZooTech.Application.Common.Behaviors.Module_Fecundacion.UpdateFecundacion;
 
 
 namespace ZooTech.Application;
@@ -277,7 +278,7 @@ public static class DependencyInjection
         services.AddScoped<ISearchFecundacionVacunosBehaviorPipelineFactory, SearchFecundacionVacunosBehaviorPipelineFactory>();
         
         services.AddScoped<IUpdateFecundacionInputPort, UpdateFecundacionInteractor>();
-        services.AddScoped<IUpdateFecundacionEstadoBehaviorPipelineFactory, UpdateFecundacionEstadoBehaviorPipelineFactory>();
+        services.AddScoped<IUpdateFecundacionBehaviorPipelineFactory, UpdateFecundacionBehaviorPipelineFactory>();
         services.AddScoped<ICommandValidator<UpdateFecundacionCommand>, UpdateFecundacionValidator>();
 
 
@@ -315,6 +316,8 @@ public static class DependencyInjection
         
         services.AddScoped<IObtenerRegistroVacunoReporteUseCase, ObtenerRegistroVacunoReporteUseCase>();
         services.AddScoped<IObtenerRegistroVacunoReporteBehaviorPipelineFactory, ObtenerRegistroVacunoReporteBehaviorPipelineFactory>();
+
+
 
         services.AddScoped<IUpdateVacunoInputPort, UpdateVacunoInteractor>();
         services.AddScoped<IUpdateVacunoBehaviorPipelineFactory, UpdateVacunoBehaviorPipelineFactory>();
