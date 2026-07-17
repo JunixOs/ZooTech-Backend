@@ -2,12 +2,13 @@ using ZooTech.Application.Common.Gateway.Caching;
 using ZooTech.Application.Modules.Module_Fecundacion.Common;
 using ZooTech.Application.Modules.Module_Fecundacion.Exceptions;
 using ZooTech.Domain.Ganaderia.Module_Fecundacion.Interfaces;
+using ZooTech.Domain.Shared.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_Fecundacion.UseCases.UpdateFecundacion;
 
 public sealed class UpdateFecundacionInteractor : IUpdateFecundacionInputPort
 {
-    private readonly IGanaderiaUnitOfWork unitOfWork;
+    private readonly IGanaderiaUnitOfWork _unitOfWork;
     private readonly IAppCacheService _cache;
 
     public UpdateFecundacionInteractor(
