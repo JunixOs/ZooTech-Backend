@@ -8,6 +8,6 @@ public sealed record CreateTriajeOutput(
     string TipoPesoCode,
     decimal PesoKg,
     string? Observaciones,
-    string EstadoRegistroCode,
+    string? EstadoRegistroCode,
     long? EncargadoUsuarioId,
     DateTime CreatedAt);

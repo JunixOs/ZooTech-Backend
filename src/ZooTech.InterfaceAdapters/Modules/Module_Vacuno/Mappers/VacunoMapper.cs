@@ -4,54 +4,65 @@ using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetVacunoById;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.UpdateVacuno;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities.ListarVacuno;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Requests;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Models;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Mappers;
 
 internal static class VacunoMapper
 {
-    internal static VacunoItemResponse ToResponse(VacunoItemDto item)
+    internal static VacunoItemResponse ToResponse(VacunoListItem item)
         => new(
             Id: item.Id,
             Codigo: item.Codigo,
             Nombre: item.Nombre,
             FechaNacimiento: item.FechaNacimiento,
-            FechaRegistro: item.FechaRegistro,
             RazaCode: item.RazaCode,
-            SexoCode: item.SexoCode,
             Procedencia: item.Procedencia,
-            Estado: item.IsDeleted ? "eliminado" : "activo");
+            Estado: item.IsDeleted ? "eliminado" : "activo",
+            FechaRegistro: item.FechaRegistro);
 
-    internal static CreateVacunoCommand ToCommand(CreateVacunoRequest request, long? padreId, long? madreId, long granjaId)
+    internal static CreateVacunoCommand ToCommand(CreateVacunoRequest request)
         => new(
-            request.Codigo,
+            request.Codigo.Trim().ToUpperInvariant(),
             request.Nombre,
             request.FechaNacimiento,
-            request.TipoAdquisicionCode,
-            request.RazaCode,
-            request.ColorCode,
-            request.SexoCode,
-            padreId,
-            madreId,
-            granjaId,
-            request.Observaciones);
+            NormalizeCatalogCode(request.TipoAdquisicionCode),
+            NormalizeCatalogCode(request.RazaCode),
+            NormalizeCatalogCode(request.ColorCode),
+            NormalizeSexoCode(request.SexoCode),
+            NormalizeOptionalCode(request.CodigoPadre),
+            NormalizeOptionalCode(request.CodigoMadre),
+            request.GranjaId,
+            NormalizeOptionalText(request.Granja),
+            NormalizeOptionalCode(request.CodigoDistrito),
+            request.Observaciones,
+            request.PrecioCompra,
+            NormalizeAptoPara(request.AptoPara));
 
-    internal static UpdateVacunoCommand ToCommand(UpdateVacunoRequest request, long? padreId, long? madreId, long granjaId)
+    internal static UpdateVacunoCommand ToCommand(long id, UpdateVacunoRequest request)
         => new(
+            id,
             request.Nombre,
             request.FechaNacimiento,
-            request.TipoAdquisicionCode,
-            request.RazaCode,
-            request.ColorCode,
-            request.SexoCode,
-            padreId,
-            madreId,
-            granjaId,
-            request.Observaciones);
+            NormalizeCatalogCode(request.TipoAdquisicionCode),
+            NormalizeCatalogCode(request.RazaCode),
+            NormalizeCatalogCode(request.ColorCode),
+            NormalizeSexoCode(request.SexoCode),
+            NormalizeOptionalCode(request.CodigoPadre),
+            NormalizeOptionalCode(request.CodigoMadre),
+            request.GranjaId,
+            NormalizeOptionalText(request.Granja),
+            NormalizeOptionalCode(request.CodigoDistrito),
+            request.Observaciones,
+            request.PrecioCompra,
+            NormalizeAptoPara(request.AptoPara));
 
-    internal static DeleteVacunoCommand ToCommand(DeleteVacunoRequest request)
-        => new(request.MotivoEliminacion);
+    internal static DeleteVacunoCommand ToCommand(long id, DeleteVacunoRequest request)
+        => new(id, request.MotivoEliminacion);
 
     internal static VacunoResponse ToResponse(CreateVacunoOutput output)
         => ToVacunoResponse(output.Data);
@@ -85,5 +96,74 @@ internal static class VacunoMapper
             null,
             null,
             null,
+            null,
+            null,
             null);
+
+    internal static VacunoReferenceResponse ToResponse(VacunoReferenceItem item)
+        => new(item.Id, item.Codigo, item.Nombre, item.SexoCode, item.EstadoCode);
+
+    internal static VacunoCatalogsResponse ToResponse(VacunoCatalogs catalogs)
+        => new(
+            catalogs.TiposAdquisicion.Select(ToResponse).ToList(),
+            catalogs.Razas.Select(ToResponse).ToList(),
+            catalogs.Colores.Select(ToResponse).ToList(),
+            catalogs.Sexos.Select(ToResponse).ToList(),
+            catalogs.Estados.Select(ToResponse).ToList(),
+            catalogs.Utilizaciones.Select(ToResponse).ToList(),
+            catalogs.Granjas.Select(item => new GranjaCatalogOptionResponse(item.Id, item.Nombre)).ToList());
+
+    private static VacunoCatalogOptionResponse ToResponse(VacunoCatalogOption option)
+        => new(option.Code, option.Nombre);
+
+    private static string? NormalizeAptoPara(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        return value.Trim().ToUpperInvariant() switch
+        {
+            "PRODUCCION_LECHE" => "LECHE",
+            "LECHE" => "LECHE",
+            "PRODUCCION_CARNE" => "CARNE",
+            "CARNE" => "CARNE",
+            "REPRODUCCION" => "REPRODUCCION",
+            _ => value.Trim().ToUpperInvariant()
+        };
+    }
+
+    private static string NormalizeCatalogCode(string value)
+    {
+        var normalized = value.Trim().ToUpperInvariant().Replace(' ', '_');
+        return normalized switch
+        {
+            "NEGRO_Y_BLANCO" => "NEGRO_BLANCO",
+            _ => normalized
+        };
+    }
+
+    private static string NormalizeSexoCode(string value)
+        => value.Trim().ToUpperInvariant() switch
+        {
+            "H" => "HEMBRA",
+            "F" => "HEMBRA",
+            "HEMBRA" => "HEMBRA",
+            "M" => "MACHO",
+            "MACHO" => "MACHO",
+            _ => value.Trim().ToUpperInvariant()
+        };
+
+    private static string? NormalizeOptionalCode(string? value)
+    {
+        var normalized = value?.Trim().ToUpperInvariant();
+        return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
+    }
+
+    private static string? NormalizeOptionalText(string? value)
+    {
+        var normalized = value?.Trim();
+        return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
+    }
 }

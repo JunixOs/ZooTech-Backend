@@ -1,7 +1,9 @@
 using Moq;
+using ZooTech.Application.Common.Models;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllTipoPesos;
 using ZooTech.Domain.Module_Sanidad.Entities;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
+using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.UnitTests.Modules.Module_Sanidad.UseCases.GetAllTipoPesos;
 
@@ -28,7 +30,7 @@ public class GetAllTipoPesosUseCaseTests
         var useCase = new GetAllTipoPesosInteractor(_repositoryMock.Object);
 
         // Act
-        var result = await useCase.HandleAsync();
+        var result = await useCase.Handle(EmptyCommand.Value(AuditEventType.Read, "Get all tipo pesos"));
 
         // Assert
         Assert.NotNull(result);
@@ -45,7 +47,7 @@ public class GetAllTipoPesosUseCaseTests
         var useCase = new GetAllTipoPesosInteractor(_repositoryMock.Object);
 
         // Act
-        var result = await useCase.HandleAsync();
+        var result = await useCase.Handle(EmptyCommand.Value(AuditEventType.Read, "Get all tipo pesos"));
 
         // Assert
         Assert.NotNull(result);

@@ -1,51 +1,70 @@
-using ZooTech.Domain.Module_Vacuno.Interfaces;
+
+using ZooTech.Application.Common.Gateway.Caching;
+using ZooTech.Application.Common.Gateway.Parametrization;
+using ZooTech.Application.Modules.Module_Vacuno.Common;
+using ZooTech.Domain.Configuration;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
 
 public sealed class ListarVacunosInteractor : IListarVacunosInputPort
 {
-    private readonly IVacunoListadoReadRepository _repository;
+    private const int DefaultPage = 1;
+    private const int DefaultPageSize = 20;
+    private const int MaxPageSize = 100;
 
-    public ListarVacunosInteractor(IVacunoListadoReadRepository repository)
+    private readonly IVacunoRepository _vacunoRepository;
+    private readonly ITenantConfigurationProvider _tenantConfigurationProvider;
+    private readonly IAppCacheService _cache;
+
+    public ListarVacunosInteractor(
+        IVacunoRepository vacunoRepository, 
+        ITenantConfigurationProvider tenantConfigurationProvider,
+        IAppCacheService cache
+    )
     {
-        _repository = repository;
+        _vacunoRepository = vacunoRepository;
+        _tenantConfigurationProvider = tenantConfigurationProvider;
+        _cache = cache;
     }
 
-    public async Task<ListarVacunosOutput> HandleAsync(
-        ListarVacunosQuery? query = null,
-        CancellationToken cancellationToken = default)
+    public async Task<ListarVacunosOutput> HandleAsync(ListarVacunosCommand command, CancellationToken cancellationToken = default)
     {
-        var vacunos = await _repository.ListarAsync(
-            new VacunoListadoReadQuery(
-                Normalize(query?.Q),
-                NormalizeEstado(query?.Estado),
-                query?.FechaDesde,
-                query?.FechaHasta),
-            cancellationToken);
+        var fechaDesde = command.FechaDesde;
+        if (!fechaDesde.HasValue && !command.FechaHasta.HasValue)
+        {
+            var defaultFilterDays = await _tenantConfigurationProvider.GetSettingAsync(
+                Settings.Vacunos.VacunosDefaultFilterDays
+            );
 
-        var items = vacunos.Select(x => new VacunoItemDto(
-            Id: x.Id,
-            Codigo: x.Codigo,
-            Nombre: x.Nombre,
-            FechaNacimiento: x.FechaNacimiento,
-            FechaRegistro: x.FechaRegistro,
-            RazaCode: x.RazaCode,
-            SexoCode: x.SexoCode,
-            Procedencia: x.Procedencia,
-            IsDeleted: x.IsDeleted)).ToList();
+            fechaDesde = DateTime.UtcNow.AddDays(-defaultFilterDays);
+        }
 
-        return new ListarVacunosOutput(items);
-    }
+        var page = command.Page <= 0 ? DefaultPage : command.Page;
+        var pageSize = command.Limit <= 0 ? DefaultPageSize : Math.Min(command.Limit, MaxPageSize);
 
-    private static string? Normalize(string? value)
-    {
-        var normalized = value?.Trim();
-        return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
-    }
+        var cacheKey = VacunoCacheKeys.Listar(
+            command.Query,
+            fechaDesde,
+            command.FechaHasta,
+            command.Estado,
+            page,
+            pageSize);
 
-    private static string? NormalizeEstado(string? value)
-    {
-        var normalized = Normalize(value)?.ToLowerInvariant();
-        return normalized is "activo" or "eliminado" ? normalized : null;
+        return await _cache.GetOrCreateAsync(
+            cacheKey,
+            async () =>
+            {
+                var (items, totalCount) = await _vacunoRepository.GetPagedAsync(
+                    command.Query,
+                    fechaDesde,
+                    command.FechaHasta,
+                    command.Estado,
+                    page,
+                    pageSize,
+                    cancellationToken);
+
+                return new ListarVacunosOutput(items, totalCount);
+            });
     }
 }

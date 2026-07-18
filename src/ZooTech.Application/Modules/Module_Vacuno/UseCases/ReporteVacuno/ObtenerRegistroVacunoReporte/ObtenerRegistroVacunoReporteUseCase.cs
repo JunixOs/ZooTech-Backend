@@ -1,5 +1,6 @@
 using ZooTech.Application.Common.Exceptions;
-using ZooTech.Domain.Module_Vacuno.Interfaces;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
+using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte;
 
@@ -37,7 +38,11 @@ public sealed class ObtenerRegistroVacunoReporteUseCase : IObtenerRegistroVacuno
 
         if (domainEntity is null)
         {
-            throw new NotFoundException("No existe un vacuno con el ID enviado.");
+            throw new NotFoundException(
+                ScopeName.Application,
+                ModuleName.Vacuno,
+                "No existe un vacuno con el ID enviado."
+            );
         }
 
         var v = domainEntity;
@@ -68,13 +73,22 @@ public sealed class ObtenerRegistroVacunoReporteUseCase : IObtenerRegistroVacuno
 
         string? NormalizeCatalogValue(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim().ToLowerInvariant().Replace(' ', '_');
 
-        string? DeterminarEstado(string? estadoCode, string? estadoNombre)
+        string DeterminarEstado(string? estadoCode, string? estadoNombre)
         {
-            if (string.IsNullOrWhiteSpace(estadoCode)) return NormalizeCatalogValue(estadoNombre);
-            return estadoCode.ToUpperInvariant() switch {
-                "ACTIVO" or "VIVO" => "vivo",
-                "MUERTO" or "FALLECIDO" or "BAJA" => "muerto",
-                _ => NormalizeCatalogValue(estadoNombre)
+            var normalizedCode = estadoCode?.Trim().ToUpperInvariant();
+            if (normalizedCode is "SANO" or "ENFERMO" or "CUARENTENA" or "MUERTO")
+            {
+                return normalizedCode;
+            }
+
+            var normalizedName = estadoNombre?.Trim().ToUpperInvariant();
+            return normalizedName switch
+            {
+                "SANO" => "SANO",
+                "ENFERMO" => "ENFERMO",
+                "CUARENTENA" => "CUARENTENA",
+                "MUERTO" => "MUERTO",
+                _ => "SANO"
             };
         }
 

@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using ZooTech.Domain.Module_Vacuno.Entities;
-using ZooTech.Domain.Module_Vacuno.Interfaces;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Mappers;
 
@@ -10,9 +10,9 @@ public sealed class RegistroVacunoReadRepository : IRegistroVacunoReadRepository
 {
     private readonly GanaderiaDbContext _context;
 
-    public RegistroVacunoReadRepository(GanaderiaDbContext context)
+    public RegistroVacunoReadRepository(IGanaderiaDbContextFactory ganaderiaDbContextFactory)
     {
-        _context = context;
+        _context = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
     }
 
     public async Task<Vacuno?> ObtenerRegistroAsync(long vacunoId, CancellationToken cancellationToken = default)

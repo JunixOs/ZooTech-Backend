@@ -1,5 +1,6 @@
 using ZooTech.Application.Common.Exceptions;
-using ZooTech.Domain.Module_Fecundacion.Interfaces;
+using ZooTech.Domain.Ganaderia.Module_Fecundacion.Interfaces;
+using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Fecundacion.UseCases.GetFecundacionForEdit;
 
@@ -13,11 +14,15 @@ public sealed class GetFecundacionForEditInteractor : IGetFecundacionForEditInpu
     }
 
     public async Task<GetFecundacionForEditOutput> HandleAsync(
-        long id,
+        GetFecundacionForEditCommand cmd,
         CancellationToken cancellationToken = default)
     {
-        var data = await _repository.GetForEditAsync(id, cancellationToken)
-            ?? throw new NotFoundException($"No se encontró la fecundación con ID {id}.");
+        var data = await _repository.GetForEditAsync(cmd.Id, cancellationToken)
+            ?? throw new NotFoundException(
+                ScopeName.Application,
+                ModuleName.Fecundacion,
+                $"No se encontró la fecundación con ID {cmd.Id}."
+            );
 
         return new GetFecundacionForEditOutput(
             data.Id,

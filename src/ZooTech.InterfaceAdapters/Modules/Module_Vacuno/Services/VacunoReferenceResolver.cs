@@ -1,27 +1,25 @@
-using Microsoft.EntityFrameworkCore;
-using ZooTech.Infrastructure.Persistence.Context;
-using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Requests;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
+using ZooTech.Application.Modules.Module_Vacuno.Services;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Services;
 
 public sealed class VacunoReferenceResolver : IVacunoReferenceResolver
 {
-    private readonly GanaderiaDbContext _db;
+    private readonly IVacunoReferenceReadRepository _referenceReadRepository;
 
-    public VacunoReferenceResolver(GanaderiaDbContext db)
+    public VacunoReferenceResolver(IVacunoReferenceReadRepository referenceReadRepository)
     {
-        _db = db;
+        _referenceReadRepository = referenceReadRepository;
     }
 
-    public async Task<VacunoReferenceResolution> ResolveForCreateAsync(
-        CreateVacunoRequest request,
+    public async Task<VacunoReferenceResolution> ResolveAsync(
+        VacunoReferenceData referenceData,
         CancellationToken cancellationToken = default)
     {
-        var ownCodigo = request.Codigo.Trim();
         var kinship = await ResolveKinshipAsync(
-            request.CodigoPadre,
-            request.CodigoMadre,
-            ownCodigo,
+            referenceData.CodigoPadre,
+            referenceData.CodigoMadre,
+            referenceData.OwnCodigo,
             cancellationToken);
 
         if (kinship.Error is not null)
@@ -30,46 +28,9 @@ public sealed class VacunoReferenceResolver : IVacunoReferenceResolver
         }
 
         var granja = await ResolveGranjaAsync(
-            request.GranjaId,
-            request.Granja,
-            request.CodigoDistrito,
-            cancellationToken);
-
-        return BuildResolution(kinship.PadreId, kinship.MadreId, granja);
-    }
-
-    public async Task<VacunoReferenceResolution> ResolveForUpdateAsync(
-        long vacunoId,
-        UpdateVacunoRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        var existingVacuno = await _db.vacunos
-            .AsNoTracking()
-            .FirstOrDefaultAsync(v => v.id == vacunoId && v.deleted_at == null, cancellationToken);
-
-        if (existingVacuno is null)
-        {
-            return VacunoReferenceResolution.Fail(new VacunoReferenceError(
-                null,
-                "El vacuno no existe.",
-                VacunoReferenceErrorKind.NotFound));
-        }
-
-        var kinship = await ResolveKinshipAsync(
-            request.CodigoPadre,
-            request.CodigoMadre,
-            existingVacuno.codigo,
-            cancellationToken);
-
-        if (kinship.Error is not null)
-        {
-            return VacunoReferenceResolution.Fail(kinship.Error);
-        }
-
-        var granja = await ResolveGranjaAsync(
-            request.GranjaId,
-            request.Granja,
-            request.CodigoDistrito,
+            referenceData.GranjaId,
+            referenceData.GranjaNombre,
+            referenceData.CodigoDistrito,
             cancellationToken);
 
         return BuildResolution(kinship.PadreId, kinship.MadreId, granja);
@@ -97,9 +58,7 @@ public sealed class VacunoReferenceResolver : IVacunoReferenceResolver
         long? padreId = null;
         if (padreCode is not null)
         {
-            var padre = await _db.vacunos
-                .AsNoTracking()
-                .FirstOrDefaultAsync(v => v.codigo == padreCode && v.deleted_at == null, cancellationToken);
+            var padre = await _referenceReadRepository.GetActiveByCodigoAsync(padreCode, cancellationToken);
 
             if (padre is null)
             {
@@ -108,15 +67,13 @@ public sealed class VacunoReferenceResolver : IVacunoReferenceResolver
                     "El vacuno padre especificado no existe.");
             }
 
-            padreId = padre.id;
+            padreId = padre.Id;
         }
 
         long? madreId = null;
         if (madreCode is not null)
         {
-            var madre = await _db.vacunos
-                .AsNoTracking()
-                .FirstOrDefaultAsync(v => v.codigo == madreCode && v.deleted_at == null, cancellationToken);
+            var madre = await _referenceReadRepository.GetActiveByCodigoAsync(madreCode, cancellationToken);
 
             if (madre is null)
             {
@@ -125,7 +82,7 @@ public sealed class VacunoReferenceResolver : IVacunoReferenceResolver
                     "El vacuno madre especificado no existe.");
             }
 
-            madreId = madre.id;
+            madreId = madre.Id;
         }
 
         return KinshipResolution.Ok(padreId, madreId);
@@ -139,9 +96,9 @@ public sealed class VacunoReferenceResolver : IVacunoReferenceResolver
     {
         if (granjaId.HasValue && granjaId.Value > 0)
         {
-            var granjaExiste = await _db.granjas
-                .AsNoTracking()
-                .AnyAsync(g => g.id == granjaId.Value && g.activo, cancellationToken);
+            var granjaExiste = await _referenceReadRepository.ExistsActiveGranjaAsync(
+                granjaId.Value,
+                cancellationToken);
 
             return granjaExiste
                 ? GranjaResolution.Existing(granjaId.Value)
@@ -157,9 +114,7 @@ public sealed class VacunoReferenceResolver : IVacunoReferenceResolver
             return GranjaResolution.Existing(0);
         }
 
-        var distritoExists = await _db.geo_distritos
-            .AsNoTracking()
-            .AnyAsync(d => d.codigo == distrito, cancellationToken);
+        var distritoExists = await _referenceReadRepository.ExistsDistritoAsync(distrito, cancellationToken);
 
         if (!distritoExists)
         {
@@ -168,11 +123,10 @@ public sealed class VacunoReferenceResolver : IVacunoReferenceResolver
                 "El distrito especificado no es válido o no está registrado.");
         }
 
-        var granjaIdExistente = await _db.granjas
-            .AsNoTracking()
-            .Where(g => g.nombre == nombre && g.distrito_codigo == distrito)
-            .Select(g => (long?)g.id)
-            .FirstOrDefaultAsync(cancellationToken);
+        var granjaIdExistente = await _referenceReadRepository.FindGranjaIdAsync(
+            nombre,
+            distrito,
+            cancellationToken);
 
         return granjaIdExistente.HasValue
             ? GranjaResolution.Existing(granjaIdExistente.Value)

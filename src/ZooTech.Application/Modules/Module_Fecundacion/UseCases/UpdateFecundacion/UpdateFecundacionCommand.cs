@@ -1,3 +1,6 @@
+using ZooTech.Application.Common.Gateway.Auditing;
+using ZooTech.Domain.Shared.Enums;
+
 namespace ZooTech.Application.Modules.Module_Fecundacion.UseCases.UpdateFecundacion;
 
 public sealed record UpdateFecundacionCommand(
@@ -13,4 +16,9 @@ public sealed record UpdateFecundacionCommand(
     string EstadoFecundacionCode,
     string? ObservacionesVeterinarias,
     string? CodigoSemen,
-    string? CodigoEmbrion);
+    string? CodigoEmbrion) : IAuditableRequest
+{
+    public AuditEventType EventType => AuditEventType.Update;
+
+    public string Action => "Update fecundacion";
+}

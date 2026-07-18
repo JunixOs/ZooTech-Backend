@@ -1,59 +1,126 @@
-using System.Net;
-using System.Text.Json;
-using FluentValidation;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
+using ZooTech.Application.Common.Gateway.Auditing;
 using ZooTech.Application.Common.Exceptions;
-using ZooTech.InterfaceAdapters.DTOs;
+using ZooTech.Domain.Shared.Enums;
+using ZooTech.Domain.Shared.Exceptions;
+using ZooTech.InterfaceAdapters.Models;
+using ZooTech.InterfaceAdapters.Utils;
 
-namespace ZooTech.InterfaceAdapters.Middleware;
-
-public sealed class ExceptionHandlingMiddleware
+namespace ZooTech.InterfaceAdapters.Middleware
 {
-    private readonly RequestDelegate _next;
-
-    public ExceptionHandlingMiddleware(RequestDelegate next)
+    public class ExceptionHandlingMiddleware
     {
-        _next = next;
-    }
+        private readonly RequestDelegate _next;
+        private readonly ILogger<ExceptionHandlingMiddleware> _logger;
 
-    public async Task InvokeAsync(HttpContext context)
-    {
-        try
+        public ExceptionHandlingMiddleware(
+            RequestDelegate next, 
+            ILogger<ExceptionHandlingMiddleware> logger
+        )
         {
-            await _next(context);
+            _next = next;
+            _logger = logger;
         }
-        catch (ValidationException ex)
-        {
-            await WriteErrorAsync(context, HttpStatusCode.BadRequest,
-                string.Join(" | ", ex.Errors.Select(e => e.ErrorMessage)));
-        }
-        catch (NotFoundException ex)
-        {
-            await WriteErrorAsync(context, HttpStatusCode.NotFound, ex.Message);
-        }
-        catch (ConflictException ex)
-        {
-            await WriteErrorAsync(context, HttpStatusCode.Conflict, ex.Message);
-        }
-        catch (ArgumentException ex)
-        {
-            await WriteErrorAsync(context, HttpStatusCode.BadRequest, ex.Message);
-        }
-        catch (OperationCanceledException)
-        {
-            context.Response.StatusCode = 499;
-        }
-    }
 
-    private static async Task WriteErrorAsync(HttpContext context, HttpStatusCode status, string message)
-    {
-        context.Response.StatusCode = (int)status;
-        context.Response.ContentType = "application/json";
+        public async Task InvokeAsync(
+            HttpContext context,
+            IAppAuditService appAuditService
+        )
+        {
+            try
+            {
+                await _next(context);
+            }
+            catch (AppDomainException ex)
+            {
+                _logger.LogWarning(ex, "ZooTechException: {Code} - {Type} - {Message} - {Scope}", ex.ErrorCode.ToString(), ex.ErrorType.ToString(), ex.Message.ToString(), ex.ScopeName.ToString());
 
-        var body = JsonSerializer.Serialize(
-            GeneralResponseDTO<object>.Fail(message),
-            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+                var rootException = ex.GetBaseException();
+                
+                await appAuditService.AuditErrorAsync(
+                    new AuditErrorInfo
+                    {
+                        EventType = AuditEventType.ZooTechException,
+                        CustomMessage =  $"ZooTechException: {ex.ErrorCode} - {ex.ScopeName} - {ex.ErrorType} - {ex.Message}",
 
-        await context.Response.WriteAsync(body);
+                        Type = rootException.GetType().Name,
+                        Message = ExceptionExtensions.ToAuditMessage(rootException),
+                        Source = rootException.Source,
+                        Method = rootException.TargetSite?.Name,
+
+                        AppInformation = new ErrorAppInformation
+                        {
+                            ErrorCode = ex.ErrorCode,
+                            ScopeName = ex.ScopeName,
+                            ModuleName = ex.ModuleName,
+                            Details = ex.Details,
+                            CompleteErrorCode = ex.CompleteErrorCode
+                        },
+
+                        StackTrace = rootException.StackTrace
+                    }
+                );
+                
+                context.Response.ContentType = "application/json";
+
+                context.Response.StatusCode = (int)ToHttpStatusCode.Convert(ex.ErrorType);
+
+                var response = new ErrorResponseModel
+                {
+                    Error = new ErrorContent
+                    {
+                        ErrorCode = ex.CompleteErrorCode,
+                        Message = ex.Message,
+                        Details = ex.Details,
+                        FieldErrors = ex is IFieldValidationException validationException
+                            ? validationException.FieldErrors
+                                .Select(error => new FieldErrorContent(error.Field, error.Code, error.Message))
+                                .ToList()
+                            : []
+                    }
+                };
+
+                await context.Response.WriteAsJsonAsync(response);
+            }
+            catch (Exception ex)
+            {
+                var rootException = ex.GetBaseException();
+
+                _logger.LogError(rootException, "Unhandled exception");
+
+                await appAuditService.AuditErrorAsync(
+                    new AuditErrorInfo
+                    {
+                        EventType = AuditEventType.UnhandledException,
+                        CustomMessage =  "Unhandled exception",
+
+                        Type = rootException.GetType().Name,
+                        Message = ExceptionExtensions.ToAuditMessage(rootException),
+                        Source = rootException.Source,
+                        Method = rootException.TargetSite?.Name,
+
+                        StackTrace = rootException.StackTrace
+                    }
+                );
+
+                context.Response.ContentType = "application/json";
+                context.Response.StatusCode = 500;
+
+                var response = new ErrorResponseModel
+                {
+                    Error = new ErrorContent
+                    {
+                        ErrorCode = "INTERNAL_SERVER_ERROR",
+                        Message = "Ocurrio un error interno",
+                        Details = []
+                    }
+                };
+
+                await context.Response.WriteAsJsonAsync(response);
+            }
+        }
+
+
     }
 }

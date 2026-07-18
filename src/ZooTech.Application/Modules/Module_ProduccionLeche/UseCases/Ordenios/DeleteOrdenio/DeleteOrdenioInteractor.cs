@@ -1,25 +1,28 @@
-using FluentValidation;
 using ZooTech.Application.Common.Exceptions;
-using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
+using ZooTech.Application.Common.Models;
+using ZooTech.Domain.Shared.Enums;
+using ZooTech.Domain.Shared.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.DeleteOrdenio;
 
 public sealed class DeleteOrdenioInteractor : IDeleteOrdenioInputPort
 {
-    private readonly IOrdenioRepository _repository;
-    private readonly IValidator<DeleteOrdenioCommand> _validator;
+    private readonly IGanaderiaUnitOfWork _unitOfWork;
 
-    public DeleteOrdenioInteractor(IOrdenioRepository repository, IValidator<DeleteOrdenioCommand> validator)
+    public DeleteOrdenioInteractor(IGanaderiaUnitOfWork unitOfWork)
     {
-        _repository = repository;
-        _validator = validator;
+        _unitOfWork = unitOfWork;
     }
 
-    public async Task HandleAsync(long id, DeleteOrdenioCommand command, CancellationToken cancellationToken)
+    public async Task<EmptyOutput> Handle(DeleteOrdenioCommand command, CancellationToken cancellationToken)
     {
-        await _validator.ValidateAndThrowAsync(command, cancellationToken);
-        var existing = await _repository.GetByIdAsync(id, cancellationToken)
-            ?? throw new NotFoundException("No se encontró el ordeño solicitado.");
+        var repository = _unitOfWork.Ordenios;
+        var existing = await repository.GetByIdAsync(command.Id, cancellationToken)
+            ?? throw new NotFoundException(
+                ScopeName.Application,
+                ModuleName.Produccion_Leche,
+                "No se encontró el ordeño solicitado."
+            );
 
         try
         {
@@ -27,9 +30,17 @@ public sealed class DeleteOrdenioInteractor : IDeleteOrdenioInputPort
         }
         catch (ArgumentException ex)
         {
-            throw new ConflictException(ex.Message);
+            throw new ConflictException(
+                ScopeName.Application,
+                ModuleName.Produccion_Leche,
+                message: ex.Message
+            );
         }
 
-        _ = await _repository.UpdateAsync(existing, cancellationToken);
+        _ = await _unitOfWork.ExecuteInTransactionAsync(
+            ct => repository.UpdateAsync(existing, ct),
+            cancellationToken);
+
+        return EmptyOutput.Value;
     }
 }

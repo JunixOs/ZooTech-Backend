@@ -1,5 +1,5 @@
-using FluentValidation;
 using ZooTech.Application.Common.Exceptions;
+using ZooTech.Application.UnitTests.Modules.Module_ProduccionLeche.UseCases;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.CreateOrdenio;
 using ZooTech.Domain.Module_ProduccionLeche.Entities;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
@@ -18,19 +18,20 @@ public class CreateOrdenioInteractorTests
             ExistsUsuarioResult = true,
             ExistsEstadoResult = true
         };
-        var validator = new InlineValidator<CreateOrdenioCommand>();
-        var interactor = new CreateOrdenioInteractor(repository, validator);
+        var interactor = new CreateOrdenioInteractor(new FakeGanaderiaUnitOfWork(repository));
 
-        var command = new CreateOrdenioCommand(
-            Codigo: "ORD-001",
-            FechaHora: DateTime.UtcNow,
-            VacunoId: 1,
-            EncargadoUsuarioId: 2,
-            Litros: 10,
-            EstadoOrdenioCode: "ACTIVO",
-            Observaciones: null);
+        var command = new CreateOrdenioCommand
+        {
+            Codigo = "ORD-001",
+            FechaHora = DateTime.UtcNow,
+            VacunoId = 1,
+            EncargadoUsuarioId = 2,
+            Litros = 10,
+            EstadoOrdenioCode = "ACTIVO",
+            Observaciones = null
+        };
 
-        var action = () => interactor.HandleAsync(command, CancellationToken.None);
+        var action = () => interactor.Handle(command, CancellationToken.None);
 
         await Assert.ThrowsAsync<ConflictException>(action);
     }
@@ -52,6 +53,9 @@ public class CreateOrdenioInteractorTests
         public Task<bool> ExistsVacunoAsync(long vacunoId, CancellationToken cancellationToken)
             => Task.FromResult(ExistsVacunoResult);
 
+        public Task<bool> HasActiveRecordsByVacunoAsync(long vacunoId, CancellationToken cancellationToken)
+            => Task.FromResult(false);
+
         public Task<bool> ExistsUsuarioAsync(long usuarioId, CancellationToken cancellationToken)
             => Task.FromResult(ExistsUsuarioResult);
 
@@ -61,7 +65,10 @@ public class CreateOrdenioInteractorTests
         public Task<Ordenio?> GetByIdAsync(long id, CancellationToken cancellationToken)
             => Task.FromResult<Ordenio?>(null);
 
-        public Task<(IReadOnlyList<Ordenio> Items, int TotalCount)> ListAsync(
+        public Task<Ordenio?> GetByCodigoAsync(string codigo, CancellationToken cancellationToken)
+            => Task.FromResult<Ordenio?>(null);
+
+        public Task<(IReadOnlyList<OrdenioList> Items, int TotalCount)> ListAsync(
             long? vacunoId,
             string? estadoOrdenioCode,
             DateTime? fechaDesde,
@@ -69,7 +76,15 @@ public class CreateOrdenioInteractorTests
             int page,
             int pageSize,
             CancellationToken cancellationToken)
-            => Task.FromResult<(IReadOnlyList<Ordenio> Items, int TotalCount)>((Array.Empty<Ordenio>(), 0));
+            => Task.FromResult<(IReadOnlyList<OrdenioList> Items, int TotalCount)>((Array.Empty<OrdenioList>(), 0));
+
+        public Task<IReadOnlyList<OrdenioList>> ListReportAsync(
+            long? vacunoId,
+            string? estadoOrdenioCode,
+            DateTime? fechaDesde,
+            DateTime? fechaHasta,
+            CancellationToken cancellationToken)
+            => Task.FromResult<IReadOnlyList<OrdenioList>>(Array.Empty<OrdenioList>());
 
         public Task<Ordenio> AddAsync(Ordenio ordenio, CancellationToken cancellationToken)
             => Task.FromResult(ordenio);

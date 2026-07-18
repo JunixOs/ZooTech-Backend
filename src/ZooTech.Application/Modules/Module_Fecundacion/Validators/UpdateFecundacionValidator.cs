@@ -1,62 +1,112 @@
-using FluentValidation;
+using ZooTech.Application.Common.Validator;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.UpdateFecundacion;
-using ZooTech.Domain.Module_Fecundacion.Rules;
+using ZooTech.Domain.Ganaderia.Module_Fecundacion.Rules;
+using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Fecundacion.Validators;
 
-public sealed class UpdateFecundacionValidator : AbstractValidator<UpdateFecundacionCommand>
+public sealed class UpdateFecundacionValidator : ICommandValidator<UpdateFecundacionCommand>
 {
-    public UpdateFecundacionValidator()
+    public ModuleName ModuleName => ModuleName.Fecundacion;
+    
+    public List<string> Validate(UpdateFecundacionCommand request)
     {
-        RuleFor(command => command.Id).GreaterThan(0);
-        RuleFor(command => command.TipoFecundacionCode).NotEmpty().MaximumLength(40);
-        RuleFor(command => command.VacunoReceptorId).GreaterThan(0);
-        RuleFor(command => command.FechaProcedimiento)
-            .LessThanOrEqualTo(DateOnly.FromDateTime(DateTime.Today))
-            .WithMessage("La fecha del procedimiento no puede ser futura.");
-        RuleFor(command => command.ResponsableNombre).NotEmpty().MaximumLength(100);
-        RuleFor(command => command.ResultadoCode).NotEmpty().MaximumLength(30);
-        RuleFor(command => command.EstadoFecundacionCode).NotEmpty().MaximumLength(30);
-        RuleFor(command => command.ObservacionesVeterinarias).MaximumLength(250);
+        var errors = new List<string>();
 
-        RuleFor(command => command.TipoDonante)
-            .NotEmpty()
-            .Must(tipo => IsDonante(tipo, FecundacionRules.TipoDonanteInterno) || IsDonante(tipo, FecundacionRules.TipoDonanteExterno))
-            .WithMessage("El tipo de donante debe ser INTERNO o EXTERNO.");
-
-        When(command => IsDonante(command.TipoDonante, FecundacionRules.TipoDonanteInterno), () =>
+        if (request.Id <= 0)
         {
-            RuleFor(command => command.VacunoDonanteId)
-                .NotNull()
-                .GreaterThan(0)
-                .WithMessage("Debe seleccionar un donante interno.");
-        });
+            errors.Add("FECUNDACION-FECUNDACION-UPDATE-ID-INVALID");
+        }
 
-        When(command => IsDonante(command.TipoDonante, FecundacionRules.TipoDonanteExterno), () =>
+        if (string.IsNullOrWhiteSpace(request.TipoFecundacionCode))
         {
-            RuleFor(command => command.ExternoDonanteNombre)
-                .NotEmpty()
-                .MaximumLength(100)
-                .WithMessage("Debe ingresar el nombre del donante externo.");
-        });
+            errors.Add("FECUNDACION-FECUNDACION-UPDATE-TIPO_FECUNDACION_CODE-NULL");
+        }
+        else if (request.TipoFecundacionCode.Length > 40)
+        {
+            errors.Add("FECUNDACION-FECUNDACION-UPDATE-TIPO_FECUNDACION_CODE-INVALID");
+        }
 
-        When(command => FecundacionRules.EsInseminacionArtificial(command.TipoFecundacionCode), () =>
+        if (request.VacunoReceptorId <= 0)
         {
-            RuleFor(command => command.CodigoSemen)
-                .NotEmpty()
-                .MaximumLength(30)
-                .WithMessage("El código de semen es obligatorio para inseminación artificial.");
-        });
+            errors.Add("FECUNDACION-FECUNDACION-UPDATE-VACUNO_RECEPTOR_ID-INVALID");
+        }
 
-        When(command => FecundacionRules.EsTransferenciaEmbriones(command.TipoFecundacionCode), () =>
+        if (request.FechaProcedimiento > DateOnly.FromDateTime(DateTime.Today))
         {
-            RuleFor(command => command.CodigoEmbrion)
-                .NotEmpty()
-                .MaximumLength(30)
-                .WithMessage("El código de embrión es obligatorio para transferencia de embriones.");
-        });
+            errors.Add("FECUNDACION-FECUNDACION-UPDATE-FECHA_PROCEDIMIENTO-INVALID");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.ResponsableNombre))
+        {
+            errors.Add("FECUNDACION-FECUNDACION-UPDATE-RESPONSABLE_NOMBRE-NULL");
+        }
+        else if (request.ResponsableNombre.Length > 100)
+        {
+            errors.Add("FECUNDACION-FECUNDACION-UPDATE-RESPONSABLE_NOMBRE-INVALID");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.ResultadoCode))
+        {
+            errors.Add("FECUNDACION-FECUNDACION-UPDATE-RESULTADO_CODE-NULL");
+        }
+        else if (request.ResultadoCode.Length > 30)
+        {
+            errors.Add("FECUNDACION-FECUNDACION-UPDATE-RESULTADO_CODE-INVALID");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.EstadoFecundacionCode))
+        {
+            errors.Add("FECUNDACION-FECUNDACION-UPDATE-ESTADO_FECUNDACION_CODE-NULL");
+        }
+        else if (request.EstadoFecundacionCode.Length > 30)
+        {
+            errors.Add("FECUNDACION-FECUNDACION-UPDATE-ESTADO_FECUNDACION_CODE-INVALID");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.ObservacionesVeterinarias) &&
+            request.ObservacionesVeterinarias.Length > 250)
+        {
+            errors.Add("FECUNDACION-FECUNDACION-UPDATE-OBSERVACIONES_VETERINARIAS-INVALID");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.TipoDonante))
+        {
+            errors.Add("FECUNDACION-FECUNDACION-UPDATE-TIPO_DONANTE-NULL");
+        }
+        else if (!string.Equals(request.TipoDonante, FecundacionRules.TipoDonanteInterno, StringComparison.OrdinalIgnoreCase) &&
+                 !string.Equals(request.TipoDonante, FecundacionRules.TipoDonanteExterno, StringComparison.OrdinalIgnoreCase))
+        {
+            errors.Add("FECUNDACION-FECUNDACION-UPDATE-TIPO_DONANTE-INVALID");
+        }
+
+        if (string.Equals(request.TipoDonante, FecundacionRules.TipoDonanteInterno, StringComparison.OrdinalIgnoreCase))
+        {
+            if (!request.VacunoDonanteId.HasValue)
+            {
+                errors.Add("FECUNDACION-FECUNDACION-UPDATE-VACUNO_DONANTE_ID-NULL");
+            }
+            else if (request.VacunoDonanteId.Value <= 0)
+            {
+                errors.Add("FECUNDACION-FECUNDACION-UPDATE-VACUNO_DONANTE_ID-INVALID");
+            }
+        }
+
+        if (string.Equals(request.TipoDonante, FecundacionRules.TipoDonanteExterno, StringComparison.OrdinalIgnoreCase))
+        {
+            if (string.IsNullOrWhiteSpace(request.ExternoDonanteNombre))
+            {
+                errors.Add("FECUNDACION-FECUNDACION-UPDATE-EXTERNO_DONANTE_NOMBRE-NULL");
+            }
+            else if (request.ExternoDonanteNombre.Length > 100)
+            {
+                errors.Add("FECUNDACION-FECUNDACION-UPDATE-EXTERNO_DONANTE_NOMBRE-INVALID");
+            }
+        }
+
+        FecundacionCommonValidationRules.ValidateCodigoSemenAndEmbrion(
+            errors, "UPDATE", request.TipoFecundacionCode, request.CodigoSemen, request.CodigoEmbrion);
+
+        return errors;
     }
-
-    private static bool IsDonante(string? value, string expected)
-        => string.Equals(value, expected, StringComparison.OrdinalIgnoreCase);
 }

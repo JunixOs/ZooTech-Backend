@@ -15,4 +15,7 @@ public sealed record UpdateVacunoRequest(
     string? Departamento,
     string? Provincia,
     string? CodigoDistrito,
+    decimal? PrecioCompra,
+    string? AptoPara,
+    DateOnly? FechaEspecificacion,
     string? Observaciones);

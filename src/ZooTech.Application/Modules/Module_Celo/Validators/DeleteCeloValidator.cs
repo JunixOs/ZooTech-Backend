@@ -1,17 +1,32 @@
-using FluentValidation;
+using ZooTech.Application.Common.Validator;
 using ZooTech.Application.Modules.Module_Celo.UseCases.DeleteCelo;
+using ZooTech.Domain.Shared.Enums;
 
-namespace ZooTech.Application.Modules.Module_Celo.Validators;
-
-internal sealed class DeleteCeloValidator : AbstractValidator<DeleteCeloCommand>
+namespace ZooTech.Application.Modules.Module_Celo.Validators
 {
-    public DeleteCeloValidator()
+    public class DeleteCeloValidator : ICommandValidator<DeleteCeloCommand>
     {
-        RuleFor(x => x.Id)
-            .GreaterThan(0).WithMessage("El ID del celo debe ser mayor que cero.");
+        public ModuleName ModuleName => ModuleName.Celo;
 
-        RuleFor(x => x.MotivoEliminacion)
-            .NotEmpty().WithMessage("El motivo de eliminación es obligatorio.")
-            .MaximumLength(500).WithMessage("El motivo no puede superar los 500 caracteres.");
+        public List<string> Validate(DeleteCeloCommand request)
+        {
+            var errors = new List<string>();
+
+            if (request.Id <= 0)
+            {
+                errors.Add("CELO-CELO-DELETE-ID-INVALID");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.MotivoEliminacion))
+            {
+                errors.Add("CELO-CELO-DELETE-MOTIVO_ELIMINACION-NULL");
+            }
+            else if (request.MotivoEliminacion.Length > 500)
+            {
+                errors.Add("CELO-CELO-DELETE-MOTIVO_ELIMINACION-INVALID");
+            }
+
+            return errors;
+        }
     }
 }

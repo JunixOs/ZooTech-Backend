@@ -1,20 +1,28 @@
+using Microsoft.EntityFrameworkCore;
 using ZooTech.Application;
 using ZooTech.Infrastructure;
 using ZooTech.InterfaceAdapters;
-using ZooTech.InterfaceAdapters.Controllers;
+using ZooTech.InterfaceAdapters.Modules.Shared.Controllers;
 using ZooTech.InterfaceAdapters.Middleware;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.Controllers;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Controllers;
+using ZooTech.Infrastructure.Persistence.Context;
+using ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers;
+using QuestPDF.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// ======= Configuracion Controllers =======
 builder.Services
     .AddControllers()
     .AddApplicationPart(typeof(HomeController).Assembly)
     .AddApplicationPart(typeof(CeloController).Assembly)
     .AddApplicationPart(typeof(VacunoController).Assembly)
-    .AddApplicationPart(typeof(ProduccionLecheController).Assembly);
+    .AddApplicationPart(typeof(ProduccionLecheController).Assembly)
+    .AddApplicationPart(typeof(TenancingController).Assembly);
 
+// ======= Configuracion Swagger =======
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen(options =>
@@ -38,29 +46,85 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-builder.Services
-    .AddApplication()
-    .AddInfrastructure(builder.Configuration)
-    .AddInterfaceAdapters();
-var frontendPort = builder.Configuration["Frontend:FrontendPort"];
-var frontendIP = builder.Configuration["Frontend:FrontendIP"];
-var frontendProtocol = builder.Configuration["Frontend:FrontendProtocol"];
+// ======= Configuracion Capas =======
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddInterfaceAdapters();
+
+// ======= Configuracion Context BD Tenant Principal =======
+builder.Services.AddDbContext<TenantCatalogDb>(options =>
+{
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("TenantCatalogConnection"));
+});
+
+// ======= Configuracion DI =======
+builder.Services.AddMemoryCache();
+
+// ======= Configuracion CORS =======
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        var frontendPort = builder.Configuration["Frontend:FrontendPort"];
-        var frontendIP = builder.Configuration["Frontend:FrontendIP"];
-        var frontendProtocol = builder.Configuration["Frontend:FrontendProtocol"];
+        policy
+            .SetIsOriginAllowed(origin =>
+            {
+                if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+                    return false;
 
-        policy.WithOrigins($"{frontendProtocol}://{frontendIP}:{frontendPort}")
+                // Produccion: permite zentrycorp.dev y todos sus subdominios
+                var isZentryDomain =
+                    uri.Scheme == "https" &&
+                    (
+                        uri.Host == "zentrycorp.dev" ||
+                        uri.Host.EndsWith(".zentrycorp.dev")
+                    );
+
+                // Desarrollo local por tenant: admin.zentrycorp.local:4200, zootecniaunas.zentrycorp.local:4200, etc.
+                var isLocal =
+                    uri.Scheme == "http" &&
+                    uri.Port == 4200 &&
+                    (
+                        uri.Host == "localhost" ||
+                        uri.Host == "127.0.0.1" ||
+                        uri.Host == "admin.zentrycorp.local" ||
+                        uri.Host == "zootecniaunas.zentrycorp.local" ||
+                        uri.Host == "elroble.zentrycorp.local" ||
+                        uri.Host == "lacteosdelvalle.zentrycorp.local" ||
+                        uri.Host == "losandes.zentrycorp.local"
+                    );
+
+                return isZentryDomain || isLocal;
+            })
             .AllowAnyHeader()
-            .AllowAnyMethod();
+            .AllowAnyMethod()
+            .WithExposedHeaders(
+                "X-Tenant-Id",
+                "X-Tenant-Name",
+                "X-Tenant-Legal-Name",
+                "X-Tenant-Type"
+            );
     });
 });
 
+QuestPDF.Settings.License = LicenseType.Community;
+
 var app = builder.Build();
 
+// ======= Middleware global de errores =======
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+// ======= HTTPS =======
+app.UseHttpsRedirection();
+
+// ======= Routing =======
+app.UseRouting();
+
+// ======= CORS =======
+// IMPORTANTE: debe ir antes de TenantResolution, Authentication y Authorization.
+app.UseCors("AllowFrontend");
+
+// ======= Swagger =======
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -81,44 +145,17 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseMiddleware<ExceptionHandlingMiddleware>();
+// ======= Tenant Middleware =======
+app.UseMiddleware<TenantResolutionMiddleware>();
 
-var storagePath = Path.Combine(AppContext.BaseDirectory, "storage");
-if (!Directory.Exists(storagePath))
-{
-    Directory.CreateDirectory(storagePath);
-}
-
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(storagePath),
-    RequestPath = "/api/v1/storage"
-});
-
-app.UseHttpsRedirection();
-app.UseCors("AllowFrontend");
-
-
-// Middleware: Resolución de Tenant desde header X-Tenant-Id
-// El TenantContext ya lee el header internamente vía IHttpContextAccessor,
-// pero este log ayuda a diagnosticar qué tenant se está usando.
-app.Use(async (context, next) =>
-{
-    var logger = context.RequestServices.GetRequiredService<ILoggerFactory>()
-        .CreateLogger("TenantMiddleware");
-
-    if (context.Request.Headers.TryGetValue("X-Tenant-Id", out var tenantHeader))
-    {
-        logger.LogInformation("Tenant recibido por header: {TenantId}", tenantHeader.ToString());
-    }
-    else
-    {
-        logger.LogInformation("Sin header X-Tenant-Id, usando DefaultTenantId del appsettings");
-    }
-
-    await next();
-});
+// ======= JWT =======
+app.UseAuthentication();
 app.UseAuthorization();
+
+
+// ======= Controllers =======
 app.MapControllers();
 
 app.Run();
+
+public partial class Program { }

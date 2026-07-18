@@ -2,5 +2,5 @@ namespace ZooTech.Application.Modules.Module_Sanidad.UseCases.GetHistorialByVacu
 
 public interface IGetHistorialByVacunoIdInputPort
 {
-    Task<GetHistorialByVacunoIdOutput> HandleAsync(long vacunoId, CancellationToken cancellationToken = default);
+    Task<GetHistorialByVacunoIdOutput> Handle(GetHistorialByVacunoIdCommand cmd, CancellationToken cancellationToken = default);
 }

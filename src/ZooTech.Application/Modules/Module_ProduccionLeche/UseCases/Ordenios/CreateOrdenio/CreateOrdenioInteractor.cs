@@ -1,40 +1,56 @@
-using FluentValidation;
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Common;
 using ZooTech.Domain.Module_ProduccionLeche.Entities;
-using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
+using ZooTech.Domain.Shared.Enums;
+using ZooTech.Domain.Shared.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.CreateOrdenio;
 
 public sealed class CreateOrdenioInteractor : ICreateOrdenioInputPort
 {
-    private readonly IOrdenioRepository _repository;
-    private readonly IValidator<CreateOrdenioCommand> _validator;
+    private readonly IGanaderiaUnitOfWork _unitOfWork;
 
-    public CreateOrdenioInteractor(IOrdenioRepository repository, IValidator<CreateOrdenioCommand> validator)
+    public CreateOrdenioInteractor(IGanaderiaUnitOfWork unitOfWork)
     {
-        _repository = repository;
-        _validator = validator;
+        _unitOfWork = unitOfWork;
     }
 
-    public async Task<CreateOrdenioOutput> HandleAsync(CreateOrdenioCommand command, CancellationToken cancellationToken)
+    public async Task<CreateOrdenioOutput> Handle(
+        CreateOrdenioCommand command, 
+        CancellationToken cancellationToken
+    )
     {
-        await _validator.ValidateAndThrowAsync(command, cancellationToken);
+        var repository = _unitOfWork.Ordenios;
+
         await OrdenioReferenceValidator.EnsureReferencesExistAsync(
-            _repository,
+            repository,
             command.VacunoId,
             command.EncargadoUsuarioId,
             command.EstadoOrdenioCode,
             cancellationToken);
 
-        if (await _repository.ExistsCodigoAsync(command.Codigo, cancellationToken))
+        if (await repository.ExistsCodigoAsync(command.Codigo, cancellationToken))
         {
-            throw new ConflictException("Ya existe un ordeño con el mismo código.");
+            throw new ConflictException(
+                ScopeName.Application,
+                ModuleName.Produccion_Leche,
+                new List<string>
+                {
+                    "ORDENIO-ORDENIO-CODE-ALREADY_EXISTS"
+                }
+            );
         }
 
-        if (await _repository.ExistsVacunoFechaAsync(command.VacunoId, command.FechaHora, null, cancellationToken))
+        if (await repository.ExistsVacunoFechaAsync(command.VacunoId, command.FechaHora, null, cancellationToken))
         {
-            throw new ConflictException("Ya existe un ordeño para el mismo vacuno en la misma fecha y hora.");
+            throw new ConflictException(
+                ScopeName.Application,
+                ModuleName.Produccion_Leche,
+                new List<string>
+                {
+                    "ORDENIO-ORDENIO-DATE-ALREADY_EXISTS"
+                }
+            );
         }
 
         Ordenio ordenio;
@@ -53,10 +69,18 @@ public sealed class CreateOrdenioInteractor : ICreateOrdenioInputPort
         }
         catch (ArgumentException ex)
         {
-            throw new ConflictException(ex.Message);
+            throw new ConflictException(
+                ScopeName.Application,
+                ModuleName.Produccion_Leche,
+                message: ex.Message
+            );
         }
 
-        var saved = await _repository.AddAsync(ordenio, cancellationToken);
+        var saved = await _unitOfWork.ExecuteInTransactionAsync(
+            ct => repository.AddAsync(ordenio, ct),
+            cancellationToken,
+            async (_, ct) => await repository.GetByCodigoAsync(command.Codigo, ct)
+                ?? throw new InvalidOperationException("No se pudo recuperar el ordeño creado."));
         return new CreateOrdenioOutput(OrdenioMapper.ToOutput(saved));
     }
 }

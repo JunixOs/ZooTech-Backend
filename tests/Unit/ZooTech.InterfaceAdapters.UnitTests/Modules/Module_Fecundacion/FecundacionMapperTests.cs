@@ -1,6 +1,6 @@
 using System.Text.Json;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.GetFecundacionForEdit;
-using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.DTOs.Requests;
+using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.Mappers;
 
 namespace ZooTech.InterfaceAdapters.UnitTests.Modules.Module_Fecundacion;

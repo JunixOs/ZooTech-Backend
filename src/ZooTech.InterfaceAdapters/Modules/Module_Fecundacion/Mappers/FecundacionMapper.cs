@@ -1,15 +1,59 @@
+﻿using System.Text.Json;
+using ZooTech.Application.Modules.Module_Fecundacion.UseCases.CreateFecundacion;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.GetFecundacionForEdit;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.GetFecundacionOptions;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.SearchFecundacionVacunos;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.UpdateFecundacion;
-using ZooTech.Domain.Module_Fecundacion.Rules;
-using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.DTOs.Requests;
+using ZooTech.Domain.Ganaderia.Module_Fecundacion.Entities;
+using ZooTech.Domain.Ganaderia.Module_Fecundacion.Rules;
+using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.DTOs.Responses;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.Mappers;
 
 public static class FecundacionMapper
 {
+    // ===== TUYO — sin cambios =====
+    public static CreateFecundacionCommand ToCommand(CreateFecundacionRequest request, long? actorUsuarioId = null)
+    {
+        var isExternal = request.MachoExterno;
+        var donorId = !isExternal ? ReadDonorId(request.MachoODonante) : null;
+        var donorName = isExternal ? ReadDonorName(request.MachoODonante) : null;
+
+        return new CreateFecundacionCommand(
+            ToInternalTipo(request.TipoFecundacion) ?? string.Empty,
+            request.VacunoReceptorId,
+            null,
+            request.FechaProcedimiento.ToDateTime(TimeOnly.MinValue),
+            request.Responsable,
+            ToInternalResultado(request.Resultado) ?? string.Empty,
+            request.Observaciones,
+            request.MachoExterno,
+            donorName,
+            donorId,
+            actorUsuarioId,
+            request.CodigoSemen,
+            request.CodigoEmbrion);
+    }
+
+    public static CreateFecundacionResponse ToResponse(CreateFecundacionOutput output)
+        => new(
+            Id: output.Id,
+            Codigo: output.Codigo,
+            FechaProcedimiento: output.FechaProcedimiento);
+
+    public static FecundacionItemResponse ToListItemResponse(FecundacionListItem item)
+        => new(
+            Id: item.Id,
+            CodigoFecundacion: item.Codigo,
+            FechaProcedimiento: item.FechaProcedimiento,
+            NombreVacunoReceptor: item.VacunoReceptor,
+            Responsable: item.Responsable,
+            TipoFecundacion: item.Tipo,
+            CodigoResultado: item.Resultado,
+            NombreDonante: item.NombreDonante ?? "Sin Donante Registrado");
+
+    // ===== DE ÉL — aditivo =====
     public static UpdateFecundacionCommand ToCommand(
         UpdateFecundacionRequest request,
         GetFecundacionForEditOutput current,
@@ -33,22 +77,6 @@ public static class FecundacionMapper
             request.CodigoSemen ?? current.CodigoSemen,
             request.CodigoEmbrion ?? current.CodigoEmbrion);
     }
-
-    public static UpdateFecundacionCommand ToCommand(UpdateFecundacionRequest request, long id)
-        => new(
-            id,
-            ToInternalTipo(request.TipoFecundacion) ?? string.Empty,
-            request.VacunoReceptorId ?? 0,
-            request.MachoExterno == true ? FecundacionRules.TipoDonanteExterno : FecundacionRules.TipoDonanteInterno,
-            request.MachoExterno == true ? null : ReadDonorId(request),
-            request.MachoExterno == true ? ReadDonorName(request) : null,
-            request.FechaProcedimiento ?? default,
-            request.Responsable ?? string.Empty,
-            ToInternalResultado(request.Resultado) ?? string.Empty,
-            ToInternalEstado(request.EstadoFecundacion) ?? "PENDIENTE",
-            request.Observaciones,
-            request.CodigoSemen,
-            request.CodigoEmbrion);
 
     public static FecundacionEditResponse ToResponse(GetFecundacionForEditOutput output)
         => new(
@@ -154,31 +182,18 @@ public static class FecundacionMapper
                 _ => code.Trim().ToUpperInvariant()
             };
 
-    private static FecundacionOptionResponse ToResponse(
-        FecundacionOptionOutput output,
-        Func<string, string> codeMapper)
+    private static FecundacionOptionResponse ToResponse(FecundacionOptionOutput output, Func<string, string> codeMapper)
         => new(codeMapper(output.Code), output.Nombre, output.Descripcion);
 
-    private static object ToMachoODonante(
-        string tipoDonante,
-        long? vacunoDonanteId,
-        string? vacunoDonanteCodigo,
-        string? vacunoDonanteNombre,
-        string? externoDonanteNombre)
+    private static object ToMachoODonante(string tipoDonante, long? vacunoDonanteId, string? vacunoDonanteCodigo, string? vacunoDonanteNombre, string? externoDonanteNombre)
     {
         if (IsExternal(tipoDonante))
             return externoDonanteNombre ?? string.Empty;
 
-        return new VacunoResumenResponse(
-            vacunoDonanteId ?? 0,
-            vacunoDonanteCodigo ?? string.Empty,
-            vacunoDonanteNombre ?? string.Empty);
+        return new VacunoResumenResponse(vacunoDonanteId ?? 0, vacunoDonanteCodigo ?? string.Empty, vacunoDonanteNombre ?? string.Empty);
     }
 
-    private static DonorValues ResolveDonor(
-        UpdateFecundacionRequest request,
-        GetFecundacionForEditOutput current,
-        bool isExternal)
+    private static DonorValues ResolveDonor(UpdateFecundacionRequest request, GetFecundacionForEditOutput current, bool isExternal)
     {
         if (request.MachoODonante is null)
         {
@@ -188,34 +203,28 @@ public static class FecundacionMapper
         }
 
         return isExternal
-            ? new DonorValues(null, ReadDonorName(request))
-            : new DonorValues(ReadDonorId(request), null);
+            ? new DonorValues(null, ReadDonorName(request.MachoODonante))
+            : new DonorValues(ReadDonorId(request.MachoODonante), null);
     }
 
-    private static long? ReadDonorId(UpdateFecundacionRequest request)
+    private static long? ReadDonorId(JsonElement? value)
     {
-        if (request.MachoODonante is not { } value)
-            return null;
-
-        if (value.ValueKind == System.Text.Json.JsonValueKind.Number &&
-            value.TryGetInt64(out var id))
-        {
-            return id;
-        }
-
+        if (value is not { } val) return null;
+        if (val.ValueKind == JsonValueKind.Number && val.TryGetInt64(out var id)) return id;
+        if (val.ValueKind == JsonValueKind.String && long.TryParse(val.GetString(), out var idParsed)) return idParsed;
         throw new ArgumentException("machoODonante debe ser numérico cuando machoExterno es false.");
     }
 
-    private static string? ReadDonorName(UpdateFecundacionRequest request)
+    private static string? ReadDonorName(JsonElement? value)
     {
-        if (request.MachoODonante is not { } value)
-            return null;
-
-        if (value.ValueKind == System.Text.Json.JsonValueKind.String)
-            return value.GetString();
-
+        if (value is not { } val) return null;
+        if (val.ValueKind == JsonValueKind.String) return val.GetString();
+        if (val.ValueKind == JsonValueKind.Number) return val.GetInt64().ToString();
         throw new ArgumentException("machoODonante debe ser texto cuando machoExterno es true.");
     }
+
+    private static long? ReadDonorId(JsonElement value) => ReadDonorId((JsonElement?)value);
+    private static string? ReadDonorName(JsonElement value) => ReadDonorName((JsonElement?)value);
 
     private static bool IsExternal(string tipoDonante)
         => string.Equals(tipoDonante, FecundacionRules.TipoDonanteExterno, StringComparison.OrdinalIgnoreCase);

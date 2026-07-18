@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using ZooTech.Domain.Module_Vacuno.Interfaces;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
 using ZooTech.Infrastructure.Persistence.Context;
 
 namespace ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Repositories;
@@ -8,9 +8,9 @@ public sealed class VacunoActivityStatsReadRepository : IVacunoActivityStatsRead
 {
     private readonly GanaderiaDbContext _context;
 
-    public VacunoActivityStatsReadRepository(GanaderiaDbContext context)
+    public VacunoActivityStatsReadRepository(IGanaderiaDbContextFactory ganaderiaDbContextFactory)
     {
-        _context = context;
+        _context = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
     }
 
     public async Task<IReadOnlyList<VacunoActivityStatsReadItem>> ListarHastaAsync(

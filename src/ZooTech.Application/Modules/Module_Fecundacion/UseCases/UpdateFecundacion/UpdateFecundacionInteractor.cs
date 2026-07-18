@@ -1,27 +1,40 @@
-using FluentValidation;
-using ZooTech.Application.Common.Exceptions;
-using ZooTech.Domain.Module_Fecundacion.Interfaces;
+using ZooTech.Application.Common.Gateway.Caching;
+using ZooTech.Application.Modules.Module_Fecundacion.Common;
+using ZooTech.Application.Modules.Module_Fecundacion.Exceptions;
+using ZooTech.Domain.Ganaderia.Module_Fecundacion.Interfaces;
+using ZooTech.Domain.Shared.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_Fecundacion.UseCases.UpdateFecundacion;
 
 public sealed class UpdateFecundacionInteractor : IUpdateFecundacionInputPort
 {
-    private readonly IFecundacionRepository _repository;
-    private readonly IValidator<UpdateFecundacionCommand> _validator;
+    private readonly IGanaderiaUnitOfWork _unitOfWork;
+    private readonly IAppCacheService _cache;
 
     public UpdateFecundacionInteractor(
-        IFecundacionRepository repository,
-        IValidator<UpdateFecundacionCommand> validator)
+        IGanaderiaUnitOfWork unitOfWork,
+        IAppCacheService cache
+    )
     {
-        _repository = repository;
-        _validator = validator;
+        _unitOfWork = unitOfWork;
+        _cache = cache;
     }
 
     public async Task<UpdateFecundacionOutput> HandleAsync(
         UpdateFecundacionCommand command,
         CancellationToken cancellationToken = default)
     {
-        await _validator.ValidateAndThrowAsync(command, cancellationToken);
+        var repository = _unitOfWork.Fecundaciones;
+
+        var existing = await repository.GetForEditAsync(command.Id, cancellationToken);
+        if (existing is null)
+            throw new FecundacionNotFoundException();
+
+        if (!await repository.ExistsVacunoAsync(command.VacunoReceptorId, cancellationToken))
+            throw new FecundacionVacunoNotFoundException();
+
+        if (await repository.HasActiveFecundacionAsync(command.Id, command.VacunoReceptorId, cancellationToken))
+            throw new FecundacionPendingActiveException();
 
         var values = new FecundacionUpdateValues(
             command.TipoFecundacionCode,
@@ -37,11 +50,13 @@ public sealed class UpdateFecundacionInteractor : IUpdateFecundacionInputPort
             command.CodigoSemen,
             command.CodigoEmbrion);
 
-        var updated = await _repository.UpdateAsync(command.Id, values, cancellationToken)
-            ?? throw new NotFoundException($"No se encontró la fecundación con ID {command.Id}.");
+        var updated = await repository.UpdateAsync(command.Id, values, cancellationToken)
+            ?? throw new FecundacionNotFoundException();
 
-        var detail = await _repository.GetForEditAsync(command.Id, cancellationToken)
-            ?? throw new NotFoundException($"No se encontró la fecundación con ID {command.Id}.");
+        var detail = await repository.GetForEditAsync(command.Id, cancellationToken)
+            ?? throw new FecundacionNotFoundException();
+
+        await _cache.RemoveByPrefixAsync(FecundacionCacheKeys.ListarPrefix);
 
         return new UpdateFecundacionOutput(
             detail.Id,

@@ -30,19 +30,22 @@ public class GetAllTriajesUseCaseTests
                 It.IsAny<string?>(),
                 It.IsAny<string?>(),
                 It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
                 It.IsAny<decimal?>(),
+                It.IsAny<long?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync((triajes, triajes.Count));
         var useCase = new GetAllTriajesInteractor(_repositoryMock.Object);
 
         // Act
-        var result = await useCase.HandleAsync(new GetAllTriajesQuery(1, 10));
+        var result = await useCase.Handle(new GetAllTriajesQuery { Pagina = 1, Tamano = 10 });
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(2, result.Items.Count);
-        Assert.Equal("TRI001", result.Items.First().Codigo);
-        Assert.Equal("Estrella", result.Items.First().VacunoNombre);
+        Assert.Equal(2, result.Data.Count);
+        Assert.Equal("TRI001", result.Data.First().Codigo);
+        Assert.Equal("Estrella", result.Data.First().VacunoNombre);
     }
 
     [Fact]
@@ -56,17 +59,20 @@ public class GetAllTriajesUseCaseTests
                 It.IsAny<string?>(),
                 It.IsAny<string?>(),
                 It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
                 It.IsAny<decimal?>(),
+                It.IsAny<long?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync((new List<Triaje>(), 0));
         var useCase = new GetAllTriajesInteractor(_repositoryMock.Object);
 
         // Act
-        var result = await useCase.HandleAsync(new GetAllTriajesQuery(1, 10));
+        var result = await useCase.Handle(new GetAllTriajesQuery { Pagina = 1, Tamano = 10 });
 
         // Assert
         Assert.NotNull(result);
-        Assert.Empty(result.Items);
+        Assert.Empty(result.Data);
     }
 
     private static Triaje CreateTriaje(long id, string codigo, long vacunoId, string vacunoNombre, string tipoPesoCode, decimal pesoKg)

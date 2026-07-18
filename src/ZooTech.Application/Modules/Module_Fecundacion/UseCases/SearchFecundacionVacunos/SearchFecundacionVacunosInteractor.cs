@@ -1,4 +1,4 @@
-using ZooTech.Domain.Module_Fecundacion.Interfaces;
+using ZooTech.Domain.Ganaderia.Module_Fecundacion.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_Fecundacion.UseCases.SearchFecundacionVacunos;
 
@@ -15,7 +15,12 @@ public sealed class SearchFecundacionVacunosInteractor : ISearchFecundacionVacun
         SearchFecundacionVacunosQuery query,
         CancellationToken cancellationToken = default)
     {
-        var data = await _repository.SearchVacunosAsync(query.Sexo, query.Query, cancellationToken);
+        var data = await _repository.SearchVacunosAsync(
+            query.Sexo,
+            query.Query,
+            query.SoloDisponibles,
+            query.ExcluirFecundacionId,
+            cancellationToken);
 
         return data
             .Select(item => new SearchFecundacionVacunoOutput(item.Id, item.Codigo, item.Nombre, item.Sexo))

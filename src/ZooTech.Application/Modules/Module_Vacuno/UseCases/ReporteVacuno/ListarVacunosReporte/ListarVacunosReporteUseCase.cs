@@ -1,12 +1,12 @@
-using ZooTech.Domain.Module_Vacuno.Interfaces;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ListarVacunosReporte;
 
 public sealed class ListarVacunosReporteUseCase : IListarVacunosReporteUseCase
 {
     private const int DefaultPage = 1;
-    private const int DefaultPageSize = 20;
-    private const int MaxPageSize = 100;
+    private const int DefaultLimit = 10;
+    private const int MaxLimit = 100;
     private readonly IListadoVacunosReporteReadRepository _repository;
 
     public ListarVacunosReporteUseCase(IListadoVacunosReporteReadRepository repository)
@@ -23,7 +23,7 @@ public sealed class ListarVacunosReporteUseCase : IListarVacunosReporteUseCase
         var fechaRegistro = ParseDate(query.FechaRegistro);
         var formato = Normalize(query.Formato) ?? "json";
         var page = ParsePositiveInt(query.Page, DefaultPage);
-        var pageSize = Math.Min(ParsePositiveInt(query.PageSize ?? query.Limit, DefaultPageSize), MaxPageSize);
+        var limit = Math.Min(ParsePositiveInt(query.PageSize ?? query.Limit, DefaultLimit), MaxLimit);
         var search = Normalize(query.Search) ?? Normalize(query.Q);
 
         var result = await _repository.ListarAsync(
@@ -40,16 +40,21 @@ public sealed class ListarVacunosReporteUseCase : IListarVacunosReporteUseCase
                 NormalizeEstadoRegistro(query.EstadoRegistro),
                 Normalize(query.AptoPara),
                 page,
-                pageSize),
+                limit),
             cancellationToken);
 
         var items = result.Items
             .Select(item => new VacunoListadoReporteItem(
                 item.Id,
                 item.Codigo,
+                item.FechaNacimiento,
                 item.FechaRegistro,
                 item.Nombre,
+                item.TipoAdquisicion,
                 item.Raza,
+                item.Color,
+                item.Sexo,
+                item.Granja,
                 item.Procedencia,
                 item.Estado,
                 item.EstadoRegistro))
@@ -57,9 +62,6 @@ public sealed class ListarVacunosReporteUseCase : IListarVacunosReporteUseCase
 
         return new ListarVacunosReporteResponse(
             items,
-            result.Total,
-            page,
-            pageSize,
             new ReporteVacunoListadoResumen(result.Total),
             new ReporteVacunoListadoFiltros(
                 fechaDesde,
@@ -74,7 +76,10 @@ public sealed class ListarVacunosReporteUseCase : IListarVacunosReporteUseCase
                 NormalizeEstadoRegistro(query.EstadoRegistro),
                 Normalize(query.AptoPara),
                 formato),
-            null);
+            null,
+            result.Total,
+            page,
+            limit);
     }
 
     private static DateOnly? ParseDate(string? value)
@@ -91,8 +96,15 @@ public sealed class ListarVacunosReporteUseCase : IListarVacunosReporteUseCase
 
     private static string? NormalizeEstado(string? value)
     {
-        var normalized = Normalize(value)?.ToLowerInvariant();
-        return normalized is "vivo" or "muerto" ? normalized : null;
+        var normalized = Normalize(value);
+        var lower = normalized?.ToLowerInvariant();
+        if (lower is "vivo" or "muerto")
+        {
+            return lower;
+        }
+
+        var upper = normalized?.ToUpperInvariant();
+        return upper is "SANO" or "ENFERMO" or "CUARENTENA" or "MUERTO" ? upper : null;
     }
 
     private static string? NormalizeEstadoRegistro(string? value)
