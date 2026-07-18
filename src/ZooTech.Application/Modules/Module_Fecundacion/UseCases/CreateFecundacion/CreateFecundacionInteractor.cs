@@ -84,8 +84,11 @@ public sealed class CreateFecundacionInteractor : ICreateFecundacionInputPort
             codigoSemen: command.CodigoSemen,
             codigoEmbrion: command.CodigoEmbrion);
 
-        // Persistir en base de datos
-        var saved = await repository.AddAsync(fecundacion, cancellationToken);
+        // Persistir en base de datos de manera transaccional
+        var saved = await _unitOfWork.ExecuteInTransactionAsync(
+            ct => repository.AddAsync(fecundacion, ct),
+            cancellationToken);
+
         await _cache.RemoveByPrefixAsync(FecundacionCacheKeys.ListarPrefix);
 
         return new CreateFecundacionOutput(
