@@ -16,7 +16,9 @@ internal static class VacunoCommonValidationRules
         string razaCode,
         string colorCode,
         string sexoCode,
-        long granjaId,
+        long? granjaId,
+        string? granja,
+        string? codigoDistrito,
         string? observaciones,
         decimal? precioCompra)
     {
@@ -50,7 +52,11 @@ internal static class VacunoCommonValidationRules
             errors.Add($"VACUNO-VACUNO-{operation}-SEXO_CODE-NULL");
         }
 
-        if (granjaId <= 0)
+        var hasExistingGranja = granjaId.HasValue && granjaId.Value > 0;
+        var hasNewGranja = !string.IsNullOrWhiteSpace(granja)
+            && !string.IsNullOrWhiteSpace(codigoDistrito);
+
+        if (!hasExistingGranja && !hasNewGranja)
         {
             errors.Add($"VACUNO-VACUNO-{operation}-GRANJA_ID-INVALID");
         }

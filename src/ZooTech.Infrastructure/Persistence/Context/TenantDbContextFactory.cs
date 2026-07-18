@@ -12,6 +12,8 @@ namespace ZooTech.Infrastructure.Tenant
 {
     public class TenantDbContextFactory : ITenantDbContextFactory
     {
+        private const string AdminConnectionName = "AdminTenantTemplate";
+
         private readonly ITenantContext _tenantContext;
         private readonly IConfiguration _config;
 
@@ -31,16 +33,15 @@ namespace ZooTech.Infrastructure.Tenant
 
         private DbContextOptions<TenantCatalogDb> GetConnectionOptions(string databaseName)
         {
-            var key = $"admin:{databaseName}";
+            var key = $"{AdminConnectionName}:{databaseName}";
 
             return _cache.GetOrAdd(key, _ =>
             {
-
-                var template = _config.GetConnectionString("TenantTemplate")!;
+                var template = _config.GetConnectionString(AdminConnectionName);
 
                 if (string.IsNullOrWhiteSpace(template))
                     throw new UndefinedConfigurationValue(
-                        message: $"Missing configuration: ConnectionStrings:TenantTemplate"
+                        message: $"Missing configuration: ConnectionStrings:{AdminConnectionName}"
                     );
 
                 var builder = new SqlConnectionStringBuilder(template)

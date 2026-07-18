@@ -2,39 +2,34 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using FluentAssertions;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.InterfaceAdapters.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.DTOs;
+using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.DTOs.Responses;
 
 namespace ZooTech.API.IntegrationTests.Controllers;
 
-public class FecundacionControllerTests : IClassFixture<WebApplicationFactory<Program>>
+public class FecundacionControllerTests : IClassFixture<ZooTechApiFactory>
 {
-    private readonly WebApplicationFactory<Program> _factory;
     private readonly HttpClient _client;
 
-    public FecundacionControllerTests(WebApplicationFactory<Program> factory)
+    public FecundacionControllerTests(ZooTechApiFactory factory)
     {
-        _factory = factory;
-        _client = factory.CreateClient();
+        _client = factory.CreateTenantClient();
     }
 
-    [Fact(Skip = "Requires a live Redis instance reachable from the CI agent (Redis:ConnectionString is empty there); WebApplicationFactory<Program> fails to build the host. Unskip once CI provides Redis config.")]
+    [Fact]
     public async Task ListarFecundaciones_ReturnsOk()
     {
         var response = await _client.GetAsync("/api/v1/fecundaciones");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var content = await response.Content.ReadFromJsonAsync<GeneralResponseDTO<List<FecundacionResponse>>>();
+        var content = await response.Content.ReadFromJsonAsync<PagedResponse<List<FecundacionItemResponse>>>();
         content.Should().NotBeNull();
         content!.Success.Should().BeTrue();
         content.Data.Should().NotBeNull();
     }
 
-    [Fact(Skip = "Requires a live Redis instance reachable from the CI agent (Redis:ConnectionString is empty there); WebApplicationFactory<Program> fails to build the host. Unskip once CI provides Redis config.")]
+    [Fact]
     public async Task EliminarFecundacion_WhenRegistroExists_ShouldHideItFromList()
     {
         var created = await CreateFecundacionAsync();
@@ -50,7 +45,7 @@ public class FecundacionControllerTests : IClassFixture<WebApplicationFactory<Pr
         getResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    [Fact(Skip = "Requires a live Redis instance reachable from the CI agent (Redis:ConnectionString is empty there); WebApplicationFactory<Program> fails to build the host. Unskip once CI provides Redis config.")]
+    [Fact]
     public async Task EliminarFecundacion_WhenRegistroDoesNotExist_ShouldReturnNotFound()
     {
         var response = await _client.SendAsync(new HttpRequestMessage(HttpMethod.Delete, "/api/v1/fecundaciones/999999")
@@ -61,7 +56,7 @@ public class FecundacionControllerTests : IClassFixture<WebApplicationFactory<Pr
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    private async Task<FecundacionCreatedResponse> CreateFecundacionAsync()
+    private async Task<CreateFecundacionResponse> CreateFecundacionAsync()
     {
         var data = await GetFecundacionFormDataAsync();
         using var doc = JsonDocument.Parse(data.VacunoDonanteId.ToString());
@@ -70,7 +65,7 @@ public class FecundacionControllerTests : IClassFixture<WebApplicationFactory<Pr
             VacunoReceptorId: data.VacunoReceptorId,
             MachoODonante: doc.RootElement.Clone(),
             MachoExterno: false,
-            FechaProcedimiento: new DateOnly(2026, 1, 15),
+            FechaProcedimiento: DateOnly.FromDateTime(DateTime.UtcNow),
             Responsable: "Responsable Test Integracion",
             Resultado: data.ResultadoCode,
             CodigoSemen: null,
@@ -80,7 +75,7 @@ public class FecundacionControllerTests : IClassFixture<WebApplicationFactory<Pr
         var response = await _client.PostAsJsonAsync("/api/v1/fecundaciones", request);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
-        var content = await response.Content.ReadFromJsonAsync<GeneralResponseDTO<FecundacionCreatedResponse>>();
+        var content = await response.Content.ReadFromJsonAsync<GeneralResponseDTO<CreateFecundacionResponse>>();
         content.Should().NotBeNull();
         content!.Data.Should().NotBeNull();
         return content.Data!;
@@ -88,30 +83,26 @@ public class FecundacionControllerTests : IClassFixture<WebApplicationFactory<Pr
 
     private async Task<FecundacionFormData> GetFecundacionFormDataAsync()
     {
-        using var scope = _factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<GanaderiaDbContext>();
+        var options = await _client.GetFromJsonAsync<GeneralResponseDTO<FecundacionOptionsResponse>>(
+            "/api/v1/fecundaciones/opciones");
+        var hembras = await _client.GetFromJsonAsync<GeneralResponseDTO<IReadOnlyList<FecundacionVacunoOptionResponse>>>(
+            "/api/v1/fecundaciones/vacunos?sexo=HEMBRA&soloDisponibles=true");
+        var machos = await _client.GetFromJsonAsync<GeneralResponseDTO<IReadOnlyList<FecundacionVacunoOptionResponse>>>(
+            "/api/v1/fecundaciones/vacunos?sexo=MACHO");
 
-        var tipo = await db.cat_tipo_fecundacions
-            .Select(x => x.code)
-            .FirstAsync();
-        var resultado = await db.cat_resultado_fecundacions
-            .Select(x => x.code)
-            .FirstAsync();
-        var receptor = await db.vacunos
-            .Where(x => x.deleted_at == null)
-            .OrderBy(x => x.id)
-            .Select(x => x.id)
-            .FirstAsync();
-        var donante = await db.vacunos
-            .Where(x => x.deleted_at == null && x.id != receptor)
-            .OrderBy(x => x.id)
-            .Select(x => x.id)
-            .FirstAsync();
+        options?.Data.Should().NotBeNull();
+        var tipo = options!.Data!.Tipos
+            .FirstOrDefault(item => item.Code.Equals("MONTA_NATURAL", StringComparison.OrdinalIgnoreCase))
+            ?? options.Data.Tipos.First();
+        var resultado = options.Data.Resultados.First();
+        var receptor = hembras?.Data?.FirstOrDefault();
+        var donante = machos?.Data?.FirstOrDefault();
 
-        return new FecundacionFormData(tipo, resultado, receptor, donante);
+        receptor.Should().NotBeNull("the tenant must contain an available female vacuno");
+        donante.Should().NotBeNull("the tenant must contain an active male vacuno");
+
+        return new FecundacionFormData(tipo.Code, resultado.Code, receptor!.Id, donante!.Id);
     }
-
-    private sealed record FecundacionCreatedResponse(long Id, string Codigo);
 
     private sealed record FecundacionFormData(
         string TipoFecundacionCode,

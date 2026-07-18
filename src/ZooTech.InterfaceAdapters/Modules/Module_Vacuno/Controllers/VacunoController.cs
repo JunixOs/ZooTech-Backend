@@ -20,7 +20,6 @@ using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Mappers;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Mappers.ReporteVacuno;
-using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Services;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.ListarVacunos;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.CreateVacuno;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.GetVacunoById;
@@ -137,29 +136,12 @@ public sealed class VacunoController : ControllerBase
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Create(
         [FromBody] CreateVacunoRequest request,
-        [FromServices] IVacunoReferenceResolver referenceResolver,
-        [FromServices] IVacunoMutationUnitOfWork mutationUnitOfWork,
         [FromServices] IVacunoResponseReadRepository responseReadRepository,
         CancellationToken cancellationToken)
     {
-        var resolution = await referenceResolver.ResolveForCreateAsync(request, cancellationToken);
-        if (!resolution.Success)
-        {
-            return ValidationErrorResponse(resolution.Error!.Field ?? string.Empty, resolution.Error.Message);
-        }
-
-        long granjaId = resolution.GranjaId ?? 0;
-        if (resolution.GranjaToCreate is not null)
-        {
-            granjaId = await mutationUnitOfWork.EnsureGranjaAsync(
-                resolution.GranjaToCreate.Nombre,
-                resolution.GranjaToCreate.CodigoDistrito,
-                cancellationToken);
-        }
-
         var behaviorPipeline = _createVacunoBehaviorPipelineFactory.Create();
 
-        var command = VacunoMapper.ToCommand(request, resolution.PadreId, resolution.MadreId, granjaId);
+        var command = VacunoMapper.ToCommand(request);
         var output = await behaviorPipeline.Execute(command, cancellationToken);
         var response = await EnrichResponseAsync(output.Data, responseReadRepository, cancellationToken);
         return Created($"/api/v1/vacuno/{response.Id}", GeneralResponseDTO<VacunoResponse>.Ok(response));
@@ -191,8 +173,6 @@ public sealed class VacunoController : ControllerBase
     public async Task<IActionResult> Update(
         [FromRoute] string identifier,
         [FromBody] UpdateVacunoRequest request,
-        [FromServices] IVacunoReferenceResolver referenceResolver,
-        [FromServices] IVacunoMutationUnitOfWork mutationUnitOfWork,
         [FromServices] IVacunoResponseReadRepository responseReadRepository,
         CancellationToken cancellationToken)
     {
@@ -202,28 +182,9 @@ public sealed class VacunoController : ControllerBase
             return NotFound(GeneralResponseDTO<object>.Fail("El vacuno no existe."));
         }
 
-        var resolution = await referenceResolver.ResolveForUpdateAsync(id, request, cancellationToken);
-        if (!resolution.Success)
-        {
-            if (resolution.Error!.Kind == VacunoReferenceErrorKind.NotFound)
-            {
-                return NotFound(GeneralResponseDTO<object>.Fail(resolution.Error.Message));
-            }
-            return ValidationErrorResponse(resolution.Error.Field ?? string.Empty, resolution.Error.Message);
-        }
-
-        long granjaId = resolution.GranjaId ?? 0;
-        if (resolution.GranjaToCreate is not null)
-        {
-            granjaId = await mutationUnitOfWork.EnsureGranjaAsync(
-                resolution.GranjaToCreate.Nombre,
-                resolution.GranjaToCreate.CodigoDistrito,
-                cancellationToken);
-        }
-
         var behaviorPipeline = _updateVacunoBehaviorPipelineFactory.Create();
 
-        var command = VacunoMapper.ToCommand(id, request, resolution.PadreId, resolution.MadreId, granjaId);
+        var command = VacunoMapper.ToCommand(id, request);
         var output = await behaviorPipeline.Execute(command, cancellationToken);
         var response = await EnrichResponseAsync(output.Data, responseReadRepository, cancellationToken);
         return Ok(GeneralResponseDTO<VacunoResponse>.Ok(response));
@@ -503,25 +464,6 @@ public sealed class VacunoController : ControllerBase
         }
 
         return -1;
-    }
-
-    private IActionResult ValidationErrorResponse(
-        string field,
-        string message,
-        string topMessage = "Los datos enviados no son válidos.")
-    {
-        return BadRequest(new
-        {
-            error = new
-            {
-                code = "VALIDATION_ERROR",
-                message = topMessage,
-                details = new[]
-                {
-                    new { field, message }
-                }
-            }
-        });
     }
 
     private async Task<object> BuildRegistroVacunoDetalleAsync(

@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Moq;
 using ZooTech.Application.Common.Gateway.Caching;
+using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Common.Models;
 using ZooTech.Application.Modules.Module_Fecundacion.Common;
 using ZooTech.Application.Modules.Module_Fecundacion.Exceptions;
@@ -118,7 +119,7 @@ public sealed class DeleteFecundacionInteractorTests
     }
 
     [Fact]
-    public async Task HandleAsync_WhenReasonIsEmpty_ShouldThrowArgumentExceptionAndNotQueryRepository()
+    public async Task HandleAsync_WhenReasonIsEmpty_ShouldReturnFieldValidationAndNotQueryRepository()
     {
         // Arrange
         var command = new DeleteFecundacionCommand(10, " ");
@@ -127,7 +128,10 @@ public sealed class DeleteFecundacionInteractorTests
         var act = async () => await _interactor.HandleAsync(command, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>();
+        var exception = await act.Should().ThrowAsync<ValidationException>();
+        exception.Which.FieldErrors.Should().ContainSingle(error =>
+            error.Field == "razon" &&
+            error.Code == "FECUNDACION-DELETE-RAZON-REQUIRED");
         _repositoryMock.Verify(r => r.GetForEditAsync(It.IsAny<long>(), It.IsAny<CancellationToken>()), Times.Never);
         _repositoryMock.Verify(r => r.DeleteAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }

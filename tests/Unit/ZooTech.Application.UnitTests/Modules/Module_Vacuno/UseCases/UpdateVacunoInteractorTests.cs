@@ -1,10 +1,10 @@
 using FluentAssertions;
-using FluentValidation.Results;
 using Moq;
 using ZooTech.Application.Common.Gateway.Caching;
 using ZooTech.Application.Common.Gateway.Parametrization;
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Modules.Module_Vacuno.Exceptions;
+using ZooTech.Application.Modules.Module_Vacuno.Services;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.UpdateVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.Validators;
 using ZooTech.Domain.Configuration;
@@ -20,6 +20,7 @@ public class UpdateVacunoInteractorTests
     private readonly Mock<IGanaderiaUnitOfWork> _unitOfWork = new();
     private readonly Mock<IAppCacheService> _cache = new();
     private readonly Mock<ITenantConfigurationProvider> _tenantConfigurationProvider = new();
+    private readonly Mock<IVacunoReferenceResolver> _referenceResolver = new();
     private readonly UpdateVacunoValidator _validator = new();
 
     public UpdateVacunoInteractorTests()
@@ -32,6 +33,9 @@ public class UpdateVacunoInteractorTests
                 It.IsAny<Func<Vacuno, CancellationToken, Task<Vacuno>>?>()))
             .Returns((Func<CancellationToken, Task<Vacuno>> operation, CancellationToken cancellationToken, Func<Vacuno, CancellationToken, Task<Vacuno>>? _) =>
                 operation(cancellationToken));
+        _referenceResolver
+            .Setup(x => x.ResolveAsync(It.IsAny<VacunoReferenceData>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(VacunoReferenceResolution.Ok(null, null, 1));
         SetupValidationSettings();
     }
 
@@ -84,6 +88,8 @@ public class UpdateVacunoInteractorTests
             ColorCode = string.Empty,
             SexoCode = string.Empty,
             GranjaId = 0,
+            Granja = null,
+            CodigoDistrito = null,
             Observaciones = null
         };
 
@@ -118,8 +124,9 @@ public class UpdateVacunoInteractorTests
 
         var act = async () => await interactor.HandleAsync(command, CancellationToken.None);
 
-        await act.Should().ThrowAsync<VacunoException>()
-            .WithMessage("*10 caracteres*");
+        var exception = await act.Should().ThrowAsync<ValidationException>();
+        exception.Which.Message.Should().Contain("10 caracteres");
+        exception.Which.FieldErrors.Should().ContainSingle(error => error.Field == "observaciones");
         _repository.Verify(x => x.UpdateAsync(It.IsAny<Vacuno>(), It.IsAny<decimal?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -131,9 +138,11 @@ public class UpdateVacunoInteractorTests
         RazaCode: "HOLSTEIN",
         ColorCode: "NEGRO_BLANCO",
         SexoCode: "HEMBRA",
-        PadreId: null,
-        MadreId: null,
+        CodigoPadre: null,
+        CodigoMadre: null,
         GranjaId: 1,
+        Granja: null,
+        CodigoDistrito: null,
         Observaciones: "Actualizacion de prueba",
         PrecioCompra: null,
         AptoPara: null);
@@ -164,7 +173,8 @@ public class UpdateVacunoInteractorTests
         => new(
             _unitOfWork.Object,
             _cache.Object,
-            _tenantConfigurationProvider.Object);
+            _tenantConfigurationProvider.Object,
+            _referenceResolver.Object);
 
     private void SetupValidationSettings()
     {

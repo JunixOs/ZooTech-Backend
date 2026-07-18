@@ -1,5 +1,4 @@
 using ZooTech.Domain.Ganaderia.Module_Fecundacion.Entities;
-using ZooTech.Domain.Ganaderia.Module_Fecundacion.Entities;
 
 namespace ZooTech.Domain.Ganaderia.Module_Fecundacion.Interfaces;
 

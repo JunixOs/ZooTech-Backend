@@ -5,6 +5,7 @@ using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities.GetArbolGenealogico;
 using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities.ListarVacuno;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Domain.Ganaderia.Module_Vacuno.Models;
+using ZooTech.Infrastructure.Persistence.Entities;
 
 namespace ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Repositories;
 
@@ -223,6 +224,37 @@ public sealed class VacunoRepository : IVacunoRepository
 
         await Task.CompletedTask;
         return ToDomain(entity);
+    }
+
+    public async Task<long> EnsureGranjaAsync(
+        string nombre,
+        string codigoDistrito,
+        CancellationToken cancellationToken = default)
+    {
+        var existingId = await _ganaderiaDbContext.granjas
+            .Where(g => g.nombre == nombre && g.distrito_codigo == codigoDistrito)
+            .Select(g => (long?)g.id)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (existingId.HasValue)
+        {
+            return existingId.Value;
+        }
+
+        var now = DateTime.UtcNow;
+        var granja = new granja
+        {
+            nombre = nombre,
+            distrito_codigo = codigoDistrito,
+            activo = true,
+            created_at = now,
+            updated_at = now
+        };
+
+        _ganaderiaDbContext.granjas.Add(granja);
+        await _ganaderiaDbContext.SaveChangesAsync(cancellationToken);
+
+        return granja.id;
     }
 
     public async Task<(List<VacunoListItem> Items, int TotalCount)> GetPagedAsync(

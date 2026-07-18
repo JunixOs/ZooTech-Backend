@@ -12,7 +12,7 @@ public class CreateVacunoValidatorTests
         string razaCode = "HOLSTEIN",
         string colorCode = "NEGRO",
         string sexoCode = "H",
-        long granjaId = 1,
+        long? granjaId = 1,
         string? observaciones = null)
     {
         return new CreateVacunoCommand(
@@ -23,9 +23,11 @@ public class CreateVacunoValidatorTests
             RazaCode: razaCode,
             ColorCode: colorCode,
             SexoCode: sexoCode,
-            PadreId: null,
-            MadreId: null,
+            CodigoPadre: null,
+            CodigoMadre: null,
             GranjaId: granjaId,
+            Granja: null,
+            CodigoDistrito: null,
             PrecioCompra: 1000m,
             AptoPara: "Carne",
             Observaciones: observaciones);
@@ -131,6 +133,21 @@ public class CreateVacunoValidatorTests
         var result = validator.Validate(ValidCommand(granjaId: 0));
 
         Assert.NotEmpty(result);
+    }
+
+    [Fact]
+    public void Validate_WhenNewGranjaDataIsProvided_HasNoGranjaError()
+    {
+        var validator = new CreateVacunoValidator();
+        var command = ValidCommand(granjaId: null) with
+        {
+            Granja = "Granja Nueva",
+            CodigoDistrito = "010101"
+        };
+
+        var result = validator.Validate(command);
+
+        Assert.DoesNotContain("VACUNO-VACUNO-CREATE-GRANJA_ID-INVALID", result);
     }
 
     [Fact]
