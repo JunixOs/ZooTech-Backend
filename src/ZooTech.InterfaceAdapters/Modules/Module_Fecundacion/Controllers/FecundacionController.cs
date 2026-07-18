@@ -79,7 +79,7 @@ public sealed class FecundacionController : ControllerBase
             Query: searchTerm,
             FechaDesde: fechaDesde,
             FechaHasta: fechaHasta,
-            Resultado: resultado,
+            Resultado: FecundacionMapper.ToInternalResultado(resultado),
             Page: currentPage,
             Limit: currentPageSize);
 

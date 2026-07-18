@@ -34,17 +34,16 @@ public sealed class FecundacionRepository : IFecundacionRepository
 
         if (!string.IsNullOrWhiteSpace(query))
         {
-            var pattern = $"%{query}%";
+            var pattern = $"%'{query}%";
+            pattern = $"%{query}%";
             q = q.Where(f =>
                 EF.Functions.Like(f.codigo, pattern)
                 || EF.Functions.Like(f.vacuno_receptor.nombre, pattern)
                 || EF.Functions.Like(f.tipo_fecundacion_code, pattern)
                 || EF.Functions.Like(f.resultado_code, pattern)
-                || (f.responsable != null && EF.Functions.Like(f.responsable.nombre_completo, pattern))
-                || (f.fecundacion_donante != null && (
-                       (f.fecundacion_donante.vacuno_donante != null && EF.Functions.Like(f.fecundacion_donante.vacuno_donante.nombre, pattern))
-                    || (f.fecundacion_donante.externo_donante != null && EF.Functions.Like(f.fecundacion_donante.externo_donante.nombre, pattern))
-                   ))
+                || EF.Functions.Like(f.responsable.nombre_completo, pattern)
+                || EF.Functions.Like(f.fecundacion_donante.vacuno_donante.nombre, pattern)
+                || EF.Functions.Like(f.fecundacion_donante.externo_donante.nombre, pattern)
             );
         }
 
@@ -67,26 +66,44 @@ public sealed class FecundacionRepository : IFecundacionRepository
             .ThenByDescending(f => f.id)
             .Skip((page - 1) * limit)
             .Take(limit)
-            .Select(f => new FecundacionListProjection
+            .Select(f => new
             {
                 Id = f.id,
                 Codigo = f.codigo,
                 FechaProcedimiento = f.fecha_procedimiento,
                 NombreVacunoReceptor = f.vacuno_receptor.nombre,
-                Responsable = f.responsable != null ? f.responsable.nombre_completo : null,
+                Responsable = f.responsable.nombre_completo,
                 TipoFecundacionCode = f.tipo_fecundacion_code,
                 ResultadoCode = f.resultado_code,
-                NombreDonante = f.fecundacion_donante != null
-                    ? (f.fecundacion_donante.vacuno_donante != null
-                        ? f.fecundacion_donante.vacuno_donante.nombre
-                        : (f.fecundacion_donante.externo_donante != null
-                            ? f.fecundacion_donante.externo_donante.nombre
-                            : "Sin Donante Registrado"))
-                    : "Sin Donante Registrado"
+                TieneDonante = f.fecundacion_donante != null,
+                VacunoDonanteNombre = f.fecundacion_donante.vacuno_donante.nombre,
+                ExternoDonanteNombre = f.fecundacion_donante.externo_donante.nombre
             })
             .ToListAsync(cancellationToken);
 
-        var items = rows.Select(ToListItem).ToList();
+        var items = rows.Select(r =>
+        {
+            string nombreDonante = "Sin Donante Registrado";
+            if (r.TieneDonante)
+            {
+                if (!string.IsNullOrWhiteSpace(r.VacunoDonanteNombre))
+                    nombreDonante = r.VacunoDonanteNombre;
+                else if (!string.IsNullOrWhiteSpace(r.ExternoDonanteNombre))
+                    nombreDonante = r.ExternoDonanteNombre;
+            }
+
+            return new FecundacionListItem(
+                Id: r.Id,
+                Codigo: r.Codigo,
+                Tipo: r.TipoFecundacionCode,
+                VacunoReceptor: r.NombreVacunoReceptor,
+                FechaProcedimiento: r.FechaProcedimiento,
+                Responsable: r.Responsable ?? string.Empty,
+                Resultado: r.ResultadoCode,
+                NombreDonante: nombreDonante,
+                Observaciones: null
+            );
+        }).ToList();
 
         return (items, totalCount);
     }
