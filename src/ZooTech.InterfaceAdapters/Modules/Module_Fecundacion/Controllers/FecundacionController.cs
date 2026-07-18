@@ -7,6 +7,7 @@ using ZooTech.Application.Common.Behaviors.Module_Fecundacion.GetFecundacionOpti
 using ZooTech.Application.Common.Behaviors.Module_Fecundacion.ListarFecundacion;
 using ZooTech.Application.Common.Behaviors.Module_Fecundacion.SearchFecundacionVacunos;
 using ZooTech.Application.Common.Behaviors.Module_Fecundacion.UpdateFecundacion;
+using ZooTech.Application.Common.Gateway.Identity;
 using ZooTech.Application.Common.Models;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.CreateFecundacion;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.DeleteFecundacion;
@@ -36,6 +37,7 @@ public sealed class FecundacionController : ControllerBase
     private readonly ISearchFecundacionVacunosBehaviorPipelineFactory _searchFecundacionVacunosBehaviorPipelineFactory;
     private readonly IUpdateFecundacionBehaviorPipelineFactory _updateFecundacionBehaviorPipelineFactory;
     private readonly IDeleteFecundacionBehaviorPipelineFactory _deleteFecundacionBehaviorPipelineFactory;
+    private readonly ICurrentUserService _currentUserService;
 
     public FecundacionController(
         ICreateFecundacionBehaviorPipelineFactory createFecundacionBehaviorPipelineFactory,
@@ -44,7 +46,8 @@ public sealed class FecundacionController : ControllerBase
         IGetFecundacionOptionsBehaviorPipelineFactory getFecundacionOptionsBehaviorPipelineFactory,
         ISearchFecundacionVacunosBehaviorPipelineFactory searchFecundacionVacunosBehaviorPipelineFactory,
         IUpdateFecundacionBehaviorPipelineFactory updateFecundacionBehaviorPipelineFactory,
-        IDeleteFecundacionBehaviorPipelineFactory deleteFecundacionBehaviorPipelineFactory
+        IDeleteFecundacionBehaviorPipelineFactory deleteFecundacionBehaviorPipelineFactory,
+        ICurrentUserService currentUserService
     )
     {
         _createFecundacionBehaviorPipelineFactory = createFecundacionBehaviorPipelineFactory;
@@ -54,6 +57,7 @@ public sealed class FecundacionController : ControllerBase
         _searchFecundacionVacunosBehaviorPipelineFactory = searchFecundacionVacunosBehaviorPipelineFactory;
         _updateFecundacionBehaviorPipelineFactory = updateFecundacionBehaviorPipelineFactory;
         _deleteFecundacionBehaviorPipelineFactory = deleteFecundacionBehaviorPipelineFactory;
+        _currentUserService = currentUserService;
     }
 
     // ===== TUYO — sin cambios =====
@@ -101,7 +105,7 @@ public sealed class FecundacionController : ControllerBase
     {
         var behaviorPipeline = _createFecundacionBehaviorPipelineFactory.Create();
 
-        var command = FecundacionMapper.ToCommand(request, GetUserIdFromHeader());
+        var command = FecundacionMapper.ToCommand(request, _currentUserService.UserId);
         var output = await behaviorPipeline.Execute(command, cancellationToken);
         var response = FecundacionMapper.ToResponse(output);
 
@@ -209,14 +213,4 @@ public sealed class FecundacionController : ControllerBase
 
     private static string? FirstNonBlank(params string?[] values)
         => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value))?.Trim();
-
-    private long GetUserIdFromHeader()
-    {
-        if (Request.Headers.TryGetValue("X-User-Id", out var values) &&
-            long.TryParse(values.FirstOrDefault(), out var userId))
-        {
-            return userId;
-        }
-        return 1;
-    }
 }
