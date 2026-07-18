@@ -34,16 +34,18 @@ public sealed class FecundacionRepository : IFecundacionRepository
 
         if (!string.IsNullOrWhiteSpace(query))
         {
-            var pattern = $"%'{query}%";
-            pattern = $"%{query}%";
+            var pattern = $"%{query.Trim()}%";
             q = q.Where(f =>
                 EF.Functions.Like(f.codigo, pattern)
                 || EF.Functions.Like(f.vacuno_receptor.nombre, pattern)
                 || EF.Functions.Like(f.tipo_fecundacion_code, pattern)
                 || EF.Functions.Like(f.resultado_code, pattern)
                 || EF.Functions.Like(f.responsable.nombre_completo, pattern)
-                || EF.Functions.Like(f.fecundacion_donante.vacuno_donante.nombre, pattern)
-                || EF.Functions.Like(f.fecundacion_donante.externo_donante.nombre, pattern)
+                || (f.fecundacion_donante != null
+                    && ((f.fecundacion_donante.vacuno_donante != null
+                            && EF.Functions.Like(f.fecundacion_donante.vacuno_donante.nombre, pattern))
+                        || (f.fecundacion_donante.externo_donante != null
+                            && EF.Functions.Like(f.fecundacion_donante.externo_donante.nombre, pattern))))
             );
         }
 
@@ -76,8 +78,16 @@ public sealed class FecundacionRepository : IFecundacionRepository
                 TipoFecundacionCode = f.tipo_fecundacion_code,
                 ResultadoCode = f.resultado_code,
                 TieneDonante = f.fecundacion_donante != null,
-                VacunoDonanteNombre = f.fecundacion_donante.vacuno_donante.nombre,
-                ExternoDonanteNombre = f.fecundacion_donante.externo_donante.nombre
+                VacunoDonanteNombre = f.fecundacion_donante != null
+                    ? f.fecundacion_donante.vacuno_donante != null
+                        ? f.fecundacion_donante.vacuno_donante.nombre
+                        : null
+                    : null,
+                ExternoDonanteNombre = f.fecundacion_donante != null
+                    ? f.fecundacion_donante.externo_donante != null
+                        ? f.fecundacion_donante.externo_donante.nombre
+                        : null
+                    : null
             })
             .ToListAsync(cancellationToken);
 

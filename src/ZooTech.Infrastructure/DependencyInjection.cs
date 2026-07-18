@@ -201,7 +201,6 @@ public static class DependencyInjection
         services.AddScoped<IVacunoListadoReadRepository, VacunoListadoReadRepository>();
         services.AddScoped<IVacunoActivityStatsReadRepository, VacunoActivityStatsReadRepository>();
         services.AddScoped<IVacunoGranjaReadRepository, VacunoGranjaReadRepository>();
-        services.AddScoped<IVacunoMutationUnitOfWork, VacunoMutationUnitOfWork>();
         services.AddScoped<IVacunoReferenceReadRepository, VacunoReferenceReadRepository>();
         services.AddScoped<IVacunoResponseReadRepository, VacunoResponseReadRepository>();
         services.AddScoped<IListadoVacunosReporteReadRepository, ListadoVacunosReporteReadRepository>();

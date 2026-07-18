@@ -1,18 +1,19 @@
-using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Requests;
-
-namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Services;
+namespace ZooTech.Application.Modules.Module_Vacuno.Services;
 
 public interface IVacunoReferenceResolver
 {
-    Task<VacunoReferenceResolution> ResolveForCreateAsync(
-        CreateVacunoRequest request,
-        CancellationToken cancellationToken = default);
-
-    Task<VacunoReferenceResolution> ResolveForUpdateAsync(
-        long vacunoId,
-        UpdateVacunoRequest request,
+    Task<VacunoReferenceResolution> ResolveAsync(
+        VacunoReferenceData referenceData,
         CancellationToken cancellationToken = default);
 }
+
+public sealed record VacunoReferenceData(
+    string OwnCodigo,
+    string? CodigoPadre,
+    string? CodigoMadre,
+    long? GranjaId,
+    string? GranjaNombre,
+    string? CodigoDistrito);
 
 public sealed record VacunoReferenceResolution(
     long? PadreId,

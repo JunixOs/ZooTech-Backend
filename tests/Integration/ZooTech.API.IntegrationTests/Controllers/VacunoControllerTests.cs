@@ -1,23 +1,21 @@
-using Microsoft.AspNetCore.Mvc.Testing;
 using FluentAssertions;
 using Xunit;
 using System.Net;
 using System.Net.Http.Json;
-using Microsoft.Extensions.DependencyInjection;
 using ZooTech.InterfaceAdapters.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses;
 
 namespace ZooTech.API.IntegrationTests.Controllers;
 
-public class VacunoControllerTests : IClassFixture<WebApplicationFactory<Program>>
+public class VacunoControllerTests : IClassFixture<ZooTechApiFactory>
 {
     private readonly HttpClient _client;
-    private readonly WebApplicationFactory<Program> _factory;
+    private readonly ZooTechApiFactory _factory;
 
-    public VacunoControllerTests(WebApplicationFactory<Program> factory)
+    public VacunoControllerTests(ZooTechApiFactory factory)
     {
         _factory = factory;
-        _client = factory.CreateClient();
+        _client = factory.CreateTenantClient();
     }
 
     [Fact(Skip = "Requires a live Redis instance reachable from the CI agent (Redis:ConnectionString is empty there); WebApplicationFactory<Program> fails to build the host. Unskip once CI provides Redis config.")]
@@ -46,28 +44,12 @@ public class VacunoControllerTests : IClassFixture<WebApplicationFactory<Program
     [Fact(Skip = "Requires a live Redis instance reachable from the CI agent (Redis:ConnectionString is empty there); WebApplicationFactory<Program> fails to build the host. Unskip once CI provides Redis config.")]
     public async Task ExportarArbolGenealogico_WhenVacunoExists_ReturnsExcelFile()
     {
-        using var scope = _factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<ZooTech.Infrastructure.Persistence.Context.GanaderiaDbContext>();
-        var v = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(db.vacunos.Where(x => x.deleted_at == null));
-        if (v == null) {
-            var sexo = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstAsync(db.cat_sexos);
-            var raza = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstAsync(db.cat_razas);
-            var color = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstAsync(db.cat_colors);
-            var adq = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstAsync(db.cat_tipo_adquisicions);
-            var granja = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstAsync(db.granjas);
+        var listResponse = await _client.GetFromJsonAsync<PagedResponse<List<VacunoItemResponse>>>(
+            "/api/v1/vacunos?page=1&limit=1");
+        var vacuno = listResponse?.Data?.FirstOrDefault();
+        vacuno.Should().NotBeNull("the tenant database must contain at least one active vacuno");
 
-            v = new ZooTech.Infrastructure.Persistence.Entities.vacuno { 
-                codigo = "VAC" + Guid.NewGuid().ToString("N").Substring(0, 8), nombre = "Test", 
-                sexo_code = sexo.code, raza_code = raza.code, 
-                color_code = color.code, tipo_adquisicion_code = adq.code, 
-                granja_id = granja.id,
-                fecha_nacimiento = new DateOnly(2020,1,1) 
-            };
-            db.vacunos.Add(v);
-            await db.SaveChangesAsync();
-        }
-
-        var response = await _client.GetAsync($"/api/v1/vacunos/{v.id}/genealogia/exportar");
+        var response = await _client.GetAsync($"/api/v1/vacunos/{vacuno!.Id}/genealogia/exportar");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         response.Content.Headers.ContentType!.MediaType.Should().Be("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
@@ -78,28 +60,12 @@ public class VacunoControllerTests : IClassFixture<WebApplicationFactory<Program
     [Fact(Skip = "Requires a live Redis instance reachable from the CI agent (Redis:ConnectionString is empty there); WebApplicationFactory<Program> fails to build the host. Unskip once CI provides Redis config.")]
     public async Task ExportarArbolGenealogico_WhenFormatoIsPdf_ReturnsPdfFile()
     {
-        using var scope = _factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<ZooTech.Infrastructure.Persistence.Context.GanaderiaDbContext>();
-        var v = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(db.vacunos.Where(x => x.deleted_at == null));
-        if (v == null) {
-            var sexo = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstAsync(db.cat_sexos);
-            var raza = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstAsync(db.cat_razas);
-            var color = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstAsync(db.cat_colors);
-            var adq = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstAsync(db.cat_tipo_adquisicions);
-            var granja = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstAsync(db.granjas);
+        var listResponse = await _client.GetFromJsonAsync<PagedResponse<List<VacunoItemResponse>>>(
+            "/api/v1/vacunos?page=1&limit=1");
+        var vacuno = listResponse?.Data?.FirstOrDefault();
+        vacuno.Should().NotBeNull("the tenant database must contain at least one active vacuno");
 
-            v = new ZooTech.Infrastructure.Persistence.Entities.vacuno { 
-                codigo = "VAC" + Guid.NewGuid().ToString("N").Substring(0, 8), nombre = "Test", 
-                sexo_code = sexo.code, raza_code = raza.code, 
-                color_code = color.code, tipo_adquisicion_code = adq.code, 
-                granja_id = granja.id,
-                fecha_nacimiento = new DateOnly(2020,1,1) 
-            };
-            db.vacunos.Add(v);
-            await db.SaveChangesAsync();
-        }
-
-        var response = await _client.GetAsync($"/api/v1/vacunos/{v.id}/genealogia/exportar?formato=pdf");
+        var response = await _client.GetAsync($"/api/v1/vacunos/{vacuno!.Id}/genealogia/exportar?formato=pdf");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         response.Content.Headers.ContentType!.MediaType.Should().Be("application/pdf");
@@ -113,5 +79,19 @@ public class VacunoControllerTests : IClassFixture<WebApplicationFactory<Program
         var response = await _client.GetAsync("/api/v1/vacunos/999999/genealogia/exportar");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Theory(Skip = "Requires a live Redis instance reachable from the CI agent (Redis:ConnectionString is empty there); WebApplicationFactory<Program> fails to build the host. Unskip once CI provides Redis config.")]
+    [InlineData("zootecniaunas.zentrycorp.local")]
+    [InlineData("elroble.zentrycorp.local")]
+    [InlineData("lacteosdelvalle.zentrycorp.local")]
+    [InlineData("losandes.zentrycorp.local")]
+    public async Task ListarVacunos_ForConfiguredTenant_ReturnsOk(string tenantHost)
+    {
+        using var client = _factory.CreateTenantClient(tenantHost);
+
+        var response = await client.GetAsync("/api/v1/vacunos?page=1&limit=1");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 }

@@ -1,8 +1,10 @@
 using ZooTech.Application.Common.Gateway.Caching;
+using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Common.Models;
 using ZooTech.Application.Modules.Module_Fecundacion.Common;
 using ZooTech.Application.Modules.Module_Fecundacion.Exceptions;
 using ZooTech.Domain.Shared.Interfaces;
+using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Fecundacion.UseCases.DeleteFecundacion;
 
@@ -23,7 +25,14 @@ public sealed class DeleteFecundacionInteractor : IDeleteFecundacionInputPort
     {
         if (string.IsNullOrWhiteSpace(command.Razon))
         {
-            throw new ArgumentException("Falta razón de eliminación o datos inválidos.");
+            const string errorCode = "FECUNDACION-DELETE-RAZON-REQUIRED";
+            const string message = "Debe indicar la razon de eliminacion.";
+            throw new ValidationException(
+                [errorCode],
+                ScopeName.Application,
+                ModuleName.Fecundacion,
+                [new FieldValidationError("razon", errorCode, message)],
+                message);
         }
 
         var repository = _unitOfWork.Fecundaciones;

@@ -2,7 +2,6 @@ using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities;
 using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities.ListarVacuno;
 using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities.GetArbolGenealogico;
 using ZooTech.Domain.Ganaderia.Module_Vacuno.Models;
-using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities;
 
 namespace ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
 
@@ -29,6 +28,11 @@ public interface IVacunoRepository
     Task<Vacuno> AddAsync(Vacuno vacuno, decimal? precioCompra, string? aptoPara, CancellationToken cancellationToken = default);
 
     Task<Vacuno> UpdateAsync(Vacuno vacuno, decimal? precioCompra, string? aptoPara, CancellationToken cancellationToken = default);
+
+    Task<long> EnsureGranjaAsync(
+        string nombre,
+        string codigoDistrito,
+        CancellationToken cancellationToken = default);
 
     Task<(List<VacunoListItem> Items, int TotalCount)> GetPagedAsync(
         string? query, DateTime? fechaDesde, DateTime? fechaHasta, string? estado, int page, int limit, CancellationToken cancellationToken = default);

@@ -12,6 +12,7 @@ using ZooTech.Domain.Configuration;
 using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities;
 using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities.GetArbolGenealogico;
 using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
+using ZooTech.Application.Common.Gateway.Services;
 
 namespace ZooTech.Application.UnitTests.Modules.Module_Vacuno.UseCases;
 

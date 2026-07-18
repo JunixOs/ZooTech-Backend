@@ -7,7 +7,6 @@ using ZooTech.Application.Modules.Module_Fecundacion.UseCases.UpdateFecundacion;
 using ZooTech.Domain.Ganaderia.Module_Fecundacion.Entities;
 using ZooTech.Domain.Ganaderia.Module_Fecundacion.Rules;
 using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.DTOs;
-using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.DTOs.Responses;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.Mappers;

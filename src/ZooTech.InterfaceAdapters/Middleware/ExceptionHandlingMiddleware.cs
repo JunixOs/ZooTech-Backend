@@ -1,7 +1,7 @@
-using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using ZooTech.Application.Common.Gateway.Auditing;
+using ZooTech.Application.Common.Exceptions;
 using ZooTech.Domain.Shared.Enums;
 using ZooTech.Domain.Shared.Exceptions;
 using ZooTech.InterfaceAdapters.Models;
@@ -72,11 +72,16 @@ namespace ZooTech.InterfaceAdapters.Middleware
                     {
                         ErrorCode = ex.CompleteErrorCode,
                         Message = ex.Message,
-                        Details = ex.Details
+                        Details = ex.Details,
+                        FieldErrors = ex is IFieldValidationException validationException
+                            ? validationException.FieldErrors
+                                .Select(error => new FieldErrorContent(error.Field, error.Code, error.Message))
+                                .ToList()
+                            : []
                     }
                 };
 
-                await context.Response.WriteAsync(JsonSerializer.Serialize(response));
+                await context.Response.WriteAsJsonAsync(response);
             }
             catch (Exception ex)
             {
@@ -112,7 +117,7 @@ namespace ZooTech.InterfaceAdapters.Middleware
                     }
                 };
 
-                await context.Response.WriteAsync(JsonSerializer.Serialize(response));
+                await context.Response.WriteAsJsonAsync(response);
             }
         }
 
