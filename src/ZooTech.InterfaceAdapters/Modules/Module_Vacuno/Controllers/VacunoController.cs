@@ -121,14 +121,14 @@ public sealed class VacunoController : ControllerBase
     [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> ExportarArbolGenealogico([FromRoute] long id, [FromQuery] int niveles = 4, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> ExportarArbolGenealogico([FromRoute] long id, [FromQuery] int niveles = 4, [FromQuery] string formato = "excel", CancellationToken cancellationToken = default)
     {
         var behaviorPipeline = _exportarArbolGenealogicoBehaviorPipelineFactory.Create();
 
-        var command = new ExportarArbolGenealogicoCommand(id, niveles);
+        var command = new ExportarArbolGenealogicoCommand(id, niveles, formato);
 
         var result = await behaviorPipeline.Execute(command, cancellationToken);
-        return File(result.excel, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Genealogia_{id}.xlsx");
+        return File(result.Bytes, result.ContentType, result.FileName);
     }
 
     [HttpPost]

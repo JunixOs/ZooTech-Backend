@@ -7,4 +7,7 @@ public interface IArbolGenealogicoExportService
 {
     Task<byte[]> GenerateExcelAsync(
         List<VacunoGenealogiaNode> arbolGenealogico, Vacuno raiz, CancellationToken cancellationToken = default);
+
+    Task<byte[]> GeneratePdfAsync(
+        List<VacunoGenealogiaNode> arbolGenealogico, Vacuno raiz, CancellationToken cancellationToken = default);
 }
