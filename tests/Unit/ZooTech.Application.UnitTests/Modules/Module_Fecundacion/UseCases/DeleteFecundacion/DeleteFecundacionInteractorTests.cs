@@ -1,7 +1,6 @@
 using FluentAssertions;
 using Moq;
 using ZooTech.Application.Common.Gateway.Caching;
-using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Common.Models;
 using ZooTech.Application.Modules.Module_Fecundacion.Common;
 using ZooTech.Application.Modules.Module_Fecundacion.Exceptions;
@@ -87,7 +86,7 @@ public sealed class DeleteFecundacionInteractorTests
         _unitOfWorkMock.Verify(u => u.ExecuteInTransactionAsync(
             It.IsAny<Func<CancellationToken, Task<EmptyOutput>>>(),
             It.IsAny<CancellationToken>(),
-            It.IsAny<Func<EmptyOutput, CancellationToken, Task<EmptyOutput>>?>()), Times.Never);
+            It.IsAny<Func<EmptyOutput, CancellationToken, Task<EmptyOutput>>?>()), Times.Once);
         _cacheMock.Verify(c => c.RemoveByPrefixAsync(It.IsAny<string>()), Times.Never);
     }
 
@@ -114,26 +113,25 @@ public sealed class DeleteFecundacionInteractorTests
         _unitOfWorkMock.Verify(u => u.ExecuteInTransactionAsync(
             It.IsAny<Func<CancellationToken, Task<EmptyOutput>>>(),
             It.IsAny<CancellationToken>(),
-            It.IsAny<Func<EmptyOutput, CancellationToken, Task<EmptyOutput>>?>()), Times.Never);
+            It.IsAny<Func<EmptyOutput, CancellationToken, Task<EmptyOutput>>?>()), Times.Once);
         _cacheMock.Verify(c => c.RemoveByPrefixAsync(It.IsAny<string>()), Times.Never);
     }
 
     [Fact]
-    public async Task HandleAsync_WhenReasonIsEmpty_ShouldReturnFieldValidationAndNotQueryRepository()
+    public async Task HandleAsync_WhenTransactionFails_ShouldNotClearCache()
     {
-        // Arrange
-        var command = new DeleteFecundacionCommand(10, " ");
+        var command = new DeleteFecundacionCommand(10, "Error transaccional");
+        _unitOfWorkMock
+            .Setup(u => u.ExecuteInTransactionAsync(
+                It.IsAny<Func<CancellationToken, Task<EmptyOutput>>>(),
+                It.IsAny<CancellationToken>(),
+                It.IsAny<Func<EmptyOutput, CancellationToken, Task<EmptyOutput>>?>()))
+            .ThrowsAsync(new InvalidOperationException("Transaction failed"));
 
-        // Act
         var act = async () => await _interactor.HandleAsync(command, CancellationToken.None);
 
-        // Assert
-        var exception = await act.Should().ThrowAsync<ValidationException>();
-        exception.Which.FieldErrors.Should().ContainSingle(error =>
-            error.Field == "razon" &&
-            error.Code == "FECUNDACION-DELETE-RAZON-REQUIRED");
-        _repositoryMock.Verify(r => r.GetForEditAsync(It.IsAny<long>(), It.IsAny<CancellationToken>()), Times.Never);
-        _repositoryMock.Verify(r => r.DeleteAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        _cacheMock.Verify(c => c.RemoveByPrefixAsync(It.IsAny<string>()), Times.Never);
     }
 
     private static FecundacionEditData CreateEditData(long id)

@@ -265,6 +265,7 @@ public static class DependencyInjection
 
         services.AddScoped<IDeleteFecundacionInputPort, DeleteFecundacionInteractor>();
         services.AddScoped<IDeleteFecundacionBehaviorPipelineFactory, DeleteFecundacionBehaviorPipelineFactory>();
+        services.AddScoped<ICommandValidator<DeleteFecundacionCommand>, DeleteFecundacionValidator>();
 
         services.AddScoped<IGetFecundacionForEditInputPort, GetFecundacionForEditInteractor>();
         services.AddScoped<IGetFecundacionForEditBehaviorPipelineFactory, GetFecundacionForEditBehaviorPipelineFactory>();
