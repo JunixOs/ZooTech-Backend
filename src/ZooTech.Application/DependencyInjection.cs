@@ -1,5 +1,7 @@
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetActivityStats;
+using ZooTech.Application.Common.Behaviors.Module_Vacuno.GetActivityStats;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 // Removed Animals references
@@ -310,6 +312,10 @@ public static class DependencyInjection
         services.AddScoped<IListarVacunosInputPort, ListarVacunosInteractor>();
         services.AddScoped<IListarVacunosBehaviorPipelineFactory, ListarVacunosBehaviorPipelineFactory>();
         services.AddScoped<ICommandValidator<ListarVacunosCommand>, ListarVacunosCommandValidator>();
+        
+        services.AddScoped<IGetActivityStatsInputPort, GetActivityStatsInteractor>();
+        services.AddScoped<IGetActivityStatsBehaviorPipelineFactory, GetActivityStatsBehaviorPipelineFactory>();
+        services.AddScoped<ICommandValidator<GetActivityStatsQuery>, GetActivityStatsQueryValidator>();
         
         services.AddScoped<IListarVacunosReporteUseCase, ListarVacunosReporteUseCase>();
         services.AddScoped<IListarVacunosReporteBehaviorPipelineFactory, ListarVacunosReporteBehaviorPipelineFactory>();
