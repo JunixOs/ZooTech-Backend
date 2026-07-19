@@ -768,7 +768,6 @@ public sealed class FecundacionRepository : IFecundacionRepository
     public async Task DeleteAsync(long id, string razon, CancellationToken cancellationToken = default)
     {
         var entity = await _context.fecundacions
-            .Include(x => x.fecundacion_cria)
             .FirstOrDefaultAsync(x => x.id == id, cancellationToken);
 
         if (entity is null)
@@ -791,7 +790,6 @@ public sealed class FecundacionRepository : IFecundacionRepository
             history.motivo_eliminacion = Truncate(reason, 250);
         }
 
-        await Task.CompletedTask;
     }
 
     private static string BuildDeleteNote(DateTime date, string reason, string? originalObservations)
