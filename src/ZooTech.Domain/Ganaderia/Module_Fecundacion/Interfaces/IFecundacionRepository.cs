@@ -14,6 +14,7 @@ public interface IFecundacionRepository
     Task<bool> ExistsCeloAsync(long celoId, CancellationToken cancellationToken = default);
 
     Task<bool> ExistsCodigoAsync(string codigo, CancellationToken cancellationToken = default);
+    Task<Fecundacion?> GetByCodigoAsync(string codigo, CancellationToken cancellationToken = default);
 
     Task<long> GetOrCreateResponsableByNameAsync(string name, CancellationToken cancellationToken = default);
 

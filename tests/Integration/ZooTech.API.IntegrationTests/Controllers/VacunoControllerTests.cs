@@ -4,6 +4,8 @@ using System.Net;
 using System.Net.Http.Json;
 using ZooTech.InterfaceAdapters.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetVacunoById;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetActivityStats;
 
 namespace ZooTech.API.IntegrationTests.Controllers;
 
@@ -93,5 +95,49 @@ public class VacunoControllerTests : IClassFixture<ZooTechApiFactory>
         var response = await client.GetAsync("/api/v1/vacunos?page=1&limit=1");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task GetVacunoById_WhenVacunoExists_ReturnsOkAndVacuno()
+    {
+        var listResponse = await _client.GetFromJsonAsync<PagedResponse<List<VacunoItemResponse>>>(
+            "/api/v1/vacunos?page=1&limit=1");
+        var vacuno = listResponse?.Data?.FirstOrDefault();
+        vacuno.Should().NotBeNull("the tenant database must contain at least one active vacuno");
+
+        var response = await _client.GetAsync($"/api/v1/vacunos/{vacuno!.Id}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        
+        var json = await response.Content.ReadAsStringAsync();
+        Console.WriteLine($"GetVacunoById Response: {json}");
+        var content = await response.Content.ReadFromJsonAsync<GeneralResponseDTO<VacunoResponse>>();
+        content.Should().NotBeNull();
+        content!.Success.Should().BeTrue();
+        content.Data.Should().NotBeNull();
+        content.Data!.Id.Should().Be(vacuno.Id);
+    }
+
+    [Fact]
+    public async Task GetVacunoById_WhenVacunoDoesNotExist_ReturnsNotFound()
+    {
+        var response = await _client.GetAsync("/api/v1/vacunos/999999");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task GetActivityStats_WithValidDates_ReturnsOkAndStats()
+    {
+        var today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+        var response = await _client.GetAsync($"/api/v1/vacunos/estadisticas/actividad?fechaInicio={today}&fechaFin={today}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        
+        var json = await response.Content.ReadAsStringAsync();
+        Console.WriteLine($"GetActivityStats Response: {json}");
+        var content = await response.Content.ReadFromJsonAsync<VacunoActivityStatsResponse>();
+        content.Should().NotBeNull();
+        content!.Points.Should().NotBeNull();
     }
 }

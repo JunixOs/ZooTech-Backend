@@ -113,11 +113,31 @@ public sealed class ZooTechApiFactory : WebApplicationFactory<Program>
         {
             var hoyDateOnly = DateOnly.FromDateTime(DateTime.UtcNow);
 
-            if (!ganaderiaDb.vacunos.Any(v => v.codigo == "V001"))
+            if (!ganaderiaDb.granjas.Any(g => g.id == 1))
+            {
+                var granja = new ZooTech.Infrastructure.Persistence.Entities.granja
+                {
+                    id = 1,
+                    nombre = "Granja de Prueba",
+                    distrito_codigo = "010101",
+                    activo = true,
+                    created_at = DateTime.UtcNow,
+                    updated_at = DateTime.UtcNow
+                };
+                
+                var depto = new ZooTech.Infrastructure.Persistence.Entities.geo_departamento { codigo = "01", nombre = "Amazonas" };
+                var prov = new ZooTech.Infrastructure.Persistence.Entities.geo_provincium { codigo = "0101", departamento_codigo = "01", nombre = "Chachapoyas", departamento_codigoNavigation = depto };
+                var dist = new ZooTech.Infrastructure.Persistence.Entities.geo_distrito { codigo = "010101", provincia_codigo = "0101", nombre = "Chachapoyas", provincia_codigoNavigation = prov };
+                
+                granja.distrito_codigoNavigation = dist;
+                ganaderiaDb.granjas.Add(granja);
+            }
+
+            if (!ganaderiaDb.vacunos.Any(v => v.codigo == "VAC001"))
             {
                 var hembra = new ZooTech.Infrastructure.Persistence.Entities.vacuno
                 {
-                    codigo = "V001",
+                    codigo = "VAC001",
                     nombre = "Vaca de Prueba",
                     sexo_code = "H",
                     fecha_nacimiento = new DateOnly(2020, 1, 1),
@@ -132,11 +152,11 @@ public sealed class ZooTechApiFactory : WebApplicationFactory<Program>
                 ganaderiaDb.vacunos.Add(hembra);
             }
 
-            if (!ganaderiaDb.vacunos.Any(v => v.codigo == "M001"))
+            if (!ganaderiaDb.vacunos.Any(v => v.codigo == "VAC002"))
             {
                 var macho = new ZooTech.Infrastructure.Persistence.Entities.vacuno
                 {
-                    codigo = "M001",
+                    codigo = "VAC002",
                     nombre = "Toro de Prueba",
                     sexo_code = "M",
                     fecha_nacimiento = new DateOnly(2020, 1, 1),

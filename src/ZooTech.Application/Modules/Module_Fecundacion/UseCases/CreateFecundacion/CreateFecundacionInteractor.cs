@@ -86,8 +86,16 @@ public sealed class CreateFecundacionInteractor : ICreateFecundacionInputPort
 
         // Persistir en base de datos de manera transaccional
         var saved = await _unitOfWork.ExecuteInTransactionAsync(
-            ct => repository.AddAsync(fecundacion, ct),
-            cancellationToken);
+            operation: ct => repository.AddAsync(fecundacion, ct),
+            cancellationToken: cancellationToken,
+            afterSave: async (domainBeforeSave, ct) => 
+            {
+                return await repository.GetByCodigoAsync(fecundacion.Codigo, ct) 
+                    ?? throw new ConflictException(
+                        ScopeName.Application, 
+                        ModuleName.Fecundacion, 
+                        message: "No se pudo recuperar la fecundación persistida.");
+            });
 
         await _cache.RemoveByPrefixAsync(FecundacionCacheKeys.ListarPrefix);
 
