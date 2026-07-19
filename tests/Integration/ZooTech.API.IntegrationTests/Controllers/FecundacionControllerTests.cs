@@ -17,7 +17,7 @@ public class FecundacionControllerTests : IClassFixture<ZooTechApiFactory>
         _client = factory.CreateTenantClient();
     }
 
-    [Fact(Skip = "Requires a live Redis instance reachable from the CI agent (Redis:ConnectionString is empty there); WebApplicationFactory<Program> fails to build the host. Unskip once CI provides Redis config.")]
+    [Fact]
     public async Task ListarFecundaciones_ReturnsOk()
     {
         var response = await _client.GetAsync("/api/v1/fecundaciones");
@@ -29,7 +29,7 @@ public class FecundacionControllerTests : IClassFixture<ZooTechApiFactory>
         content.Data.Should().NotBeNull();
     }
 
-    [Fact(Skip = "Requires a live Redis instance reachable from the CI agent (Redis:ConnectionString is empty there); WebApplicationFactory<Program> fails to build the host. Unskip once CI provides Redis config.")]
+    [Fact]
     public async Task EliminarFecundacion_WhenRegistroExists_ShouldHideItFromList()
     {
         var created = await CreateFecundacionAsync();
@@ -45,7 +45,7 @@ public class FecundacionControllerTests : IClassFixture<ZooTechApiFactory>
         getResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    [Fact(Skip = "Requires a live Redis instance reachable from the CI agent (Redis:ConnectionString is empty there); WebApplicationFactory<Program> fails to build the host. Unskip once CI provides Redis config.")]
+    [Fact]
     public async Task EliminarFecundacion_WhenRegistroDoesNotExist_ShouldReturnNotFound()
     {
         var response = await _client.SendAsync(new HttpRequestMessage(HttpMethod.Delete, "/api/v1/fecundaciones/999999")

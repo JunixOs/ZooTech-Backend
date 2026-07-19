@@ -18,7 +18,7 @@ public class VacunoControllerTests : IClassFixture<ZooTechApiFactory>
         _client = factory.CreateTenantClient();
     }
 
-    [Fact(Skip = "Requires a live Redis instance reachable from the CI agent (Redis:ConnectionString is empty there); WebApplicationFactory<Program> fails to build the host. Unskip once CI provides Redis config.")]
+    [Fact]
     public async Task ListarVacunos_ReturnsOk_AndPagedResponse()
     {
         var response = await _client.GetAsync("/api/v1/vacunos?page=1&limit=5");
@@ -33,7 +33,7 @@ public class VacunoControllerTests : IClassFixture<ZooTechApiFactory>
         content.Data.Should().NotBeNull();
     }
 
-    [Fact(Skip = "Requires a live Redis instance reachable from the CI agent (Redis:ConnectionString is empty there); WebApplicationFactory<Program> fails to build the host. Unskip once CI provides Redis config.")]
+    [Fact]
     public async Task GetArbolGenealogico_WhenVacunoDoesNotExist_ReturnsNotFound()
     {
         var response = await _client.GetAsync("/api/v1/vacunos/999999/genealogia");
@@ -41,7 +41,7 @@ public class VacunoControllerTests : IClassFixture<ZooTechApiFactory>
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    [Fact(Skip = "Requires a live Redis instance reachable from the CI agent (Redis:ConnectionString is empty there); WebApplicationFactory<Program> fails to build the host. Unskip once CI provides Redis config.")]
+    [Fact]
     public async Task ExportarArbolGenealogico_WhenVacunoExists_ReturnsExcelFile()
     {
         var listResponse = await _client.GetFromJsonAsync<PagedResponse<List<VacunoItemResponse>>>(
@@ -57,7 +57,7 @@ public class VacunoControllerTests : IClassFixture<ZooTechApiFactory>
         bytes.Length.Should().BeGreaterThan(0);
     }
 
-    [Fact(Skip = "Requires a live Redis instance reachable from the CI agent (Redis:ConnectionString is empty there); WebApplicationFactory<Program> fails to build the host. Unskip once CI provides Redis config.")]
+    [Fact]
     public async Task ExportarArbolGenealogico_WhenFormatoIsPdf_ReturnsPdfFile()
     {
         var listResponse = await _client.GetFromJsonAsync<PagedResponse<List<VacunoItemResponse>>>(
@@ -73,7 +73,7 @@ public class VacunoControllerTests : IClassFixture<ZooTechApiFactory>
         bytes.Length.Should().BeGreaterThan(0);
     }
 
-    [Fact(Skip = "Requires a live Redis instance reachable from the CI agent (Redis:ConnectionString is empty there); WebApplicationFactory<Program> fails to build the host. Unskip once CI provides Redis config.")]
+    [Fact]
     public async Task ExportarArbolGenealogico_WhenVacunoDoesNotExist_ReturnsNotFound()
     {
         var response = await _client.GetAsync("/api/v1/vacunos/999999/genealogia/exportar");
@@ -81,7 +81,7 @@ public class VacunoControllerTests : IClassFixture<ZooTechApiFactory>
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    [Theory(Skip = "Requires a live Redis instance reachable from the CI agent (Redis:ConnectionString is empty there); WebApplicationFactory<Program> fails to build the host. Unskip once CI provides Redis config.")]
+    [Theory]
     [InlineData("zootecniaunas.zentrycorp.local")]
     [InlineData("elroble.zentrycorp.local")]
     [InlineData("lacteosdelvalle.zentrycorp.local")]
