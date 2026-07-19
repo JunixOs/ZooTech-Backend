@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Moq;
 using StackExchange.Redis;
 using ZooTech.Application.Common.Gateway.Auditing;
 using ZooTech.Application.Common.Gateway.Caching;
@@ -64,6 +65,21 @@ public sealed class ZooTechApiFactory : WebApplicationFactory<Program>
             services.AddSingleton(catalogOptions);
             services.AddScoped<TenantCatalogDb>();
 
+            // Seed TenantCatalogDb with settings
+            // Use Mock TenantConfigurationProvider to provide default settings for testing
+            services.AddScoped<ZooTech.Application.Common.Gateway.Parametrization.ITenantConfigurationProvider>(sp =>
+            {
+                var mockProvider = new Moq.Mock<ZooTech.Application.Common.Gateway.Parametrization.ITenantConfigurationProvider>();
+                
+                // Configurar valores por defecto requeridos por las pruebas
+                mockProvider.Setup(p => p.GetSettingAsync(Moq.It.Is<ZooTech.Domain.Configuration.SettingDefinition<int>>(s => s.Code == "VACUNOS_ARBOL_MAX_NIVELES")))
+                            .ReturnsAsync(4);
+                mockProvider.Setup(p => p.GetSettingAsync(Moq.It.Is<ZooTech.Domain.Configuration.SettingDefinition<int>>(s => s.Code == "VACUNOS_ARBOL_MIN_NIVELES")))
+                            .ReturnsAsync(1);
+                            
+                return mockProvider.Object;
+            });
+
             services.AddScoped<ITenantDbContextFactory, InMemoryTenantDbContextFactory>();
             services.AddScoped<IGanaderiaDbContextFactory, InMemoryGanaderiaDbContextFactory>();
 
@@ -111,44 +127,45 @@ public sealed class ZooTechApiFactory : WebApplicationFactory<Program>
         
         lock (_seedLock)
         {
-            var hoyDateOnly = DateOnly.FromDateTime(DateTime.UtcNow);
-
-            if (!ganaderiaDb.vacunos.Any(v => v.codigo == "V001"))
+            // --- GEO DATA ---
+            if (!ganaderiaDb.geo_departamentos.Any(d => d.codigo == "01"))
             {
-                var hembra = new ZooTech.Infrastructure.Persistence.Entities.vacuno
-                {
-                    codigo = "V001",
-                    nombre = "Vaca de Prueba",
-                    sexo_code = "H",
-                    fecha_nacimiento = new DateOnly(2020, 1, 1),
-                    tipo_adquisicion_code = "COMPRA",
-                    raza_code = "HOLSTEIN",
-                    color_code = "BLANCO",
-                    granja_id = 1,
-                    fecha_registro = hoyDateOnly,
-                    created_at = DateTime.UtcNow,
-                    updated_at = DateTime.UtcNow
-                };
-                ganaderiaDb.vacunos.Add(hembra);
+                ganaderiaDb.geo_departamentos.Add(new ZooTech.Infrastructure.Persistence.Entities.geo_departamento { codigo = "01", nombre = "Amazonas" });
+                ganaderiaDb.geo_provincia.Add(new ZooTech.Infrastructure.Persistence.Entities.geo_provincium { codigo = "0101", departamento_codigo = "01", nombre = "Chachapoyas" });
+                ganaderiaDb.geo_distritos.Add(new ZooTech.Infrastructure.Persistence.Entities.geo_distrito { codigo = "010101", provincia_codigo = "0101", nombre = "Chachapoyas" });
             }
 
-            if (!ganaderiaDb.vacunos.Any(v => v.codigo == "M001"))
+            if (!ganaderiaDb.granjas.Any(g => g.id == 1))
             {
-                var macho = new ZooTech.Infrastructure.Persistence.Entities.vacuno
-                {
-                    codigo = "M001",
-                    nombre = "Toro de Prueba",
-                    sexo_code = "M",
-                    fecha_nacimiento = new DateOnly(2020, 1, 1),
-                    tipo_adquisicion_code = "COMPRA",
-                    raza_code = "HOLSTEIN",
-                    color_code = "BLANCO",
-                    granja_id = 1,
-                    fecha_registro = hoyDateOnly,
+                ganaderiaDb.granjas.Add(new ZooTech.Infrastructure.Persistence.Entities.granja 
+                { 
+                    id = 1, 
+                    nombre = "Granja Principal",
+                    distrito_codigo = "010101",
+                    activo = true,
                     created_at = DateTime.UtcNow,
                     updated_at = DateTime.UtcNow
-                };
-                ganaderiaDb.vacunos.Add(macho);
+                });
+            }
+
+            // --- FAMILY TREE ---
+            var hoyDateOnly = DateOnly.FromDateTime(DateTime.UtcNow);
+            
+            if (!ganaderiaDb.vacunos.Any(v => v.codigo == "V001"))
+            {
+                // Abuelos
+                ganaderiaDb.vacunos.Add(new ZooTech.Infrastructure.Persistence.Entities.vacuno { id = 1, codigo = "M001", nombre = "Abuelo", sexo_code = "M", fecha_nacimiento = new DateOnly(2010, 1, 1), tipo_adquisicion_code = "COMPRA", raza_code = "HOLSTEIN", color_code = "BLANCO", granja_id = 1, fecha_registro = hoyDateOnly, created_at = DateTime.UtcNow, updated_at = DateTime.UtcNow });
+                ganaderiaDb.vacunos.Add(new ZooTech.Infrastructure.Persistence.Entities.vacuno { id = 2, codigo = "H001", nombre = "Abuela", sexo_code = "H", fecha_nacimiento = new DateOnly(2010, 1, 1), tipo_adquisicion_code = "COMPRA", raza_code = "HOLSTEIN", color_code = "BLANCO", granja_id = 1, fecha_registro = hoyDateOnly, created_at = DateTime.UtcNow, updated_at = DateTime.UtcNow });
+                
+                // Padres
+                ganaderiaDb.vacunos.Add(new ZooTech.Infrastructure.Persistence.Entities.vacuno { id = 3, codigo = "M002", nombre = "Padre", padre_id = 1, madre_id = 2, sexo_code = "M", fecha_nacimiento = new DateOnly(2015, 1, 1), tipo_adquisicion_code = "COMPRA", raza_code = "HOLSTEIN", color_code = "BLANCO", granja_id = 1, fecha_registro = hoyDateOnly, created_at = DateTime.UtcNow, updated_at = DateTime.UtcNow });
+                ganaderiaDb.vacunos.Add(new ZooTech.Infrastructure.Persistence.Entities.vacuno { id = 4, codigo = "H002", nombre = "Madre", sexo_code = "H", fecha_nacimiento = new DateOnly(2015, 1, 1), tipo_adquisicion_code = "COMPRA", raza_code = "HOLSTEIN", color_code = "BLANCO", granja_id = 1, fecha_registro = hoyDateOnly, created_at = DateTime.UtcNow, updated_at = DateTime.UtcNow });
+                
+                // Hijo Principal (Objetivo de la prueba)
+                ganaderiaDb.vacunos.Add(new ZooTech.Infrastructure.Persistence.Entities.vacuno { id = 5, codigo = "V001", nombre = "Hijo Principal", padre_id = 3, madre_id = 4, sexo_code = "H", fecha_nacimiento = new DateOnly(2020, 1, 1), tipo_adquisicion_code = "COMPRA", raza_code = "HOLSTEIN", color_code = "BLANCO", granja_id = 1, fecha_registro = hoyDateOnly, created_at = DateTime.UtcNow, updated_at = DateTime.UtcNow });
+                
+                // Hijo Extra (Para probar que la eliminación no afecte el árbol si no es padre)
+                ganaderiaDb.vacunos.Add(new ZooTech.Infrastructure.Persistence.Entities.vacuno { id = 6, codigo = "DEL1", nombre = "Hijo Eliminado", padre_id = 3, madre_id = 4, sexo_code = "H", fecha_nacimiento = new DateOnly(2021, 1, 1), tipo_adquisicion_code = "COMPRA", raza_code = "HOLSTEIN", color_code = "BLANCO", granja_id = 1, fecha_registro = hoyDateOnly, deleted_at = DateTime.UtcNow, created_at = DateTime.UtcNow, updated_at = DateTime.UtcNow });
             }
 
             if (!ganaderiaDb.cat_tipo_fecundacions.Any(t => t.code == "MN"))
