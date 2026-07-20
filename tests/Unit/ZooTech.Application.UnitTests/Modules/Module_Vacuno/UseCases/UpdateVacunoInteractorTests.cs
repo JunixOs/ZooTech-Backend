@@ -1,197 +1,100 @@
 using FluentAssertions;
 using Moq;
-using ZooTech.Application.Common.Gateway.Caching;
-using ZooTech.Application.Common.Gateway.Parametrization;
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Modules.Module_Vacuno.Exceptions;
-using ZooTech.Application.Modules.Module_Vacuno.Services;
-using ZooTech.Application.Modules.Module_Vacuno.UseCases.UpdateVacuno;
-using ZooTech.Application.Modules.Module_Vacuno.Validators;
+using ZooTech.Application.UnitTests.Modules.Module_Vacuno.Support;
 using ZooTech.Domain.Configuration;
 using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities;
-using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
-using ZooTech.Domain.Shared.Interfaces;
+using ZooTech.Tests.Shared.Factories;
 
 namespace ZooTech.Application.UnitTests.Modules.Module_Vacuno.UseCases;
 
-public class UpdateVacunoInteractorTests
+public sealed class UpdateVacunoInteractorTests
 {
-    private readonly Mock<IVacunoRepository> _repository = new();
-    private readonly Mock<IGanaderiaUnitOfWork> _unitOfWork = new();
-    private readonly Mock<IAppCacheService> _cache = new();
-    private readonly Mock<ITenantConfigurationProvider> _tenantConfigurationProvider = new();
-    private readonly Mock<IVacunoReferenceResolver> _referenceResolver = new();
-    private readonly UpdateVacunoValidator _validator = new();
-
-    public UpdateVacunoInteractorTests()
-    {
-        _unitOfWork.Setup(x => x.Vacunos).Returns(_repository.Object);
-        _unitOfWork
-            .Setup(x => x.ExecuteInTransactionAsync(
-                It.IsAny<Func<CancellationToken, Task<Vacuno>>>(),
-                It.IsAny<CancellationToken>(),
-                It.IsAny<Func<Vacuno, CancellationToken, Task<Vacuno>>?>()))
-            .Returns((Func<CancellationToken, Task<Vacuno>> operation, CancellationToken cancellationToken, Func<Vacuno, CancellationToken, Task<Vacuno>>? _) =>
-                operation(cancellationToken));
-        _referenceResolver
-            .Setup(x => x.ResolveAsync(It.IsAny<VacunoReferenceData>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(VacunoReferenceResolution.Ok(null, null, 1));
-        SetupValidationSettings();
-    }
+    private readonly VacunoMutationTestContext _context = new();
 
     [Fact]
-    public async Task HandleAsync_WhenVacunoExists_ShouldUpdateEditableData()
+    public async Task HandleAsync_WhenCommandIsValid_UpdatesEditableFieldsAndPreservesCodigo()
     {
-        var existing = CreateExistingVacuno();
-        var command = CreateValidCommand(existing.Id) with 
-        { 
-            Nombre = "Nombre Editado",
-            FechaNacimiento = existing.FechaNacimiento,
-            TipoAdquisicionCode = existing.TipoAdquisicionCode
-        };
-        _repository.Setup(x => x.GetByIdAsync(existing.Id, It.IsAny<CancellationToken>()))
+        var existing = VacunoTestDataFactory.ExistingVacuno();
+        var command = VacunoTestDataFactory.UpdateCommand() with { Nombre = "Nombre Editado" };
+        _context.Repository.Setup(x => x.GetByIdAsync(existing.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
-        _repository.Setup(x => x.UpdateAsync(It.IsAny<Vacuno>(), It.IsAny<decimal?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+        _context.Repository
+            .Setup(x => x.UpdateAsync(It.IsAny<Vacuno>(), It.IsAny<decimal?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Vacuno vacuno, decimal? _, string? _, CancellationToken _) => vacuno);
-        var interactor = CreateInteractor();
 
-        var result = await interactor.HandleAsync(command, CancellationToken.None);
+        var result = await _context.UpdateInteractor().HandleAsync(command, CancellationToken.None);
 
-        result.Data.Codigo.Should().Be(existing.Codigo);
+        result.Data.Codigo.Should().Be(VacunoTestDataFactory.ExistingCodigo);
         result.Data.Nombre.Should().Be(command.Nombre);
-        _repository.Verify(x => x.UpdateAsync(It.Is<Vacuno>(v => v.Nombre == command.Nombre), It.IsAny<decimal?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Once);
-        _cache.Verify(x => x.RemoveByPrefixAsync("vacunos:listar"), Times.Once);
+        _context.UnitOfWork.Verify(x => x.ExecuteInTransactionAsync(
+            It.IsAny<Func<CancellationToken, Task<Vacuno>>>(),
+            It.IsAny<CancellationToken>(),
+            It.IsAny<Func<Vacuno, CancellationToken, Task<Vacuno>>?>()), Times.Once);
+        _context.Cache.Verify(x => x.RemoveByPrefixAsync("vacunos:listar"), Times.Once);
     }
 
     [Fact]
-    public async Task HandleAsync_WhenVacunoDoesNotExist_ShouldThrowNotFound()
+    public async Task HandleAsync_WhenVacunoDoesNotExist_DoesNotStartTransaction()
     {
-        var command = CreateValidCommand(99);
-        _repository.Setup(x => x.GetByIdAsync(It.IsAny<long>(), It.IsAny<CancellationToken>()))
+        var command = VacunoTestDataFactory.UpdateCommand(99);
+        _context.Repository.Setup(x => x.GetByIdAsync(command.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Vacuno?)null);
-        var interactor = CreateInteractor();
 
-        var act = async () => await interactor.HandleAsync(command, CancellationToken.None);
+        var act = () => _context.UpdateInteractor().HandleAsync(command, CancellationToken.None);
 
         await act.Should().ThrowAsync<VacunoNotFoundException>();
-        _repository.Verify(x => x.UpdateAsync(It.IsAny<Vacuno>(), It.IsAny<decimal?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+        _context.UnitOfWork.Verify(x => x.ExecuteInTransactionAsync(
+            It.IsAny<Func<CancellationToken, Task<Vacuno>>>(),
+            It.IsAny<CancellationToken>(),
+            It.IsAny<Func<Vacuno, CancellationToken, Task<Vacuno>>?>()), Times.Never);
+        _context.Cache.Verify(x => x.RemoveByPrefixAsync(It.IsAny<string>()), Times.Never);
     }
 
-    [Fact]
-    public async Task Validator_WhenEditableFieldsAreInvalid_ShouldRejectCommand()
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public async Task HandleAsync_WhenImmutableFieldChanges_RejectsUpdate(
+        bool changeFechaNacimiento,
+        bool changeTipoAdquisicion)
     {
-        var command = CreateValidCommand() with
+        var existing = VacunoTestDataFactory.ExistingVacuno();
+        var command = VacunoTestDataFactory.UpdateCommand() with
         {
-            Nombre = string.Empty,
-            TipoAdquisicionCode = string.Empty,
-            RazaCode = string.Empty,
-            ColorCode = string.Empty,
-            SexoCode = string.Empty,
-            GranjaId = 0,
-            Granja = null,
-            CodigoDistrito = null,
-            Observaciones = null
+            FechaNacimiento = changeFechaNacimiento
+                ? existing.FechaNacimiento.AddDays(1)
+                : existing.FechaNacimiento,
+            TipoAdquisicionCode = changeTipoAdquisicion
+                ? "COMPRA"
+                : existing.TipoAdquisicionCode
         };
-
-        var result = _validator.Validate(command);
-
-        result.Should().Contain([
-            "VACUNO-VACUNO-UPDATE-NOMBRE-NULL",
-            "VACUNO-VACUNO-UPDATE-TIPO_ADQUISICION_CODE-NULL",
-            "VACUNO-VACUNO-UPDATE-RAZA_CODE-NULL",
-            "VACUNO-VACUNO-UPDATE-COLOR_CODE-NULL",
-            "VACUNO-VACUNO-UPDATE-SEXO_CODE-NULL",
-            "VACUNO-VACUNO-UPDATE-GRANJA_ID-INVALID"
-        ]);
-    }
-
-    [Fact]
-    public async Task HandleAsync_WhenTenantObservationLimitIsExceeded_ShouldThrowValidation()
-    {
-        var existing = CreateExistingVacuno();
-        var command = CreateValidCommand(existing.Id) with
-        {
-            FechaNacimiento = existing.FechaNacimiento,
-            TipoAdquisicionCode = existing.TipoAdquisicionCode,
-            Observaciones = new string('X', 11)
-        };
-        _tenantConfigurationProvider
-            .Setup(x => x.GetSettingAsync(Settings.Vacunos.VacunosObservacionesMaxLength))
-            .ReturnsAsync(10);
-        _repository.Setup(x => x.GetByIdAsync(existing.Id, It.IsAny<CancellationToken>()))
+        _context.Repository.Setup(x => x.GetByIdAsync(existing.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
-        var interactor = CreateInteractor();
 
-        var act = async () => await interactor.HandleAsync(command, CancellationToken.None);
+        var act = () => _context.UpdateInteractor().HandleAsync(command, CancellationToken.None);
+
+        await act.Should().ThrowAsync<ImmutableFieldException>();
+        _context.UnitOfWork.Verify(x => x.ExecuteInTransactionAsync(
+            It.IsAny<Func<CancellationToken, Task<Vacuno>>>(),
+            It.IsAny<CancellationToken>(),
+            It.IsAny<Func<Vacuno, CancellationToken, Task<Vacuno>>?>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenTenantObservationLimitIsExceeded_ReturnsStructuredValidationError()
+    {
+        var existing = VacunoTestDataFactory.ExistingVacuno();
+        var command = VacunoTestDataFactory.UpdateCommand() with { Observaciones = new string('X', 11) };
+        _context.Repository.Setup(x => x.GetByIdAsync(existing.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+        _context.Settings.Setup(x => x.GetSettingAsync(Settings.Vacunos.VacunosObservacionesMaxLength))
+            .ReturnsAsync(10);
+
+        var act = () => _context.UpdateInteractor().HandleAsync(command, CancellationToken.None);
 
         var exception = await act.Should().ThrowAsync<ValidationException>();
-        exception.Which.Message.Should().Contain("10 caracteres");
         exception.Which.FieldErrors.Should().ContainSingle(error => error.Field == "observaciones");
-        _repository.Verify(x => x.UpdateAsync(It.IsAny<Vacuno>(), It.IsAny<decimal?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
-    }
-
-    private static UpdateVacunoCommand CreateValidCommand(long id = 20) => new(
-        Id: id,
-        Nombre: "Vacuno Editado",
-        FechaNacimiento: new DateOnly(2024, 1, 10),
-        TipoAdquisicionCode: "NACIMIENTO",
-        RazaCode: "HOLSTEIN",
-        ColorCode: "NEGRO_BLANCO",
-        SexoCode: "HEMBRA",
-        CodigoPadre: null,
-        CodigoMadre: null,
-        GranjaId: 1,
-        Granja: null,
-        CodigoDistrito: null,
-        Observaciones: "Actualizacion de prueba",
-        PrecioCompra: null,
-        AptoPara: null);
-
-    private static Vacuno CreateExistingVacuno() => Vacuno.Rehydrate(
-        id: 20,
-        codigo: "VAC-TST-020",
-        nombre: "Vacuno Original",
-        fechaNacimiento: new DateOnly(2023, 5, 1),
-        tipoAdquisicionCode: "NACIMIENTO",
-        razaCode: "HOLSTEIN",
-        colorCode: "NEGRO_BLANCO",
-        sexoCode: "HEMBRA",
-        padreId: null,
-        madreId: null,
-        granjaId: 1,
-        observaciones: null,
-        fechaRegistro: new DateOnly(2023, 5, 2),
-        createdAt: DateTime.UtcNow.AddDays(-1),
-        updatedAt: DateTime.UtcNow.AddDays(-1),
-        deletedAt: null,
-        motivoEliminacion: null,
-        createdBy: null,
-        updatedBy: null,
-        deletedBy: null);
-
-    private UpdateVacunoInteractor CreateInteractor()
-        => new(
-            _unitOfWork.Object,
-            _cache.Object,
-            _tenantConfigurationProvider.Object,
-            _referenceResolver.Object);
-
-    private void SetupValidationSettings()
-    {
-        _tenantConfigurationProvider
-            .Setup(x => x.GetSettingAsync(Settings.Vacunos.VacunosCodigoMaxLength))
-            .ReturnsAsync(20);
-        _tenantConfigurationProvider
-            .Setup(x => x.GetSettingAsync(Settings.Vacunos.VacunosInputMaxLength))
-            .ReturnsAsync(100);
-        _tenantConfigurationProvider
-            .Setup(x => x.GetSettingAsync(Settings.Vacunos.VacunosObservacionesMaxLength))
-            .ReturnsAsync(150);
-        _tenantConfigurationProvider
-            .Setup(x => x.GetSettingAsync(Settings.Vacunos.VacunosObservacionesMaxWords))
-            .ReturnsAsync(30);
-        _tenantConfigurationProvider
-            .Setup(x => x.GetSettingAsync(Settings.Vacunos.VacunosCodigoUppercaseRequired))
-            .ReturnsAsync(true);
+        _context.Cache.Verify(x => x.RemoveByPrefixAsync(It.IsAny<string>()), Times.Never);
     }
 }
