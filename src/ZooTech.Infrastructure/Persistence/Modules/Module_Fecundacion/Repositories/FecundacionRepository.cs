@@ -246,6 +246,37 @@ public sealed class FecundacionRepository : IFecundacionRepository
         return await _context.fecundacions.AnyAsync(f => f.codigo == codigo, cancellationToken);
     }
 
+    public async Task<Fecundacion?> GetByCodigoAsync(string codigo, CancellationToken cancellationToken = default)
+    {
+        var entity = await _context.fecundacions
+            .Include(f => f.vacuno_receptor)
+            .Include(f => f.responsable)
+            .Include(f => f.fecundacion_donante)
+            .Include(f => f.fecundacion_inseminacion)
+            .Include(f => f.fecundacion_embrion)
+            .FirstOrDefaultAsync(x => x.codigo == codigo, cancellationToken);
+
+        if (entity is null)
+            return null;
+
+        return new Fecundacion(
+            id: entity.id,
+            codigo: entity.codigo,
+            tipoFecundacionCode: entity.tipo_fecundacion_code,
+            vacunoReceptorId: entity.vacuno_receptor_id,
+            celoRegistroId: entity.celo_registro_id,
+            fechaProcedimiento: entity.fecha_procedimiento.ToDateTime(TimeOnly.MinValue),
+            responsableId: entity.responsable_id,
+            resultadoCode: entity.resultado_code,
+            observacionesVeterinarias: entity.observaciones_veterinarias,
+            actorUsuarioId: entity.created_by,
+            machoExterno: entity.fecundacion_donante?.tipo_donante == FecundacionRules.TipoDonanteExterno,
+            machoExternoNombre: null, // Si es necesario mapear el nombre del reproductor externo, habría que hacer el include
+            vacunoDonanteId: entity.fecundacion_donante?.vacuno_donante_id,
+            codigoSemen: entity.fecundacion_inseminacion?.codigo_semen,
+            codigoEmbrion: entity.fecundacion_embrion?.codigo_embrion);
+    }
+
     public async Task<long> GetOrCreateResponsableByNameAsync(string name, CancellationToken cancellationToken = default)
     {
         var normalizedName = name.Trim();
