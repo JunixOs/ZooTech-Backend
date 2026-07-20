@@ -46,6 +46,11 @@ internal sealed class VacunoApiScenario : IAsyncDisposable
     public async Task<VacunoResponse> CreateAsync(CreateVacunoRequest request)
     {
         var response = await _client.PostAsJsonAsync(RequirementApiRoutes.Vacunos, request);
+        if (response.StatusCode != HttpStatusCode.Created)
+        {
+            var err = await response.Content.ReadAsStringAsync();
+            throw new Exception($"Failed to create vacuno. Status: {response.StatusCode}. Error: {err}");
+        }
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         var body = await response.Content.ReadFromJsonAsync<GeneralResponseDTO<VacunoResponse>>();
         body!.Data.Should().NotBeNull();

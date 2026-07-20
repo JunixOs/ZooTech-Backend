@@ -6,9 +6,9 @@ namespace ZooTech.Tests.Shared.Factories;
 
 public static class VacunoTestDataFactory
 {
-    public const long ExistingVacunoId = 20;
+    public const long ExistingVacunoId = 1;
     public const long DefaultGranjaId = 1;
-    public const string ExistingCodigo = "VAC-TST-020";
+    public const string ExistingCodigo = "VAC001";
     public const string DefaultCodigo = "VAC-TST-001";
 
     public static CreateVacunoCommand CreateCommand() => new(

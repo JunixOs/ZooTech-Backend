@@ -84,7 +84,7 @@ public sealed class VacunoMutationControllerTests : IClassFixture<ZooTechApiFact
 
         var response = await _client.PatchAsJsonAsync(RequirementApiRoutes.Vacuno(created.Id), update);
 
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
     }
 
     private static UpdateVacunoRequest ToUpdate(CreateVacunoRequest request) => new(

@@ -73,10 +73,17 @@ public sealed class ZooTechApiFactory : WebApplicationFactory<Program>
                 var mockProvider = new Moq.Mock<ZooTech.Application.Common.Gateway.Parametrization.ITenantConfigurationProvider>();
                 
                 // Configurar valores por defecto requeridos por las pruebas
-                mockProvider.Setup(p => p.GetSettingAsync(Moq.It.Is<ZooTech.Domain.Configuration.SettingDefinition<int>>(s => s.Code == "VACUNOS_ARBOL_MAX_NIVELES")))
-                            .ReturnsAsync(4);
+                mockProvider.Setup(p => p.GetSettingAsync(Moq.It.IsAny<ZooTech.Domain.Configuration.SettingDefinition<int>>()))
+                            .ReturnsAsync(255);
+                            
+                // Override specific ones if needed
                 mockProvider.Setup(p => p.GetSettingAsync(Moq.It.Is<ZooTech.Domain.Configuration.SettingDefinition<int>>(s => s.Code == "VACUNOS_ARBOL_MIN_NIVELES")))
                             .ReturnsAsync(1);
+                mockProvider.Setup(p => p.GetSettingAsync(Moq.It.Is<ZooTech.Domain.Configuration.SettingDefinition<int>>(s => s.Code == "VACUNOS_ARBOL_MAX_NIVELES")))
+                            .ReturnsAsync(4);
+                            
+                mockProvider.Setup(p => p.GetSettingAsync(Moq.It.IsAny<ZooTech.Domain.Configuration.SettingDefinition<bool>>()))
+                            .ReturnsAsync(false);
                             
                 return mockProvider.Object;
             });
@@ -133,43 +140,7 @@ public sealed class ZooTechApiFactory : WebApplicationFactory<Program>
             ganaderiaDb.SeedVacunosBasic();
             ganaderiaDb.SeedGenealogia();
 
-            if (!ganaderiaDb.cat_tipo_fecundacions.Any(t => t.code == "MN"))
-            {
-                var tipoFecundacion = new ZooTech.Infrastructure.Persistence.Entities.cat_tipo_fecundacion
-                {
-                    nombre = "Monta Natural",
-                    code = "MN"
-                };
-                ganaderiaDb.cat_tipo_fecundacions.Add(tipoFecundacion);
-            }
 
-            if (!ganaderiaDb.cat_resultado_fecundacions.Any(r => r.code == "POSITIVO"))
-            {
-                var resultado = new ZooTech.Infrastructure.Persistence.Entities.cat_resultado_fecundacion
-                {
-                    nombre = "Positivo",
-                    code = "POSITIVO"
-                };
-                ganaderiaDb.cat_resultado_fecundacions.Add(resultado);
-            }
-
-            if (!ganaderiaDb.cat_razas.Any(r => r.code == "HOLSTEIN"))
-            {
-                ganaderiaDb.cat_razas.Add(new ZooTech.Infrastructure.Persistence.Entities.cat_raza { code = "HOLSTEIN", nombre = "Holstein" });
-            }
-            if (!ganaderiaDb.cat_sexos.Any(s => s.code == "H"))
-            {
-                ganaderiaDb.cat_sexos.Add(new ZooTech.Infrastructure.Persistence.Entities.cat_sexo { code = "H", nombre = "Hembra" });
-                ganaderiaDb.cat_sexos.Add(new ZooTech.Infrastructure.Persistence.Entities.cat_sexo { code = "M", nombre = "Macho" });
-            }
-            if (!ganaderiaDb.cat_colors.Any(c => c.code == "BLANCO"))
-            {
-                ganaderiaDb.cat_colors.Add(new ZooTech.Infrastructure.Persistence.Entities.cat_color { code = "BLANCO", nombre = "Blanco" });
-            }
-            if (!ganaderiaDb.cat_tipo_adquisicions.Any(ta => ta.code == "COMPRA"))
-            {
-                ganaderiaDb.cat_tipo_adquisicions.Add(new ZooTech.Infrastructure.Persistence.Entities.cat_tipo_adquisicion { code = "COMPRA", nombre = "Compra" });
-            }
 
             ganaderiaDb.SaveChanges();
         }
