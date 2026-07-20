@@ -5,8 +5,8 @@ namespace ZooTech.Application.Modules.Module_Celo.UseCases.ListCelos
 {
     public class ListCelosCommand : IAuditableRequest
     {
-        public AuditEventType EventType => throw new NotImplementedException();
-        public string Action => throw new NotImplementedException();
+        public AuditEventType EventType => AuditEventType.Read;
+        public string Action => "List celos";
 
         public string? Search { get; set; }
         public int Page { get; set; }

@@ -11,7 +11,7 @@ public class ValidationBehaviorTests
 {
     public record TestRequest;
 
-    private class TestValidator : ICommandValidator<TestRequest>
+    private class TestValidator : ICommandValidator<TestRequest>, IValidationErrorDetailsProvider
     {
         private readonly List<string> _errors;
         public ModuleName ModuleName => ModuleName.Tenancing;
@@ -22,6 +22,11 @@ public class ValidationBehaviorTests
         }
 
         public List<string> Validate(TestRequest request) => _errors;
+
+        public IReadOnlyList<FieldValidationError> GetFieldErrors(IReadOnlyCollection<string> errorCodes)
+            => errorCodes
+                .Select(code => new FieldValidationError("code", code, "Campo invalido."))
+                .ToList();
     }
 
     [Fact]
@@ -53,5 +58,8 @@ public class ValidationBehaviorTests
         var ex = await act.Should().ThrowAsync<ValidationException>();
         ex.Which.Details.Should().ContainSingle()
            .Which.Should().Be("TENANCING_CREATE-TENANT-CODE-NULL");
+        ex.Which.FieldErrors.Should().ContainSingle(error =>
+            error.Field == "code" &&
+            error.Code == "TENANCING_CREATE-TENANT-CODE-NULL");
     }
 }

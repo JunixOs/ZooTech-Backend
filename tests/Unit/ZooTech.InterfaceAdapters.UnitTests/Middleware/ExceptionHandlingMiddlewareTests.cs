@@ -36,7 +36,11 @@ public class ExceptionHandlingMiddlewareTests
     public async Task Should_Return_Json_For_AppException()
     {
         // Arrange
-        var middleware = CreateMiddleware(_ => throw new ValidationException(new List<string> { "ERROR" }, ScopeName.Application, ModuleName.Tenancing));
+        var middleware = CreateMiddleware(_ => throw new ValidationException(
+            new List<string> { "ERROR" },
+            ScopeName.Application,
+            ModuleName.Tenancing,
+            [new FieldValidationError("codigo", "ERROR", "Campo invalido.")]));
         var context = CreateHttpContext();
 
         var auditServiceMock = new Mock<IAppAuditService>();
@@ -46,9 +50,11 @@ public class ExceptionHandlingMiddlewareTests
 
         // Assert
         context.Response.StatusCode.Should().Be(400);
-        context.Response.ContentType.Should().Be("application/json");
+        context.Response.ContentType.Should().StartWith("application/json");
         var body = await ReadResponseBody(context);
         body.Should().Contain("VALIDATION_ERROR");
+        body.Should().Contain("fieldErrors");
+        body.Should().Contain("codigo");
     }
 
     [Fact]

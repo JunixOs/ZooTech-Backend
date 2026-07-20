@@ -1,10 +1,11 @@
 using Microsoft.EntityFrameworkCore;
-using ZooTech.Domain.Module_Vacuno.Entities;
-using ZooTech.Domain.Module_Vacuno.Interfaces;
-using ZooTech.Domain.Module_Vacuno.Entities.GetArbolGenealogico;
-using ZooTech.Domain.Module_Vacuno.Entities.ListarVacuno;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities.GetArbolGenealogico;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities.ListarVacuno;
 using ZooTech.Infrastructure.Persistence.Context;
-using ZooTech.Domain.Module_Vacuno.Models;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Models;
+using ZooTech.Infrastructure.Persistence.Entities;
 
 namespace ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Repositories;
 
@@ -12,11 +13,14 @@ public sealed class VacunoRepository : IVacunoRepository
 {
     private readonly GanaderiaDbContext _ganaderiaDbContext;
 
-    public VacunoRepository(
-        IGanaderiaDbContextFactory ganaderiaDbContextFactory
-    )
+    public VacunoRepository(IGanaderiaDbContextFactory ganaderiaDbContextFactory)
+        : this(ganaderiaDbContextFactory.CreateDbContextByTenantContext())
     {
-        _ganaderiaDbContext = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
+    }
+
+    public VacunoRepository(GanaderiaDbContext ganaderiaDbContext)
+    {
+        _ganaderiaDbContext = ganaderiaDbContext;
     }
 
     public async Task<List<Vacuno>> ListAllAsync(CancellationToken cancellationToken = default)
@@ -96,18 +100,16 @@ public sealed class VacunoRepository : IVacunoRepository
 
     public async Task<Vacuno> AddAsync(Vacuno vacuno, decimal? precioCompra, string? aptoPara, CancellationToken cancellationToken = default)
     {
-        await using var transaction = await _ganaderiaDbContext.Database.BeginTransactionAsync(cancellationToken);
         var entity = ToEntity(vacuno);
         _ganaderiaDbContext.vacunos.Add(entity);
 
         var now = DateTime.UtcNow;
-        await _ganaderiaDbContext.SaveChangesAsync(cancellationToken);
 
         if (precioCompra.HasValue)
         {
             var adq = new ZooTech.Infrastructure.Persistence.Entities.vacuno_adquisicion
             {
-                vacuno_id = entity.id,
+                vacuno = entity,
                 tipo_adquisicion_code = entity.tipo_adquisicion_code,
                 fecha_adquisicion = DateOnly.FromDateTime(now),
                 precio_compra = precioCompra.Value,
@@ -120,7 +122,7 @@ public sealed class VacunoRepository : IVacunoRepository
         {
             var util = new ZooTech.Infrastructure.Persistence.Entities.vacuno_utilizacion_historial
             {
-                vacuno_id = entity.id,
+                vacuno = entity,
                 tipo_utilizacion_code = aptoPara,
                 created_at = now
             };
@@ -129,15 +131,14 @@ public sealed class VacunoRepository : IVacunoRepository
 
         var est = new ZooTech.Infrastructure.Persistence.Entities.vacuno_estado_historial
         {
-            vacuno_id = entity.id,
+            vacuno = entity,
             estado_code = "SANO",
             fecha_estado = DateOnly.FromDateTime(now),
             created_at = now
         };
         _ganaderiaDbContext.vacuno_estado_historials.Add(est);
 
-        await _ganaderiaDbContext.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
+        await Task.CompletedTask;
         return ToDomain(entity);
     }
 
@@ -221,8 +222,39 @@ public sealed class VacunoRepository : IVacunoRepository
             }
         }
 
-        await _ganaderiaDbContext.SaveChangesAsync(cancellationToken);
+        await Task.CompletedTask;
         return ToDomain(entity);
+    }
+
+    public async Task<long> EnsureGranjaAsync(
+        string nombre,
+        string codigoDistrito,
+        CancellationToken cancellationToken = default)
+    {
+        var existingId = await _ganaderiaDbContext.granjas
+            .Where(g => g.nombre == nombre && g.distrito_codigo == codigoDistrito)
+            .Select(g => (long?)g.id)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (existingId.HasValue)
+        {
+            return existingId.Value;
+        }
+
+        var now = DateTime.UtcNow;
+        var granja = new granja
+        {
+            nombre = nombre,
+            distrito_codigo = codigoDistrito,
+            activo = true,
+            created_at = now,
+            updated_at = now
+        };
+
+        _ganaderiaDbContext.granjas.Add(granja);
+        await _ganaderiaDbContext.SaveChangesAsync(cancellationToken);
+
+        return granja.id;
     }
 
     public async Task<(List<VacunoListItem> Items, int TotalCount)> GetPagedAsync(

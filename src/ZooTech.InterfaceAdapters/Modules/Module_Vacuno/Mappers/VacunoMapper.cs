@@ -4,10 +4,10 @@ using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetVacunoById;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.UpdateVacuno;
-using ZooTech.Domain.Module_Vacuno.Entities.ListarVacuno;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities.ListarVacuno;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Requests;
-using ZooTech.Domain.Module_Vacuno.Models;
-using ZooTech.Domain.Module_Vacuno.Entities;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Models;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Mappers;
@@ -25,7 +25,7 @@ internal static class VacunoMapper
             Estado: item.IsDeleted ? "eliminado" : "activo",
             FechaRegistro: item.FechaRegistro);
 
-    internal static CreateVacunoCommand ToCommand(CreateVacunoRequest request, long? padreId, long? madreId, long granjaId)
+    internal static CreateVacunoCommand ToCommand(CreateVacunoRequest request)
         => new(
             request.Codigo.Trim().ToUpperInvariant(),
             request.Nombre,
@@ -34,14 +34,16 @@ internal static class VacunoMapper
             NormalizeCatalogCode(request.RazaCode),
             NormalizeCatalogCode(request.ColorCode),
             NormalizeSexoCode(request.SexoCode),
-            padreId,
-            madreId,
-            granjaId,
+            NormalizeOptionalCode(request.CodigoPadre),
+            NormalizeOptionalCode(request.CodigoMadre),
+            request.GranjaId,
+            NormalizeOptionalText(request.Granja),
+            NormalizeOptionalCode(request.CodigoDistrito),
             request.Observaciones,
             request.PrecioCompra,
             NormalizeAptoPara(request.AptoPara));
 
-    internal static UpdateVacunoCommand ToCommand(long id, UpdateVacunoRequest request, long? padreId, long? madreId, long granjaId)
+    internal static UpdateVacunoCommand ToCommand(long id, UpdateVacunoRequest request)
         => new(
             id,
             request.Nombre,
@@ -50,9 +52,11 @@ internal static class VacunoMapper
             NormalizeCatalogCode(request.RazaCode),
             NormalizeCatalogCode(request.ColorCode),
             NormalizeSexoCode(request.SexoCode),
-            padreId,
-            madreId,
-            granjaId,
+            NormalizeOptionalCode(request.CodigoPadre),
+            NormalizeOptionalCode(request.CodigoMadre),
+            request.GranjaId,
+            NormalizeOptionalText(request.Granja),
+            NormalizeOptionalCode(request.CodigoDistrito),
             request.Observaciones,
             request.PrecioCompra,
             NormalizeAptoPara(request.AptoPara));
@@ -150,4 +154,16 @@ internal static class VacunoMapper
             "MACHO" => "MACHO",
             _ => value.Trim().ToUpperInvariant()
         };
+
+    private static string? NormalizeOptionalCode(string? value)
+    {
+        var normalized = value?.Trim().ToUpperInvariant();
+        return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
+    }
+
+    private static string? NormalizeOptionalText(string? value)
+    {
+        var normalized = value?.Trim();
+        return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
+    }
 }

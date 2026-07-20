@@ -23,7 +23,15 @@ namespace ZooTech.Application.Common.Behaviors
 
             if(errors.Count != 0)
             {
-                throw new ValidationException(errors, ScopeName.Application, _validator.ModuleName);
+                var fieldErrors = _validator is IValidationErrorDetailsProvider detailsProvider
+                    ? detailsProvider.GetFieldErrors(errors)
+                    : [];
+
+                throw new ValidationException(
+                    errors,
+                    ScopeName.Application,
+                    _validator.ModuleName,
+                    fieldErrors);
             }
 
             return await next();

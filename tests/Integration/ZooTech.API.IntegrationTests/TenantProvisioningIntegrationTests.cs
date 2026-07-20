@@ -13,17 +13,15 @@ using ZooTech.Domain.Admin.Enums;
 using ZooTech.Infrastructure.Context;
 namespace ZooTech.API.IntegrationTests;
 
-public class TenantProvisioningIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
+public class TenantProvisioningIntegrationTests : IClassFixture<ZooTechApiFactory>
 {
     private readonly HttpClient _client;
 
-    public TenantProvisioningIntegrationTests(WebApplicationFactory<Program> factory)
+    public TenantProvisioningIntegrationTests(ZooTechApiFactory factory)
     {
         var provisioningMock = new Mock<ITenantProvisioningService>();
         provisioningMock
             .Setup(x => x.ProvisionAsync(It.IsAny<CreateTenantCommand>()));
-
-        var auditMock = new Mock<IAppAuditService>();
 
         var storeMock = new Mock<ITenantStore>();
         storeMock
@@ -49,32 +47,23 @@ public class TenantProvisioningIntegrationTests : IClassFixture<WebApplicationFa
 
                 builder.ConfigureTestServices(services =>
                 {
-                    RemoveService(services, typeof(IAppAuditService));
-                    services.AddSingleton(auditMock.Object);
-
-                    RemoveService(services, typeof(ITenantProvisioningService));
+                    var provDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(ITenantProvisioningService));
+                    if (provDescriptor != null) services.Remove(provDescriptor);
                     services.AddSingleton(provisioningMock.Object);
 
-                    RemoveService(services, typeof(ITenantStore));
+                    var storeDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(ITenantStore));
+                    if (storeDescriptor != null) services.Remove(storeDescriptor);
                     services.AddSingleton(storeMock.Object);
 
-                    RemoveService(services, typeof(ITenantContext));
+                    var ctxDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(ITenantContext));
+                    if (ctxDescriptor != null) services.Remove(ctxDescriptor);
                     services.AddSingleton<ITenantContext>(new TenantContext());
                 });
             })
             .CreateClient();
     }
 
-    private static void RemoveService(IServiceCollection services, Type serviceType)
-    {
-        var descriptor = services.SingleOrDefault(d => d.ServiceType == serviceType);
-        if (descriptor != null)
-        {
-            services.Remove(descriptor);
-        }
-    }
-
-    [Fact(Skip = "Requires a live Redis instance reachable from the CI agent (Redis:ConnectionString is empty there); WebApplicationFactory<Program> fails to build the host. Unskip once CI provides Redis config.")]
+    [Fact]
     public async Task POST_Tenancing_Should_Return_200_When_Provisioning_Succeeds()
     {
         // Arrange
@@ -106,7 +95,7 @@ public class TenantProvisioningIntegrationTests : IClassFixture<WebApplicationFa
         };
 
         // Act
-        var request = new HttpRequestMessage(HttpMethod.Post, "/tenancing")
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/tenancing")
         {
             Content = JsonContent.Create(payload)
         };

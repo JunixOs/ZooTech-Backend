@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using ZooTech.Domain.Module_Vacuno.Interfaces;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
 using ZooTech.Infrastructure.Persistence.Context;
 
 namespace ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Repositories;
