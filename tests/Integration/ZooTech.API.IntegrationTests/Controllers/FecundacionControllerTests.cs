@@ -2,7 +2,9 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using FluentAssertions;
+using ZooTech.API.IntegrationTests.Support;
 using ZooTech.InterfaceAdapters.DTOs;
+using ZooTech.InterfaceAdapters.Models;
 using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.DTOs.Responses;
 
@@ -20,7 +22,7 @@ public class FecundacionControllerTests : IClassFixture<ZooTechApiFactory>
     [Fact]
     public async Task ListarFecundaciones_ReturnsOk()
     {
-        var response = await _client.GetAsync("/api/v1/fecundaciones");
+        var response = await _client.GetAsync(RequirementApiRoutes.Fecundaciones);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var content = await response.Content.ReadFromJsonAsync<PagedResponse<List<FecundacionItemResponse>>>();
@@ -34,7 +36,7 @@ public class FecundacionControllerTests : IClassFixture<ZooTechApiFactory>
     {
         var created = await CreateFecundacionAsync();
 
-        var deleteResponse = await _client.SendAsync(new HttpRequestMessage(HttpMethod.Delete, $"/api/v1/fecundaciones/{created.Id}")
+        var deleteResponse = await _client.SendAsync(new HttpRequestMessage(HttpMethod.Delete, RequirementApiRoutes.Fecundacion(created.Id))
         {
             Content = JsonContent.Create(new DeleteFecundacionRequest("Prueba de eliminacion de fecundacion."))
         });
@@ -42,7 +44,7 @@ public class FecundacionControllerTests : IClassFixture<ZooTechApiFactory>
         var errorBody = await deleteResponse.Content.ReadAsStringAsync();
         deleteResponse.StatusCode.Should().Be(HttpStatusCode.NoContent, $"because {errorBody}");
 
-        var getResponse = await _client.GetAsync($"/api/v1/fecundaciones/{created.Id}");
+        var getResponse = await _client.GetAsync(RequirementApiRoutes.Fecundacion(created.Id));
         getResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
@@ -55,6 +57,22 @@ public class FecundacionControllerTests : IClassFixture<ZooTechApiFactory>
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task EliminarFecundacion_WhenReasonIsEmpty_ShouldReturnStructuredBadRequest()
+    {
+        var response = await _client.SendAsync(new HttpRequestMessage(
+            HttpMethod.Delete,
+            RequirementApiRoutes.Fecundacion(10))
+        {
+            Content = JsonContent.Create(new DeleteFecundacionRequest(" "))
+        });
+        var error = await response.Content.ReadFromJsonAsync<ErrorResponseModel>();
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        error!.Error.FieldErrors.Should().ContainSingle(x =>
+            x.Field == "razon" && x.Code == "FECUNDACION-DELETE-RAZON-REQUIRED");
     }
 
     private async Task<CreateFecundacionResponse> CreateFecundacionAsync()
@@ -73,7 +91,7 @@ public class FecundacionControllerTests : IClassFixture<ZooTechApiFactory>
             CodigoEmbrion: null,
             Observaciones: "Creado por prueba de integracion");
 
-        var response = await _client.PostAsJsonAsync("/api/v1/fecundaciones", request);
+        var response = await _client.PostAsJsonAsync(RequirementApiRoutes.Fecundaciones, request);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var content = await response.Content.ReadFromJsonAsync<GeneralResponseDTO<CreateFecundacionResponse>>();
