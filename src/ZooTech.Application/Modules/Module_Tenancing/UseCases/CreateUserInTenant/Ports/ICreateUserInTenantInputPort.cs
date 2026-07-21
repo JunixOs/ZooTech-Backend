@@ -1,7 +1,8 @@
+using ZooTech.Application.Common.Behaviors;
+
 namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateUserInTenant.Ports
 {
-    public interface ICreateUserInTenantInputPort
+    public interface ICreateUserInTenantInputPort : IRequestHandler<CreateUserInTenantCommand , CreateUserInTenantOutput>
     {
-        Task<CreateUserInTenantOutput> Handle(CreateUserInTenantCommand cmd, CancellationToken cancellationToken = default);
     }
 }

@@ -17,7 +17,7 @@ namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.ListAdminUsers
             _adminUserRepository = adminUserRepository;
         }
 
-        public Task<List<ListAdminUsersOutput>> Handle(EmptyCommand emptyCmd, CancellationToken cancellationToken = default)
+        public Task<List<ListAdminUsersOutput>> HandleAsync(ListAdminUsersQuery query, CancellationToken cancellationToken = default)
         {
             return _adminUserRepository.FindAll();
         }

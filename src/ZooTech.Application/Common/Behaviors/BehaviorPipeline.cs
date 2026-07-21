@@ -1,5 +1,6 @@
 namespace ZooTech.Application.Common.Behaviors
 {
+    // Clase que sirve para construir un Pipeline que incluya todos los Behaviors que se indique 
     public class BehaviorPipeline<TRequest , TResponse>
     {
         private readonly IEnumerable<IBehavior<TRequest , TResponse>> _behaviors;

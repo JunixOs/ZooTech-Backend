@@ -28,9 +28,13 @@ namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateUserInTena
                 errors.Add("TENANCING-ADMIN_USER-CREATE-CODE-INVALID");
             }
 
-            if (string.IsNullOrWhiteSpace(request.TenantDatabaseName))
+            if (request.TenantId is null)
             {
-                errors.Add("TENANCING-ADMIN_USER-CREATE-TENANT_DATABASE_NAME-NULL");
+                errors.Add("TENANCING-ADMIN_USER-CREATE-TENANT_ID-NULL");
+            }
+            else if (request.TenantId <= 0)
+            {
+                errors.Add("TENANCING-ADMIN_USER-CREATE-TENANT_ID-INVALID");
             }
 
             return errors;
