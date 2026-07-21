@@ -25,7 +25,7 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Mappers
                 FullName = dto.FullName,
                 Email = dto.Email,
                 IsActive = dto.IsActive,
-                TenantDatabaseName = dto.TenantDatabaseName
+                TenantId = dto.TenantId
             };
         }
     }

@@ -8,6 +8,6 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.DTOs.Requests
         public string? Email { get; set; }
         public bool IsActive { get; set; }
 
-        public string? TenantDatabaseName { get; set; }
+        public int? TenantId { get; set; }
     }
 }

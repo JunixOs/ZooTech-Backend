@@ -1,9 +1,9 @@
-using ZooTech.Application.Common.Models;
+using ZooTech.Application.Common.Behaviors;
 
 namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.ListAdminUsers.Ports
 {
     public interface IListAdminUsersInputPort
+        : IRequestHandler<ListAdminUsersQuery , List<ListAdminUsersOutput>>
     {
-        Task<List<ListAdminUsersOutput>> Handle(EmptyCommand emptyCmd, CancellationToken cancellationToken = default);
     }
 }
