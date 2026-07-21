@@ -11,6 +11,7 @@ public interface IOrdenioRepository
     Task<bool> ExistsUsuarioAsync(long usuarioId, CancellationToken cancellationToken);
     Task<bool> ExistsEstadoAsync(string estadoOrdenioCode, CancellationToken cancellationToken);
     Task<Ordenio?> GetByIdAsync(long id, CancellationToken cancellationToken);
+    Task<Ordenio?> GetByCodigoAsync(string codigo, CancellationToken cancellationToken);
     Task<(IReadOnlyList<OrdenioList> Items, int TotalCount)> ListAsync(
         long? vacunoId,
         string? estadoOrdenioCode,

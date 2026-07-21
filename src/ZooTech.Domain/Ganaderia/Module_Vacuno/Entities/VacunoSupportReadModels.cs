@@ -20,3 +20,9 @@ public sealed record VacunoGranjaDetails(
 public sealed record VacunoUtilizacionDetails(
     string TipoUtilizacionCode,
     DateTime CreatedAt);
+
+public sealed record ActivityAggregatesOutput(
+    int InventarioInicial,
+    Dictionary<DateOnly, int> AltasPorDia,
+    Dictionary<DateOnly, int> BajasPorDia);
+

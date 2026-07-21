@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using ZooTech.Application.Common.Gateway.Caching;
 using ZooTech.Application.Common.Gateway.Context;
 
@@ -11,15 +12,18 @@ namespace ZooTech.Infrastructure.Caching
         private readonly GarnetCacheConnection _garnetCacheConnection;
         private readonly ITenantContext _tenantContext;
         private readonly TimeSpan _defaultExpiration;
+        private readonly ILogger<GarnetCacheService> _logger;
 
         public GarnetCacheService(
             GarnetCacheConnection garnetCacheConnection, 
             ITenantContext tenantContext,
-            IConfiguration configuration
+            IConfiguration configuration,
+            ILogger<GarnetCacheService> logger
         )
         {
             _garnetCacheConnection = garnetCacheConnection;
             _tenantContext = tenantContext;
+            _logger = logger;
             
             var expirationTime = configuration["Garnet:ExpirationTime"];
             if (TimeSpan.TryParseExact(
@@ -38,24 +42,27 @@ namespace ZooTech.Infrastructure.Caching
 
         public async Task<(bool Found, T? Value)> TryGetAsync<T>(string key)
         {
-            key = $"{_tenantContext.TenantId}:{key}";
-
-            var garnetDatabase = _garnetCacheConnection.GetDatabase();
-
-            var json = await garnetDatabase.StringGetAsync(key);
-
-            if (!json.HasValue)
-                return (false, default);
-
             try
             {
-                return (
-                    true,
-                    JsonSerializer.Deserialize<T>((string)json!)
-                );
+                var multiplexer = _garnetCacheConnection.GetMultiplexer();
+                if (!multiplexer.IsConnected)
+                {
+                    return (false, default);
+                }
+
+                key = $"{_tenantContext.TenantId}:{key}";
+                var garnetDatabase = _garnetCacheConnection.GetDatabase();
+                var json = await garnetDatabase.StringGetAsync(key);
+
+                if (!json.HasValue)
+                    return (false, default);
+
+                var deserialized = JsonSerializer.Deserialize<T>((string)json!);
+                return (true, deserialized);
             }
-            catch (JsonException)
+            catch (Exception ex)
             {
+                _logger.LogWarning(ex, "TryGetAsync failed for key: {Key}. Redis/Garnet might be unavailable.", key);
                 return (false, default);
             }
         }
@@ -74,37 +81,90 @@ namespace ZooTech.Infrastructure.Caching
             TimeSpan ttl
         )
         {
-            key = $"{_tenantContext.TenantId}:{key}";
-
-            var (found , value) = await TryGetAsync<T>(key);
-
-            if(found)
+            try
             {
-                return value!;
+                var multiplexer = _garnetCacheConnection.GetMultiplexer();
+                if (multiplexer.IsConnected)
+                {
+                    var (found, value) = await TryGetAsync<T>(key);
+                    if (found)
+                    {
+                        return value!;
+                    }
+                }
             }
-
-            var garnetDatabase = _garnetCacheConnection.GetDatabase();
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "GetOrCreateAsync read failed for key: {Key}.", key);
+            }
 
             var result = await factory();
 
-            var serialized = JsonSerializer.Serialize(result);
-
-            await garnetDatabase.StringSetAsync(
-                key,
-                serialized, 
-                ttl
-            );
+            try
+            {
+                var multiplexer = _garnetCacheConnection.GetMultiplexer();
+                if (multiplexer.IsConnected)
+                {
+                    var fullKey = $"{_tenantContext.TenantId}:{key}";
+                    var garnetDatabase = _garnetCacheConnection.GetDatabase();
+                    var serialized = JsonSerializer.Serialize(result);
+                    await garnetDatabase.StringSetAsync(fullKey, serialized, ttl);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "GetOrCreateAsync write failed for key: {Key}.", key);
+            }
 
             return result;
         }
 
         public async Task RemoveByKeyAsync(string key)
         {
-            key = $"{_tenantContext.TenantId}:{key}";
+            try
+            {
+                var multiplexer = _garnetCacheConnection.GetMultiplexer();
+                if (!multiplexer.IsConnected)
+                {
+                    return;
+                }
 
-            var garnetDatabase = _garnetCacheConnection.GetDatabase();
+                key = $"{_tenantContext.TenantId}:{key}";
+                var garnetDatabase = _garnetCacheConnection.GetDatabase();
+                await garnetDatabase.KeyDeleteAsync(key);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "RemoveByKeyAsync failed for key: {Key}.", key);
+            }
+        }
 
-            await garnetDatabase.KeyDeleteAsync(key);
+        public async Task RemoveByPrefixAsync(string keyPrefix)
+        {
+            var tenantPrefix = $"{_tenantContext.TenantId}:{keyPrefix}";
+
+            try
+            {
+                var multiplexer = _garnetCacheConnection.GetMultiplexer();
+                if (!multiplexer.IsConnected)
+                {
+                    return;
+                }
+
+                var database = _garnetCacheConnection.GetDatabase();
+                foreach (var endpoint in multiplexer.GetEndPoints())
+                {
+                    var server = multiplexer.GetServer(endpoint);
+                    await foreach (var key in server.KeysAsync(pattern: $"{tenantPrefix}*"))
+                    {
+                        await database.KeyDeleteAsync(key);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "RemoveByPrefixAsync failed for key prefix: {KeyPrefix}.", keyPrefix);
+            }
         }
 
         public async Task SaveAsync<T>(
@@ -113,17 +173,23 @@ namespace ZooTech.Infrastructure.Caching
             TimeSpan ttl
         )
         {
-            key = $"{_tenantContext.TenantId}:{key}";
+            try
+            {
+                var multiplexer = _garnetCacheConnection.GetMultiplexer();
+                if (!multiplexer.IsConnected)
+                {
+                    return;
+                }
 
-            var garnetDatabase = _garnetCacheConnection.GetDatabase();
-
-            var serialized = JsonSerializer.Serialize(valueToCaching);
-
-            await garnetDatabase.StringSetAsync(
-                key,
-                serialized, 
-                ttl
-            );
+                key = $"{_tenantContext.TenantId}:{key}";
+                var garnetDatabase = _garnetCacheConnection.GetDatabase();
+                var serialized = JsonSerializer.Serialize(valueToCaching);
+                await garnetDatabase.StringSetAsync(key, serialized, ttl);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "SaveAsync failed for key: {Key}.", key);
+            }
         }
     }
 }

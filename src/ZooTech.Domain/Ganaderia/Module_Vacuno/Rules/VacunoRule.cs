@@ -28,34 +28,34 @@ public static class VacunoRule
             throw new ArgumentException("La fecha de registro persistida del vacuno es obligatoria.");
 
         if (createdAt == default)
-            throw new ArgumentException("La fecha de creación persistida del vacuno es obligatoria.");
+            throw new ArgumentException("La fecha de creacion persistida del vacuno es obligatoria.");
 
         if (updatedAt == default)
-            throw new ArgumentException("La fecha de actualización persistida del vacuno es obligatoria.");
+            throw new ArgumentException("La fecha de actualizacion persistida del vacuno es obligatoria.");
 
         if (updatedAt < createdAt)
-            throw new ArgumentException("La fecha de actualización persistida no puede ser anterior a la creación.");
+            throw new ArgumentException("La fecha de actualizacion persistida no puede ser anterior a la creacion.");
 
         if (deletedAt.HasValue && deletedAt.Value < createdAt)
-            throw new ArgumentException("La fecha de eliminación persistida no puede ser anterior a la creación.");
+            throw new ArgumentException("La fecha de eliminacion persistida no puede ser anterior a la creacion.");
     }
 
-    public static void ValidarCodigo(string? codigo)
+    public static void ValidarCodigo(string? codigo, int maxLength)
     {
         if (string.IsNullOrWhiteSpace(codigo))
-            throw new ArgumentException("El código del vacuno es obligatorio.");
+            throw new ArgumentException("El codigo del vacuno es obligatorio.");
 
-        if (codigo.Trim().Length > 15)
-            throw new ArgumentException("El código del vacuno no puede superar los 15 caracteres.");
+        if (codigo.Trim().Length > maxLength)
+            throw new ArgumentException($"El codigo del vacuno no puede superar los {maxLength} caracteres.");
     }
 
-    public static void ValidarNombre(string? nombre)
+    public static void ValidarNombre(string? nombre, int maxLength)
     {
         if (string.IsNullOrWhiteSpace(nombre))
             throw new ArgumentException("El nombre del vacuno es obligatorio.");
 
-        if (nombre.Trim().Length > 100)
-            throw new ArgumentException("El nombre del vacuno no puede superar los 100 caracteres.");
+        if (nombre.Trim().Length > maxLength)
+            throw new ArgumentException($"El nombre del vacuno no puede superar los {maxLength} caracteres.");
     }
 
     public static void ValidarGranjaId(long granjaId)
@@ -64,54 +64,54 @@ public static class VacunoRule
             throw new ArgumentException("El ID de la granja debe ser mayor a 0.");
     }
 
-    public static void ValidarRazaCode(string? razaCode)
+    public static void ValidarRazaCode(string? razaCode, int maxLength)
     {
-        if (string.IsNullOrWhiteSpace(razaCode))
-            throw new ArgumentException("El código de raza es obligatorio.");
-
-        if (razaCode.Trim().Length > 30)
-            throw new ArgumentException("El código de raza no puede superar los 30 caracteres.");
+        ValidarCatalogoCode(razaCode, "raza", maxLength);
     }
 
-    public static void ValidarSexoCode(string? sexoCode)
+    public static void ValidarSexoCode(string? sexoCode, int maxLength)
     {
-        if (string.IsNullOrWhiteSpace(sexoCode))
-            throw new ArgumentException("El código de sexo es obligatorio.");
-
-        if (sexoCode.Trim().Length > 10)
-            throw new ArgumentException("El código de sexo no puede superar los 10 caracteres.");
+        ValidarCatalogoCode(sexoCode, "sexo", maxLength);
     }
 
-    public static void ValidarTipoAdquisicionCode(string? tipoAdquisicionCode)
+    public static void ValidarTipoAdquisicionCode(string? tipoAdquisicionCode, int maxLength)
     {
-        if (string.IsNullOrWhiteSpace(tipoAdquisicionCode))
-            throw new ArgumentException("El código de tipo de adquisición es obligatorio.");
-
-        if (tipoAdquisicionCode.Trim().Length > 30)
-            throw new ArgumentException("El código de tipo de adquisición no puede superar los 30 caracteres.");
+        ValidarCatalogoCode(tipoAdquisicionCode, "tipo de adquisicion", maxLength);
     }
 
-    public static void ValidarColorCode(string? colorCode)
+    public static void ValidarColorCode(string? colorCode, int maxLength)
     {
-        if (string.IsNullOrWhiteSpace(colorCode))
-            throw new ArgumentException("El código de color es obligatorio.");
-
-        if (colorCode.Trim().Length > 30)
-            throw new ArgumentException("El código de color no puede superar los 30 caracteres.");
+        ValidarCatalogoCode(colorCode, "color", maxLength);
     }
 
-    public static void ValidarObservaciones(string? observaciones)
+    public static void ValidarObservaciones(string? observaciones, int maxLength, int maxWords)
     {
-        if (!string.IsNullOrWhiteSpace(observaciones) && observaciones.Trim().Length > 150)
-            throw new ArgumentException("Las observaciones no pueden superar los 150 caracteres.");
+        if (string.IsNullOrWhiteSpace(observaciones))
+            return;
+
+        var value = observaciones.Trim();
+        if (value.Length > maxLength)
+            throw new ArgumentException($"Las observaciones no pueden superar los {maxLength} caracteres.");
+
+        if (value.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length > maxWords)
+            throw new ArgumentException($"Las observaciones no pueden superar las {maxWords} palabras.");
     }
 
     public static void ValidarMotivoEliminacion(string? motivoEliminacion)
     {
         if (string.IsNullOrWhiteSpace(motivoEliminacion))
-            throw new ArgumentException("El motivo de eliminación es obligatorio.");
+            throw new ArgumentException("El motivo de eliminacion es obligatorio.");
 
         if (motivoEliminacion.Trim().Length > 200)
-            throw new ArgumentException("El motivo de eliminación no puede superar los 200 caracteres.");
+            throw new ArgumentException("El motivo de eliminacion no puede superar los 200 caracteres.");
+    }
+
+    private static void ValidarCatalogoCode(string? value, string fieldName, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            throw new ArgumentException($"El codigo de {fieldName} es obligatorio.");
+
+        if (value.Trim().Length > maxLength)
+            throw new ArgumentException($"El codigo de {fieldName} no puede superar los {maxLength} caracteres.");
     }
 }

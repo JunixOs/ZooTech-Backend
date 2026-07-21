@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.CreateFecundacion;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.GetFecundacionForEdit;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.GetFecundacionOptions;
@@ -6,7 +6,6 @@ using ZooTech.Application.Modules.Module_Fecundacion.UseCases.SearchFecundacionV
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.UpdateFecundacion;
 using ZooTech.Domain.Ganaderia.Module_Fecundacion.Entities;
 using ZooTech.Domain.Ganaderia.Module_Fecundacion.Rules;
-using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.DTOs.Responses;
 

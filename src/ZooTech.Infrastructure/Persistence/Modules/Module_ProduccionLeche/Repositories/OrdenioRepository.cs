@@ -10,11 +10,14 @@ public sealed class OrdenioRepository : IOrdenioRepository
 {
     private readonly GanaderiaDbContext _ganaderiaDbContext;
 
-    public OrdenioRepository(
-        IGanaderiaDbContextFactory ganaderiaDbContextFactory
-    )
+    public OrdenioRepository(IGanaderiaDbContextFactory ganaderiaDbContextFactory)
+        : this(ganaderiaDbContextFactory.CreateDbContextByTenantContext())
     {
-        _ganaderiaDbContext = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
+    }
+
+    public OrdenioRepository(GanaderiaDbContext ganaderiaDbContext)
+    {
+        _ganaderiaDbContext = ganaderiaDbContext;
     }
 
     public Task<bool> ExistsCodigoAsync(string codigo, CancellationToken cancellationToken)
@@ -53,6 +56,17 @@ public sealed class OrdenioRepository : IOrdenioRepository
         return entity is null ? null : ToDomain(entity);
     }
 
+    public async Task<Ordenio?> GetByCodigoAsync(string codigo, CancellationToken cancellationToken)
+    {
+        var entity = await _ganaderiaDbContext.ordenios
+            .Include(x => x.vacuno)
+            .Include(x => x.encargado_usuario)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.codigo == codigo.Trim() && x.deleted_at == null, cancellationToken);
+
+        return entity is null ? null : ToDomain(entity);
+    }
+
     public async Task<(IReadOnlyList<OrdenioList> Items, int TotalCount)> ListAsync(
         long? vacunoId,
         string? estadoOrdenioCode,
@@ -82,7 +96,7 @@ public sealed class OrdenioRepository : IOrdenioRepository
     {
         var entity = ToEntity(ordenio);
         _ganaderiaDbContext.ordenios.Add(entity);
-        await _ganaderiaDbContext.SaveChangesAsync(cancellationToken);
+        await Task.CompletedTask;
         return ToDomain(entity);
     }
 
@@ -103,7 +117,7 @@ public sealed class OrdenioRepository : IOrdenioRepository
         entity.deleted_by = ordenio.DeletedBy;
         entity.motivo_eliminacion = ordenio.MotivoEliminacion;
 
-        await _ganaderiaDbContext.SaveChangesAsync(cancellationToken);
+        await Task.CompletedTask;
         return ToDomain(entity);
     }
 

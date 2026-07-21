@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,6 +10,7 @@ using ZooTech.Domain.Module_Celo.Interfaces;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
 using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
+using ZooTech.Domain.Shared.Interfaces;
 using ZooTech.Infrastructure.Common.Export;
 using ZooTech.Infrastructure.Time;
 using ZooTech.Infrastructure.Common.Services.PdfGenerator;
@@ -50,6 +52,7 @@ using MongoDB.Driver;
 using ZooTech.Infrastructure.Caching.ConcurrentCache;
 using ZooTech.Domain.Ganaderia.Module_Fecundacion.Interfaces;
 using ZooTech.Infrastructure.Persistence.Modules.Module_Fecundacion.Repositories;
+using ZooTech.Infrastructure.Persistence;
 using ZooTech.Infrastructure.Persistence.Repositories;
 using ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.Common;
 using ZooTech.Infrastructure.Reports;
@@ -75,20 +78,30 @@ public static class DependencyInjection
         services.AddScoped<IPdfDocumentGenerator, PdfDocumentGenerator>();
         services.AddScoped<IPdfGeneratorService, PdfGeneratorService>();
         services.AddScoped<IOrdeniosComparationPdfGeneratorService, PdfGenerateComparationService>();
-
+        
         services.AddScoped<IExcelGeneratorService, ExcelGeneratorService>();
+
         // ============================================
         // Repositories
         // ============================================
-
         services.AddScoped<ICeloRepository, CeloRepository>();
         services.AddScoped<IOrdenioRepository, OrdenioRepository>();
+        services.AddScoped<IGanaderiaUnitOfWork, GanaderiaUnitOfWork>();
         services.AddScoped<IVacunoRepository, VacunoRepository>();
         services.AddScoped<ITriajeRepository, TriajeRepository>();
         services.AddScoped<ITipoPesoRepository, TipoPesoRepository>();
         
-        var garnetConnectionString = configuration["Garnet:ConnectionString"]
-            ?? throw new InvalidOperationException("Garnet:ConnectionString no configurado");
+        var garnetConnectionString = configuration["Garnet:ConnectionString"];
+        if (string.IsNullOrWhiteSpace(garnetConnectionString))
+        {
+            garnetConnectionString = "localhost,abortConnect=false";
+        }
+        else if (!garnetConnectionString.Contains("abortConnect="))
+        {
+            garnetConnectionString = garnetConnectionString.Contains(";") || garnetConnectionString.Contains(",")
+                ? garnetConnectionString + ",abortConnect=false"
+                : garnetConnectionString + ",abortConnect=false";
+        }
 
         services.AddSingleton<IConnectionMultiplexer>(sp =>
             ConnectionMultiplexer.Connect(garnetConnectionString));
@@ -119,8 +132,9 @@ public static class DependencyInjection
 
             return new MongoClient(connection);
         });
-        services.AddSingleton<MongoDbContext>();
-        services.AddScoped<IAppAuditService, MongoDbAudit>();
+        services.AddSingleton<IMongoDbContextFactory , MongoDbContextFactory>();
+        services.AddScoped<IAppAuditService, MongoDbAuditService>();
+        services.AddScoped<MongoDbLogNormalizer>();
 
         services.AddScoped<ITenantRepository, TenantRepository>();
         services.AddScoped<IAdminUserRepository, AdminUserRepository>();
@@ -187,7 +201,6 @@ public static class DependencyInjection
         services.AddScoped<IVacunoListadoReadRepository, VacunoListadoReadRepository>();
         services.AddScoped<IVacunoActivityStatsReadRepository, VacunoActivityStatsReadRepository>();
         services.AddScoped<IVacunoGranjaReadRepository, VacunoGranjaReadRepository>();
-        services.AddScoped<IVacunoMutationUnitOfWork, VacunoMutationUnitOfWork>();
         services.AddScoped<IVacunoReferenceReadRepository, VacunoReferenceReadRepository>();
         services.AddScoped<IVacunoResponseReadRepository, VacunoResponseReadRepository>();
         services.AddScoped<IListadoVacunosReporteReadRepository, ListadoVacunosReporteReadRepository>();
@@ -196,7 +209,7 @@ public static class DependencyInjection
         // Servicios de Exportación y Reportes
         services.AddScoped<ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte.IRegistroVacunoExcelReportService, RegistroVacunoExcelReportService>();
         services.AddScoped<ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte.IRegistroVacunoPdfReportService, RegistroVacunoPdfReportService>();
-        services.AddScoped<ZooTech.Application.Common.Gateway.Services.IArbolGenealogicoExportService, ZooTech.Infrastructure.Reports.Vacunos.ArbolGenealogicoExcelExportService>();
+        services.AddScoped<ZooTech.Application.Common.Gateway.Services.IArbolGenealogicoExportService, ZooTech.Infrastructure.Reports.Vacunos.ArbolGenealogicoExportService>();
 
         return services;
     }

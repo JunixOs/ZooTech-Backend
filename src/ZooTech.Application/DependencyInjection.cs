@@ -1,5 +1,7 @@
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetActivityStats;
+using ZooTech.Application.Common.Behaviors.Module_Vacuno.GetActivityStats;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 // Removed Animals references
@@ -122,6 +124,7 @@ using ZooTech.Application.Common.Behaviors.Module_Fecundacion.GetFecundacionForE
 using ZooTech.Application.Common.Behaviors.Module_Fecundacion.GetFecundacionOptions;
 using ZooTech.Application.Common.Behaviors.Module_Fecundacion.ListarFecundacion;
 using ZooTech.Application.Common.Behaviors.Module_Fecundacion.SearchFecundacionVacunos;
+using ZooTech.Application.Common.Behaviors.Module_Fecundacion.UpdateFecundacion;
 
 
 namespace ZooTech.Application;
@@ -262,6 +265,7 @@ public static class DependencyInjection
 
         services.AddScoped<IDeleteFecundacionInputPort, DeleteFecundacionInteractor>();
         services.AddScoped<IDeleteFecundacionBehaviorPipelineFactory, DeleteFecundacionBehaviorPipelineFactory>();
+        services.AddScoped<ICommandValidator<DeleteFecundacionCommand>, DeleteFecundacionValidator>();
 
         services.AddScoped<IGetFecundacionForEditInputPort, GetFecundacionForEditInteractor>();
         services.AddScoped<IGetFecundacionForEditBehaviorPipelineFactory, GetFecundacionForEditBehaviorPipelineFactory>();
@@ -277,7 +281,7 @@ public static class DependencyInjection
         services.AddScoped<ISearchFecundacionVacunosBehaviorPipelineFactory, SearchFecundacionVacunosBehaviorPipelineFactory>();
         
         services.AddScoped<IUpdateFecundacionInputPort, UpdateFecundacionInteractor>();
-        services.AddScoped<IUpdateFecundacionEstadoBehaviorPipelineFactory, UpdateFecundacionEstadoBehaviorPipelineFactory>();
+        services.AddScoped<IUpdateFecundacionBehaviorPipelineFactory, UpdateFecundacionBehaviorPipelineFactory>();
         services.AddScoped<ICommandValidator<UpdateFecundacionCommand>, UpdateFecundacionValidator>();
 
 
@@ -310,11 +314,17 @@ public static class DependencyInjection
         services.AddScoped<IListarVacunosBehaviorPipelineFactory, ListarVacunosBehaviorPipelineFactory>();
         services.AddScoped<ICommandValidator<ListarVacunosCommand>, ListarVacunosCommandValidator>();
         
+        services.AddScoped<IGetActivityStatsInputPort, GetActivityStatsInteractor>();
+        services.AddScoped<IGetActivityStatsBehaviorPipelineFactory, GetActivityStatsBehaviorPipelineFactory>();
+        services.AddScoped<ICommandValidator<GetActivityStatsQuery>, GetActivityStatsQueryValidator>();
+        
         services.AddScoped<IListarVacunosReporteUseCase, ListarVacunosReporteUseCase>();
         services.AddScoped<IListarVacunosReporteBehaviorPipelineFactory, ListarVacunosReporteBehaviorPipelineFactory>();
         
         services.AddScoped<IObtenerRegistroVacunoReporteUseCase, ObtenerRegistroVacunoReporteUseCase>();
         services.AddScoped<IObtenerRegistroVacunoReporteBehaviorPipelineFactory, ObtenerRegistroVacunoReporteBehaviorPipelineFactory>();
+
+
 
         services.AddScoped<IUpdateVacunoInputPort, UpdateVacunoInteractor>();
         services.AddScoped<IUpdateVacunoBehaviorPipelineFactory, UpdateVacunoBehaviorPipelineFactory>();

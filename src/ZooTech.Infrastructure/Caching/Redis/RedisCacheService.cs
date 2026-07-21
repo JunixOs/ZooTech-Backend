@@ -107,6 +107,11 @@ namespace ZooTech.Infrastructure.Caching
             await redisDatabase.KeyDeleteAsync(key);
         }
 
+        public Task RemoveByPrefixAsync(string keyPrefix)
+        {
+            return Task.CompletedTask;
+        }
+
         public async Task SaveAsync<T>(
             string key,
             T valueToCaching,

@@ -80,18 +80,18 @@ builder.Services.AddCors(options =>
                         uri.Host.EndsWith(".zentrycorp.dev")
                     );
 
-                // Desarrollo local
+                // Desarrollo local por tenant: admin.zentrycorp.local:4200, zootecniaunas.zentrycorp.local:4200, etc.
                 var isLocal =
                     uri.Scheme == "http" &&
                     uri.Port == 4200 &&
                     (
+                        uri.Host == "localhost" ||
+                        uri.Host == "127.0.0.1" ||
                         uri.Host == "admin.zentrycorp.local" ||
                         uri.Host == "zootecniaunas.zentrycorp.local" ||
                         uri.Host == "elroble.zentrycorp.local" ||
                         uri.Host == "lacteosdelvalle.zentrycorp.local" ||
-                        uri.Host == "losandes.zentrycorp.local" ||
-                        uri.Host == "localhost" ||
-                        uri.Host == "127.0.0.1"
+                        uri.Host == "losandes.zentrycorp.local"
                     );
 
                 return isZentryDomain || isLocal;
@@ -124,13 +124,6 @@ app.UseRouting();
 // IMPORTANTE: debe ir antes de TenantResolution, Authentication y Authorization.
 app.UseCors("AllowFrontend");
 
-// ======= Tenant Middleware =======
-app.UseMiddleware<TenantResolutionMiddleware>();
-
-// ======= JWT =======
-app.UseAuthentication();
-app.UseAuthorization();
-
 // ======= Swagger =======
 if (app.Environment.IsDevelopment())
 {
@@ -151,6 +144,14 @@ if (app.Environment.IsDevelopment())
             "Users API");
     });
 }
+
+// ======= Tenant Middleware =======
+app.UseMiddleware<TenantResolutionMiddleware>();
+
+// ======= JWT =======
+app.UseAuthentication();
+app.UseAuthorization();
+
 
 // ======= Controllers =======
 app.MapControllers();

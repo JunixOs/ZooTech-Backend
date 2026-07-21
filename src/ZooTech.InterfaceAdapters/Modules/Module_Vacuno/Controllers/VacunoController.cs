@@ -20,7 +20,6 @@ using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Mappers;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Mappers.ReporteVacuno;
-using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Services;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.ListarVacunos;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.CreateVacuno;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.GetVacunoById;
@@ -29,6 +28,8 @@ using ZooTech.Application.Common.Behaviors.Module_Vacuno.DeleteVacuno;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.ExportarArbolGenealogico;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.ReporteVacuno.ListarVacunosReporte;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.GetArbolGenealogico;
+using ZooTech.Application.Common.Behaviors.Module_Vacuno.GetActivityStats;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetActivityStats;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Controllers;
 
@@ -45,6 +46,7 @@ public sealed class VacunoController : ControllerBase
     private readonly IExportarArbolGenealogicoBehaviorPipelineFactory _exportarArbolGenealogicoBehaviorPipelineFactory;
     private readonly IListarVacunosReporteBehaviorPipelineFactory _listarVacunosReporteBehaviorPipelineFactory;
     private readonly IGetArbolGenealogicoBehaviorPipelineFactory _getArbolGenealogicoBehaviorPipelineFactory;
+    private readonly IGetActivityStatsBehaviorPipelineFactory _getActivityStatsBehaviorPipelineFactory;
     private readonly IVacunoRepository _vacunoRepository;
 
     public VacunoController(
@@ -56,6 +58,7 @@ public sealed class VacunoController : ControllerBase
         IExportarArbolGenealogicoBehaviorPipelineFactory exportarArbolGenealogicoBehaviorPipelineFactory,
         IListarVacunosReporteBehaviorPipelineFactory listarVacunosReporteBehaviorPipelineFactory,
         IGetArbolGenealogicoBehaviorPipelineFactory getArbolGenealogicoBehaviorPipelineFactory,
+        IGetActivityStatsBehaviorPipelineFactory getActivityStatsBehaviorPipelineFactory,
         IVacunoRepository vacunoRepository)
     {
         _listarVacunosBehaviorPipelineFactory = listarVacunosBehaviorPipelineFactory;
@@ -66,6 +69,7 @@ public sealed class VacunoController : ControllerBase
         _exportarArbolGenealogicoBehaviorPipelineFactory = exportarArbolGenealogicoBehaviorPipelineFactory;
         _listarVacunosReporteBehaviorPipelineFactory = listarVacunosReporteBehaviorPipelineFactory;
         _getArbolGenealogicoBehaviorPipelineFactory = getArbolGenealogicoBehaviorPipelineFactory;
+        _getActivityStatsBehaviorPipelineFactory = getActivityStatsBehaviorPipelineFactory;
 
         _vacunoRepository = vacunoRepository;
     }
@@ -121,14 +125,14 @@ public sealed class VacunoController : ControllerBase
     [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> ExportarArbolGenealogico([FromRoute] long id, [FromQuery] int niveles = 4, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> ExportarArbolGenealogico([FromRoute] long id, [FromQuery] int niveles = 4, [FromQuery] string formato = "excel", CancellationToken cancellationToken = default)
     {
         var behaviorPipeline = _exportarArbolGenealogicoBehaviorPipelineFactory.Create();
 
-        var command = new ExportarArbolGenealogicoCommand(id, niveles);
+        var command = new ExportarArbolGenealogicoCommand(id, niveles, formato);
 
         var result = await behaviorPipeline.Execute(command, cancellationToken);
-        return File(result.excel, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Genealogia_{id}.xlsx");
+        return File(result.Bytes, result.ContentType, result.FileName);
     }
 
     [HttpPost]
@@ -137,29 +141,12 @@ public sealed class VacunoController : ControllerBase
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Create(
         [FromBody] CreateVacunoRequest request,
-        [FromServices] IVacunoReferenceResolver referenceResolver,
-        [FromServices] IVacunoMutationUnitOfWork mutationUnitOfWork,
         [FromServices] IVacunoResponseReadRepository responseReadRepository,
         CancellationToken cancellationToken)
     {
-        var resolution = await referenceResolver.ResolveForCreateAsync(request, cancellationToken);
-        if (!resolution.Success)
-        {
-            return ValidationErrorResponse(resolution.Error!.Field ?? string.Empty, resolution.Error.Message);
-        }
-
-        long granjaId = resolution.GranjaId ?? 0;
-        if (resolution.GranjaToCreate is not null)
-        {
-            granjaId = await mutationUnitOfWork.EnsureGranjaAsync(
-                resolution.GranjaToCreate.Nombre,
-                resolution.GranjaToCreate.CodigoDistrito,
-                cancellationToken);
-        }
-
         var behaviorPipeline = _createVacunoBehaviorPipelineFactory.Create();
 
-        var command = VacunoMapper.ToCommand(request, resolution.PadreId, resolution.MadreId, granjaId);
+        var command = VacunoMapper.ToCommand(request);
         var output = await behaviorPipeline.Execute(command, cancellationToken);
         var response = await EnrichResponseAsync(output.Data, responseReadRepository, cancellationToken);
         return Created($"/api/v1/vacuno/{response.Id}", GeneralResponseDTO<VacunoResponse>.Ok(response));
@@ -191,8 +178,6 @@ public sealed class VacunoController : ControllerBase
     public async Task<IActionResult> Update(
         [FromRoute] string identifier,
         [FromBody] UpdateVacunoRequest request,
-        [FromServices] IVacunoReferenceResolver referenceResolver,
-        [FromServices] IVacunoMutationUnitOfWork mutationUnitOfWork,
         [FromServices] IVacunoResponseReadRepository responseReadRepository,
         CancellationToken cancellationToken)
     {
@@ -202,28 +187,9 @@ public sealed class VacunoController : ControllerBase
             return NotFound(GeneralResponseDTO<object>.Fail("El vacuno no existe."));
         }
 
-        var resolution = await referenceResolver.ResolveForUpdateAsync(id, request, cancellationToken);
-        if (!resolution.Success)
-        {
-            if (resolution.Error!.Kind == VacunoReferenceErrorKind.NotFound)
-            {
-                return NotFound(GeneralResponseDTO<object>.Fail(resolution.Error.Message));
-            }
-            return ValidationErrorResponse(resolution.Error.Field ?? string.Empty, resolution.Error.Message);
-        }
-
-        long granjaId = resolution.GranjaId ?? 0;
-        if (resolution.GranjaToCreate is not null)
-        {
-            granjaId = await mutationUnitOfWork.EnsureGranjaAsync(
-                resolution.GranjaToCreate.Nombre,
-                resolution.GranjaToCreate.CodigoDistrito,
-                cancellationToken);
-        }
-
         var behaviorPipeline = _updateVacunoBehaviorPipelineFactory.Create();
 
-        var command = VacunoMapper.ToCommand(id, request, resolution.PadreId, resolution.MadreId, granjaId);
+        var command = VacunoMapper.ToCommand(id, request);
         var output = await behaviorPipeline.Execute(command, cancellationToken);
         var response = await EnrichResponseAsync(output.Data, responseReadRepository, cancellationToken);
         return Ok(GeneralResponseDTO<VacunoResponse>.Ok(response));
@@ -376,45 +342,16 @@ public sealed class VacunoController : ControllerBase
         [FromQuery] System.DateOnly? fechaFin,
         CancellationToken cancellationToken)
     {
-        var end = fechaFin ?? System.DateOnly.FromDateTime(System.DateTime.UtcNow);
-        var start = fechaInicio ?? end.AddDays(-30);
-
-        if (start > end)
-        {
-            return BadRequest("La fecha de inicio no puede ser posterior a la fecha de fin.");
-        }
-
-        var vacunos = await _vacunoRepository.ListAllWithDeletedAsync(cancellationToken);
-        var points = new List<VacunoActivityPointResponse>();
-
-        for (var date = start; date <= end; date = date.AddDays(1))
-        {
-            var count = vacunos.Count(v =>
-            {
-                var isRegistered = v.FechaRegistro <= date;
-                if (!isRegistered) return false;
-
-                if (v.DeletedAt.HasValue)
-                {
-                    var deletionDate = System.DateOnly.FromDateTime(v.DeletedAt.Value);
-                    return deletionDate > date;
-                }
-
-                return true;
-            });
-
-            points.Add(new VacunoActivityPointResponse(date.ToString("yyyy-MM-dd"), count));
-        }
-
-        var mayor = points.Any() ? points.Max(p => p.Cantidad) : 0;
-        var menor = points.Any() ? points.Min(p => p.Cantidad) : 0;
+        var query = new GetActivityStatsQuery(fechaInicio, fechaFin);
+        var pipeline = _getActivityStatsBehaviorPipelineFactory.Create();
+        var output = await pipeline.Execute(query, cancellationToken);
 
         return Ok(new VacunoActivityStatsResponse(
-            start.ToString("yyyy-MM-dd"),
-            end.ToString("yyyy-MM-dd"),
-            points,
-            mayor,
-            menor
+            output.FechaInicio,
+            output.FechaFin,
+            output.Points.Select(p => new VacunoActivityPointResponse(p.Fecha, p.Cantidad)).ToList(),
+            output.Mayor,
+            output.Menor
         ));
     }
 
@@ -490,25 +427,6 @@ public sealed class VacunoController : ControllerBase
         }
 
         return -1;
-    }
-
-    private IActionResult ValidationErrorResponse(
-        string field,
-        string message,
-        string topMessage = "Los datos enviados no son válidos.")
-    {
-        return BadRequest(new
-        {
-            error = new
-            {
-                code = "VALIDATION_ERROR",
-                message = topMessage,
-                details = new[]
-                {
-                    new { field, message }
-                }
-            }
-        });
     }
 
     private async Task<object> BuildRegistroVacunoDetalleAsync(

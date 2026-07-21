@@ -13,7 +13,7 @@ public class UpdateVacunoValidatorTests
         string razaCode = "HOLSTEIN",
         string colorCode = "NEGRO",
         string sexoCode = "H",
-        long granjaId = 1,
+        long? granjaId = 1,
         string? observaciones = null)
     {
         return new UpdateVacunoCommand(
@@ -24,9 +24,11 @@ public class UpdateVacunoValidatorTests
             RazaCode: razaCode,
             ColorCode: colorCode,
             SexoCode: sexoCode,
-            PadreId: null,
-            MadreId: null,
+            CodigoPadre: null,
+            CodigoMadre: null,
             GranjaId: granjaId,
+            Granja: null,
+            CodigoDistrito: null,
             PrecioCompra: 1000m,
             AptoPara: "Carne",
             Observaciones: observaciones);
@@ -53,13 +55,13 @@ public class UpdateVacunoValidatorTests
     }
 
     [Fact]
-    public void Validate_WhenNombreExceedsMaxLength_HasError()
+    public void Validate_WhenNombreExceedsTenantLimit_HasNoBasicValidatorError()
     {
         var validator = new UpdateVacunoValidator();
 
         var result = validator.Validate(ValidCommand(nombre: new string('A', 101)));
 
-        Assert.NotEmpty(result);
+        Assert.Empty(result);
     }
 
     [Fact]
@@ -113,13 +115,28 @@ public class UpdateVacunoValidatorTests
     }
 
     [Fact]
-    public void Validate_WhenObservacionesExceedsMaxLength_HasError()
+    public void Validate_WhenNewGranjaDataIsProvided_HasNoGranjaError()
+    {
+        var validator = new UpdateVacunoValidator();
+        var command = ValidCommand(granjaId: null) with
+        {
+            Granja = "Granja Nueva",
+            CodigoDistrito = "010101"
+        };
+
+        var result = validator.Validate(command);
+
+        Assert.DoesNotContain("VACUNO-VACUNO-UPDATE-GRANJA_ID-INVALID", result);
+    }
+
+    [Fact]
+    public void Validate_WhenObservacionesExceedsTenantLimit_HasNoBasicValidatorError()
     {
         var validator = new UpdateVacunoValidator();
 
         var result = validator.Validate(ValidCommand(observaciones: new string('A', 151)));
 
-        Assert.NotEmpty(result);
+        Assert.Empty(result);
     }
 
     [Fact]

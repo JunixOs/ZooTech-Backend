@@ -1,5 +1,6 @@
 using Moq;
 using FluentAssertions;
+using ZooTech.Application.Common.Gateway.Caching;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
 using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
 using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities.ListarVacuno;
@@ -13,16 +14,26 @@ public class ListarVacunosInteractorTests
 {
     private readonly Mock<IVacunoRepository> _vacunoRepositoryMock;
     private readonly Mock<ITenantConfigurationProvider> _settingsMock;
+    private readonly Mock<IAppCacheService> _cacheMock;
     private readonly ListarVacunosInteractor _interactor;
 
     public ListarVacunosInteractorTests()
     {
         _vacunoRepositoryMock = new Mock<IVacunoRepository>();
         _settingsMock = new Mock<ITenantConfigurationProvider>();
+        _cacheMock = new Mock<IAppCacheService>();
         
         _settingsMock.Setup(x => x.GetSettingAsync(Settings.Vacunos.VacunosDefaultFilterDays)).ReturnsAsync(30);
+        _cacheMock
+            .Setup(x => x.GetOrCreateAsync(
+                It.IsAny<string>(),
+                It.IsAny<Func<Task<ListarVacunosOutput>>>()))
+            .Returns((string _, Func<Task<ListarVacunosOutput>> factory) => factory());
 
-        _interactor = new ListarVacunosInteractor(_vacunoRepositoryMock.Object, _settingsMock.Object);
+        _interactor = new ListarVacunosInteractor(
+            _vacunoRepositoryMock.Object,
+            _settingsMock.Object,
+            _cacheMock.Object);
     }
 
     [Fact]
@@ -45,6 +56,9 @@ public class ListarVacunosInteractorTests
         result.TotalCount.Should().Be(1);
         result.Items.Should().HaveCount(1);
         result.Items.First().Codigo.Should().Be("V-001");
+        _cacheMock.Verify(x => x.GetOrCreateAsync(
+            It.Is<string>(key => key.StartsWith("vacunos:listar")),
+            It.IsAny<Func<Task<ListarVacunosOutput>>>()), Times.Once);
     }
 
     [Fact]
