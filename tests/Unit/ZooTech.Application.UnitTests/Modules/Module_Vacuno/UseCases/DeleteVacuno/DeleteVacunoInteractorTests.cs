@@ -4,11 +4,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using NSubstitute;
 using Xunit;
+using ZooTech.Application.Common.Gateway.Caching;
 using ZooTech.Application.Common.Models;
 using ZooTech.Application.Modules.Module_Vacuno.Exceptions;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
 using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities;
 using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Rules;
+using ZooTech.Domain.Shared.Interfaces;
 using ZooTech.Domain.Module_Celo.Interfaces;
 using ZooTech.Domain.Module_Sanidad.Entities;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
@@ -18,23 +21,36 @@ namespace ZooTech.Application.UnitTests.Modules.Module_Vacuno.UseCases.DeleteVac
 
 public class DeleteVacunoInteractorTests
 {
+    private readonly IGanaderiaUnitOfWork _unitOfWork = Substitute.For<IGanaderiaUnitOfWork>();
     private readonly IVacunoRepository _vacunoRepository = Substitute.For<IVacunoRepository>();
     private readonly ICeloRepository _celoRepository = Substitute.For<ICeloRepository>();
     private readonly ITriajeRepository _triajeRepository = Substitute.For<ITriajeRepository>();
     private readonly IOrdenioRepository _ordenioRepository = Substitute.For<IOrdenioRepository>();
+    private readonly IAppCacheService _cache = Substitute.For<IAppCacheService>();
     private readonly DeleteVacunoInteractor _interactor;
 
     public DeleteVacunoInteractorTests()
     {
+        _unitOfWork.Vacunos.Returns(_vacunoRepository);
+
+        _unitOfWork.ExecuteInTransactionAsync(Arg.Any<Func<CancellationToken, Task<Vacuno>>>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo =>
+            {
+                var func = callInfo.Arg<Func<CancellationToken, Task<Vacuno>>>();
+                return func(callInfo.Arg<CancellationToken>());
+            });
+
         _interactor = new DeleteVacunoInteractor(
-            _vacunoRepository,
+            _unitOfWork,
             _celoRepository,
             _triajeRepository,
-            _ordenioRepository);
+            _ordenioRepository,
+            _cache);
     }
 
     private static Vacuno CreateTestVacuno()
     {
+        var defaultLimits = new VacunoValidationLimits(50, 100, 500, 100);
         return Vacuno.CreateNew(
             codigo: "V001",
             nombre: "Lola",
@@ -47,6 +63,7 @@ public class DeleteVacunoInteractorTests
             madreId: null,
             granjaId: 1,
             observaciones: "Sin obs",
+            validationLimits: defaultLimits,
             actorUsuarioId: 1,
             utcNow: DateTime.UtcNow);
     }
@@ -94,7 +111,7 @@ public class DeleteVacunoInteractorTests
     }
 
     [Fact]
-    public async Task HandleAsync_WhenVacunoHasNoDependencies_ShouldSoftDeleteAndUpdate()
+    public async Task HandleAsync_WhenVacunoHasNoDependencies_ShouldSoftDeleteAndUpdateInTransactionAndClearCache()
     {
         // Arrange
         var vacuno = CreateTestVacuno();
@@ -113,6 +130,7 @@ public class DeleteVacunoInteractorTests
         // Assert
         Assert.Equal(EmptyOutput.Value, result);
         await _vacunoRepository.Received(1).UpdateAsync(vacuno, null, null, Arg.Any<CancellationToken>());
+        await _cache.Received(1).RemoveByPrefixAsync(Arg.Any<string>());
         Assert.NotNull(vacuno.DeletedAt);
         Assert.Equal("Venta de vacuno", vacuno.MotivoEliminacion);
     }

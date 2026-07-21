@@ -196,7 +196,6 @@ public sealed class VacunoController : ControllerBase
     }
 
     [HttpDelete("{id:long}")]
-    [HttpDelete("/api/v1/vacuno/{id:long}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -210,6 +209,7 @@ public sealed class VacunoController : ControllerBase
 
 
     [HttpGet("reportes")]
+    [HttpGet("reportes/listado")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> ReportesListado(
         [FromQuery] ListadoVacunosRequest request,
@@ -335,6 +335,7 @@ public sealed class VacunoController : ControllerBase
         return Ok(response);
     }
 
+    [HttpGet("actividad")]
     [HttpGet("estadisticas/actividad")]
     [ProducesResponseType(typeof(VacunoActivityStatsResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetActivityStats(

@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Reflection;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
@@ -14,23 +15,36 @@ public class OfficialRouteContractTests
         var method = typeof(VacunoController).GetMethod(nameof(VacunoController.Delete));
 
         method.Should().NotBeNull();
-        var templates = method!
-            .GetCustomAttributes<HttpDeleteAttribute>()
-            .Select(attribute => attribute.Template)
-            .ToArray();
-
-        templates.Should().Contain("{id:long}");
+        method!.GetCustomAttribute<HttpDeleteAttribute>()!.Template
+            .Should().Be("{id:long}");
     }
 
     [Fact]
     public void ReporteListadoVacunos_ShouldUseOfficialSwaggerRoutes()
     {
-        GetHttpGetTemplate(nameof(VacunoController.ReportesListado))
-            .Should().Be("reportes");
+        var method = typeof(VacunoController).GetMethod(nameof(VacunoController.ReportesListado));
+        var templates = method!
+            .GetCustomAttributes<HttpGetAttribute>()
+            .Select(a => a.Template)
+            .ToArray();
+
+        templates.Should().Contain("reportes/listado");
         GetHttpGetTemplate(nameof(VacunoController.ReportesListadoExcel))
             .Should().Be("reportes/excel");
         GetHttpGetTemplate(nameof(VacunoController.ReportesListadoPdf))
             .Should().Be("reportes/pdf");
+    }
+
+    [Fact]
+    public void ActividadVacunos_ShouldUseOfficialSwaggerRoute()
+    {
+        var method = typeof(VacunoController).GetMethod(nameof(VacunoController.GetActivityStats));
+        var templates = method!
+            .GetCustomAttributes<HttpGetAttribute>()
+            .Select(a => a.Template)
+            .ToArray();
+
+        templates.Should().Contain("actividad");
     }
 
     [Fact]
