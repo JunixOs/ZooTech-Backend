@@ -1,7 +1,8 @@
+using ZooTech.Application.Common.Behaviors;
+
 namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant
 {
-    public interface ICreateTenantInputPort
+    public interface ICreateTenantInputPort : IRequestHandler<CreateTenantCommand , CreateTenantOutput>
     {
-        Task<CreateTenantOutput> Handle(CreateTenantCommand request, CancellationToken cancellationToken = default);
     }
 }

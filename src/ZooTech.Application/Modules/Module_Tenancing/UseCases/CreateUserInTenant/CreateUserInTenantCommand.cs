@@ -14,6 +14,6 @@ namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateUserInTena
         public string? Email { get; set; }
         public bool IsActive { get; set; }
 
-        public string? TenantDatabaseName { get; set; }
+        public int? TenantId { get; set; }
     }
 }

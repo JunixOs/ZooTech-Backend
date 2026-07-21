@@ -29,7 +29,7 @@ namespace ZooTech.Application.Modules.Module_Auth.UseCases.AdminLogin
             _refreshTokenRepository = refreshTokenRepository;
         }
 
-        public async Task<string> Handle(AdminLoginCommand cmd, CancellationToken cancellationToken = default)
+        public async Task<string> HandleAsync(AdminLoginCommand cmd, CancellationToken cancellationToken = default)
         {
             AdminUserDomainEntity? domainEntity = await _adminUserRepository.GetByEmail(cmd.Email);
 

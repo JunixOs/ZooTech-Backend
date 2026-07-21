@@ -40,21 +40,30 @@ namespace ZooTech.InterfaceAdapters.Middleware
 
             if(domain == null)
             {
-                throw new NotFoundException(ScopeName.Interface_Adapters);
+                throw new NotFoundException(
+                    ScopeName.Interface_Adapters,
+                    message: "The domain name is null"
+                );
             }
 
             var subDomain = ExtractSubDomain(domain);
 
             if (subDomain == null)
             {
-                throw new NotFoundException(ScopeName.Interface_Adapters);
+                throw new NotFoundException(
+                    ScopeName.Interface_Adapters,
+                    message: "The subdomain was not found."
+                );
             }
 
             var tenant = await tenantStore.GetBySubDomainAsync(subDomain);
 
             if (tenant == null)
             {
-                throw new NotFoundException(ScopeName.Interface_Adapters);
+                throw new NotFoundException(
+                    ScopeName.Interface_Adapters,
+                    message: $"Tenant for subdomain [{subDomain}] not exists"
+                );
             }
 
             tenantContext.SetTenant(
