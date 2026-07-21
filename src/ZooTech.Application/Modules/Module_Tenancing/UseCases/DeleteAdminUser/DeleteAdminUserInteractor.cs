@@ -1,7 +1,6 @@
 using ZooTech.Application.Common.Gateway.Repositories.MainTenantsDb;
 using ZooTech.Application.Common.Models;
 using ZooTech.Application.Modules.Module_Tenancing.UseCases.DeleteAdminUser.Ports;
-using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.DeleteAdminUser
 {
@@ -16,7 +15,7 @@ namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.DeleteAdminUser
             _adminUserRepository = adminUserRepository;
         }
 
-        public async Task<EmptyOutput> Handle(DeleteAdminUserCommand cmd, CancellationToken cancellationToken = default)
+        public async Task<EmptyOutput> HandleAsync(DeleteAdminUserCommand cmd, CancellationToken cancellationToken = default)
         {
             await _adminUserRepository.DeleteById(cmd.Id.GetValueOrDefault());
 

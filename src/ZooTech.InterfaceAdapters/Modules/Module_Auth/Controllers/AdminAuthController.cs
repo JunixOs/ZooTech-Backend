@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ZooTech.Application.Common.Behaviors.Module_Auth.AdminLogin;
+using ZooTech.Application.Common.Behaviors;
+using ZooTech.Application.Modules.Module_Auth.UseCases.AdminLogin;
 using ZooTech.Domain.Shared.Enums;
 using ZooTech.InterfaceAdapters.Filters;
 using ZooTech.InterfaceAdapters.Modules.Module_Auth.DTOs;
@@ -9,32 +10,30 @@ using ZooTech.InterfaceAdapters.Modules.Module_Auth.Mappers;
 namespace ZooTech.InterfaceAdapters.Modules.Module_Auth
 {
     [ApiController]
-    [Route("api/v1/auth")]
+    [Route("api/v1/auth/admin")]
     [ApiExplorerSettings(GroupName = "auth")]
     public class AdminAuthController : ControllerBase
     {
-        private readonly IAdminLoginBehaviorPipelineFactory _adminLoginBehaviorPipelineFactory;
+        private readonly IBehaviorDispatcher _behaviorDispatcher;
 
         public AdminAuthController(
-            IAdminLoginBehaviorPipelineFactory adminLoginBehaviorPipelineFactory
+            IBehaviorDispatcher behaviorDispatcher
         )
         {
-            _adminLoginBehaviorPipelineFactory = adminLoginBehaviorPipelineFactory;
+            _behaviorDispatcher = behaviorDispatcher;
         }
 
         [AllowAnonymous]
         [ServiceFilter(typeof(AnonymousOnlyFilter))]
         [ServiceFilter(typeof(TenantHeaderFilter))]
         [RestrictTenantType(TenantType.Admin)]
-        [HttpPost("admin/login")]
+        [HttpPost("login")]
         public async Task<IActionResult> LoginAdminUsers(
             [FromBody] AdminLoginRequestDTO requestDto,
             CancellationToken cancellationToken = default
         )
         {
-            var behaviorPipeline = _adminLoginBehaviorPipelineFactory.Create();
-
-            var result = await behaviorPipeline.Execute(
+            var result = await _behaviorDispatcher.Send<AdminLoginCommand , string>(
                 AdminLoginMapper.ToCommand(requestDto),
                 cancellationToken
             );

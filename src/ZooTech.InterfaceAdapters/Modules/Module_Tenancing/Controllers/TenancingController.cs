@@ -1,8 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ZooTech.Application.Common.Behaviors.Module_Tenancing.CreateTenant;
-using ZooTech.Application.Common.Behaviors.Module_Tenancing.CreateUserInTenant;
-using ZooTech.Application.Modules.Module_Tenancing.UseCases;
+using ZooTech.Application.Common.Behaviors;
+using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant;
+using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateUserInTenant;
+using ZooTech.Application.Modules.Module_Tenancing.UseCases.ListTenants;
 using ZooTech.Domain.Shared.Enums;
 using ZooTech.InterfaceAdapters.Filters;
 using ZooTech.InterfaceAdapters.Modules.Module_Tenancing.DTOs.Requests;
@@ -15,16 +16,12 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers
     [ApiExplorerSettings(GroupName = "tenancing")]
     public class TenancingController : ControllerBase
     {
-        private readonly ICreateTenantBehaviorPipelineFactory _createTenantBehaviorPipelineFactory;
-        private readonly ICreateUserInTenantBehaviorPipelineFactory _createUserInTenantBehaviorPipelineFactory;
-
+        private readonly IBehaviorDispatcher _behaviorDispatcher;
         public TenancingController(
-            ICreateTenantBehaviorPipelineFactory createTenantBehaviorPipelineFactory,
-            ICreateUserInTenantBehaviorPipelineFactory createUserInTenantBehaviorPipelineFactory
+            IBehaviorDispatcher behaviorDispatcher
         )
         {
-            _createTenantBehaviorPipelineFactory = createTenantBehaviorPipelineFactory;
-            _createUserInTenantBehaviorPipelineFactory = createUserInTenantBehaviorPipelineFactory;
+            _behaviorDispatcher = behaviorDispatcher;
         }
 
         [ServiceFilter(typeof(TenantHeaderFilter))]
@@ -43,10 +40,10 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers
             CancellationToken cancellationToken = default
         )
         {
-            var behaviorPipeline = _createTenantBehaviorPipelineFactory.Create();
-
             var command = CreateTenantMapper.ToCommand(requestDto);
-            var result = await behaviorPipeline.Execute(command , cancellationToken);
+            var result = await _behaviorDispatcher.Send<CreateTenantCommand , CreateTenantOutput>(
+                command , cancellationToken
+            );
 
             return Ok(CreateTenantMapper.ToResponseDto(result));
         }
@@ -67,14 +64,28 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers
             CancellationToken cancellationToken = default
         )
         {
-            var behaviorPipeline = _createUserInTenantBehaviorPipelineFactory.Create();
-
-            var result = await behaviorPipeline.Execute(
+            var result = await _behaviorDispatcher.Send<CreateUserInTenantCommand , CreateUserInTenantOutput>(
                 CreateUserInTenantMapper.ToCommand(requestDto),
                 cancellationToken
             );
 
             return Ok(CreateUserInTenantMapper.ToResponse(result));
+        }
+
+        [ServiceFilter(typeof(TenantHeaderFilter))]
+        [RestrictTenantType(TenantType.Admin)]
+        [Authorize(Roles = AuthorizationRoles.Admin)]
+        [HttpGet("list")]
+        public async Task<IActionResult> ListTenants(
+            CancellationToken cancellationToken = default
+        )
+        {
+            var result = await _behaviorDispatcher.Send<ListTenantsQuery , List<ListTenantsOutput>>(
+                new(),
+                cancellationToken
+            );
+
+            return Ok(ListTenantsMapper.ToResponse(result));
         }
     }
 }
