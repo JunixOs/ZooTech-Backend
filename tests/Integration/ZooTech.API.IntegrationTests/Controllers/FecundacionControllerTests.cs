@@ -41,7 +41,8 @@ public class FecundacionControllerTests : IClassFixture<ZooTechApiFactory>
             Content = JsonContent.Create(new DeleteFecundacionRequest("Prueba de eliminacion de fecundacion."))
         });
 
-        deleteResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var errorBody = await deleteResponse.Content.ReadAsStringAsync();
+        deleteResponse.StatusCode.Should().Be(HttpStatusCode.NoContent, $"because {errorBody}");
 
         var getResponse = await _client.GetAsync(RequirementApiRoutes.Fecundacion(created.Id));
         getResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);

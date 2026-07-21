@@ -28,6 +28,8 @@ using ZooTech.Application.Common.Behaviors.Module_Vacuno.DeleteVacuno;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.ExportarArbolGenealogico;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.ReporteVacuno.ListarVacunosReporte;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.GetArbolGenealogico;
+using ZooTech.Application.Common.Behaviors.Module_Vacuno.GetActivityStats;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetActivityStats;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Controllers;
 
@@ -44,6 +46,7 @@ public sealed class VacunoController : ControllerBase
     private readonly IExportarArbolGenealogicoBehaviorPipelineFactory _exportarArbolGenealogicoBehaviorPipelineFactory;
     private readonly IListarVacunosReporteBehaviorPipelineFactory _listarVacunosReporteBehaviorPipelineFactory;
     private readonly IGetArbolGenealogicoBehaviorPipelineFactory _getArbolGenealogicoBehaviorPipelineFactory;
+    private readonly IGetActivityStatsBehaviorPipelineFactory _getActivityStatsBehaviorPipelineFactory;
     private readonly IVacunoRepository _vacunoRepository;
 
     public VacunoController(
@@ -55,6 +58,7 @@ public sealed class VacunoController : ControllerBase
         IExportarArbolGenealogicoBehaviorPipelineFactory exportarArbolGenealogicoBehaviorPipelineFactory,
         IListarVacunosReporteBehaviorPipelineFactory listarVacunosReporteBehaviorPipelineFactory,
         IGetArbolGenealogicoBehaviorPipelineFactory getArbolGenealogicoBehaviorPipelineFactory,
+        IGetActivityStatsBehaviorPipelineFactory getActivityStatsBehaviorPipelineFactory,
         IVacunoRepository vacunoRepository)
     {
         _listarVacunosBehaviorPipelineFactory = listarVacunosBehaviorPipelineFactory;
@@ -65,6 +69,7 @@ public sealed class VacunoController : ControllerBase
         _exportarArbolGenealogicoBehaviorPipelineFactory = exportarArbolGenealogicoBehaviorPipelineFactory;
         _listarVacunosReporteBehaviorPipelineFactory = listarVacunosReporteBehaviorPipelineFactory;
         _getArbolGenealogicoBehaviorPipelineFactory = getArbolGenealogicoBehaviorPipelineFactory;
+        _getActivityStatsBehaviorPipelineFactory = getActivityStatsBehaviorPipelineFactory;
 
         _vacunoRepository = vacunoRepository;
     }
@@ -120,14 +125,14 @@ public sealed class VacunoController : ControllerBase
     [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> ExportarArbolGenealogico([FromRoute] long id, [FromQuery] int niveles = 4, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> ExportarArbolGenealogico([FromRoute] long id, [FromQuery] int niveles = 4, [FromQuery] string formato = "excel", CancellationToken cancellationToken = default)
     {
         var behaviorPipeline = _exportarArbolGenealogicoBehaviorPipelineFactory.Create();
 
-        var command = new ExportarArbolGenealogicoCommand(id, niveles);
+        var command = new ExportarArbolGenealogicoCommand(id, niveles, formato);
 
         var result = await behaviorPipeline.Execute(command, cancellationToken);
-        return File(result.excel, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Genealogia_{id}.xlsx");
+        return File(result.Bytes, result.ContentType, result.FileName);
     }
 
     [HttpPost]
@@ -350,45 +355,16 @@ public sealed class VacunoController : ControllerBase
         [FromQuery] System.DateOnly? fechaFin,
         CancellationToken cancellationToken)
     {
-        var end = fechaFin ?? System.DateOnly.FromDateTime(System.DateTime.UtcNow);
-        var start = fechaInicio ?? end.AddDays(-30);
-
-        if (start > end)
-        {
-            return BadRequest("La fecha de inicio no puede ser posterior a la fecha de fin.");
-        }
-
-        var vacunos = await _vacunoRepository.ListAllWithDeletedAsync(cancellationToken);
-        var points = new List<VacunoActivityPointResponse>();
-
-        for (var date = start; date <= end; date = date.AddDays(1))
-        {
-            var count = vacunos.Count(v =>
-            {
-                var isRegistered = v.FechaRegistro <= date;
-                if (!isRegistered) return false;
-
-                if (v.DeletedAt.HasValue)
-                {
-                    var deletionDate = System.DateOnly.FromDateTime(v.DeletedAt.Value);
-                    return deletionDate > date;
-                }
-
-                return true;
-            });
-
-            points.Add(new VacunoActivityPointResponse(date.ToString("yyyy-MM-dd"), count));
-        }
-
-        var mayor = points.Any() ? points.Max(p => p.Cantidad) : 0;
-        var menor = points.Any() ? points.Min(p => p.Cantidad) : 0;
+        var query = new GetActivityStatsQuery(fechaInicio, fechaFin);
+        var pipeline = _getActivityStatsBehaviorPipelineFactory.Create();
+        var output = await pipeline.Execute(query, cancellationToken);
 
         return Ok(new VacunoActivityStatsResponse(
-            start.ToString("yyyy-MM-dd"),
-            end.ToString("yyyy-MM-dd"),
-            points,
-            mayor,
-            menor
+            output.FechaInicio,
+            output.FechaFin,
+            output.Points.Select(p => new VacunoActivityPointResponse(p.Fecha, p.Cantidad)).ToList(),
+            output.Mayor,
+            output.Menor
         ));
     }
 
