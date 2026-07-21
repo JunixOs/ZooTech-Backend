@@ -781,7 +781,7 @@ InterfaceAdapters/
 |                    |             |            | Figure    | 6: Diagrama     | C4  | - Interface | Adapters |
 | Análisis           | de Cada     | Componente |           |                 |     |             |          |
 | Para el            | análisis se | tendrá     | en cuenta | este escenario: |     |             |          |
-| POST /api/animals: |             | Crear      | una       | vaca (Animal)   |     |             |          |
+| Ruta legacy retirada: |             | Crear      | una       | vaca (Animal)   |     |             |          |
 DTOs/
 Requests/
 CreateAnimalRequest.cs

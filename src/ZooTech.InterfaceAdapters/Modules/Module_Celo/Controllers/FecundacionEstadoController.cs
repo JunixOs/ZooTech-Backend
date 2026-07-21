@@ -13,8 +13,8 @@ using ApiErrorResponse = ZooTech.InterfaceAdapters.DTOs.Responses.ErrorResponse;
 namespace ZooTech.InterfaceAdapters.Modules.Module_Celo.Controllers;
 
 [ApiController]
-[Route("api/reproduccion/fecundacion/estado")]
-[ApiExplorerSettings(GroupName = "celo - fecundacion_estado")]
+[Route("api/v1")]
+[ApiExplorerSettings(GroupName = "public")]
 public sealed class FecundacionEstadoController : ControllerBase
 {
     private const string UpdatedByHeaderName = "X-User-Id";
@@ -30,27 +30,38 @@ public sealed class FecundacionEstadoController : ControllerBase
         _updateFecundacionEstadoBehaviorPipelineFactory = updateFecundacionEstadoBehaviorPipelineFactory;
     }
 
-    [HttpGet("{vacunoId:long}")]
+    [HttpGet("vacunos/fecundacion-estado")]
+    [HttpGet("vacunos/{vacunoId:long}/fecundacion-estado")]
     [Tags("Reproduccion")]
     [ProducesResponseType(typeof(GeneralResponseDTO<FecundacionEstadoResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> GetEstado(
-        [FromRoute] long vacunoId,
+        [FromRoute] long? vacunoId,
+        [FromQuery] long? id,
         CancellationToken cancellationToken)
     {
+        var resolvedVacunoId = vacunoId ?? id;
+        if (!resolvedVacunoId.HasValue)
+        {
+            return BadRequest(ApiErrorResponse.Create(
+                "VALIDATION_ERROR",
+                "El id del vacuno es obligatorio.",
+                null));
+        }
+
         var behaviorPipeline = _getFecundacionEstadoBehaviorPipelineFactory.Create();
 
         var output = await behaviorPipeline.Execute(
-            new GetFecundacionEstadoCommand(vacunoId),
+            new GetFecundacionEstadoCommand(resolvedVacunoId.Value),
             cancellationToken);
 
         return Ok(GeneralResponseDTO<FecundacionEstadoResponse>.Ok(
             FecundacionEstadoMapper.ToResponse(output)));
     }
 
-    [HttpPut("{fecundacionId:long}")]
+    [HttpPut("fecundaciones/{fecundacionId:long}/estado")]
     [Tags("Reproduccion")]
     [ProducesResponseType(typeof(GeneralResponseDTO<FecundacionEstadoResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]

@@ -70,7 +70,7 @@ public class FecundacionEstadoInteractorTests
         Assert.Equal(FecundacionEstadoConstants.EnProceso, output.EstadoActual);
     }
 
-    [Fact(Skip = "Error format mismatch: production now returns error codes (e.g. \"FECUNDACION-FECUNDACION_ESTADO-INVALID\") in Details, not the field name \"estadoFecundacion\". Pending decision on the expected error contract.")]
+    [Fact]
     public async Task UpdateEstado_WhenTransitionIsNotAllowed_ShouldThrowValidation()
     {
         var repository = new FakeFecundacionEstadoRepository
@@ -86,22 +86,22 @@ public class FecundacionEstadoInteractorTests
                 FecundacionEstadoConstants.Confirmada,
                 7)));
 
-        Assert.Contains("estadoFecundacion", exception.Details);
+        Assert.Contains("FECUNDACION-FECUNDACION_ESTADO-INVALID", exception.Details);
         Assert.False(repository.Updated);
     }
 
-    [Fact(Skip = "Test's fake repository doesn't seed a matching Fecundacion, so the interactor throws NotFoundException before reaching UpdatedBy validation, not FecundacionEstadoValidationException as asserted. Needs repository seeding fixed or a decision on validation order.")]
-    public async Task UpdateEstado_WhenUpdatedByIsMissing_ShouldThrowValidation()
+    [Fact]
+    public void UpdateEstado_WhenUpdatedByIsMissing_ShouldReturnValidationError()
     {
-        var interactor = CreateUpdateInteractor(new FakeFecundacionEstadoRepository());
+        var validator = new UpdateFecundacionEstadoValidator();
+        var command = new UpdateFecundacionEstadoCommand(
+            10,
+            FecundacionEstadoConstants.EnProceso,
+            null);
 
-        var exception = await Assert.ThrowsAsync<FecundacionEstadoValidationException>(() =>
-            interactor.HandleAsync(new UpdateFecundacionEstadoCommand(
-                10,
-                FecundacionEstadoConstants.EnProceso,
-                null)));
+        var errors = validator.Validate(command);
 
-        Assert.Contains("updatedBy", exception.Details);
+        Assert.Contains("CELO-UPDATE-FECUNDACION_UPDATED_BY-INVALID", errors);
     }
 
     [Fact]

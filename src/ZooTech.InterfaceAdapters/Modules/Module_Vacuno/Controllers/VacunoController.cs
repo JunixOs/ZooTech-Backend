@@ -229,15 +229,15 @@ public sealed class VacunoController : ControllerBase
         return Ok(GeneralResponseDTO<VacunoResponse>.Ok(response));
     }
 
-    [HttpDelete("{identifier}")]
+    [HttpDelete("{id:long}")]
+    [HttpDelete("/api/v1/vacuno/{id:long}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Delete([FromRoute] string identifier, [FromBody] DeleteVacunoRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Delete([FromRoute] long id, [FromBody] DeleteVacunoRequest request, CancellationToken cancellationToken)
     {
         var behaviorPipeline = _deleteVacunoBehaviorPipelineFactory.Create();
 
-        long id = await ResolveIdAsync(identifier, cancellationToken);
         await behaviorPipeline.Execute(VacunoMapper.ToCommand(id, request), cancellationToken);
         return NoContent();
     }
@@ -245,41 +245,28 @@ public sealed class VacunoController : ControllerBase
 
     [HttpGet("reportes")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public IActionResult ReportesDisponibles(
-        [FromQuery] string? fechaDesde,
-        [FromQuery] string? fechaHasta)
-    {
-        return Ok(new
-        {
-            reportes = new[]
-            {
-                new
-                {
-                    id = "listado",
-                    titulo = "Reporte de listado de vacunos",
-                    descripcion = "Lista los vacunos registrados, sus datos principales y el estado actual del registro.",
-                    disponible = true
-                },
-                new
-                {
-                    id = "registro",
-                    titulo = "Reporte de registro por vacuno",
-                    descripcion = "Presenta el historial registrado para un vacuno dentro del rango de fechas.",
-                    disponible = true
-                }
-            },
-            filtros = new
-            {
-                fechaDesde = ParseDateOrNull(fechaDesde),
-                fechaHasta = ParseDateOrNull(fechaHasta)
-            }
-        });
-    }
-
-    [HttpGet("reportes/listado")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> ReportesListado(
         [FromQuery] ListadoVacunosRequest request,
+        CancellationToken cancellationToken)
+        => await GetReportesListadoAsync(request, request.Formato, cancellationToken);
+
+    [HttpGet("reportes/excel")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> ReportesListadoExcel(
+        [FromQuery] ListadoVacunosRequest request,
+        CancellationToken cancellationToken)
+        => await GetReportesListadoAsync(request, "excel", cancellationToken);
+
+    [HttpGet("reportes/pdf")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> ReportesListadoPdf(
+        [FromQuery] ListadoVacunosRequest request,
+        CancellationToken cancellationToken)
+        => await GetReportesListadoAsync(request, "pdf", cancellationToken);
+
+    private async Task<IActionResult> GetReportesListadoAsync(
+        ListadoVacunosRequest request,
+        string? formato,
         CancellationToken cancellationToken)
     {
         var behaviorPipeline = _listarVacunosReporteBehaviorPipelineFactory.Create();
@@ -288,7 +275,7 @@ public sealed class VacunoController : ControllerBase
             RegistroVacunoReporteMapper.ToApplicationQuery(request),
             cancellationToken);
 
-        var normalizedFormato = NormalizeFormat(request.Formato);
+        var normalizedFormato = NormalizeFormat(formato);
         if (normalizedFormato is "excel" or "pdf")
         {
             var rows = await LoadAllListadoReporteItemsAsync(request, response.TotalCount, cancellationToken);
