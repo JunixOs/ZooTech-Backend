@@ -1,3 +1,4 @@
+using ZooTech.Application.UnitTests.Modules.Module_ProduccionLeche.UseCases;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.UpdateOrdenio;
 using ZooTech.Domain.Module_ProduccionLeche.Entities;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
@@ -35,7 +36,7 @@ public class UpdateOrdenioInteractorTests
             ExistsUsuarioResult = true,
             ExistsEstadoResult = true
         };
-        var interactor = new UpdateOrdenioInteractor(repository);
+        var interactor = new UpdateOrdenioInteractor(new FakeGanaderiaUnitOfWork(repository));
         var nuevaFecha = fecha.AddHours(2);
 
         var command = new UpdateOrdenioCommand
@@ -90,6 +91,9 @@ public class UpdateOrdenioInteractorTests
             => Task.FromResult(ExistsEstadoResult);
 
         public Task<Ordenio?> GetByIdAsync(long id, CancellationToken cancellationToken)
+            => Task.FromResult<Ordenio?>(_existing);
+
+        public Task<Ordenio?> GetByCodigoAsync(string codigo, CancellationToken cancellationToken)
             => Task.FromResult<Ordenio?>(_existing);
 
         public Task<(IReadOnlyList<OrdenioList> Items, int TotalCount)> ListAsync(
