@@ -5,19 +5,19 @@ namespace ZooTech.Domain.Module_Sanidad.Interfaces;
 public interface ITriajeRepository
 {
     Task<Triaje?> GetByIdAsync(long id, CancellationToken cancellationToken = default);
-    Task<(IEnumerable<Triaje> Items, int Total)> GetAllAsync(
-        int pagina,
-        int tamano,
-        string? fecha = null,
-        string? fechaDesde = null,
-        string? fechaHasta = null,
-        string? codigo = null,
-        string? nombre = null,
-        string? tipoPeso = null,
-        decimal? pesoKg = null,
-        long? vacunoId = null,
-        bool? uniqueVacuno = null,
-        CancellationToken cancellationToken = default);
+    Task<(IEnumerable<TriajeListadoItem> Items, int Total)> GetAllAsync(
+    int pagina,
+    int tamano,
+    string? fecha = null,
+    string? fechaDesde = null,
+    string? fechaHasta = null,
+    string? codigo = null,
+    string? nombre = null,
+    string? tipoPeso = null,
+    decimal? pesoKg = null,
+    long? vacunoId = null,
+    bool? uniqueVacuno = null,
+    CancellationToken cancellationToken = default);
     Task<Triaje> AddAsync(Triaje triaje, CancellationToken cancellationToken = default);
     Task<Triaje> UpdateAsync(Triaje triaje, CancellationToken cancellationToken = default);
     Task DeleteAsync(long id, CancellationToken cancellationToken = default);

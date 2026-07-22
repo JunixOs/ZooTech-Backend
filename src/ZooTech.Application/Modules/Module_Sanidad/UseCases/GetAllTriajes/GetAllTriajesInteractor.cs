@@ -32,7 +32,10 @@ public sealed class GetAllTriajesInteractor : IGetAllTriajesInputPort
             cancellationToken: cancellationToken
         );
 
-        var items = triajes.Select(TriajeMapper.ToOutput).ToList();
+        var items = triajes.Select(t => new TriajeOutput(
+            t.Id, t.Codigo, t.FechaHora, t.VacunoId, t.VacunoNombre,
+            t.TipoPesoCode, t.PesoKg, t.Observaciones, t.EstadoRegistroCode,
+            t.EncargadoUsuarioId, t.CreatedAt)).ToList();
 
         return new GetAllTriajesOutput(items, total);
     }

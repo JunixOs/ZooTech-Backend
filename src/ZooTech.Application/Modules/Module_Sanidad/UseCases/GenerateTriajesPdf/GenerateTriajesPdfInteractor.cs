@@ -39,7 +39,10 @@ public sealed class GenerateTriajesPdfInteractor : IGenerateTriajesPdfInputPort
             cancellationToken: cancellationToken);
 
         var document = new GenerateTriajesPdfDocument(
-            triajes.Select(TriajeMapper.ToOutput).ToList(),
+            triajes.Select(t => new TriajeOutput(
+    t.Id, t.Codigo, t.FechaHora, t.VacunoId, t.VacunoNombre,
+    t.TipoPesoCode, t.PesoKg, t.Observaciones, t.EstadoRegistroCode,
+    t.EncargadoUsuarioId, t.CreatedAt)).ToList(),
             query.Fecha,
             query.FechaDesde,
             query.FechaHasta,

@@ -32,23 +32,22 @@ public class TriajeRepository : ITriajeRepository
         return entity is null ? null : ToTriaje(entity);
     }
 
-    public async Task<(IEnumerable<Triaje> Items, int Total)> GetAllAsync(
-        int pagina,
-        int tamano,
-        string? fecha = null,
-        string? fechaDesde = null,
-        string? fechaHasta = null,
-        string? codigo = null,
-        string? nombre = null,
-        string? tipoPeso = null,
-        decimal? pesoKg = null,
-        long? vacunoId = null,
-        bool? uniqueVacuno = null,
-        CancellationToken cancellationToken = default)
+    public async Task<(IEnumerable<TriajeListadoItem> Items, int Total)> GetAllAsync(
+    int pagina,
+    int tamano,
+    string? fecha = null,
+    string? fechaDesde = null,
+    string? fechaHasta = null,
+    string? codigo = null,
+    string? nombre = null,
+    string? tipoPeso = null,
+    decimal? pesoKg = null,
+    long? vacunoId = null,
+    bool? uniqueVacuno = null,
+    CancellationToken cancellationToken = default)
     {
         var query = _ganaderiaDbContext.triajes
             .AsNoTracking()
-            .Include(t => t.vacuno)
             .Where(t => t.deleted_at == null)
             .AsQueryable();
 
@@ -62,7 +61,7 @@ public class TriajeRepository : ITriajeRepository
             query = query.Where(t => t.vacuno.nombre.Contains(nombre));
 
         if (!string.IsNullOrEmpty(fecha) &&
-    DateTime.TryParseExact(fecha, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var fechaExacta))
+            DateTime.TryParseExact(fecha, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var fechaExacta))
         {
             var desdeExacta = fechaExacta.Date;
             var hastaExacta = desdeExacta.AddDays(1);
@@ -96,18 +95,30 @@ public class TriajeRepository : ITriajeRepository
                 .FirstOrDefault());
         }
 
-
-
         query = query.OrderByDescending(t => t.fecha_hora);
 
         var total = await query.CountAsync(cancellationToken);
 
-        var entities = await query
+        var items = await query
             .Skip((pagina - 1) * tamano)
             .Take(tamano)
+            .Select(t => new TriajeListadoItem
+            {
+                Id = t.id,
+                Codigo = t.codigo,
+                FechaHora = t.fecha_hora,
+                VacunoId = t.vacuno_id,
+                VacunoNombre = t.vacuno.nombre,
+                TipoPesoCode = t.tipo_peso_code,
+                PesoKg = t.peso_kg,
+                Observaciones = t.observaciones,
+                EstadoRegistroCode = t.estado_registro_code,
+                EncargadoUsuarioId = t.encargado_usuario_id,
+                CreatedAt = t.created_at
+            })
             .ToListAsync(cancellationToken);
 
-        return (entities.Select(ToTriaje), total);
+        return (items, total);
     }
 
     public async Task<Triaje> AddAsync(Triaje triaje, CancellationToken cancellationToken = default)
