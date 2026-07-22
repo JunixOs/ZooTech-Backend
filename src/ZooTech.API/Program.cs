@@ -108,17 +108,12 @@ builder.Services.AddCors(options =>
                     uri.Scheme == "http" &&
                     uri.Port == 4200 &&
                     (
-                        uri.Host == "admin.zentrycorp.local" ||
-                        uri.Host == "zootecniaunas.zentrycorp.local" ||
-                        uri.Host == "elroble.zentrycorp.local" ||
-                        uri.Host == "lacteosdelvalle.zentrycorp.local" ||
-                        uri.Host == "losandes.zentrycorp.local" ||
                         uri.Host == "localhost" ||
-                        uri.Host == "127.0.0.1"
+                        uri.Host == "127.0.0.1" ||
+                        uri.Host.EndsWith(".zentrycorp.local")
                     );
 
                 return isZentryDomain || isLocal;
-
             })
             .AllowAnyHeader()
             .AllowAnyMethod()
@@ -169,7 +164,7 @@ if (app.Environment.IsDevelopment())
     // IMPORTANTE: debe ir antes de TenantResolution, Authentication y Authorization.
     app.UseCors("DevelopmentCorsPolicy");
 }
-if (app.Environment.IsProduction())
+if(app.Environment.IsProduction())
 {
     app.UseCors("ProductionCorsPolicy");
 }

@@ -40,6 +40,7 @@ Published/
 # =========================
 
 *.log
+errores.txt
 logs/
 Log/
 Logs/
@@ -208,10 +209,14 @@ BenchmarkDotNet.Artifacts/
 
 copilot/
 .ai/
+.zed/
 
-# =========================
-# Misc
-# =========================
+# Local Pi runtime state
+.atl/
+.pi/
 
-*.cache
-.cache/
+# IA 
+
+.codex-run-logs/
+.antigravitycli/
+.claude/

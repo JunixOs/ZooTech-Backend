@@ -1,0 +1,29 @@
+[33md525ba7[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mPRODUCCION_LECHE[m[33m, [m[1;31morigin/PRODUCCION_LECHE[m[33m)[m HEAD@{0}: checkout: moving from PRODUCCION_LECHE to PRODUCCION_LECHE
+[33md525ba7[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mPRODUCCION_LECHE[m[33m, [m[1;31morigin/PRODUCCION_LECHE[m[33m)[m HEAD@{1}: pull --progress --no-edit --no-stat --recurse-submodules=no origin: Fast-forward
+[33m19661fa[m HEAD@{2}: checkout: moving from PRODUCCION_LECHE to PRODUCCION_LECHE
+[33m19661fa[m HEAD@{3}: checkout: moving from ALAN_VALLES/feature to PRODUCCION_LECHE
+[33mc31b36c[m[33m ([m[1;31morigin/ALAN_VALLES/feature[m[33m, [m[1;32mALAN_VALLES/feature[m[33m)[m HEAD@{4}: commit: por si acaso
+[33mc73f2a7[m[33m ([m[1;31morigin/YONEL_ORDOÃ‘EZ/feature[m[33m, [m[1;31morigin/ANDERSON_MELENDEZ/feature[m[33m)[m HEAD@{5}: checkout: moving from PRODUCCION_LECHE to ALAN_VALLES/feature
+[33m19661fa[m HEAD@{6}: reset: moving to HEAD
+[33m19661fa[m HEAD@{7}: pull --progress --no-edit --no-stat --recurse-submodules=no origin: Fast-forward
+[33m90b6eac[m HEAD@{8}: reset: moving to HEAD
+[33m90b6eac[m HEAD@{9}: checkout: moving from PRODUCCION_LECHE to PRODUCCION_LECHE
+[33m90b6eac[m HEAD@{10}: checkout: moving from develop to PRODUCCION_LECHE
+[33mae9d87d[m[33m ([m[1;31morigin/INT-VACUNO-TENANCING[m[33m, [m[1;32mdevelop[m[33m)[m HEAD@{11}: reset: moving to HEAD
+[33mae9d87d[m[33m ([m[1;31morigin/INT-VACUNO-TENANCING[m[33m, [m[1;32mdevelop[m[33m)[m HEAD@{12}: pull --progress --no-edit --no-stat --recurse-submodules=no origin: Fast-forward
+[33m41acc71[m HEAD@{13}: checkout: moving from PRODUCCION_LECHE to develop
+[33m90b6eac[m HEAD@{14}: commit (merge): Endpoint de generación de excel
+[33m1a5a84b[m HEAD@{15}: commit: Endpoint de reportes excel
+[33me2ffe15[m HEAD@{16}: checkout: moving from PRODUCCION_LECHE to PRODUCCION_LECHE
+[33me2ffe15[m HEAD@{17}: pull --progress --no-edit --no-stat --recurse-submodules=no origin: Fast-forward
+[33me405b6a[m HEAD@{18}: checkout: moving from ANDERSON_MELENDEZ/backend to PRODUCCION_LECHE
+[33m1609106[m[33m ([m[1;31morigin/ANDERSON_MELENDEZ/backend[m[33m, [m[1;32mANDERSON_MELENDEZ/backend[m[33m)[m HEAD@{19}: checkout: moving from ANDERSON_MELENDEZ/backend to ANDERSON_MELENDEZ/backend
+[33m1609106[m[33m ([m[1;31morigin/ANDERSON_MELENDEZ/backend[m[33m, [m[1;32mANDERSON_MELENDEZ/backend[m[33m)[m HEAD@{20}: pull --progress --no-edit --no-stat --recurse-submodules=no origin: Fast-forward
+[33m560ee48[m HEAD@{21}: checkout: moving from develop to ANDERSON_MELENDEZ/backend
+[33m41acc71[m HEAD@{22}: pull --progress --no-edit --no-stat --recurse-submodules=no origin: Fast-forward
+[33mf762068[m HEAD@{23}: checkout: moving from BRENNIS_CASTRO/feature to develop
+[33mf92a49a[m[33m ([m[1;32mBRENNIS_CASTRO/feature[m[33m)[m HEAD@{24}: reset: moving to HEAD
+[33mf92a49a[m[33m ([m[1;32mBRENNIS_CASTRO/feature[m[33m)[m HEAD@{25}: pull --progress --no-edit --no-stat --recurse-submodules=no origin: Fast-forward
+[33m5f28c14[m HEAD@{26}: checkout: moving from JORGE_ROMERO/feature to BRENNIS_CASTRO/feature
+[33m67c1072[m[33m ([m[1;32mJORGE_ROMERO/feature[m[33m)[m HEAD@{27}: checkout: moving from main to JORGE_ROMERO/feature
+[33md5820cc[m[33m ([m[1;32mmain[m[33m)[m HEAD@{28}: clone: from https://dev.azure.com/pmarco031/Zootech%20Platform/_git/zootech-backend

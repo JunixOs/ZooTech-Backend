@@ -80,7 +80,6 @@ public static class DependencyInjection
         services.AddScoped<IOrdeniosComparationPdfGeneratorService, PdfGenerateComparationService>();
 
         services.AddScoped<IExcelGeneratorService, ExcelGeneratorService>();
-        services.AddScoped<IExcelComparationGeneratorService, ExcelComparationGeneratorService>();
 
         // ============================================
         // Repositories

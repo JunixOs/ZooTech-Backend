@@ -1,4 +1,3 @@
-using ZooTech.Application.Common.Gateway.Services;
 using ZooTech.Application.Common.Gateway.Auditing;
 using ZooTech.Domain.Shared.Enums;
 
@@ -13,8 +12,5 @@ public class GenerateOrdeniosComparationExcelQuery : IAuditableRequest
     public string? EstadoOrdenioCode { get; set; }
     public DateTime? FechaDesde { get; set; }
     public DateTime? FechaHasta { get; set; }
-    public string? SheetName { get; set; }
-    public bool Comparativo { get; set; }
-    public IReadOnlyList<ExcelColumnDefinition>? Columns { get; set; }
 
 }

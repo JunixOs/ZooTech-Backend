@@ -1,7 +1,6 @@
 using ClosedXML.Excel;
 using System.Globalization;
 using ZooTech.Application.Common.Gateway.Services;
-using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Common;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GenerateOrdeniosExcel;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GenerateTriajesExcel;
 
@@ -18,41 +17,30 @@ public sealed class ExcelGeneratorService : IExcelGeneratorService
     public byte[] GenerateOrdeniosReport(GenerateOrdeniosExcelDocument document)
     {
         using var workbook = new XLWorkbook();
-        var sheetName = document.SheetName ?? "Reporte de ordenios"; 
-        var worksheet = workbook.Worksheets.Add(sheetName);
+        var worksheet = workbook.Worksheets.Add("Reporte de Ordenios");
 
         RenderHeader(worksheet, "Reporte de Ordeños", document.GeneratedAtUtc, BuildFilters(document));
 
         RenderTable(
             worksheet,
             startRow: 5,
-            headers: document.Columns.Select(c => c.Header).ToArray(),
+            headers: new[] { "Código", "Fecha", "Vacuno", "Litros", "Estado" },
             items: document.Items,
-            cellSelector: item => document.Columns
-                        .Select(c => ResolveColumnValue(item, c.Key))
-                        .ToArray());
+            cellSelector: item => new object[]
+            {
+                item.Codigo,
+                FormatDateTime(item.FechaHora),
+                item.NombreVacuno,
+                item.Litros,
+                item.EstadoOrdenioCode
+            });
 
         using var stream = new MemoryStream();
         workbook.SaveAs(stream);
         return stream.ToArray();
     }
 
-    private static object ResolveColumnValue(OrdenioListOutput item, string key)
-        => key switch {
-           "Codigo" => item.Codigo,
-           "FechaHora" => FormatDateTime(item.FechaHora),
-           "Fecha" => FormatDate(item.FechaHora),
-           "Hora" => FormatTime(item.FechaHora),
-           "NombreVacuno" => item.NombreVacuno,
-           "VacunoCodigo" => item.VacunoCodigo ?? string.Empty,
-           "Litros" => item.Litros,
-           "EstadoOrdenioCode" => item.EstadoOrdenioCode,
-           "NombreEncargado" => item.NombreCompleto ?? string.Empty,
-           "Observaciones" => item.Observaciones ?? string.Empty,
-           _ => string.Empty
-       };
-
-private static string BuildFilters(GenerateOrdeniosExcelDocument document)
+    private static string BuildFilters(GenerateOrdeniosExcelDocument document)
     {
         return BuildFilterLine(
             ("VacunoId", document.VacunoId?.ToString()),
