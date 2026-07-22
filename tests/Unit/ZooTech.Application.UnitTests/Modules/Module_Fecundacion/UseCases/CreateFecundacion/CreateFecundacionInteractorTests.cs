@@ -1,25 +1,47 @@
-using Moq;
+using NSubstitute;
+using FluentAssertions;
 using Xunit;
+using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Common.Gateway.Caching;
 using ZooTech.Application.Modules.Module_Fecundacion.Exceptions;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.CreateFecundacion;
 using ZooTech.Domain.Ganaderia.Module_Fecundacion.Entities;
 using ZooTech.Domain.Ganaderia.Module_Fecundacion.Interfaces;
+using ZooTech.Domain.Shared.Interfaces;
 
 namespace ZooTech.Application.UnitTests.Modules.Module_Fecundacion.UseCases.CreateFecundacion;
 
 public sealed class CreateFecundacionInteractorTests
 {
-    private readonly Mock<IFecundacionRepository> _repositoryMock;
-    private readonly Mock<IAppCacheService> _cacheMock;
+    private readonly IFecundacionRepository _repositoryMock;
+    private readonly IAppCacheService _cacheMock;
+    private readonly IGanaderiaUnitOfWork _unitOfWorkMock;
     private readonly CreateFecundacionInteractor _interactor;
 
     public CreateFecundacionInteractorTests()
     {
-        _repositoryMock = new Mock<IFecundacionRepository>();
-        _cacheMock = new Mock<IAppCacheService>();
-        var fakeUnitOfWork = new FakeGanaderiaUnitOfWork(_repositoryMock.Object);
-        _interactor = new CreateFecundacionInteractor(fakeUnitOfWork, _cacheMock.Object);
+        _repositoryMock = Substitute.For<IFecundacionRepository>();
+        _cacheMock = Substitute.For<IAppCacheService>();
+        _unitOfWorkMock = Substitute.For<IGanaderiaUnitOfWork>();
+
+        _unitOfWorkMock.Fecundaciones.Returns(_repositoryMock);
+
+        _unitOfWorkMock.ExecuteInTransactionAsync(
+                Arg.Any<Func<CancellationToken, Task<Fecundacion>>>(),
+                Arg.Any<CancellationToken>(),
+                Arg.Any<Func<Fecundacion, CancellationToken, Task<Fecundacion>>>())
+            .Returns(async callInfo =>
+            {
+                var operation = callInfo.Arg<Func<CancellationToken, Task<Fecundacion>>>();
+                var afterSave = callInfo.Arg<Func<Fecundacion, CancellationToken, Task<Fecundacion>>>();
+                
+                var operationResult = await operation(CancellationToken.None);
+                return afterSave == null 
+                    ? operationResult 
+                    : await afterSave(operationResult, CancellationToken.None);
+            });
+
+        _interactor = new CreateFecundacionInteractor(_unitOfWorkMock, _cacheMock);
     }
 
     [Fact]
@@ -40,14 +62,14 @@ public sealed class CreateFecundacionInteractorTests
             CreatedById: 1
         );
 
-        _repositoryMock.Setup(r => r.ExistsVacunoAsync(command.VacunoReceptorId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
-        _repositoryMock.Setup(r => r.ExistsVacunoAsync(command.VacunoDonanteId!.Value, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
-        _repositoryMock.Setup(r => r.GetOrCreateResponsableByNameAsync(command.ResponsableName, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(10);
-        _repositoryMock.Setup(r => r.ExistsCodigoAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
+        _repositoryMock.ExistsVacunoAsync(command.VacunoReceptorId, Arg.Any<CancellationToken>())
+            .Returns(true);
+        _repositoryMock.ExistsVacunoAsync(command.VacunoDonanteId!.Value, Arg.Any<CancellationToken>())
+            .Returns(true);
+        _repositoryMock.GetOrCreateResponsableByNameAsync(command.ResponsableName, Arg.Any<CancellationToken>())
+            .Returns(10);
+        _repositoryMock.ExistsCodigoAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(false);
 
         var domainFecundacion = Fecundacion.CreateNew(
             codigo: "FEC-123456",
@@ -65,17 +87,40 @@ public sealed class CreateFecundacionInteractorTests
             vacunoDonanteId: command.VacunoDonanteId
         );
 
-        _repositoryMock.Setup(r => r.AddAsync(It.IsAny<Fecundacion>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(domainFecundacion);
+        var domainFecundacionWithId = new Fecundacion(
+            id: 500L,
+            codigo: "FEC-123456",
+            tipoFecundacionCode: command.TipoFecundacionCode,
+            vacunoReceptorId: command.VacunoReceptorId,
+            celoRegistroId: command.CeloRegistroId,
+            fechaProcedimiento: command.FechaProcedimiento,
+            responsableId: 10,
+            resultadoCode: command.ResultadoCode,
+            observacionesVeterinarias: command.ObservacionesVeterinarias,
+            actorUsuarioId: command.CreatedById,
+            machoExterno: command.MachoExterno,
+            machoExternoNombre: command.MachoExternoNombre,
+            vacunoDonanteId: command.VacunoDonanteId
+        );
+
+        _repositoryMock.AddAsync(Arg.Any<Fecundacion>(), Arg.Any<CancellationToken>())
+            .Returns(domainFecundacion);
+
+        // Mock para el nuevo método GetByCodigoAsync usado en afterSave
+        _repositoryMock.GetByCodigoAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(domainFecundacionWithId);
 
         // Act
         var result = await _interactor.HandleAsync(command);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal("FEC-123456", result.Codigo);
-        _repositoryMock.Verify(r => r.AddAsync(It.IsAny<Fecundacion>(), It.IsAny<CancellationToken>()), Times.Once);
-        _cacheMock.Verify(c => c.RemoveByPrefixAsync("fecundacion:listar"), Times.Once);
+        result.Should().NotBeNull();
+        result.Id.Should().Be(500L); // Validamos que toma el ID del GetByCodigoAsync
+        result.Codigo.Should().Be("FEC-123456");
+
+        await _repositoryMock.Received(1).AddAsync(Arg.Any<Fecundacion>(), Arg.Any<CancellationToken>());
+        await _repositoryMock.Received(1).GetByCodigoAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await _cacheMock.Received(1).RemoveByPrefixAsync("fecundacion:listar");
     }
 
     [Fact]
@@ -96,10 +141,13 @@ public sealed class CreateFecundacionInteractorTests
             CreatedById: 1
         );
 
-        _repositoryMock.Setup(r => r.ExistsVacunoAsync(command.VacunoReceptorId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
+        _repositoryMock.ExistsVacunoAsync(command.VacunoReceptorId, Arg.Any<CancellationToken>())
+            .Returns(false);
 
-        // Act & Assert
-        await Assert.ThrowsAsync<FecundacionVacunoNotFoundException>(() => _interactor.HandleAsync(command));
+        // Act
+        var action = async () => await _interactor.HandleAsync(command);
+
+        // Assert
+        await action.Should().ThrowAsync<FecundacionVacunoNotFoundException>();
     }
 }

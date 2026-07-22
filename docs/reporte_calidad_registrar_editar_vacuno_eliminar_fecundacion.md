@@ -1,8 +1,10 @@
-# Reporte de integracion y calidad
+# Reporte final de integracion y calidad
 
 ## Alcance
 
 Este reporte cubre la integracion de `JUAN_RAMOS/feature` y la revision de calidad de los requisitos Registrar Vacuno, Editar Registro y Eliminar Fecundacion. El analisis considera Clean Architecture, principios SOLID, consistencia transaccional, parametrizacion por tenant, respuestas HTTP y pruebas automatizadas.
+
+La observacion de deuda tecnica documentada en `fecundacion_delete_tech_debt.md` fue revisada y resuelta usando el mecanismo nativo del proyecto (`ICommandValidator` y `ValidationBehavior`), sin agregar un segundo framework de validacion.
 
 ## Integracion de rama
 
@@ -33,10 +35,14 @@ Este reporte cubre la integracion de `JUAN_RAMOS/feature` y la revision de calid
 ### Eliminar Fecundacion
 
 - La eliminacion usa `IGanaderiaUnitOfWork` y el repositorio expuesto por la unidad transaccional.
-- Se valida existencia y dependencia de crias antes de eliminar.
+- La validacion estructural de identificador y razon se traslado a `DeleteFecundacionValidator`.
+- `DeleteFecundacionBehaviorPipelineFactory` ejecuta `ValidationBehavior` antes de logging, auditoria e interactor.
+- El interactor quedo dedicado a coordinar reglas de negocio, transaccion, persistencia e invalidacion de cache.
+- La existencia del registro y la dependencia de crias se verifican dentro de la misma transaccion que elimina, evitando una condicion de carrera.
 - La razon vacia ahora produce HTTP 400 con el campo `razon`; ya no escala como excepcion generica HTTP 500.
 - La cache de listados se invalida despues de confirmar la transaccion.
 - Se simplifico el filtro del repositorio y se protegieron las proyecciones ante donantes opcionales nulos.
+- Se retiro una carga `Include` que no era utilizada y un `Task.CompletedTask` redundante.
 
 ## Principios y code smells
 
@@ -47,7 +53,8 @@ Este reporte cubre la integracion de `JUAN_RAMOS/feature` y la revision de calid
 | Dos Unit of Work para Vacuno | Eliminado el duplicado | DRY, ISP |
 | Contrato de referencias en InterfaceAdapters | Interfaz trasladada a Application | DIP |
 | Validaciones con formatos HTTP distintos | `FieldValidationError` y middleware comun | OCP, consistencia de API |
-| Razon de eliminacion como `ArgumentException` | `ValidationException` tipada | Errores predecibles |
+| Validacion estructural dentro del interactor de Fecundacion | Validador y `ValidationBehavior` independientes | SRP, Separation of Concerns |
+| Verificaciones realizadas antes de la transaccion | Existencia, dependencias y eliminacion atomicas | Consistencia transaccional |
 | Paquetes NuGet explicitos y duplicados | Referencias redundantes retiradas | Mantenibilidad |
 | Fabrica administrativa usando login de tenant | Uso obligatorio de `AdminTenantTemplate` | Separacion de responsabilidades |
 
@@ -80,9 +87,11 @@ El frontend prioriza `fieldErrors` y mantiene compatibilidad defensiva con respu
 
 ## Evidencia de verificacion
 
-- API: compilacion correcta, 0 errores.
+- API: compilacion correcta, 0 advertencias y 0 errores.
 - Frontend Angular: compilacion de produccion correcta.
-- Application: 52 pruebas de Vacuno, Fecundacion y validacion superadas; 0 fallidas y 0 omitidas.
+- Application: 55 pruebas de Vacuno, Fecundacion y validacion superadas; 0 fallidas y 0 omitidas.
+- El nuevo validador de eliminacion cubre entrada valida, razon obligatoria, identificador invalido y detalle de error por campo.
+- Las pruebas del interactor verifican eliminacion exitosa, registro inexistente, dependencias y que la cache no se invalide si falla la transaccion.
 - InterfaceAdapters: 2 pruebas del middleware de errores superadas.
 - Infrastructure: 2 pruebas de seleccion de contexto administrativo superadas.
 - Las pruebas de integracion dejaron de estar marcadas con `Skip` y usan una fabrica que reemplaza solamente Garnet y auditoria externa.

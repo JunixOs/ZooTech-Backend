@@ -1,10 +1,8 @@
 using ZooTech.Application.Common.Gateway.Caching;
-using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Common.Models;
 using ZooTech.Application.Modules.Module_Fecundacion.Common;
 using ZooTech.Application.Modules.Module_Fecundacion.Exceptions;
 using ZooTech.Domain.Shared.Interfaces;
-using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Fecundacion.UseCases.DeleteFecundacion;
 
@@ -21,43 +19,31 @@ public sealed class DeleteFecundacionInteractor : IDeleteFecundacionInputPort
         _cache = cache;
     }
 
-    public async Task<EmptyOutput> HandleAsync(DeleteFecundacionCommand command, CancellationToken cancellationToken)
+    public async Task<EmptyOutput> HandleAsync(
+        DeleteFecundacionCommand command,
+        CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(command.Razon))
-        {
-            const string errorCode = "FECUNDACION-DELETE-RAZON-REQUIRED";
-            const string message = "Debe indicar la razon de eliminacion.";
-            throw new ValidationException(
-                [errorCode],
-                ScopeName.Application,
-                ModuleName.Fecundacion,
-                [new FieldValidationError("razon", errorCode, message)],
-                message);
-        }
-
-        var repository = _unitOfWork.Fecundaciones;
-        var existing = await repository.GetForEditAsync(command.Id, cancellationToken);
-        if (existing is null)
-        {
-            throw new FecundacionNotFoundException();
-        }
-
-        // Validar si tiene crías vinculadas en trazabilidad
-        var hasCria = await repository.HasCriaAsync(command.Id, cancellationToken);
-        if (hasCria)
-        {
-            throw new FecundacionHasDependenciesException();
-        }
-
         _ = await _unitOfWork.ExecuteInTransactionAsync(
             async ct =>
             {
+                var repository = _unitOfWork.Fecundaciones;
+                var existing = await repository.GetForEditAsync(command.Id, ct);
+                if (existing is null)
+                {
+                    throw new FecundacionNotFoundException();
+                }
+
+                if (await repository.HasCriaAsync(command.Id, ct))
+                {
+                    throw new FecundacionHasDependenciesException();
+                }
+
                 await repository.DeleteAsync(command.Id, command.Razon, ct);
                 return EmptyOutput.Value;
             },
             cancellationToken);
-        await _cache.RemoveByPrefixAsync(FecundacionCacheKeys.ListarPrefix);
 
+        await _cache.RemoveByPrefixAsync(FecundacionCacheKeys.ListarPrefix);
         return EmptyOutput.Value;
     }
 }

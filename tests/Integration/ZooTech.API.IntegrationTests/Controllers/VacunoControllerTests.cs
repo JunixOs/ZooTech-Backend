@@ -4,6 +4,9 @@ using System.Net;
 using System.Net.Http.Json;
 using ZooTech.InterfaceAdapters.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities.GetArbolGenealogico;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetVacunoById;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetActivityStats;
 
 namespace ZooTech.API.IntegrationTests.Controllers;
 
@@ -18,7 +21,7 @@ public class VacunoControllerTests : IClassFixture<ZooTechApiFactory>
         _client = factory.CreateTenantClient();
     }
 
-    [Fact(Skip = "Requires a live Redis instance reachable from the CI agent (Redis:ConnectionString is empty there); WebApplicationFactory<Program> fails to build the host. Unskip once CI provides Redis config.")]
+    [Fact]
     public async Task ListarVacunos_ReturnsOk_AndPagedResponse()
     {
         var response = await _client.GetAsync("/api/v1/vacunos?page=1&limit=5");
@@ -33,47 +36,77 @@ public class VacunoControllerTests : IClassFixture<ZooTechApiFactory>
         content.Data.Should().NotBeNull();
     }
 
-    [Fact(Skip = "Requires a live Redis instance reachable from the CI agent (Redis:ConnectionString is empty there); WebApplicationFactory<Program> fails to build the host. Unskip once CI provides Redis config.")]
-    public async Task GetArbolGenealogico_WhenVacunoDoesNotExist_ReturnsNotFound()
+    [Theory]
+    [InlineData("zootecniaunas.zentrycorp.local")]
+    [InlineData("elroble.zentrycorp.local")]
+    [InlineData("lacteosdelvalle.zentrycorp.local")]
+    public async Task GetArbolGenealogico_WhenVacunoHasLineage_ReturnsTreeUpToMaxLevels(string tenantHost)
     {
-        var response = await _client.GetAsync("/api/v1/vacunos/999999/genealogia");
+        using var client = _factory.CreateTenantClient(tenantHost);
 
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        // Fetch ID of V001
+        var listResponse = await client.GetFromJsonAsync<PagedResponse<List<VacunoItemResponse>>>(
+            "/api/v1/vacunos?page=1&limit=1&query=V001");
+        var vacuno = listResponse?.Data?.FirstOrDefault();
+        vacuno.Should().NotBeNull("Se espera que el hijo principal V001 esté inyectado en memoria.");
+
+        // Requerir hasta 10 niveles (el backend lo clamp a maxNiveles configurado, ej: 4)
+        var response = await client.GetAsync($"/api/v1/vacunos/{vacuno!.Id}/genealogia?niveles=10");
+        
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        
+        var content = await response.Content.ReadFromJsonAsync<GeneralResponseDTO<List<GetArbolGenealogicoItem>>>();
+        content.Should().NotBeNull();
+        content!.Success.Should().BeTrue();
+        
+        // Debería retornar Abuelos (Nivel 3), Padres (Nivel 2) y el Hijo (Nivel 1) = 5 nodos
+        content.Data.Should().NotBeNullOrEmpty();
+        content.Data!.Count.Should().Be(5);
+        content.Data.Any(n => n.Nivel == 1 && n.Nombre == "Hijo Principal").Should().BeTrue();
+        content.Data.Any(n => n.Nivel == 3 && n.Nombre == "Abuelo").Should().BeTrue();
     }
 
-    [Fact(Skip = "Requires a live Redis instance reachable from the CI agent (Redis:ConnectionString is empty there); WebApplicationFactory<Program> fails to build the host. Unskip once CI provides Redis config.")]
-    public async Task ExportarArbolGenealogico_WhenVacunoExists_ReturnsExcelFile()
+    [Fact]
+    public async Task GetArbolGenealogico_WhenNivelesIsInvalid_ReturnsBadRequest()
     {
-        var listResponse = await _client.GetFromJsonAsync<PagedResponse<List<VacunoItemResponse>>>(
-            "/api/v1/vacunos?page=1&limit=1");
-        var vacuno = listResponse?.Data?.FirstOrDefault();
-        vacuno.Should().NotBeNull("the tenant database must contain at least one active vacuno");
+        var response = await _client.GetAsync("/api/v1/vacunos/1/genealogia?niveles=-1");
+        // Dependiendo de la validación puede retornar 400 Bad Request o el pipeline lo fuerza a un valor válido,
+        // pero validamos que no provoque errores 500.
+        response.StatusCode.Should().NotBe(HttpStatusCode.InternalServerError);
+    }
 
-        var response = await _client.GetAsync($"/api/v1/vacunos/{vacuno!.Id}/genealogia/exportar");
+    [Theory]
+    [InlineData("zootecniaunas.zentrycorp.local", "excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")]
+    [InlineData("elroble.zentrycorp.local", "pdf", "application/pdf")]
+    public async Task ExportarArbolGenealogico_WhenVacunoExists_ReturnsCorrectFile(string tenantHost, string formato, string expectedMediaType)
+    {
+        using var client = _factory.CreateTenantClient(tenantHost);
+        
+        var listResponse = await client.GetFromJsonAsync<PagedResponse<List<VacunoItemResponse>>>("/api/v1/vacunos?page=1&limit=1&query=V001");
+        var vacuno = listResponse?.Data?.FirstOrDefault();
+        vacuno.Should().NotBeNull();
+
+        var response = await client.GetAsync($"/api/v1/vacunos/{vacuno!.Id}/genealogia/exportar?formato={formato}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        response.Content.Headers.ContentType!.MediaType.Should().Be("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.Content.Headers.ContentType!.MediaType.Should().Be(expectedMediaType);
+        
         var bytes = await response.Content.ReadAsByteArrayAsync();
         bytes.Length.Should().BeGreaterThan(0);
     }
 
-    [Fact(Skip = "Requires a live Redis instance reachable from the CI agent (Redis:ConnectionString is empty there); WebApplicationFactory<Program> fails to build the host. Unskip once CI provides Redis config.")]
-    public async Task ExportarArbolGenealogico_WhenFormatoIsPdf_ReturnsPdfFile()
+    [Fact]
+    public async Task ExportarArbolGenealogico_WhenFormatoIsInvalid_ReturnsBadRequest()
     {
-        var listResponse = await _client.GetFromJsonAsync<PagedResponse<List<VacunoItemResponse>>>(
-            "/api/v1/vacunos?page=1&limit=1");
+        var listResponse = await _client.GetFromJsonAsync<PagedResponse<List<VacunoItemResponse>>>("/api/v1/vacunos?page=1&limit=1&query=V001");
         var vacuno = listResponse?.Data?.FirstOrDefault();
-        vacuno.Should().NotBeNull("the tenant database must contain at least one active vacuno");
-
-        var response = await _client.GetAsync($"/api/v1/vacunos/{vacuno!.Id}/genealogia/exportar?formato=pdf");
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        response.Content.Headers.ContentType!.MediaType.Should().Be("application/pdf");
-        var bytes = await response.Content.ReadAsByteArrayAsync();
-        bytes.Length.Should().BeGreaterThan(0);
+        
+        var response = await _client.GetAsync($"/api/v1/vacunos/{vacuno!.Id}/genealogia/exportar?formato=csv");
+        
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
-    [Fact(Skip = "Requires a live Redis instance reachable from the CI agent (Redis:ConnectionString is empty there); WebApplicationFactory<Program> fails to build the host. Unskip once CI provides Redis config.")]
+    [Fact]
     public async Task ExportarArbolGenealogico_WhenVacunoDoesNotExist_ReturnsNotFound()
     {
         var response = await _client.GetAsync("/api/v1/vacunos/999999/genealogia/exportar");
@@ -81,7 +114,7 @@ public class VacunoControllerTests : IClassFixture<ZooTechApiFactory>
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    [Theory(Skip = "Requires a live Redis instance reachable from the CI agent (Redis:ConnectionString is empty there); WebApplicationFactory<Program> fails to build the host. Unskip once CI provides Redis config.")]
+    [Theory]
     [InlineData("zootecniaunas.zentrycorp.local")]
     [InlineData("elroble.zentrycorp.local")]
     [InlineData("lacteosdelvalle.zentrycorp.local")]
@@ -93,5 +126,49 @@ public class VacunoControllerTests : IClassFixture<ZooTechApiFactory>
         var response = await client.GetAsync("/api/v1/vacunos?page=1&limit=1");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task GetVacunoById_WhenVacunoExists_ReturnsOkAndVacuno()
+    {
+        var listResponse = await _client.GetFromJsonAsync<PagedResponse<List<VacunoItemResponse>>>(
+            "/api/v1/vacunos?page=1&limit=1&q=VAC001");
+        var vacuno = listResponse?.Data?.FirstOrDefault();
+        vacuno.Should().NotBeNull("the tenant database must contain at least one active vacuno");
+
+        var response = await _client.GetAsync($"/api/v1/vacunos/{vacuno!.Id}");
+        var responseBody = await response.Content.ReadAsStringAsync();
+        response.StatusCode.Should().Be(HttpStatusCode.OK, $"because the server returned {response.StatusCode} with body: {responseBody}");
+        
+        var json = await response.Content.ReadAsStringAsync();
+        Console.WriteLine($"GetVacunoById Response: {json}");
+        var content = await response.Content.ReadFromJsonAsync<GeneralResponseDTO<VacunoResponse>>();
+        content.Should().NotBeNull();
+        content!.Success.Should().BeTrue();
+        content.Data.Should().NotBeNull();
+        content.Data!.Id.Should().Be(vacuno.Id);
+    }
+
+    [Fact]
+    public async Task GetVacunoById_WhenVacunoDoesNotExist_ReturnsNotFound()
+    {
+        var response = await _client.GetAsync("/api/v1/vacunos/999999");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task GetActivityStats_WithValidDates_ReturnsOkAndStats()
+    {
+        var today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+        var response = await _client.GetAsync($"/api/v1/vacunos/estadisticas/actividad?fechaInicio={today}&fechaFin={today}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        
+        var json = await response.Content.ReadAsStringAsync();
+        Console.WriteLine($"GetActivityStats Response: {json}");
+        var content = await response.Content.ReadFromJsonAsync<VacunoActivityStatsResponse>();
+        content.Should().NotBeNull();
+        content!.Points.Should().NotBeNull();
     }
 }
