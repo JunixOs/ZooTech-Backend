@@ -178,6 +178,7 @@ public sealed class ProduccionLecheController : ControllerBase
         [FromQuery] string? estadoOrdenioCode,
         [FromQuery] DateTime? fechaDesde,
         [FromQuery] DateTime? fechaHasta,
+        [FromQuery] bool comparativo,
         CancellationToken cancellationToken)
     {
         var behaviorPipeline = _generateOrdeniosExcelBehaviorPipelineFactory.Create();
@@ -188,7 +189,8 @@ public sealed class ProduccionLecheController : ControllerBase
                 VacunoId = vacunoId, 
                 EstadoOrdenioCode = estadoOrdenioCode, 
                 FechaDesde = fechaDesde, 
-                FechaHasta = fechaHasta
+                FechaHasta = fechaHasta,
+                Comparativo = comparativo
             },
             cancellationToken
         );

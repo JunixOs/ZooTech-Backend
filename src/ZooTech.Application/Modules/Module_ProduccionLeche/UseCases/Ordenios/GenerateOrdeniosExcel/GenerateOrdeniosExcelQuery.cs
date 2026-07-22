@@ -12,5 +12,6 @@ public class GenerateOrdeniosComparationExcelQuery : IAuditableRequest
     public string? EstadoOrdenioCode { get; set; }
     public DateTime? FechaDesde { get; set; }
     public DateTime? FechaHasta { get; set; }
+    public bool Comparativo { get; set; } = false;
 
 }

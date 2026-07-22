@@ -93,6 +93,32 @@ public class ProduccionLecheControllerTests
         Assert.Equal(1, response.Id);
     }
 
+    [Fact]
+    public async Task GenerateExcel_MapsComparativoQueryAndReturnsFile()
+    {
+        var excelInputPort = new FakeGetOrdeniosExcelBehaviorPipelineFactory();
+        var controller = CreateController(getOrdeniosExcelInputPort: excelInputPort);
+        var fechaDesde = new DateTime(2026, 7, 1, 8, 0, 0);
+        var fechaHasta = new DateTime(2026, 7, 2, 8, 0, 0);
+
+        var result = await controller.GenerateExcel(
+            vacunoId: 10,
+            estadoOrdenioCode: "ACTIVO",
+            fechaDesde: fechaDesde,
+            fechaHasta: fechaHasta,
+            comparativo: true,
+            CancellationToken.None);
+
+        var fileResult = Assert.IsType<FileContentResult>(result);
+        Assert.Equal("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileResult.ContentType);
+        Assert.Equal("ordenios.xlsx", fileResult.FileDownloadName);
+        Assert.Equal(10, excelInputPort.CapturedQuery?.VacunoId);
+        Assert.Equal("ACTIVO", excelInputPort.CapturedQuery?.EstadoOrdenioCode);
+        Assert.Equal(fechaDesde, excelInputPort.CapturedQuery?.FechaDesde);
+        Assert.Equal(fechaHasta, excelInputPort.CapturedQuery?.FechaHasta);
+        Assert.True(excelInputPort.CapturedQuery?.Comparativo);
+    }
+
     private static ProduccionLecheController CreateController(
         IListarVacunosBehaviorPipelineFactory? listarVacunosInputPort = null,
         ICreateOrdenioBehaviorPipelineFactory? createInputPort = null,
@@ -201,10 +227,16 @@ public class ProduccionLecheControllerTests
 
     private sealed class FakeGetOrdeniosExcelBehaviorPipelineFactory : IGenerateOrdeniosExcelBehaviorPipelineFactory
     {
+        public GenerateOrdeniosComparationExcelQuery? CapturedQuery { get; private set; }
+
         public BehaviorPipeline<GenerateOrdeniosComparationExcelQuery, GenerateOrdeniosExcelOutput> Create()
             => new(
                 Array.Empty<IBehavior<GenerateOrdeniosComparationExcelQuery, GenerateOrdeniosExcelOutput>>(),
-                (_, _) => Task.FromResult(new GenerateOrdeniosExcelOutput(new byte[] { 1 }, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "ordenios.xlsx")));
+                (query, _) =>
+                {
+                    CapturedQuery = query;
+                    return Task.FromResult(new GenerateOrdeniosExcelOutput(new byte[] { 1 }, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "ordenios.xlsx"));
+                });
     }
 
     private sealed class FakeListOrdeniosBehaviorPipelineFactory : IListOrdeniosBehaviorPipelineFactory
