@@ -10,11 +10,14 @@ public sealed class OrdenioRepository : IOrdenioRepository
 {
     private readonly GanaderiaDbContext _ganaderiaDbContext;
 
-    public OrdenioRepository(
-        IGanaderiaDbContextFactory ganaderiaDbContextFactory
-    )
+    public OrdenioRepository(IGanaderiaDbContextFactory ganaderiaDbContextFactory)
+        : this(ganaderiaDbContextFactory.CreateDbContextByTenantContext())
     {
-        _ganaderiaDbContext = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
+    }
+
+    public OrdenioRepository(GanaderiaDbContext ganaderiaDbContext)
+    {
+        _ganaderiaDbContext = ganaderiaDbContext;
     }
 
     public Task<bool> ExistsCodigoAsync(string codigo, CancellationToken cancellationToken)
@@ -49,6 +52,17 @@ public sealed class OrdenioRepository : IOrdenioRepository
             .Include(x => x.encargado_usuario)
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.id == id && x.deleted_at == null, cancellationToken);
+
+        return entity is null ? null : ToDomain(entity);
+    }
+
+    public async Task<Ordenio?> GetByCodigoAsync(string codigo, CancellationToken cancellationToken)
+    {
+        var entity = await _ganaderiaDbContext.ordenios
+            .Include(x => x.vacuno)
+            .Include(x => x.encargado_usuario)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.codigo == codigo.Trim() && x.deleted_at == null, cancellationToken);
 
         return entity is null ? null : ToDomain(entity);
     }
@@ -106,7 +120,6 @@ public sealed class OrdenioRepository : IOrdenioRepository
         await _ganaderiaDbContext.SaveChangesAsync(cancellationToken);
         return ToDomain(entity);
     }
-
     public async Task<IReadOnlyList<OrdenioList>> ListReportAsync(
         long? vacunoId,
         string? estadoOrdenioCode,
@@ -167,6 +180,7 @@ public sealed class OrdenioRepository : IOrdenioRepository
             vacuno = new vacuno
             {
                 id = entity.vacuno.id,
+                codigo = entity.vacuno.codigo,
                 nombre = entity.vacuno.nombre
             },
             encargado_usuario = new usuario
@@ -177,7 +191,7 @@ public sealed class OrdenioRepository : IOrdenioRepository
         };
 
 
-    public static OrdenioList ListOrdenioToDomain(ordenio entity) 
+    public static OrdenioList ListOrdenioToDomain(ordenio entity)
         => OrdenioList.Rehydrate(
 
             entity.id,
@@ -185,6 +199,7 @@ public sealed class OrdenioRepository : IOrdenioRepository
             entity.fecha_hora,
             entity.vacuno_id,
             entity.vacuno?.nombre ?? string.Empty,
+            entity.vacuno?.codigo ?? string.Empty,
             entity.encargado_usuario_id,
             entity.encargado_usuario?.nombre_completo ?? string.Empty,
             entity.litros,

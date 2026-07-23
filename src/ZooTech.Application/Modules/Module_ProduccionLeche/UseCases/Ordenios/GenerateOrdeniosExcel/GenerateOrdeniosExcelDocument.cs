@@ -3,7 +3,7 @@ using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Commo
 namespace ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GenerateOrdeniosExcel;
 
 public sealed record GenerateOrdeniosExcelDocument(
-    IReadOnlyList<OrdenioOutput> Items,
+    IReadOnlyList<OrdenioListOutput> Items,
     long? VacunoId,
     string? EstadoOrdenioCode,
     DateTime? FechaDesde,

@@ -9,15 +9,18 @@ internal sealed class GenerateOrdeniosExcelInteractor : IGetOrdeniosExcelInputPo
 {
     private readonly IOrdenioRepository _repository;
     private readonly IExcelGeneratorService _excelGeneratorService;
+    private readonly IOrdeniosComparationExcelGeneratorService _comparationExcelGeneratorService;
     private readonly IDateTimeProvider _dateTimeProvider;
 
     public GenerateOrdeniosExcelInteractor(
         IOrdenioRepository repository,
         IExcelGeneratorService excelGeneratorService,
+        IOrdeniosComparationExcelGeneratorService comparationExcelGeneratorService,
         IDateTimeProvider dateTimeProvider)
     {
         _repository = repository;
         _excelGeneratorService = excelGeneratorService;
+        _comparationExcelGeneratorService = comparationExcelGeneratorService;
         _dateTimeProvider = dateTimeProvider;
     }
 
@@ -34,17 +37,25 @@ internal sealed class GenerateOrdeniosExcelInteractor : IGetOrdeniosExcelInputPo
             cancellationToken);
 
         var document = new GenerateOrdeniosExcelDocument(
-            entities.Select(OrdenioMapper.ToOutput).ToList(),
+            entities.Select(OrdenioMapper.ToOutputList).ToList(),
             query.VacunoId,
             query.EstadoOrdenioCode,
             query.FechaDesde,
             query.FechaHasta,
             _dateTimeProvider.ServerNow);
 
+        var excelContent = query.Comparativo
+            ? _comparationExcelGeneratorService.GenerateOrdeniosReport(document)
+            : _excelGeneratorService.GenerateOrdeniosReport(document);
+
+        var fileNamePrefix = query.Comparativo
+            ? "reporte-comparativo-ordenios"
+            : "reporte-ordenios";
+
         return new GenerateOrdeniosExcelOutput(
-            _excelGeneratorService.GenerateOrdeniosReport(document),
+            excelContent,
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            $"reporte-ordenios-{document.GeneratedAtUtc:yyyyMMddHHmmss}.xlsx");
+            $"{fileNamePrefix}-{document.GeneratedAtUtc:yyyyMMddHHmmss}.xlsx");
     }
 
 

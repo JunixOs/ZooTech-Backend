@@ -1,29 +1,29 @@
 using ZooTech.Application.Common.Gateway.Services;
 using ZooTech.Application.Common.Gateway.Time;
-using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GenerateOrdeniosPdf;
-using ZooTech.Application.Modules.Module_Sanidad.UseCases.GenerateTriajesPdf;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GenerateOrdeniosExcel;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GenerateTriajesExcel;
 using ZooTech.Domain.Module_ProduccionLeche.Entities;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
 
-namespace ZooTech.Application.UnitTests.Modules.Module_ProduccionLeche.UseCases.GenerateOrdeniosPdf;
+namespace ZooTech.Application.UnitTests.Modules.Module_ProduccionLeche.UseCases.GenerateOrdeniosExcel;
 
-public class GenerateOrdeniosPdfInteractorTests
+public class GenerateOrdeniosExcelInteractorTests
 {
     [Fact]
     public async Task HandleAsync_WhenComparativoIsFalse_UsesStandardGeneratorAndStandardFileName()
     {
         var now = new DateTime(2026, 7, 2, 10, 11, 12, DateTimeKind.Utc);
         var repository = new FakeOrdenioRepository();
-        var standardGenerator = new FakePdfGeneratorService(new byte[] { 1, 2, 3 });
-        var comparativeGenerator = new FakeComparationPdfGeneratorService(new byte[] { 9, 9, 9 });
-        var interactor = new GenerateOrdeniosPdfInteractor(
+        var standardGenerator = new FakeExcelGeneratorService(new byte[] { 1, 2, 3 });
+        var comparativeGenerator = new FakeComparationExcelGeneratorService(new byte[] { 9, 9, 9 });
+        var interactor = new GenerateOrdeniosExcelInteractor(
             repository,
             standardGenerator,
             comparativeGenerator,
             new FakeDateTimeProvider(now));
 
         var result = await interactor.Handle(
-            new GenerateOrdeniosComparationPdfQuery
+            new GenerateOrdeniosComparationExcelQuery
             {
                 VacunoId = 1,
                 EstadoOrdenioCode = "ACTIVO",
@@ -35,8 +35,8 @@ public class GenerateOrdeniosPdfInteractorTests
 
         Assert.True(standardGenerator.WasCalled);
         Assert.False(comparativeGenerator.WasCalled);
-        Assert.Equal("application/pdf", result.ContentType);
-        Assert.Equal("reporte-ordenios-20260702101112.pdf", result.FileName);
+        Assert.Equal("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", result.ContentType);
+        Assert.Equal("reporte-ordenios-20260702101112.xlsx", result.FileName);
         Assert.Equal(new byte[] { 1, 2, 3 }, result.Content);
         Assert.Equal(1, repository.CapturedVacunoId);
         Assert.Equal("ACTIVO", repository.CapturedEstadoOrdenioCode);
@@ -47,16 +47,16 @@ public class GenerateOrdeniosPdfInteractorTests
     {
         var now = new DateTime(2026, 7, 2, 10, 11, 12, DateTimeKind.Utc);
         var repository = new FakeOrdenioRepository();
-        var standardGenerator = new FakePdfGeneratorService(new byte[] { 1, 2, 3 });
-        var comparativeGenerator = new FakeComparationPdfGeneratorService(new byte[] { 7, 8, 9 });
-        var interactor = new GenerateOrdeniosPdfInteractor(
+        var standardGenerator = new FakeExcelGeneratorService(new byte[] { 1, 2, 3 });
+        var comparativeGenerator = new FakeComparationExcelGeneratorService(new byte[] { 7, 8, 9 });
+        var interactor = new GenerateOrdeniosExcelInteractor(
             repository,
             standardGenerator,
             comparativeGenerator,
             new FakeDateTimeProvider(now));
 
         var result = await interactor.Handle(
-            new GenerateOrdeniosComparationPdfQuery
+            new GenerateOrdeniosComparationExcelQuery
             {
                 VacunoId = null,
                 EstadoOrdenioCode = null,
@@ -68,7 +68,7 @@ public class GenerateOrdeniosPdfInteractorTests
 
         Assert.False(standardGenerator.WasCalled);
         Assert.True(comparativeGenerator.WasCalled);
-        Assert.Equal("reporte-comparativo-ordenios-20260702101112.pdf", result.FileName);
+        Assert.Equal("reporte-comparativo-ordenios-20260702101112.xlsx", result.FileName);
         Assert.Equal(new byte[] { 7, 8, 9 }, result.Content);
     }
 
@@ -82,39 +82,39 @@ public class GenerateOrdeniosPdfInteractorTests
         public DateTime ServerNow { get; }
     }
 
-    private sealed class FakePdfGeneratorService : IPdfGeneratorService
+    private sealed class FakeExcelGeneratorService : IExcelGeneratorService
     {
         private readonly byte[] _content;
 
-        public FakePdfGeneratorService(byte[] content)
+        public FakeExcelGeneratorService(byte[] content)
         {
             _content = content;
         }
 
         public bool WasCalled { get; private set; }
 
-        public byte[] GenerateOrdeniosReport(GenerateOrdeniosPdfDocument document)
+        public byte[] GenerateOrdeniosReport(GenerateOrdeniosExcelDocument document)
         {
             WasCalled = true;
             return _content;
         }
 
-        public byte[] GenerateTriajesReport(GenerateTriajesPdfDocument document)
+        public byte[] GenerateTriajesReport(GenerateTriajesExcelDocument document)
             => throw new NotSupportedException();
     }
 
-    private sealed class FakeComparationPdfGeneratorService : IOrdeniosComparationPdfGeneratorService
+    private sealed class FakeComparationExcelGeneratorService : IOrdeniosComparationExcelGeneratorService
     {
         private readonly byte[] _content;
 
-        public FakeComparationPdfGeneratorService(byte[] content)
+        public FakeComparationExcelGeneratorService(byte[] content)
         {
             _content = content;
         }
 
         public bool WasCalled { get; private set; }
 
-        public byte[] GenerateOrdeniosReport(GenerateOrdeniosPdfDocument document)
+        public byte[] GenerateOrdeniosReport(GenerateOrdeniosExcelDocument document)
         {
             WasCalled = true;
             return _content;
@@ -185,4 +185,3 @@ public class GenerateOrdeniosPdfInteractorTests
             => Task.FromResult(ordenio);
     }
 }
-
