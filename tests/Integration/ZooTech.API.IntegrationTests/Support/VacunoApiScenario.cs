@@ -18,7 +18,7 @@ internal sealed class VacunoApiScenario : IAsyncDisposable
     public async Task<CreateVacunoRequest> ValidRequestAsync()
     {
         var response = await _client.GetFromJsonAsync<GeneralResponseDTO<VacunoCatalogsResponse>>(
-            $"{RequirementApiRoutes.Vacunos}/catalogos");
+            RequirementApiRoutes.VacunoCatalogos);
         var catalogs = response?.Data;
         catalogs.Should().NotBeNull("the tenant must expose vacuno catalogs");
         catalogs!.Granjas.Should().NotBeEmpty();
