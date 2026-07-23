@@ -136,9 +136,6 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 // ======= HTTPS =======
 app.UseHttpsRedirection();
 
-// ======= Archivos Estáticos =======
-app.UseStaticFiles();
-
 // ======= Routing =======
 app.UseRouting();
 
