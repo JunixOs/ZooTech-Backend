@@ -461,6 +461,17 @@ public sealed class VacunoController : ControllerBase
         }
 
         var utilizacion = await responseReadRepository.GetLatestUtilizacionAsync(dto.Id, cancellationToken);
+        var fotoUrl = await responseReadRepository.GetFotoUrlAsync(dto.Id, cancellationToken);
+
+        string? finalFotoUrl = null;
+        if (!string.IsNullOrEmpty(fotoUrl))
+        {
+            var request = HttpContext.Request;
+            var baseUrl = $"{request.Scheme}://{request.Host}";
+            finalFotoUrl = fotoUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase) 
+                ? fotoUrl 
+                : $"{baseUrl}/{fotoUrl.TrimStart('/')}";
+        }
 
         return new VacunoResponse(
             dto.Id,
@@ -482,11 +493,12 @@ public sealed class VacunoController : ControllerBase
             codigoMadre,
             granjaNombre,
             distritoNombre,
-            provinciaNombre,
             departamentoNombre,
+            provinciaNombre,
             codigoDistrito,
             utilizacion?.TipoUtilizacionCode,
-            utilizacion?.CreatedAt);
+            utilizacion?.CreatedAt,
+            finalFotoUrl);
     }
 
     private async Task<long> ResolveIdAsync(string identifier, CancellationToken cancellationToken)

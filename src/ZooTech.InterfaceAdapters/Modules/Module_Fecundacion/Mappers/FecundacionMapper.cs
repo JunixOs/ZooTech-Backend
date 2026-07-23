@@ -1,12 +1,11 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.CreateFecundacion;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.GetFecundacionForEdit;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.GetFecundacionOptions;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.SearchFecundacionVacunos;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.UpdateFecundacion;
-using ZooTech.Domain.Module_Fecundacion.Entities;
-using ZooTech.Domain.Module_Fecundacion.Rules;
-using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.DTOs;
+using ZooTech.Domain.Ganaderia.Module_Fecundacion.Entities;
+using ZooTech.Domain.Ganaderia.Module_Fecundacion.Rules;
 using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.DTOs.Responses;
 
@@ -93,7 +92,7 @@ public static class FecundacionMapper
             output.CodigoSemen,
             output.CodigoEmbrion,
             output.ObservacionesVeterinarias,
-            ToContractEstado(output.EstadoFecundacionCode),
+            ToContractEstado(DefaultEstado(output.EstadoFecundacionCode)),
             output.CreadoEn,
             output.ActualizadoEn);
 
@@ -164,6 +163,9 @@ public static class FecundacionMapper
     public static string ToContractEstado(string code)
         => Normalize(code) switch
         {
+            "EN_ESPERA" => "en_espera",
+            "GESTANTE" => "gestante",
+            "VACIA" => "vacia",
             "EN_PROCESO" or "PENDIENTE" => "en_proceso",
             "CONFIRMADA" or "FECUNDADO" => "fecundado",
             "EN_GESTACION" or "GESTACION" => "en_gestacion",
@@ -176,6 +178,9 @@ public static class FecundacionMapper
             ? null
             : Normalize(code) switch
             {
+                "EN_ESPERA" => "EN_ESPERA",
+                "GESTANTE" => "GESTANTE",
+                "VACIA" => "VACIA",
                 "EN_PROCESO" => "EN_PROCESO",
                 "FECUNDADO" => "CONFIRMADA",
                 "EN_GESTACION" => "EN_GESTACION",
@@ -231,7 +236,7 @@ public static class FecundacionMapper
         => string.Equals(tipoDonante, FecundacionRules.TipoDonanteExterno, StringComparison.OrdinalIgnoreCase);
 
     private static string DefaultEstado(string current)
-        => string.IsNullOrWhiteSpace(current) ? "PENDIENTE" : current;
+        => string.IsNullOrWhiteSpace(current) ? "EN_ESPERA" : current;
 
     private static string Normalize(string value)
         => value.Trim().Replace("-", "_").ToUpperInvariant();

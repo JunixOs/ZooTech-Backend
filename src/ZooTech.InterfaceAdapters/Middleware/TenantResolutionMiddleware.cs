@@ -36,14 +36,32 @@ namespace ZooTech.InterfaceAdapters.Middleware
             ITenantContext tenantContext
         )
         {
+            var path = context.Request.Path.Value ?? "";
+            if (path.StartsWith("/swagger", StringComparison.OrdinalIgnoreCase) ||
+                path.Equals("/favicon.ico", StringComparison.OrdinalIgnoreCase) ||
+                context.Request.Method == "OPTIONS")
+            {
+                await _next(context);
+                return;
+            }
+
             var domain = context.Request.Headers["X-Tenant-Url"].FirstOrDefault();
 
-            if(domain == null)
+            if (domain == null)
             {
-                throw new NotFoundException(ScopeName.Interface_Adapters);
+                domain = "localhost";
             }
 
             var subDomain = ExtractSubDomain(domain);
+
+            if (subDomain == null && (domain == "localhost" || domain == "127.0.0.1" || domain.StartsWith("localhost:")))
+            {
+                // En desarrollo local, las rutas admin usan subdomain 'admin', el resto 'zootecniaunas'
+                subDomain = path.StartsWith("/api/v1/auth/admin", StringComparison.OrdinalIgnoreCase)
+                    || path.StartsWith("/api/v1/tenancing", StringComparison.OrdinalIgnoreCase)
+                    ? _adminSubDomain
+                    : "zootecniaunas";
+            }
 
             if (subDomain == null)
             {
@@ -72,12 +90,23 @@ namespace ZooTech.InterfaceAdapters.Middleware
 
         private string? ExtractSubDomain(string host)
         {
-            if (!host.EndsWith("." + _baseDomain))
+            var cleanHost = host.Contains(":") ? host.Split(':')[0] : host;
+
+            if (cleanHost.EndsWith(".localhost"))
+            {
+                return cleanHost[..^(".localhost".Length)];
+            }
+            if (cleanHost.EndsWith(".zentrycorp.dev"))
+            {
+                return cleanHost[..^(".zentrycorp.dev".Length)];
+            }
+
+            if (!cleanHost.EndsWith("." + _baseDomain))
             {
                 return null;
             }
 
-            return host[..^(_baseDomain.Length + 1)];
+            return cleanHost[..^(_baseDomain.Length + 1)];
         }
     }
 }

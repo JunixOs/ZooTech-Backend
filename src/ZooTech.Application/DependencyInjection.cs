@@ -1,5 +1,7 @@
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetActivityStats;
+using ZooTech.Application.Common.Behaviors.Module_Vacuno.GetActivityStats;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 // Removed Animals references
@@ -43,6 +45,7 @@ using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetTriajeById;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.UpdateTriaje;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.CreateVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarArbolGenealogico;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarActividadVacunos;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetArbolGenealogico;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetVacunoById;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ListarVacunosReporte;
@@ -106,6 +109,7 @@ using ZooTech.Application.Common.Behaviors.Module_Vacuno.CreateVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.Validators;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.DeleteVacuno;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.ExportarArbolGenealogico;
+using ZooTech.Application.Common.Behaviors.Module_Vacuno.ExportarActividadVacunos;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.GetArbolGenealogico;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.GetVacunoById;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetVacunoCatalogs;
@@ -122,6 +126,9 @@ using ZooTech.Application.Common.Behaviors.Module_Fecundacion.GetFecundacionForE
 using ZooTech.Application.Common.Behaviors.Module_Fecundacion.GetFecundacionOptions;
 using ZooTech.Application.Common.Behaviors.Module_Fecundacion.ListarFecundacion;
 using ZooTech.Application.Common.Behaviors.Module_Fecundacion.SearchFecundacionVacunos;
+using ZooTech.Application.Common.Behaviors.Module_Fecundacion.UpdateFecundacion;
+using ZooTech.Application.Common.Gateway.Reports;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.Common;
 
 
 namespace ZooTech.Application;
@@ -262,6 +269,7 @@ public static class DependencyInjection
 
         services.AddScoped<IDeleteFecundacionInputPort, DeleteFecundacionInteractor>();
         services.AddScoped<IDeleteFecundacionBehaviorPipelineFactory, DeleteFecundacionBehaviorPipelineFactory>();
+        services.AddScoped<ICommandValidator<DeleteFecundacionCommand>, DeleteFecundacionValidator>();
 
         services.AddScoped<IGetFecundacionForEditInputPort, GetFecundacionForEditInteractor>();
         services.AddScoped<IGetFecundacionForEditBehaviorPipelineFactory, GetFecundacionForEditBehaviorPipelineFactory>();
@@ -277,7 +285,7 @@ public static class DependencyInjection
         services.AddScoped<ISearchFecundacionVacunosBehaviorPipelineFactory, SearchFecundacionVacunosBehaviorPipelineFactory>();
         
         services.AddScoped<IUpdateFecundacionInputPort, UpdateFecundacionInteractor>();
-        services.AddScoped<IUpdateFecundacionEstadoBehaviorPipelineFactory, UpdateFecundacionEstadoBehaviorPipelineFactory>();
+        services.AddScoped<IUpdateFecundacionBehaviorPipelineFactory, UpdateFecundacionBehaviorPipelineFactory>();
         services.AddScoped<ICommandValidator<UpdateFecundacionCommand>, UpdateFecundacionValidator>();
 
 
@@ -295,6 +303,10 @@ public static class DependencyInjection
         services.AddScoped<IExportarArbolGenealogicoInputPort,ExportarArbolGenealogicoInteractor>();
         services.AddScoped<IExportarArbolGenealogicoBehaviorPipelineFactory, ExportarArbolGenealogicoBehaviorPipelineFactory>();
         services.AddScoped<ICommandValidator<ExportarArbolGenealogicoCommand>, ExportarArbolGenealogicoCommandValidator>();
+
+        services.AddScoped<IExportarActividadVacunosInputPort, ExportarActividadVacunosInteractor>();
+        services.AddScoped<IExportarActividadVacunosBehaviorPipelineFactory, ExportarActividadVacunosBehaviorPipelineFactory>();
+        services.AddScoped<ICommandValidator<ExportarActividadVacunosQuery>, ExportarActividadVacunosQueryValidator>();
         
         services.AddScoped<IGetArbolGenealogicoInputPort, GetArbolGenealogicoInteractor>();
         services.AddScoped<IGetArbolGenealogicoBehaviorPipelineFactory, GetArbolGenealogicoBehaviorPipelineFactory>();
@@ -310,11 +322,23 @@ public static class DependencyInjection
         services.AddScoped<IListarVacunosBehaviorPipelineFactory, ListarVacunosBehaviorPipelineFactory>();
         services.AddScoped<ICommandValidator<ListarVacunosCommand>, ListarVacunosCommandValidator>();
         
+        services.AddScoped<IGetActivityStatsInputPort, GetActivityStatsInteractor>();
+        services.AddScoped<IVacunoActivityStatsService, VacunoActivityStatsService>();
+        services.AddScoped<IGetActivityStatsBehaviorPipelineFactory, GetActivityStatsBehaviorPipelineFactory>();
+        services.AddScoped<ICommandValidator<GetActivityStatsQuery>, GetActivityStatsQueryValidator>();
+
+        services.AddScoped(typeof(IReportStrategyResolver<>), typeof(ReportStrategyResolver<>));
+        services.AddScoped<IVacunoReportFormatPolicy, VacunoReportFormatPolicy>();
+        
         services.AddScoped<IListarVacunosReporteUseCase, ListarVacunosReporteUseCase>();
         services.AddScoped<IListarVacunosReporteBehaviorPipelineFactory, ListarVacunosReporteBehaviorPipelineFactory>();
+        services.AddScoped<ICommandValidator<ListarVacunosReporteQuery>, ListarVacunosReporteQueryValidator>();
         
         services.AddScoped<IObtenerRegistroVacunoReporteUseCase, ObtenerRegistroVacunoReporteUseCase>();
         services.AddScoped<IObtenerRegistroVacunoReporteBehaviorPipelineFactory, ObtenerRegistroVacunoReporteBehaviorPipelineFactory>();
+        services.AddScoped<ICommandValidator<ObtenerRegistroVacunoReporteQuery>, ObtenerRegistroVacunoReporteQueryValidator>();
+
+
 
         services.AddScoped<IUpdateVacunoInputPort, UpdateVacunoInteractor>();
         services.AddScoped<IUpdateVacunoBehaviorPipelineFactory, UpdateVacunoBehaviorPipelineFactory>();

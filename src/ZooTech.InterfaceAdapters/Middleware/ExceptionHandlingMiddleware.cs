@@ -1,7 +1,7 @@
-using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using ZooTech.Application.Common.Gateway.Auditing;
+using ZooTech.Application.Common.Exceptions;
 using ZooTech.Domain.Shared.Enums;
 using ZooTech.Domain.Shared.Exceptions;
 using ZooTech.InterfaceAdapters.Models;
@@ -32,15 +32,40 @@ namespace ZooTech.InterfaceAdapters.Middleware
             {
                 await _next(context);
             }
+            catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
+            {
+                _logger.LogDebug(
+                    "Request canceled by the client: {Method} {Path}",
+                    context.Request.Method,
+                    context.Request.Path);
+            }
             catch (AppDomainException ex)
             {
                 _logger.LogWarning(ex, "ZooTechException: {Code} - {Type} - {Message} - {Scope}", ex.ErrorCode.ToString(), ex.ErrorType.ToString(), ex.Message.ToString(), ex.ScopeName.ToString());
+
+                var rootException = ex.GetBaseException();
                 
-                await appAuditService.SaveLogAsync(
-                    new AuditModel
+                await appAuditService.AuditErrorAsync(
+                    new AuditErrorInfo
                     {
                         EventType = AuditEventType.ZooTechException,
-                        Action =  $"ZooTechException: {ex.ErrorCode.ToString()} - {ex.ErrorType.ToString()} - {ex.Message.ToString()} - {ex.ScopeName.ToString()}",
+                        CustomMessage =  $"ZooTechException: {ex.ErrorCode} - {ex.ScopeName} - {ex.ErrorType} - {ex.Message}",
+
+                        Type = rootException.GetType().Name,
+                        Message = ExceptionExtensions.ToAuditMessage(rootException),
+                        Source = rootException.Source,
+                        Method = rootException.TargetSite?.Name,
+
+                        AppInformation = new ErrorAppInformation
+                        {
+                            ErrorCode = ex.ErrorCode,
+                            ScopeName = ex.ScopeName,
+                            ModuleName = ex.ModuleName,
+                            Details = ex.Details,
+                            CompleteErrorCode = ex.CompleteErrorCode
+                        },
+
+                        StackTrace = rootException.StackTrace
                     }
                 );
                 
@@ -54,21 +79,35 @@ namespace ZooTech.InterfaceAdapters.Middleware
                     {
                         ErrorCode = ex.CompleteErrorCode,
                         Message = ex.Message,
-                        Details = ex.Details
+                        Details = ex.Details,
+                        FieldErrors = ex is IFieldValidationException validationException
+                            ? validationException.FieldErrors
+                                .Select(error => new FieldErrorContent(error.Field, error.Code, error.Message))
+                                .ToList()
+                            : []
                     }
                 };
 
-                await context.Response.WriteAsync(JsonSerializer.Serialize(response));
+                await context.Response.WriteAsJsonAsync(response);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unhandled exception");
+                var rootException = ex.GetBaseException();
 
-                await appAuditService.SaveLogAsync(
-                    new AuditModel
+                _logger.LogError(rootException, "Unhandled exception");
+
+                await appAuditService.AuditErrorAsync(
+                    new AuditErrorInfo
                     {
                         EventType = AuditEventType.UnhandledException,
-                        Action =  "Unhandled exception",
+                        CustomMessage =  "Unhandled exception",
+
+                        Type = rootException.GetType().Name,
+                        Message = ExceptionExtensions.ToAuditMessage(rootException),
+                        Source = rootException.Source,
+                        Method = rootException.TargetSite?.Name,
+
+                        StackTrace = rootException.StackTrace
                     }
                 );
 
@@ -85,8 +124,10 @@ namespace ZooTech.InterfaceAdapters.Middleware
                     }
                 };
 
-                await context.Response.WriteAsync(JsonSerializer.Serialize(response));
+                await context.Response.WriteAsJsonAsync(response);
             }
         }
+
+
     }
 }

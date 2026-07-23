@@ -87,6 +87,7 @@ public sealed class ExcelGeneratorService : IExcelGeneratorService
             ("Peso", document.PesoKg.HasValue ? $"{document.PesoKg.Value} Kg" : null));
     }
 
+
     private static void RenderHeader(IXLWorksheet worksheet, string title, DateTime generatedAtUtc, string filterLine)
     {
         worksheet.Cell(1, 1).Value = title;

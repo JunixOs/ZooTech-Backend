@@ -1,10 +1,11 @@
 using Microsoft.EntityFrameworkCore;
-using ZooTech.Domain.Module_Fecundacion.Entities;
-using ZooTech.Domain.Module_Fecundacion.Interfaces;
+using ZooTech.Application.Modules.Module_Fecundacion.Exceptions;
+using ZooTech.Domain.Ganaderia.Module_Fecundacion.Entities;
+using ZooTech.Domain.Ganaderia.Module_Fecundacion.Interfaces;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Persistence.Entities;
 using ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.Common;
-using ZooTech.Domain.Module_Fecundacion.Rules;
+using ZooTech.Domain.Ganaderia.Module_Fecundacion.Rules;
 
 namespace ZooTech.Infrastructure.Persistence.Modules.Module_Fecundacion.Repositories;
 
@@ -13,8 +14,13 @@ public sealed class FecundacionRepository : IFecundacionRepository
     private readonly GanaderiaDbContext _context;
 
     public FecundacionRepository(IGanaderiaDbContextFactory ganaderiaDbContextFactory)
+        : this(ganaderiaDbContextFactory.CreateDbContextByTenantContext())
     {
-        _context = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
+    }
+
+    public FecundacionRepository(GanaderiaDbContext context)
+    {
+        _context = context;
     }
 
     public async Task<(List<FecundacionListItem> Items, int TotalCount)> GetPagedAsync(
@@ -29,17 +35,18 @@ public sealed class FecundacionRepository : IFecundacionRepository
 
         if (!string.IsNullOrWhiteSpace(query))
         {
-            var pattern = $"%{query}%";
+            var pattern = $"%{query.Trim()}%";
             q = q.Where(f =>
                 EF.Functions.Like(f.codigo, pattern)
                 || EF.Functions.Like(f.vacuno_receptor.nombre, pattern)
                 || EF.Functions.Like(f.tipo_fecundacion_code, pattern)
                 || EF.Functions.Like(f.resultado_code, pattern)
-                || (f.responsable != null && EF.Functions.Like(f.responsable.nombre_completo, pattern))
-                || (f.fecundacion_donante != null && (
-                       (f.fecundacion_donante.vacuno_donante != null && EF.Functions.Like(f.fecundacion_donante.vacuno_donante.nombre, pattern))
-                    || (f.fecundacion_donante.externo_donante != null && EF.Functions.Like(f.fecundacion_donante.externo_donante.nombre, pattern))
-                   ))
+                || EF.Functions.Like(f.responsable.nombre_completo, pattern)
+                || (f.fecundacion_donante != null
+                    && ((f.fecundacion_donante.vacuno_donante != null
+                            && EF.Functions.Like(f.fecundacion_donante.vacuno_donante.nombre, pattern))
+                        || (f.fecundacion_donante.externo_donante != null
+                            && EF.Functions.Like(f.fecundacion_donante.externo_donante.nombre, pattern))))
             );
         }
 
@@ -62,26 +69,52 @@ public sealed class FecundacionRepository : IFecundacionRepository
             .ThenByDescending(f => f.id)
             .Skip((page - 1) * limit)
             .Take(limit)
-            .Select(f => new FecundacionListProjection
+            .Select(f => new
             {
                 Id = f.id,
                 Codigo = f.codigo,
                 FechaProcedimiento = f.fecha_procedimiento,
                 NombreVacunoReceptor = f.vacuno_receptor.nombre,
-                Responsable = f.responsable != null ? f.responsable.nombre_completo : null,
+                Responsable = f.responsable.nombre_completo,
                 TipoFecundacionCode = f.tipo_fecundacion_code,
                 ResultadoCode = f.resultado_code,
-                NombreDonante = f.fecundacion_donante != null
-                    ? (f.fecundacion_donante.vacuno_donante != null
+                TieneDonante = f.fecundacion_donante != null,
+                VacunoDonanteNombre = f.fecundacion_donante != null
+                    ? f.fecundacion_donante.vacuno_donante != null
                         ? f.fecundacion_donante.vacuno_donante.nombre
-                        : (f.fecundacion_donante.externo_donante != null
-                            ? f.fecundacion_donante.externo_donante.nombre
-                            : "Sin Donante Registrado"))
-                    : "Sin Donante Registrado"
+                        : null
+                    : null,
+                ExternoDonanteNombre = f.fecundacion_donante != null
+                    ? f.fecundacion_donante.externo_donante != null
+                        ? f.fecundacion_donante.externo_donante.nombre
+                        : null
+                    : null
             })
             .ToListAsync(cancellationToken);
 
-        var items = rows.Select(ToListItem).ToList();
+        var items = rows.Select(r =>
+        {
+            string nombreDonante = "Sin Donante Registrado";
+            if (r.TieneDonante)
+            {
+                if (!string.IsNullOrWhiteSpace(r.VacunoDonanteNombre))
+                    nombreDonante = r.VacunoDonanteNombre;
+                else if (!string.IsNullOrWhiteSpace(r.ExternoDonanteNombre))
+                    nombreDonante = r.ExternoDonanteNombre;
+            }
+
+            return new FecundacionListItem(
+                Id: r.Id,
+                Codigo: r.Codigo,
+                Tipo: r.TipoFecundacionCode,
+                VacunoReceptor: r.NombreVacunoReceptor,
+                FechaProcedimiento: r.FechaProcedimiento,
+                Responsable: r.Responsable ?? string.Empty,
+                Resultado: r.ResultadoCode,
+                NombreDonante: nombreDonante,
+                Observaciones: null
+            );
+        }).ToList();
 
         return (items, totalCount);
     }
@@ -212,6 +245,37 @@ public sealed class FecundacionRepository : IFecundacionRepository
     public async Task<bool> ExistsCodigoAsync(string codigo, CancellationToken cancellationToken = default)
     {
         return await _context.fecundacions.AnyAsync(f => f.codigo == codigo, cancellationToken);
+    }
+
+    public async Task<Fecundacion?> GetByCodigoAsync(string codigo, CancellationToken cancellationToken = default)
+    {
+        var entity = await _context.fecundacions
+            .Include(f => f.vacuno_receptor)
+            .Include(f => f.responsable)
+            .Include(f => f.fecundacion_donante)
+            .Include(f => f.fecundacion_inseminacion)
+            .Include(f => f.fecundacion_embrion)
+            .FirstOrDefaultAsync(x => x.codigo == codigo, cancellationToken);
+
+        if (entity is null)
+            return null;
+
+        return new Fecundacion(
+            id: entity.id,
+            codigo: entity.codigo,
+            tipoFecundacionCode: entity.tipo_fecundacion_code,
+            vacunoReceptorId: entity.vacuno_receptor_id,
+            celoRegistroId: entity.celo_registro_id,
+            fechaProcedimiento: entity.fecha_procedimiento.ToDateTime(TimeOnly.MinValue),
+            responsableId: entity.responsable_id,
+            resultadoCode: entity.resultado_code,
+            observacionesVeterinarias: entity.observaciones_veterinarias,
+            actorUsuarioId: entity.created_by,
+            machoExterno: entity.fecundacion_donante?.tipo_donante == FecundacionRules.TipoDonanteExterno,
+            machoExternoNombre: null, // Si es necesario mapear el nombre del reproductor externo, habría que hacer el include
+            vacunoDonanteId: entity.fecundacion_donante?.vacuno_donante_id,
+            codigoSemen: entity.fecundacion_inseminacion?.codigo_semen,
+            codigoEmbrion: entity.fecundacion_embrion?.codigo_embrion);
     }
 
     public async Task<long> GetOrCreateResponsableByNameAsync(string name, CancellationToken cancellationToken = default)
@@ -397,7 +461,7 @@ public sealed class FecundacionRepository : IFecundacionRepository
         entity.tipo_fecundacion_code = values.TipoFecundacionCode.Trim();
         entity.vacuno_receptor_id = values.VacunoReceptorId;
         entity.fecha_procedimiento = values.FechaProcedimiento;
-        entity.responsable_id = responsable.id;
+        entity.responsable = responsable;
         entity.resultado_code = values.ResultadoCode.Trim();
         entity.observaciones_veterinarias = string.IsNullOrWhiteSpace(values.ObservacionesVeterinarias)
             ? null
@@ -438,7 +502,7 @@ public sealed class FecundacionRepository : IFecundacionRepository
         var estadoExists = await _context.cat_estado_fecundacion_vacunos
             .AnyAsync(e => e.code == values.EstadoFecundacionCode, cancellationToken);
         if (!estadoExists)
-            throw new ArgumentException("El estado de fecundación indicado no existe.");
+            throw new FecundacionInvalidEstadoException();
     }
 
     private async Task ValidateVacunosAsync(
@@ -736,7 +800,6 @@ public sealed class FecundacionRepository : IFecundacionRepository
     public async Task DeleteAsync(long id, string razon, CancellationToken cancellationToken = default)
     {
         var entity = await _context.fecundacions
-            .Include(x => x.fecundacion_cria)
             .FirstOrDefaultAsync(x => x.id == id, cancellationToken);
 
         if (entity is null)
@@ -746,7 +809,6 @@ public sealed class FecundacionRepository : IFecundacionRepository
         var reason = razon.Trim();
         var deleteNote = BuildDeleteNote(now, reason, entity.observaciones_veterinarias);
 
-        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
         entity.observaciones_veterinarias = deleteNote;
         entity.updated_at = now;
 
@@ -760,8 +822,6 @@ public sealed class FecundacionRepository : IFecundacionRepository
             history.motivo_eliminacion = Truncate(reason, 250);
         }
 
-        await _context.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
     }
 
     private static string BuildDeleteNote(DateTime date, string reason, string? originalObservations)

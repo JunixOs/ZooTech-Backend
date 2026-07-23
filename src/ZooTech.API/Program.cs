@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using ZooTech.Application;
 using ZooTech.Infrastructure;
 using ZooTech.InterfaceAdapters;
-using ZooTech.InterfaceAdapters.Controllers;
+using ZooTech.InterfaceAdapters.Modules.Shared.Controllers;
 using ZooTech.InterfaceAdapters.Middleware;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.Controllers;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
@@ -64,7 +64,7 @@ builder.Services.AddMemoryCache();
 // ======= Configuracion CORS =======
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowFrontend", policy =>
+    options.AddPolicy("ProductionCorsPolicy", policy =>
     {
         policy
             .SetIsOriginAllowed(origin =>
@@ -104,6 +104,37 @@ builder.Services.AddCors(options =>
                 "X-Tenant-Legal-Name",
                 "X-Tenant-Type");
     });
+
+    options.AddPolicy("DevelopmentCorsPolicy", policy =>
+    {
+        policy
+            .SetIsOriginAllowed(origin =>
+            {
+                var uri = new Uri(origin);
+
+                var isZentryDomain =
+                    uri.Host.EndsWith(".zentrycorp.local");
+
+                var isLocal =
+                    uri.Scheme == "http" &&
+                    uri.Port == 4200 &&
+                    (
+                        uri.Host == "localhost" ||
+                        uri.Host == "127.0.0.1" ||
+                        uri.Host.EndsWith(".zentrycorp.local")
+                    );
+
+                return isZentryDomain || isLocal;
+            })
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials()
+            .WithExposedHeaders(
+                "X-Tenant-Id",
+                "X-Tenant-Name",
+                "X-Tenant-Legal-Name",
+                "X-Tenant-Type");
+    });
 });
 
 QuestPDF.Settings.License = LicenseType.Community;
@@ -119,18 +150,8 @@ app.UseHttpsRedirection();
 // ======= Routing =======
 app.UseRouting();
 
-// ======= CORS =======
-// IMPORTANTE: debe ir antes de TenantResolution, Authentication y Authorization.
-app.UseCors("AllowFrontend");
-
-// ======= Tenant Middleware =======
-app.UseMiddleware<TenantResolutionMiddleware>();
-
-// ======= JWT =======
-app.UseAuthentication();
-app.UseAuthorization();
-
-// ======= Swagger =======
+// ======= Swagger + CORS (por entorno) =======
+// IMPORTANTE: CORS debe ir antes de TenantResolution, Authentication y Authorization.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -149,7 +170,21 @@ if (app.Environment.IsDevelopment())
             "/swagger/users/swagger.json",
             "Users API");
     });
+
+    app.UseCors("DevelopmentCorsPolicy");
 }
+if (app.Environment.IsProduction())
+{
+    app.UseCors("ProductionCorsPolicy");
+}
+
+// ======= Tenant Middleware =======
+app.UseMiddleware<TenantResolutionMiddleware>();
+
+// ======= JWT =======
+app.UseAuthentication();
+app.UseAuthorization();
+
 
 // ======= Controllers =======
 app.MapControllers();

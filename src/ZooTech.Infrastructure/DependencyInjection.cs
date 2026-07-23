@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,9 +9,10 @@ using ZooTech.Domain.Common.Interfaces;
 using ZooTech.Domain.Module_Celo.Interfaces;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
-using ZooTech.Domain.Module_Vacuno.Interfaces;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
+using ZooTech.Domain.Shared.Interfaces;
 using ZooTech.Infrastructure.Common.Export;
-using ZooTech.Infrastructure.Common.Time;
+using ZooTech.Infrastructure.Time;
 using ZooTech.Infrastructure.Common.Services.PdfGenerator;
 using ZooTech.Infrastructure.Common.Services.ExcelGenerator;
 using ZooTech.Infrastructure.Persistence.Context;
@@ -34,6 +36,11 @@ using ZooTech.Application.Common.Gateway.Repositories.GanaderiaDb;
 using ZooTech.Application.Common.Gateway.Repositories.MainTenantsDb;
 using ZooTech.Application.Common.Gateway.Repositories.Parametrization;
 using ZooTech.Application.Common.Gateway.Tenant;
+using ZooTech.Application.Common.Gateway.Reports;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ListarVacunosReporte;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarArbolGenealogico;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarActividadVacunos;
 
 using ZooTech.Infrastructure.Auditing.MongoDb;
 using ZooTech.Infrastructure.Caching;
@@ -48,11 +55,14 @@ using ZooTech.Infrastructure.Tenant;
 using ZooTech.Infrastructure.Context;
 using MongoDB.Driver;
 using ZooTech.Infrastructure.Caching.ConcurrentCache;
-using ZooTech.Domain.Module_Fecundacion.Interfaces;
+using ZooTech.Domain.Ganaderia.Module_Fecundacion.Interfaces;
 using ZooTech.Infrastructure.Persistence.Modules.Module_Fecundacion.Repositories;
+using ZooTech.Infrastructure.Persistence;
 using ZooTech.Infrastructure.Persistence.Repositories;
 using ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.Common;
 using ZooTech.Infrastructure.Reports;
+using ZooTech.Infrastructure.Reports.Vacunos;
+using ZooTech.Infrastructure.Storage;
 // Removed Animals references
 
 namespace ZooTech.Infrastructure;
@@ -64,6 +74,11 @@ public static class DependencyInjection
         IConfiguration configuration)
     {
         QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+        services.Configure<ReportStorageOptions>(configuration.GetSection("ReportStorage"));
+        services.AddHttpClient("TenantReportBranding", client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(3);
+        });
 
         // ============================================
         // Transversal
@@ -74,20 +89,30 @@ public static class DependencyInjection
         services.AddScoped<IPdfDocumentGenerator, PdfDocumentGenerator>();
         services.AddScoped<IPdfGeneratorService, PdfGeneratorService>();
         services.AddScoped<IOrdeniosComparationPdfGeneratorService, PdfGenerateComparationService>();
-
+        
         services.AddScoped<IExcelGeneratorService, ExcelGeneratorService>();
+
         // ============================================
         // Repositories
         // ============================================
-
         services.AddScoped<ICeloRepository, CeloRepository>();
         services.AddScoped<IOrdenioRepository, OrdenioRepository>();
+        services.AddScoped<IGanaderiaUnitOfWork, GanaderiaUnitOfWork>();
         services.AddScoped<IVacunoRepository, VacunoRepository>();
         services.AddScoped<ITriajeRepository, TriajeRepository>();
         services.AddScoped<ITipoPesoRepository, TipoPesoRepository>();
         
-        var garnetConnectionString = configuration["Garnet:ConnectionString"]
-            ?? throw new InvalidOperationException("Garnet:ConnectionString no configurado");
+        var garnetConnectionString = configuration["Garnet:ConnectionString"];
+        if (string.IsNullOrWhiteSpace(garnetConnectionString))
+        {
+            garnetConnectionString = "localhost,abortConnect=false";
+        }
+        else if (!garnetConnectionString.Contains("abortConnect="))
+        {
+            garnetConnectionString = garnetConnectionString.Contains(";") || garnetConnectionString.Contains(",")
+                ? garnetConnectionString + ",abortConnect=false"
+                : garnetConnectionString + ",abortConnect=false";
+        }
 
         services.AddSingleton<IConnectionMultiplexer>(sp =>
             ConnectionMultiplexer.Connect(garnetConnectionString));
@@ -118,8 +143,9 @@ public static class DependencyInjection
 
             return new MongoClient(connection);
         });
-        services.AddSingleton<MongoDbContext>();
-        services.AddScoped<IAppAuditService, MongoDbAudit>();
+        services.AddSingleton<IMongoDbContextFactory , MongoDbContextFactory>();
+        services.AddScoped<IAppAuditService, MongoDbAuditService>();
+        services.AddScoped<MongoDbLogNormalizer>();
 
         services.AddScoped<ITenantRepository, TenantRepository>();
         services.AddScoped<IAdminUserRepository, AdminUserRepository>();
@@ -186,16 +212,25 @@ public static class DependencyInjection
         services.AddScoped<IVacunoListadoReadRepository, VacunoListadoReadRepository>();
         services.AddScoped<IVacunoActivityStatsReadRepository, VacunoActivityStatsReadRepository>();
         services.AddScoped<IVacunoGranjaReadRepository, VacunoGranjaReadRepository>();
-        services.AddScoped<IVacunoMutationUnitOfWork, VacunoMutationUnitOfWork>();
         services.AddScoped<IVacunoReferenceReadRepository, VacunoReferenceReadRepository>();
         services.AddScoped<IVacunoResponseReadRepository, VacunoResponseReadRepository>();
         services.AddScoped<IListadoVacunosReporteReadRepository, ListadoVacunosReporteReadRepository>();
         services.AddScoped<IRegistroVacunoReadRepository, RegistroVacunoReadRepository>();
 
         // Servicios de Exportación y Reportes
-        services.AddScoped<ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte.IRegistroVacunoExcelReportService, RegistroVacunoExcelReportService>();
-        services.AddScoped<ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte.IRegistroVacunoPdfReportService, RegistroVacunoPdfReportService>();
-        services.AddScoped<ZooTech.Application.Common.Gateway.Services.IArbolGenealogicoExportService, ZooTech.Infrastructure.Reports.Vacunos.ArbolGenealogicoExcelExportService>();
+        services.AddScoped<IReportFileStorage, VacunoReportFileStorage>();
+        services.AddScoped<ITenantReportBrandingProvider, TenantReportBrandingProvider>();
+        services.AddScoped<IVacunoReportPhotoLoader, VacunoReportPhotoLoader>();
+        services.AddScoped<IStyledExcelReportRenderer, StyledExcelReportRenderer>();
+        services.AddScoped<IStyledPdfReportRenderer, StyledPdfReportRenderer>();
+        services.AddScoped<IReportStrategy<ListadoVacunosReportModel>, ListadoVacunosExcelReportService>();
+        services.AddScoped<IReportStrategy<ListadoVacunosReportModel>, ListadoVacunosPdfReportService>();
+        services.AddScoped<IReportStrategy<RegistroVacunoDetalle>, RegistroVacunoExcelReportService>();
+        services.AddScoped<IReportStrategy<RegistroVacunoDetalle>, RegistroVacunoPdfReportService>();
+        services.AddScoped<IReportStrategy<GenealogiaVacunoReportModel>, GenealogiaVacunoExcelReportStrategy>();
+        services.AddScoped<IReportStrategy<GenealogiaVacunoReportModel>, GenealogiaVacunoPdfReportStrategy>();
+        services.AddScoped<IReportStrategy<ActividadVacunosReportModel>, ActividadVacunosExcelReportStrategy>();
+        services.AddScoped<IReportStrategy<ActividadVacunosReportModel>, ActividadVacunosPdfReportStrategy>();
 
         return services;
     }
