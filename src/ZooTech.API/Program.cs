@@ -139,8 +139,8 @@ app.UseHttpsRedirection();
 // ======= Routing =======
 app.UseRouting();
 
-// ======= Swagger + CORS (por entorno) =======
-// IMPORTANTE: CORS debe ir antes de TenantResolution, Authentication y Authorization.
+
+// ======= Swagger =======
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -160,9 +160,11 @@ if (app.Environment.IsDevelopment())
             "Users API");
     });
 
+    // ======= CORS =======
+    // IMPORTANTE: debe ir antes de TenantResolution, Authentication y Authorization.
     app.UseCors("DevelopmentCorsPolicy");
 }
-if (app.Environment.IsProduction())
+if(app.Environment.IsProduction())
 {
     app.UseCors("ProductionCorsPolicy");
 }
@@ -173,7 +175,6 @@ app.UseMiddleware<TenantResolutionMiddleware>();
 // ======= JWT =======
 app.UseAuthentication();
 app.UseAuthorization();
-
 
 // ======= Controllers =======
 app.MapControllers();
