@@ -16,9 +16,16 @@ public class TriajeRepository : ITriajeRepository
     public TriajeRepository(
         IGanaderiaDbContextFactory ganaderiaDbContextFactory,
         IDateTimeProvider dateTimeProvider
+    ) : this(ganaderiaDbContextFactory.CreateDbContextByTenantContext(), dateTimeProvider)
+    {
+    }
+
+    public TriajeRepository(
+        GanaderiaDbContext ganaderiaDbContext,
+        IDateTimeProvider dateTimeProvider
     )
     {
-        _ganaderiaDbContext = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
+        _ganaderiaDbContext = ganaderiaDbContext;
         _dateTimeProvider = dateTimeProvider;
     }
 
@@ -28,6 +35,16 @@ public class TriajeRepository : ITriajeRepository
             .Include(t => t.vacuno)
             .AsNoTracking()
             .FirstOrDefaultAsync(t => t.id == id && t.deleted_at == null, cancellationToken);
+
+        return entity is null ? null : ToTriaje(entity);
+    }
+
+    public async Task<Triaje?> GetByCodigoAsync(string codigo, CancellationToken cancellationToken = default)
+    {
+        var entity = await _ganaderiaDbContext.triajes
+            .Include(t => t.vacuno)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.codigo == codigo.Trim() && t.deleted_at == null, cancellationToken);
 
         return entity is null ? null : ToTriaje(entity);
     }
@@ -126,24 +143,17 @@ public class TriajeRepository : ITriajeRepository
 
     public async Task<Triaje> AddAsync(Triaje triaje, CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var entity = ToEntity(triaje);
-            _ganaderiaDbContext.triajes.Add(entity);
-            await _ganaderiaDbContext.SaveChangesAsync(cancellationToken);
-            return ToTriaje(entity);
-        }
-        catch (DbUpdateException)
-        {
-            throw new InvalidOperationException("No se pudo registrar el triaje. Verifique que no exista un registro con el mismo vacuno, tipo de peso y fecha.");
-        }
+        var entity = ToEntity(triaje);
+        _ganaderiaDbContext.triajes.Add(entity);
+        await Task.CompletedTask;
+        return ToTriaje(entity);
     }
 
     public async Task<Triaje> UpdateAsync(Triaje triaje, CancellationToken cancellationToken = default)
     {
         var entity = ToEntity(triaje);
         _ganaderiaDbContext.triajes.Update(entity);
-        await _ganaderiaDbContext.SaveChangesAsync(cancellationToken);
+        await Task.CompletedTask;
         return ToTriaje(entity);
     }
 
@@ -158,7 +168,7 @@ public class TriajeRepository : ITriajeRepository
         entity.deleted_at = now;
         entity.updated_at = now;
 
-        await _ganaderiaDbContext.SaveChangesAsync(cancellationToken);
+        await Task.CompletedTask;
     }
 
     public async Task<string> GenerateCodigoAsync(CancellationToken cancellationToken = default)

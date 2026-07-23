@@ -27,17 +27,19 @@ public class CreateTriajeInteractorTests
         _repositoryMock.Setup(r => r.ExistsTipoPesoAsync("CONTROL", It.IsAny<CancellationToken>())).ReturnsAsync(true);
         _repositoryMock.Setup(r => r.GenerateCodigoAsync(It.IsAny<CancellationToken>())).ReturnsAsync("TRI010");
         _repositoryMock.Setup(r => r.AddAsync(It.IsAny<Triaje>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Triaje t, CancellationToken _) => SanidadTestData.CreateTriaje(
+            .ReturnsAsync((Triaje t, CancellationToken _) => t);
+        _repositoryMock.Setup(r => r.GetByCodigoAsync("TRI010", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string _, CancellationToken _) => SanidadTestData.CreateTriaje(
                 id: 10,
-                codigo: t.Codigo,
-                vacunoId: t.VacunoId,
-                tipoPesoCode: t.TipoPesoCode,
-                pesoKg: t.PesoKg,
-                observaciones: t.Observaciones,
-                estadoRegistroCode: t.EstadoRegistroCode,
-                encargadoUsuarioId: t.EncargadoUsuarioId,
-                fechaHora: t.FechaHora,
-                createdAt: t.CreatedAt));
+                codigo: "TRI010",
+                vacunoId: 1,
+                tipoPesoCode: "CONTROL",
+                pesoKg: 120m,
+                observaciones: "Sin observaciones",
+                estadoRegistroCode: "ACTIVO",
+                encargadoUsuarioId: 10,
+                fechaHora: selectedFechaHora,
+                createdAt: now));
         var interactor = CreateInteractor();
 
         var result = await interactor.Handle(new CreateTriajeCommand
@@ -94,7 +96,7 @@ public class CreateTriajeInteractorTests
     }
 
     private CreateTriajeInteractor CreateInteractor()
-        => new(_repositoryMock.Object, _dateTimeProviderMock.Object, _estadoRegistroRepositoryMock.Object);
+        => new(new FakeGanaderiaUnitOfWork(_repositoryMock.Object), _dateTimeProviderMock.Object, _estadoRegistroRepositoryMock.Object);
 
     private static CreateTriajeCommand ValidCommand()
         => new()

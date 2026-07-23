@@ -140,7 +140,6 @@ public class TriajeTests
 
         triaje.SoftDelete("Duplicado", "ELIMINADO", 10, deletedAt);
 
-        
         Assert.True(triaje.IsDeleted);
         Assert.Equal("Duplicado", triaje.MotivoEliminacion);
         Assert.Equal("ELIMINADO", triaje.EstadoRegistroCode);

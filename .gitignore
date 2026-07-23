@@ -87,7 +87,6 @@ packages/
 
 appsettings.Development.json
 secrets.json
-Program.cs
 # Local environment variables
 .env
 .env.*

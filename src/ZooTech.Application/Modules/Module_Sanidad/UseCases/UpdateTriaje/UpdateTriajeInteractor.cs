@@ -1,8 +1,8 @@
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Common.Gateway.Time;
 using ZooTech.Domain.Module_Sanidad.Entities;
-using ZooTech.Domain.Module_Sanidad.Interfaces;
 using ZooTech.Domain.Shared.Enums;
+using ZooTech.Domain.Shared.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_Sanidad.UseCases.UpdateTriaje;
 
@@ -22,18 +22,20 @@ public sealed record UpdateTriajeOutput(
 
 public sealed class UpdateTriajeInteractor : IUpdateTriajeInputPort
 {
-    private readonly ITriajeRepository _repository;
+    private readonly IGanaderiaUnitOfWork _unitOfWork;
     private readonly IDateTimeProvider _dateTimeProvider;
     
-    public UpdateTriajeInteractor(ITriajeRepository repository, IDateTimeProvider dateTimeProvider)
+    public UpdateTriajeInteractor(IGanaderiaUnitOfWork unitOfWork, IDateTimeProvider dateTimeProvider)
     {
-        _repository = repository;
+        _unitOfWork = unitOfWork;
         _dateTimeProvider = dateTimeProvider;
     }
 
     public async Task<UpdateTriajeOutput> Handle(UpdateTriajeCommand command, CancellationToken cancellationToken = default)
     {
-        var triaje = await _repository.GetByIdAsync(command.Id, cancellationToken)
+        var repository = _unitOfWork.Triajes;
+
+        var triaje = await repository.GetByIdAsync(command.Id, cancellationToken)
             ?? throw new NotFoundException(
                 ScopeName.Application,
                 ModuleName.Triaje,
@@ -47,7 +49,9 @@ public sealed class UpdateTriajeInteractor : IUpdateTriajeInputPort
             command.EncargadoUsuarioId,
             _dateTimeProvider.ServerNow);
 
-        var updated = await _repository.UpdateAsync(triaje, cancellationToken);
+        var updated = await _unitOfWork.ExecuteInTransactionAsync(
+            ct => repository.UpdateAsync(triaje, ct),
+            cancellationToken);
 
         return ToOutput(updated);
     }

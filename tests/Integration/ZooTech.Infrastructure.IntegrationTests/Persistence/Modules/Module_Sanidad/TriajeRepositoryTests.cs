@@ -117,6 +117,7 @@ public class TriajeRepositoryTests
 
         triaje!.SoftDelete("Duplicado", "ELIMINADO", 10, Now);
         await repository.UpdateAsync(triaje);
+        await updateContext.SaveChangesAsync();
 
         await using var assertContext = CreateDbContext(options);
         var entity = await assertContext.triajes.IgnoreQueryFilters().SingleAsync(t => t.id == 1);

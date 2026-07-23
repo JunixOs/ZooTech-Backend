@@ -1,6 +1,7 @@
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.UpdateOrdenio;
 using ZooTech.Domain.Module_ProduccionLeche.Entities;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
+using ZooTech.Domain.Module_Sanidad.Interfaces;
 using ZooTech.Domain.Shared.Interfaces;
 
 namespace ZooTech.Application.UnitTests.Modules.Module_ProduccionLeche.UseCases.UpdateOrdenio;
@@ -129,6 +130,7 @@ public class UpdateOrdenioInteractorTests
         }
 
         public IOrdenioRepository Ordenios { get; }
+        public ITriajeRepository Triajes => throw new NotSupportedException();
 
         public Task<T> ExecuteInTransactionAsync<T>(
             Func<CancellationToken, Task<T>> operation,

@@ -5,6 +5,7 @@ namespace ZooTech.Domain.Module_Sanidad.Interfaces;
 public interface ITriajeRepository
 {
     Task<Triaje?> GetByIdAsync(long id, CancellationToken cancellationToken = default);
+    Task<Triaje?> GetByCodigoAsync(string codigo, CancellationToken cancellationToken = default);
     Task<(IEnumerable<TriajeListadoItem> Items, int Total)> GetAllAsync(
     int pagina,
     int tamano,

@@ -4,6 +4,7 @@ using ZooTech.Domain.Common.Interfaces;
 using ZooTech.Domain.Module_Sanidad.Entities;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
 using ZooTech.Domain.Shared.Enums;
+using ZooTech.Domain.Shared.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_Sanidad.UseCases.CreateTriaje;
 
@@ -53,27 +54,29 @@ internal static class TriajeReferenceValidator
 
 public sealed class CreateTriajeInteractor : ICreateTriajeInputPort
 {
-    private readonly ITriajeRepository _repository;
+    private readonly IGanaderiaUnitOfWork _unitOfWork;
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly IEstadoRegistroRepository _estadoRegistroRepository;
 
     public CreateTriajeInteractor(
-        ITriajeRepository repository,
+        IGanaderiaUnitOfWork unitOfWork,
         IDateTimeProvider dateTimeProvider,
         IEstadoRegistroRepository estadoRegistroRepository
     )
     {
-        _repository = repository;
+        _unitOfWork = unitOfWork;
         _dateTimeProvider = dateTimeProvider;
         _estadoRegistroRepository = estadoRegistroRepository;
     }
 
     public async Task<CreateTriajeOutput> Handle(CreateTriajeCommand command, CancellationToken cancellationToken = default)
     {
-        await TriajeReferenceValidator.EnsureReferencesExistAsync(
-            _repository, command.VacunoId, command.EncargadoUsuarioId, command.TipoPesoCode, cancellationToken);
+        var repository = _unitOfWork.Triajes;
 
-        var codigo = await _repository.GenerateCodigoAsync(cancellationToken);
+        await TriajeReferenceValidator.EnsureReferencesExistAsync(
+            repository, command.VacunoId, command.EncargadoUsuarioId, command.TipoPesoCode, cancellationToken);
+
+        var codigo = await repository.GenerateCodigoAsync(cancellationToken);
         var utcNow = _dateTimeProvider.ServerNow;
         var estadoActivo = await _estadoRegistroRepository.GetActiveCodeAsync(cancellationToken);
 
@@ -88,7 +91,11 @@ public sealed class CreateTriajeInteractor : ICreateTriajeInputPort
             encargadoUsuarioId: command.EncargadoUsuarioId,
             utcNow: utcNow);
 
-        var saved = await _repository.AddAsync(triaje, cancellationToken);
+        var saved = await _unitOfWork.ExecuteInTransactionAsync(
+            ct => repository.AddAsync(triaje, ct),
+            cancellationToken,
+            async (_, ct) => await repository.GetByCodigoAsync(codigo, ct)
+                ?? throw new InvalidOperationException("No se pudo recuperar el triaje creado."));
 
         return new CreateTriajeOutput(
             saved.Id, saved.Codigo, saved.FechaHora, saved.VacunoId,

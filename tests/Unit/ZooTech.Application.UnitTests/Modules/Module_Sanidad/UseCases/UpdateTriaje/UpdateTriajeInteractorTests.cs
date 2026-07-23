@@ -22,7 +22,7 @@ public class UpdateTriajeInteractorTests
         _repositoryMock.Setup(r => r.GetByIdAsync(3, It.IsAny<CancellationToken>())).ReturnsAsync(triaje);
         _repositoryMock.Setup(r => r.UpdateAsync(It.IsAny<Triaje>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Triaje t, CancellationToken _) => t);
-        var interactor = new UpdateTriajeInteractor(_repositoryMock.Object, _dateTimeProviderMock.Object);
+        var interactor = new UpdateTriajeInteractor(new FakeGanaderiaUnitOfWork(_repositoryMock.Object), _dateTimeProviderMock.Object);
 
         var result = await interactor.Handle(new UpdateTriajeCommand
         {
@@ -45,7 +45,7 @@ public class UpdateTriajeInteractorTests
     public async Task Handle_WhenTriajeDoesNotExist_ThrowsNotFoundException()
     {
         _repositoryMock.Setup(r => r.GetByIdAsync(3, It.IsAny<CancellationToken>())).ReturnsAsync((Triaje?)null);
-        var interactor = new UpdateTriajeInteractor(_repositoryMock.Object, _dateTimeProviderMock.Object);
+        var interactor = new UpdateTriajeInteractor(new FakeGanaderiaUnitOfWork(_repositoryMock.Object), _dateTimeProviderMock.Object);
 
         await Assert.ThrowsAsync<NotFoundException>(() => interactor.Handle(new UpdateTriajeCommand { Id = 3, TipoPesoCode = "FINAL", PesoKg = 150 }));
     }
