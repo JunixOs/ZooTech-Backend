@@ -71,12 +71,15 @@ public sealed class ZooTechApiFactory : WebApplicationFactory<Program>
             services.AddScoped<ZooTech.Application.Common.Gateway.Parametrization.ITenantConfigurationProvider>(sp =>
             {
                 var mockProvider = new Moq.Mock<ZooTech.Application.Common.Gateway.Parametrization.ITenantConfigurationProvider>();
+                var tenantContext = sp.GetRequiredService<ZooTech.Application.Common.Gateway.Context.ITenantContext>();
                 
                 // Configurar valores por defecto requeridos por las pruebas
                 mockProvider.Setup(p => p.GetSettingAsync(Moq.It.Is<ZooTech.Domain.Configuration.SettingDefinition<int>>(s => s.Code == "VACUNOS_ARBOL_MAX_NIVELES")))
                             .ReturnsAsync(4);
                 mockProvider.Setup(p => p.GetSettingAsync(Moq.It.Is<ZooTech.Domain.Configuration.SettingDefinition<int>>(s => s.Code == "VACUNOS_ARBOL_MIN_NIVELES")))
                             .ReturnsAsync(1);
+                mockProvider.Setup(p => p.GetSettingAsync(Moq.It.Is<ZooTech.Domain.Configuration.SettingDefinition<string>>(s => s.Code == "VACUNOS_REPORTE_FORMATOS_DESCARGA")))
+                            .ReturnsAsync(() => tenantContext.Code == "LOSA" ? "excel" : "excel,pdf");
                             
                 return mockProvider.Object;
             });
@@ -132,6 +135,7 @@ public sealed class ZooTechApiFactory : WebApplicationFactory<Program>
             ganaderiaDb.SeedBaseCatalogs();
             ganaderiaDb.SeedVacunosBasic();
             ganaderiaDb.SeedGenealogia();
+            ganaderiaDb.SeedVacunosReportes();
 
             if (!ganaderiaDb.cat_tipo_fecundacions.Any(t => t.code == "MN"))
             {

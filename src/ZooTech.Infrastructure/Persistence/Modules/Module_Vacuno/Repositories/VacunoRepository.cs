@@ -35,16 +35,6 @@ public sealed class VacunoRepository : IVacunoRepository
 
     }
 
-    public async Task<List<Vacuno>> ListAllWithDeletedAsync(CancellationToken cancellationToken = default)
-    {
-        var entities = await _ganaderiaDbContext.vacunos
-            .AsNoTracking()
-            .OrderBy(v => v.codigo)
-            .ToListAsync(cancellationToken);
-
-        return entities.Select(ToDomain).ToList();
-    }
-
     public async Task<List<(Vacuno Vacuno, string? Procedencia)>> ListAllForDisplayAsync(CancellationToken cancellationToken = default)
     {
         var entities = await _ganaderiaDbContext.vacunos

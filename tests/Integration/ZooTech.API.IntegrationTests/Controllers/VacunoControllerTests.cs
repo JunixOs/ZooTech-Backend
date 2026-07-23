@@ -7,6 +7,7 @@ using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses;
 using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities.GetArbolGenealogico;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetVacunoById;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetActivityStats;
+using ClosedXML.Excel;
 
 namespace ZooTech.API.IntegrationTests.Controllers;
 
@@ -73,26 +74,6 @@ public class VacunoControllerTests : IClassFixture<ZooTechApiFactory>
         // Dependiendo de la validación puede retornar 400 Bad Request o el pipeline lo fuerza a un valor válido,
         // pero validamos que no provoque errores 500.
         response.StatusCode.Should().NotBe(HttpStatusCode.InternalServerError);
-    }
-
-    [Theory]
-    [InlineData("zootecniaunas.zentrycorp.local", "excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")]
-    [InlineData("elroble.zentrycorp.local", "pdf", "application/pdf")]
-    public async Task ExportarArbolGenealogico_WhenVacunoExists_ReturnsCorrectFile(string tenantHost, string formato, string expectedMediaType)
-    {
-        using var client = _factory.CreateTenantClient(tenantHost);
-        
-        var listResponse = await client.GetFromJsonAsync<PagedResponse<List<VacunoItemResponse>>>("/api/v1/vacunos?page=1&limit=1&query=V001");
-        var vacuno = listResponse?.Data?.FirstOrDefault();
-        vacuno.Should().NotBeNull();
-
-        var response = await client.GetAsync($"/api/v1/vacunos/{vacuno!.Id}/genealogia/exportar?formato={formato}");
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        response.Content.Headers.ContentType!.MediaType.Should().Be(expectedMediaType);
-        
-        var bytes = await response.Content.ReadAsByteArrayAsync();
-        bytes.Length.Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -169,6 +150,161 @@ public class VacunoControllerTests : IClassFixture<ZooTechApiFactory>
         Console.WriteLine($"GetActivityStats Response: {json}");
         var content = await response.Content.ReadFromJsonAsync<VacunoActivityStatsResponse>();
         content.Should().NotBeNull();
-        content!.Points.Should().NotBeNull();
+        content!.Points.Should().ContainSingle();
+        content.Points[0].Fecha.Should().Be(today);
+        content.Points[0].Cantidad.Should().BeGreaterThan(0);
+    }
+
+    [Fact]
+    public async Task GetActivityStats_WithInvalidEffectiveRange_ReturnsBadRequest()
+    {
+        var tomorrow = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(1);
+
+        var response = await _client.GetAsync(
+            $"/api/v1/vacunos/estadisticas/actividad?fechaInicio={tomorrow:yyyy-MM-dd}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Theory]
+    [InlineData("excel", ".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")]
+    [InlineData("pdf", ".pdf", "application/pdf")]
+    public async Task ReportesListado_WithDownloadFormat_GeneratesDownloadableFile(
+        string formato,
+        string extension,
+        string expectedContentType)
+    {
+        var response = await _client.GetAsync($"/api/v1/vacunos/reportes/listado?formato={formato}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var report = await response.Content.ReadFromJsonAsync<ListadoVacunosReporteResponse>();
+        report.Should().NotBeNull();
+        report!.DownloadUrl.Should().NotBeNull().And.EndWith(extension);
+
+        var download = await _client.GetAsync(report.DownloadUrl);
+        download.StatusCode.Should().Be(HttpStatusCode.OK);
+        download.Content.Headers.ContentType!.MediaType.Should().Be(expectedContentType);
+        (await download.Content.ReadAsByteArrayAsync()).Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public async Task ReportesListado_WithInvalidFormat_ReturnsBadRequest()
+    {
+        var response = await _client.GetAsync("/api/v1/vacunos/reportes/listado?formato=csv");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Theory]
+    [InlineData("excel", ".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")]
+    [InlineData("pdf", ".pdf", "application/pdf")]
+    public async Task ReporteIndividual_WithDownloadFormat_GeneratesDownloadableFile(
+        string formato,
+        string extension,
+        string expectedContentType)
+    {
+        var listResponse = await _client.GetFromJsonAsync<PagedResponse<List<VacunoItemResponse>>>(
+            "/api/v1/vacunos?page=1&limit=1&q=VAC001");
+        var vacuno = listResponse?.Data?.FirstOrDefault();
+        vacuno.Should().NotBeNull();
+
+        var response = await _client.GetAsync(
+            $"/api/v1/vacunos/{vacuno!.Id}/reporte?formato={formato}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var report = await response.Content.ReadFromJsonAsync<RegistroVacunoReporteResponse>();
+        report.Should().NotBeNull();
+        report!.Vacuno.Codigo.Should().Be("VAC001");
+        report.DownloadUrl.Should().NotBeNull().And.EndWith(extension);
+
+        var download = await _client.GetAsync(report.DownloadUrl);
+        download.StatusCode.Should().Be(HttpStatusCode.OK);
+        download.Content.Headers.ContentType!.MediaType.Should().Be(expectedContentType);
+        (await download.Content.ReadAsByteArrayAsync()).Should().NotBeEmpty();
+    }
+
+    [Theory]
+    [InlineData("zootecniaunas.zentrycorp.local", "excel", ".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")]
+    [InlineData("zootecniaunas.zentrycorp.local", "pdf", ".pdf", "application/pdf")]
+    [InlineData("elroble.zentrycorp.local", "excel", ".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")]
+    [InlineData("elroble.zentrycorp.local", "pdf", ".pdf", "application/pdf")]
+    public async Task ExportarGenealogia_WithSupportedFormat_ReturnsBinaryFile(
+        string tenantHost,
+        string formato,
+        string extension,
+        string expectedContentType)
+    {
+        using var client = _factory.CreateTenantClient(tenantHost);
+        var listResponse = await client.GetFromJsonAsync<PagedResponse<List<VacunoItemResponse>>>(
+            "/api/v1/vacunos?page=1&limit=10&q=V001");
+        var vacuno = listResponse?.Data?.Single(item => item.Codigo == "V001");
+        vacuno.Should().NotBeNull();
+
+        var response = await client.GetAsync(
+            $"/api/v1/vacunos/{vacuno!.Id}/genealogia/exportar?formato={formato}&niveles=4");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Content.Headers.ContentType!.MediaType.Should().Be(expectedContentType);
+        response.Content.Headers.ContentDisposition!.FileNameStar.Should().EndWith(extension);
+        (await response.Content.ReadAsByteArrayAsync()).Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public async Task ExportarGenealogia_WhenVacunoDoesNotExist_ReturnsNotFound()
+    {
+        var response = await _client.GetAsync(
+            "/api/v1/vacunos/999999/genealogia/exportar?formato=pdf&niveles=4");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Theory]
+    [InlineData("excel", ".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")]
+    [InlineData("pdf", ".pdf", "application/pdf")]
+    public async Task ExportarActividad_WithSupportedFormat_ReturnsBinaryFile(
+        string formato,
+        string extension,
+        string expectedContentType)
+    {
+        var today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+
+        var response = await _client.GetAsync(
+            $"/api/v1/vacunos/estadisticas/actividad/exportar?formato={formato}&fechaInicio={today}&fechaFin={today}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Content.Headers.ContentType!.MediaType.Should().Be(expectedContentType);
+        response.Content.Headers.ContentDisposition!.FileNameStar.Should().EndWith(extension);
+        (await response.Content.ReadAsByteArrayAsync()).Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public async Task ReportesListado_WithMoreThanTwoHundredFilteredRows_ExportsAllRows()
+    {
+        var response = await _client.GetAsync(
+            "/api/v1/vacunos/reportes/listado?formato=excel&search=RPT-");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var report = await response.Content.ReadFromJsonAsync<ListadoVacunosReporteResponse>();
+        report!.DownloadUrl.Should().NotBeNull();
+
+        var download = await _client.GetAsync(report.DownloadUrl);
+        var content = await download.Content.ReadAsByteArrayAsync();
+        using var workbook = new XLWorkbook(new MemoryStream(content));
+        var exportedCodes = workbook.Worksheet("Listado de vacunos")
+            .Column(1)
+            .CellsUsed()
+            .Count(cell => cell.GetString().StartsWith("RPT-", StringComparison.Ordinal));
+
+        exportedCodes.Should().Be(205);
+    }
+
+    [Fact]
+    public async Task ReportesListado_WhenTenantDisablesPdf_ReturnsBadRequest()
+    {
+        using var client = _factory.CreateTenantClient("losandes.zentrycorp.local");
+
+        var response = await client.GetAsync(
+            "/api/v1/vacunos/reportes/listado?formato=pdf");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 }
