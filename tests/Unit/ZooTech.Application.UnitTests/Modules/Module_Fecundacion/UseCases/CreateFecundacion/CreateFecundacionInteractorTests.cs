@@ -142,31 +142,6 @@ public sealed class CreateFecundacionInteractorTests
             command.ResponsableName,
             Arg.Any<CancellationToken>());
         await _repositoryMock.Received(1).GetByCodigoAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
-        await _cacheMock.Received(1).RemoveByPrefixAsync("fecundacion:listar");
-    }
-
-    [Fact]
-    public async Task HandleAsync_NoDebeInvalidarCache_CuandoFallaLaPersistencia()
-    {
-        var command = CreateValidCommand();
-        ConfigureValidReferences(command);
-        _repositoryMock.GetOrCreateResponsableByNameAsync(
-                command.ResponsableName,
-                Arg.Any<CancellationToken>())
-            .Returns(10);
-        _repositoryMock.AddAsync(
-                Arg.Any<Fecundacion>(),
-                Arg.Any<CancellationToken>())
-            .Returns(_ => Task.FromException<Fecundacion>(
-                new InvalidOperationException("Fallo de persistencia")));
-
-        var action = () => _interactor.HandleAsync(command);
-
-        await action.Should().ThrowAsync<InvalidOperationException>();
-        await _repositoryMock.DidNotReceive().GetByCodigoAsync(
-            Arg.Any<string>(),
-            Arg.Any<CancellationToken>());
-        await _cacheMock.DidNotReceive().RemoveByPrefixAsync(Arg.Any<string>());
     }
 
     [Fact]
@@ -190,7 +165,6 @@ public sealed class CreateFecundacionInteractorTests
         var action = () => _interactor.HandleAsync(command);
 
         await action.Should().ThrowAsync<ConflictException>();
-        await _cacheMock.DidNotReceive().RemoveByPrefixAsync(Arg.Any<string>());
     }
 
     [Fact]

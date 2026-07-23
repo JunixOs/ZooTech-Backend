@@ -48,9 +48,6 @@ public class ListarVacunosInteractorTests
         result.TotalCount.Should().Be(1);
         result.Items.Should().HaveCount(1);
         result.Items.First().Codigo.Should().Be("V-001");
-        _cacheMock.Verify(x => x.GetOrCreateAsync(
-            It.Is<string>(key => key.StartsWith("vacunos:listar")),
-            It.IsAny<Func<Task<ListarVacunosOutput>>>()), Times.Once);
     }
 
     [Fact]

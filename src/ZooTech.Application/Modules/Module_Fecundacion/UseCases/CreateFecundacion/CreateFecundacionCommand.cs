@@ -1,4 +1,3 @@
-using ZooTech.Application.Common.Caching;
 using ZooTech.Application.Common.Gateway.Auditing;
 using ZooTech.Domain.Shared.Enums;
 
@@ -17,11 +16,9 @@ public sealed record CreateFecundacionCommand(
     long? VacunoDonanteId,
     long? CreatedById,
     string? CodigoSemen = null,
-    string? CodigoEmbrion = null) : IAuditableRequest, IEvictCacheRequest
+    string? CodigoEmbrion = null) : IAuditableRequest
 {
     public AuditEventType EventType => AuditEventType.Create;
 
     public string Action => "Create fecundacion";
-
-    public string[] GetCachePrefixesToEvict() => ["fecundacion:listar"];
 }

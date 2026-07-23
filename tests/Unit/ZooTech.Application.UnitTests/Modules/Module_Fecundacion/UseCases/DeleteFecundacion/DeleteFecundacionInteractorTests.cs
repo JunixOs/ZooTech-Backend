@@ -13,7 +13,7 @@ public sealed class DeleteFecundacionInteractorTests
     private readonly DeleteFecundacionTestContext _context = new();
 
     [Fact]
-    public async Task HandleAsync_WhenFecundacionCanBeDeleted_DeletesInsideTransactionAndClearsCache()
+    public async Task HandleAsync_WhenFecundacionCanBeDeleted_DeletesInsideTransaction()
     {
         var command = FecundacionTestDataFactory.DeleteCommand();
         _context.Repository.Setup(x => x.GetForEditAsync(command.Id, It.IsAny<CancellationToken>()))
@@ -32,11 +32,10 @@ public sealed class DeleteFecundacionInteractorTests
             command.Id,
             command.Razon,
             It.IsAny<CancellationToken>()), Times.Once);
-        _context.Cache.Verify(x => x.RemoveByPrefixAsync("fecundacion:listar"), Times.Once);
     }
 
     [Fact]
-    public async Task HandleAsync_WhenFecundacionDoesNotExist_DoesNotDeleteOrClearCache()
+    public async Task HandleAsync_WhenFecundacionDoesNotExist_DoesNotDelete()
     {
         var command = FecundacionTestDataFactory.DeleteCommand(id: 99);
         _context.Repository.Setup(x => x.GetForEditAsync(command.Id, It.IsAny<CancellationToken>()))
@@ -47,11 +46,10 @@ public sealed class DeleteFecundacionInteractorTests
         await act.Should().ThrowAsync<FecundacionNotFoundException>();
         _context.Repository.Verify(x => x.DeleteAsync(
             It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
-        _context.Cache.Verify(x => x.RemoveByPrefixAsync(It.IsAny<string>()), Times.Never);
     }
 
     [Fact]
-    public async Task HandleAsync_WhenFecundacionHasCria_DoesNotDeleteOrClearCache()
+    public async Task HandleAsync_WhenFecundacionHasCria_DoesNotDelete()
     {
         var command = FecundacionTestDataFactory.DeleteCommand();
         _context.Repository.Setup(x => x.GetForEditAsync(command.Id, It.IsAny<CancellationToken>()))
@@ -64,11 +62,10 @@ public sealed class DeleteFecundacionInteractorTests
         await act.Should().ThrowAsync<FecundacionHasDependenciesException>();
         _context.Repository.Verify(x => x.DeleteAsync(
             It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
-        _context.Cache.Verify(x => x.RemoveByPrefixAsync(It.IsAny<string>()), Times.Never);
     }
 
     [Fact]
-    public async Task HandleAsync_WhenTransactionFails_DoesNotClearCache()
+    public async Task HandleAsync_WhenTransactionFails_ThrowsException()
     {
         var command = FecundacionTestDataFactory.DeleteCommand();
         _context.UnitOfWork
@@ -81,6 +78,5 @@ public sealed class DeleteFecundacionInteractorTests
         var act = () => _context.CreateInteractor().HandleAsync(command, CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>();
-        _context.Cache.Verify(x => x.RemoveByPrefixAsync(It.IsAny<string>()), Times.Never);
     }
 }

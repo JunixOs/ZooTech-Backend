@@ -1,4 +1,3 @@
-using ZooTech.Application.Common.Caching;
 using ZooTech.Application.Common.Gateway.Auditing;
 using ZooTech.Domain.Shared.Enums;
 
@@ -19,11 +18,9 @@ public sealed record UpdateVacunoCommand(
     string? CodigoDistrito,
     string? Observaciones,
     decimal? PrecioCompra,
-    string? AptoPara) : IAuditableRequest, IEvictCacheRequest
+    string? AptoPara) : IAuditableRequest
 {
     public AuditEventType EventType => AuditEventType.Update;
 
     public string Action => "Update vacuno";
-
-    public string[] GetCachePrefixesToEvict() => ["vacunos:listar"];
 }

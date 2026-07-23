@@ -32,7 +32,6 @@ public sealed class UpdateVacunoInteractorTests
             It.IsAny<Func<CancellationToken, Task<Vacuno>>>(),
             It.IsAny<CancellationToken>(),
             It.IsAny<Func<Vacuno, CancellationToken, Task<Vacuno>>?>()), Times.Once);
-        _context.Cache.Verify(x => x.RemoveByPrefixAsync("vacunos:listar"), Times.Once);
     }
 
     [Fact]
@@ -49,7 +48,6 @@ public sealed class UpdateVacunoInteractorTests
             It.IsAny<Func<CancellationToken, Task<Vacuno>>>(),
             It.IsAny<CancellationToken>(),
             It.IsAny<Func<Vacuno, CancellationToken, Task<Vacuno>>?>()), Times.Never);
-        _context.Cache.Verify(x => x.RemoveByPrefixAsync(It.IsAny<string>()), Times.Never);
     }
 
     [Theory]
@@ -95,6 +93,5 @@ public sealed class UpdateVacunoInteractorTests
 
         var exception = await act.Should().ThrowAsync<ValidationException>();
         exception.Which.FieldErrors.Should().ContainSingle(error => error.Field == "observaciones");
-        _context.Cache.Verify(x => x.RemoveByPrefixAsync(It.IsAny<string>()), Times.Never);
     }
 }

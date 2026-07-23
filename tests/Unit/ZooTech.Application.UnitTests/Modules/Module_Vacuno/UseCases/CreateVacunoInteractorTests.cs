@@ -37,7 +37,6 @@ public sealed class CreateVacunoInteractorTests
             command.PrecioCompra,
             command.AptoPara,
             It.IsAny<CancellationToken>()), Times.Once);
-        _context.Cache.Verify(x => x.RemoveByPrefixAsync("vacunos:listar"), Times.Once);
     }
 
     [Fact]
@@ -54,7 +53,6 @@ public sealed class CreateVacunoInteractorTests
             It.IsAny<Func<CancellationToken, Task<Vacuno>>>(),
             It.IsAny<CancellationToken>(),
             It.IsAny<Func<Vacuno, CancellationToken, Task<Vacuno>>?>()), Times.Never);
-        _context.Cache.Verify(x => x.RemoveByPrefixAsync(It.IsAny<string>()), Times.Never);
     }
 
     [Fact]

@@ -1,3 +1,4 @@
+#pragma warning disable CS0618
 using Moq;
 using ZooTech.Application.Common.Gateway.Parametrization.Features;
 using ZooTech.Application.Common.Gateway.Parametrization.Rules;
@@ -9,7 +10,7 @@ namespace ZooTech.Application.UnitTests;
 public sealed class ProviderInterfaceTests
 {
     [Fact]
-    public void ISettingsProvider_GetAsync_WithSettingDefinition_InfersType()
+    public async Task ISettingsProvider_GetAsync_WithSettingDefinition_InfersType()
     {
         var mock = new Mock<ISettingsProvider>();
         var setting = new SettingDefinition<int>("max_login_attempts");
@@ -17,14 +18,14 @@ public sealed class ProviderInterfaceTests
         mock.Setup(p => p.GetAsync(1, setting))
             .ReturnsAsync(5);
 
-        var result = mock.Object.GetAsync(1, setting).Result;
+        var result = await mock.Object.GetAsync(1, setting);
 
         Assert.IsType<int>(result);
         Assert.Equal(5, result);
     }
 
     [Fact]
-    public void ISettingsProvider_GetAsync_StringSetting_ReturnsString()
+    public async Task ISettingsProvider_GetAsync_StringSetting_ReturnsString()
     {
         var mock = new Mock<ISettingsProvider>();
         var setting = new SettingDefinition<string>("smtp_host");
@@ -32,7 +33,7 @@ public sealed class ProviderInterfaceTests
         mock.Setup(p => p.GetAsync(1, setting))
             .ReturnsAsync("smtp.gmail.com");
 
-        var result = mock.Object.GetAsync(1, setting).Result;
+        var result = await mock.Object.GetAsync(1, setting);
 
         Assert.IsType<string>(result);
         Assert.Equal("smtp.gmail.com", result);

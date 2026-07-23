@@ -18,6 +18,8 @@ public sealed class UpdateFecundacionInteractorTests
     public UpdateFecundacionInteractorTests()
     {
         _unitOfWork.Fecundaciones.Returns(_repository);
+        _tenantConfigurationProvider.GetSettingAsync(Arg.Any<ZooTech.Domain.Configuration.SettingDefinition<int>>())
+            .Returns(Task.FromResult(250));
         _sut = new UpdateFecundacionInteractor(_unitOfWork, _tenantConfigurationProvider);
     }
 
@@ -85,7 +87,6 @@ public sealed class UpdateFecundacionInteractorTests
         await _repository.DidNotReceive().GetForEditAsync(
             Arg.Any<long>(),
             Arg.Any<CancellationToken>());
-        await _cache.DidNotReceive().RemoveByPrefixAsync(Arg.Any<string>());
     }
 
     private static UpdateFecundacionCommand CreateCommand()

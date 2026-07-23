@@ -109,7 +109,7 @@ public class DeleteVacunoInteractorTests
     }
 
     [Fact]
-    public async Task HandleAsync_WhenVacunoHasNoDependencies_ShouldSoftDeleteAndUpdateInTransactionAndClearCache()
+    public async Task HandleAsync_WhenVacunoHasNoDependencies_ShouldSoftDeleteAndUpdateInTransaction()
     {
         // Arrange
         var vacuno = CreateTestVacuno();
@@ -128,7 +128,6 @@ public class DeleteVacunoInteractorTests
         // Assert
         Assert.Equal(EmptyOutput.Value, result);
         await _vacunoRepository.Received(1).UpdateAsync(vacuno, null, null, Arg.Any<CancellationToken>());
-        await _cache.Received(1).RemoveByPrefixAsync(Arg.Any<string>());
         Assert.NotNull(vacuno.DeletedAt);
         Assert.Equal("Venta de vacuno", vacuno.MotivoEliminacion);
     }

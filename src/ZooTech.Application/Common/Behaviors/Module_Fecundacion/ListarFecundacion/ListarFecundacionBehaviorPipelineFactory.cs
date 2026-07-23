@@ -7,7 +7,6 @@ namespace ZooTech.Application.Common.Behaviors.Module_Fecundacion.ListarFecundac
         private readonly ValidationBehavior<ListarFecundacionCommand , ListarFecundacionOutput> _validation;
         private readonly LoggingBehavior<ListarFecundacionCommand , ListarFecundacionOutput> _logging;
         private readonly AuditBehavior<ListarFecundacionCommand , ListarFecundacionOutput> _audit;
-        private readonly QueryCacheBehavior<ListarFecundacionCommand, ListarFecundacionOutput> _queryCache;
 
         private readonly IListarFecundacionInputPort _handler;
 
@@ -15,14 +14,13 @@ namespace ZooTech.Application.Common.Behaviors.Module_Fecundacion.ListarFecundac
             ValidationBehavior<ListarFecundacionCommand , ListarFecundacionOutput> validation,
             LoggingBehavior<ListarFecundacionCommand , ListarFecundacionOutput> logging,
             AuditBehavior<ListarFecundacionCommand , ListarFecundacionOutput> audit,
-            QueryCacheBehavior<ListarFecundacionCommand, ListarFecundacionOutput> queryCache,
+
             IListarFecundacionInputPort handler
         )
         {
             _validation = validation;
             _logging = logging;
             _audit = audit;
-            _queryCache = queryCache;
 
             _handler = handler;
         }
@@ -33,8 +31,7 @@ namespace ZooTech.Application.Common.Behaviors.Module_Fecundacion.ListarFecundac
             [
                 _validation,
                 _logging,
-                _audit,
-                _queryCache
+                _audit
             ],
             _handler.HandleAsync
             );
