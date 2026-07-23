@@ -98,6 +98,7 @@ internal static class VacunoMapper
             null,
             null,
             null,
+            null,
             null);
 
     internal static VacunoReferenceResponse ToResponse(VacunoReferenceItem item)

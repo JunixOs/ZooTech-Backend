@@ -385,6 +385,33 @@ public sealed class VacunoController : ControllerBase
         }
 
         var utilizacion = await responseReadRepository.GetLatestUtilizacionAsync(dto.Id, cancellationToken);
+        var fotoUrl = await responseReadRepository.GetFotoUrlAsync(dto.Id, cancellationToken);
+
+        // Si la foto está almacenada localmente, construimos la ruta base, o si no se maneja desde el proxy estático
+        // El frontend recibirá la URL relativa o absoluta.
+        string? finalFotoUrl = null;
+        if (!string.IsNullOrEmpty(fotoUrl))
+        {
+            // El API base maneja static files usando UseStaticFiles, 
+            // pero si la URL empieza con /uploads, está lista para usarse localmente.
+            // Nos aseguramos de devolver el host base del request si se requiere, pero el frontend asume
+            // url absoluta si empieza con http, de lo contrario concatena con la API URL si está hecho así, 
+            // o simplemente devolveremos la ruta cruda ya que vacuno.fotoUrl en angular se bindea a src directamente,
+            // pero el API_BASE_URL debería ser usado si es relativa, a menos que se formatee en el frontend.
+            // Para simplificar, le damos la ruta original que está en BD (ej: "/uploads/vacunos/vaca.jpg") 
+            // y configuraremos UseStaticFiles para que intercepte esto en root.
+            
+            // Asumiremos que el frontend usa <img src="http://api:puerto/uploads/vacunos/vaca.jpg">
+            // si pasamos url relativa y no la une con environment, puede que falle.
+            // Lo más seguro es devolver http://host/uploads/...
+            
+            var request = HttpContext.Request;
+            var baseUrl = $"{request.Scheme}://{request.Host}";
+            
+            finalFotoUrl = fotoUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase) 
+                ? fotoUrl 
+                : $"{baseUrl}/{fotoUrl.TrimStart('/')}";
+        }
 
         return new VacunoResponse(
             dto.Id,
@@ -406,11 +433,12 @@ public sealed class VacunoController : ControllerBase
             codigoMadre,
             granjaNombre,
             distritoNombre,
-            provinciaNombre,
             departamentoNombre,
+            provinciaNombre,
             codigoDistrito,
             utilizacion?.TipoUtilizacionCode,
-            utilizacion?.CreatedAt);
+            utilizacion?.CreatedAt,
+            finalFotoUrl);
     }
 
     private async Task<long> ResolveIdAsync(string identifier, CancellationToken cancellationToken)
