@@ -18,7 +18,8 @@ public class CreateTriajeInteractorTests
     [Fact]
     public async Task Handle_WhenCommandIsValid_CreatesTriaje()
     {
-        var now = DateTime.UtcNow;
+        var now = new DateTime(2026, 7, 23, 12, 0, 0, DateTimeKind.Utc);
+        var selectedFechaHora = new DateTime(2026, 7, 20, 8, 30, 0, DateTimeKind.Utc);
         _dateTimeProviderMock.Setup(p => p.ServerNow).Returns(now);
         _estadoRegistroRepositoryMock.Setup(r => r.GetActiveCodeAsync(It.IsAny<CancellationToken>())).ReturnsAsync("ACTIVO");
         _repositoryMock.Setup(r => r.ExistsVacunoAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(true);
@@ -46,16 +47,18 @@ public class CreateTriajeInteractorTests
             PesoKg = 120m,
             Observaciones = "Sin observaciones",
             EncargadoUsuarioId = 10,
-            FechaHora = now.AddDays(-1),
+            FechaHora = selectedFechaHora,
         });
 
         Assert.Equal(10, result.Id);
         Assert.Equal("TRI010", result.Codigo);
-        Assert.Equal(now, result.FechaHora);
+        Assert.Equal(selectedFechaHora, result.FechaHora);
         Assert.Equal("ACTIVO", result.EstadoRegistroCode);
         _repositoryMock.Verify(r => r.AddAsync(It.Is<Triaje>(t =>
             t.Codigo == "TRI010" &&
-            t.FechaHora == now &&
+            t.FechaHora == selectedFechaHora &&
+            t.CreatedAt == now &&
+            t.UpdatedAt == now &&
             t.TipoPesoCode == "CONTROL" &&
             t.PesoKg == 120m), It.IsAny<CancellationToken>()), Times.Once);
     }

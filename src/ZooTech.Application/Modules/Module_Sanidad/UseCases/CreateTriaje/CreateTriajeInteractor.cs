@@ -79,7 +79,7 @@ public sealed class CreateTriajeInteractor : ICreateTriajeInputPort
 
         var triaje = Triaje.CreateNew(
             codigo: codigo,
-            fechaHora: utcNow,
+            fechaHora: command.FechaHora!.Value,
             vacunoId: command.VacunoId,
             tipoPesoCode: command.TipoPesoCode,
             pesoKg: command.PesoKg,
