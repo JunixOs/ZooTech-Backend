@@ -1,6 +1,7 @@
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Common.Gateway.Time;
 using ZooTech.Application.Common.Models;
+using ZooTech.Domain.Common.Interfaces;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
 using ZooTech.Domain.Shared.Enums;
 
@@ -10,14 +11,17 @@ public sealed class DeleteTriajeInteractor : IDeleteTriajeInputPort
 {
     private readonly ITriajeRepository _repository;
     private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly IEstadoRegistroRepository _estadoRegistroRepository;
 
     public DeleteTriajeInteractor(
         ITriajeRepository repository,
-        IDateTimeProvider dateTimeProvider
+        IDateTimeProvider dateTimeProvider,
+        IEstadoRegistroRepository estadoRegistroRepository
     )
     {
         _repository = repository;
         _dateTimeProvider = dateTimeProvider;
+        _estadoRegistroRepository = estadoRegistroRepository;
     }
 
     public async Task<EmptyOutput> Handle(DeleteTriajeCommand command, CancellationToken cancellationToken)
@@ -29,7 +33,8 @@ public sealed class DeleteTriajeInteractor : IDeleteTriajeInputPort
                 "No se encontró el triaje solicitado."
             );
 
-        triaje.SoftDelete(command.MotivoEliminacion, null, _dateTimeProvider.ServerNow);
+        var estadoEliminado = await _estadoRegistroRepository.GetDeletedCodeAsync(cancellationToken);
+        triaje.SoftDelete(command.MotivoEliminacion, estadoEliminado, null, _dateTimeProvider.ServerNow);
         await _repository.UpdateAsync(triaje, cancellationToken);
 
         return EmptyOutput.Value;

@@ -81,7 +81,7 @@ public sealed class Triaje
             fechaHora: fechaHora,
             vacunoId: vacunoId,
             vacunoNombre: string.Empty,
-            tipoPesoCode: tipoPesoCode.Trim(),
+            tipoPesoCode: tipoPesoCode.Trim(),s
             pesoKg: pesoKg,
             observaciones: SanitizeObservaciones(observaciones),
             estadoRegistroCode: estadoRegistroCode.Trim(),
@@ -155,12 +155,14 @@ public sealed class Triaje
         UpdatedAt = utcNow;
     }
 
-    public void SoftDelete(string motivoEliminacion, long? actorId, DateTime utcNow)
+    public void SoftDelete(string motivoEliminacion, string estadoEliminadoCode, long? actorId, DateTime utcNow)
     {
         if (IsDeleted)
             throw new InvalidOperationException("El triaje ya se encuentra eliminado.");
         TriajeRule.ValidarMotivoEliminacion(motivoEliminacion);
+        ArgumentException.ThrowIfNullOrWhiteSpace(estadoEliminadoCode);
         MotivoEliminacion = motivoEliminacion;
+        EstadoRegistroCode = estadoEliminadoCode.Trim();
         DeletedAt = utcNow;
         DeletedBy = actorId;
         UpdatedAt = utcNow;

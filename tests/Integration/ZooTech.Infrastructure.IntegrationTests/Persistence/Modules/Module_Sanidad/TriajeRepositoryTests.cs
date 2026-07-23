@@ -102,6 +102,31 @@ public class TriajeRepositoryTests
     }
 
     [Fact]
+    public async Task UpdateAsync_WhenTriajeIsSoftDeleted_PersistsDeletedStateWithoutRemovingRow()
+    {
+        var options = CreateDbContextOptions();
+        await using (var seedContext = CreateDbContext(options))
+        {
+            SeedTriajes(seedContext);
+        }
+
+        await using var updateContext = CreateDbContext(options);
+        var repository = CreateRepository(updateContext);
+        var triaje = await repository.GetByIdAsync(1);
+        Assert.NotNull(triaje);
+
+        triaje!.SoftDelete("Duplicado", "ELIMINADO", 10, Now);
+        await repository.UpdateAsync(triaje);
+
+        await using var assertContext = CreateDbContext(options);
+        var entity = await assertContext.triajes.IgnoreQueryFilters().SingleAsync(t => t.id == 1);
+        Assert.Equal("ELIMINADO", entity.estado_registro_code);
+        Assert.Equal(Now, entity.deleted_at);
+        Assert.Equal(10, entity.deleted_by);
+        Assert.Equal("Duplicado", entity.motivo_eliminacion);
+    }
+
+    [Fact]
     public async Task GetHistorialByVacunoIdAsync_FiltersDatesAndOrdersAscending()
     {
         await using var dbContext = CreateDbContext();
@@ -169,12 +194,16 @@ public class TriajeRepositoryTests
     }
 
     private static GanaderiaDbContext CreateDbContext()
+        => new(CreateDbContextOptions());
+
+    private static GanaderiaDbContext CreateDbContext(DbContextOptions<GanaderiaDbContext> options)
+        => new(options);
+
+    private static DbContextOptions<GanaderiaDbContext> CreateDbContextOptions()
     {
-        var options = new DbContextOptionsBuilder<GanaderiaDbContext>()
+        return new DbContextOptionsBuilder<GanaderiaDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
-
-        return new GanaderiaDbContext(options);
     }
 
     private static TriajeRepository CreateRepository(GanaderiaDbContext dbContext)
@@ -185,6 +214,7 @@ public class TriajeRepositoryTests
         var control = new cat_tipo_peso { code = "CONTROL", nombre = "Peso Control", activo = true };
         var final = new cat_tipo_peso { code = "FINAL", nombre = "Peso Final", activo = true };
         var activo = new cat_estado_registro { code = "ACTIVO", nombre = "Activo" };
+        var eliminado = new cat_estado_registro { code = "ELIMINADO", nombre = "Eliminado" };
         var usuario = new usuario
         {
             id = 10,
@@ -199,7 +229,7 @@ public class TriajeRepositoryTests
         var estrella = CreateVacuno(2, "VAC002", "Estrella");
 
         dbContext.cat_tipo_pesos.AddRange(control, final);
-        dbContext.cat_estado_registros.Add(activo);
+        dbContext.cat_estado_registros.AddRange(activo, eliminado);
         dbContext.usuarios.Add(usuario);
         dbContext.vacunos.AddRange(luna, estrella);
         dbContext.triajes.AddRange(

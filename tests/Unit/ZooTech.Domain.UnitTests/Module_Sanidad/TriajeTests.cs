@@ -103,7 +103,7 @@ public class TriajeTests
     public void Update_WhenTriajeIsDeleted_ThrowsInvalidOperationException()
     {
         var triaje = CreateValid();
-        triaje.SoftDelete("Duplicado", 10, DateTime.UtcNow);
+        triaje.SoftDelete("Duplicado", "ELIMINADO", 10, DateTime.UtcNow);
 
         var action = () => triaje.Update("FINAL", 155.75m, null, 20, DateTime.UtcNow);
 
@@ -115,7 +115,7 @@ public class TriajeTests
     {
         var triaje = CreateValid();
 
-        var action = () => triaje.SoftDelete(string.Empty, 10, DateTime.UtcNow);
+        var action = () => triaje.SoftDelete(string.Empty, "ELIMINADO", 10, DateTime.UtcNow);
 
         var exception = Assert.Throws<ArgumentException>(action);
         Assert.Contains("motivo", exception.Message, StringComparison.OrdinalIgnoreCase);
@@ -125,9 +125,9 @@ public class TriajeTests
     public void SoftDelete_WhenAlreadyDeleted_ThrowsInvalidOperationException()
     {
         var triaje = CreateValid();
-        triaje.SoftDelete("Duplicado", 10, DateTime.UtcNow);
+        triaje.SoftDelete("Duplicado", "ELIMINADO", 10, DateTime.UtcNow);
 
-        var action = () => triaje.SoftDelete("Otro motivo", 10, DateTime.UtcNow);
+        var action = () => triaje.SoftDelete("Otro motivo", "ELIMINADO", 10, DateTime.UtcNow);
 
         Assert.Throws<InvalidOperationException>(action);
     }
@@ -138,11 +138,12 @@ public class TriajeTests
         var triaje = CreateValid();
         var deletedAt = DateTime.UtcNow;
 
-        triaje.SoftDelete("Duplicado", 10, deletedAt);
+        triaje.SoftDelete("Duplicado", "ELIMINADO", 10, deletedAt);
 
         
         Assert.True(triaje.IsDeleted);
         Assert.Equal("Duplicado", triaje.MotivoEliminacion);
+        Assert.Equal("ELIMINADO", triaje.EstadoRegistroCode);
         Assert.Equal(deletedAt, triaje.DeletedAt);
         Assert.Equal(10, triaje.DeletedBy);
         Assert.Equal(10, triaje.UpdatedBy);
