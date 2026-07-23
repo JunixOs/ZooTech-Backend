@@ -1,10 +1,7 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
-using Moq;
-using ZooTech.Application.Common.Gateway.Parametrization;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte;
-using ZooTech.Domain.Configuration;
 using ZooTech.Infrastructure.Reports.Vacunos;
 using ZooTech.Infrastructure.Storage;
 
@@ -87,72 +84,6 @@ public sealed class VacunoReportPhotoLoaderTests : IDisposable
         result.Should().BeNull();
     }
 
-    [Fact]
-    public async Task LoadAsync_WhenTenantAllowsPng_ReturnsPngContent()
-    {
-        Directory.CreateDirectory(_testRoot);
-        await File.WriteAllBytesAsync(Path.Combine(_testRoot, "vacuno.png"), ValidPng);
-        var sut = CreateSut(configuredFormats: ".png");
-
-        var result = await sut.LoadAsync(CreateVacuno("vacuno.png"));
-
-        result.Should().Equal(ValidPng);
-    }
-
-    [Fact]
-    public async Task LoadAsync_WhenTenantDoesNotAllowPng_ReturnsNull()
-    {
-        Directory.CreateDirectory(_testRoot);
-        await File.WriteAllBytesAsync(Path.Combine(_testRoot, "vacuno.png"), ValidPng);
-        var sut = CreateSut(configuredFormats: ".jpg");
-
-        var result = await sut.LoadAsync(CreateVacuno("vacuno.png"));
-
-        result.Should().BeNull();
-    }
-
-    [Theory]
-    [InlineData(".jpg")]
-    [InlineData(".jpeg")]
-    public async Task LoadAsync_WhenTenantAllowsJpegAlias_ReturnsJpegContent(string configuredFormat)
-    {
-        byte[] validJpeg = [0xFF, 0xD8, 0xFF, 0xD9];
-        Directory.CreateDirectory(_testRoot);
-        await File.WriteAllBytesAsync(Path.Combine(_testRoot, "vacuno.jpg"), validJpeg);
-        var sut = CreateSut(configuredFormats: configuredFormat);
-
-        var result = await sut.LoadAsync(CreateVacuno("vacuno.jpg", ".jpg"));
-
-        result.Should().Equal(validJpeg);
-    }
-
-    [Fact]
-    public async Task LoadAsync_WhenExtensionDoesNotMatchSignature_ReturnsNull()
-    {
-        byte[] jpegContent = [0xFF, 0xD8, 0xFF, 0xD9];
-        Directory.CreateDirectory(_testRoot);
-        await File.WriteAllBytesAsync(Path.Combine(_testRoot, "vacuno.png"), jpegContent);
-        var sut = CreateSut(configuredFormats: ".png,.jpg");
-
-        var result = await sut.LoadAsync(CreateVacuno("vacuno.png"));
-
-        result.Should().BeNull();
-    }
-
-    [Theory]
-    [InlineData("")]
-    [InlineData(".gif")]
-    public async Task LoadAsync_WhenTenantConfigurationIsInvalid_ReturnsNull(string configuredFormats)
-    {
-        Directory.CreateDirectory(_testRoot);
-        await File.WriteAllBytesAsync(Path.Combine(_testRoot, "vacuno.png"), ValidPng);
-        var sut = CreateSut(configuredFormats: configuredFormats);
-
-        var result = await sut.LoadAsync(CreateVacuno("vacuno.png"));
-
-        result.Should().BeNull();
-    }
-
     public void Dispose()
     {
         if (Directory.Exists(_testRoot))
@@ -161,28 +92,15 @@ public sealed class VacunoReportPhotoLoaderTests : IDisposable
         }
     }
 
-    private VacunoReportPhotoLoader CreateSut(
-        string? mediaRoot = null,
-        string configuredFormats = ".png,.jpg")
-    {
-        var configurationProvider = new Mock<ITenantConfigurationProvider>();
-        configurationProvider
-            .Setup(provider => provider.GetSettingAsync(
-                Settings.Vacunos.VacunosFotoFormatosPermitidos))
-            .ReturnsAsync(configuredFormats);
-
-        return new(
+    private VacunoReportPhotoLoader CreateSut(string? mediaRoot = null)
+        => new(
             Options.Create(new ReportStorageOptions
             {
                 VacunoMediaRoot = mediaRoot ?? _testRoot
             }),
-            configurationProvider.Object,
             NullLogger<VacunoReportPhotoLoader>.Instance);
-    }
 
-    private static RegistroVacunoDetalle CreateVacuno(
-        string? photoPath,
-        string? photoExtension = ".png")
+    private static RegistroVacunoDetalle CreateVacuno(string? photoPath)
         => new(
             Id: 1,
             Codigo: "VAC-001",
@@ -210,7 +128,7 @@ public sealed class VacunoReportPhotoLoaderTests : IDisposable
             FotoNombreAlmacenado: null,
             FotoRuta: photoPath,
             FotoUrl: null,
-            FotoExtension: photoExtension,
+            FotoExtension: ".png",
             FotoTamanoBytes: null,
             EstadoActualCode: "SANO",
             EstadoActualNombre: "Sano",

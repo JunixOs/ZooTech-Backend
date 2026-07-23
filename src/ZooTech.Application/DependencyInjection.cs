@@ -18,7 +18,6 @@ using ZooTech.Application.Modules.Module_Celo.UseCases.GetVacasEnCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.ListCelos;
 using ZooTech.Application.Modules.Module_Celo.UseCases.ListReporteCeloGeneral;
 using ZooTech.Application.Modules.Module_Celo.UseCases.UpdateCelo;
-using ZooTech.Application.Modules.Module_Fecundacion.Common;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.CreateFecundacion;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.DeleteFecundacion;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.GetFecundacionForEdit;
@@ -265,7 +264,6 @@ public static class DependencyInjection
         // Use Cases - Module_Fecundacion
         // ============================================
         services.AddScoped<ICreateFecundacionInputPort, CreateFecundacionInteractor>();
-        services.AddScoped<IFecundacionObservationPolicy, FecundacionObservationPolicy>();
         services.AddScoped<ICreateFecundacionBehaviorPipelineFactory, CreateFecundacionBehaviorPipelineFactory>();
         services.AddScoped<ICommandValidator<CreateFecundacionCommand>, CreateFecundacionValidator>();
 

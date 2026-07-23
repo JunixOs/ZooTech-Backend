@@ -1,8 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using ZooTech.Application.Common.Gateway.Parametrization;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte;
-using ZooTech.Domain.Configuration;
 using ZooTech.Infrastructure.Storage;
 
 namespace ZooTech.Infrastructure.Reports.Vacunos;
@@ -17,18 +15,14 @@ public interface IVacunoReportPhotoLoader
 public sealed class VacunoReportPhotoLoader : IVacunoReportPhotoLoader
 {
     private const long MaxImageBytes = 5L * 1024 * 1024;
-    private static readonly char[] FormatSeparators = [',', ';', '|'];
     private readonly string _mediaRoot;
-    private readonly ITenantConfigurationProvider _configurationProvider;
     private readonly ILogger<VacunoReportPhotoLoader> _logger;
 
     public VacunoReportPhotoLoader(
         IOptions<ReportStorageOptions> options,
-        ITenantConfigurationProvider configurationProvider,
         ILogger<VacunoReportPhotoLoader> logger)
     {
         _mediaRoot = ResolveMediaRoot(options.Value.VacunoMediaRoot);
-        _configurationProvider = configurationProvider;
         _logger = logger;
     }
 
@@ -36,12 +30,6 @@ public sealed class VacunoReportPhotoLoader : IVacunoReportPhotoLoader
         RegistroVacunoDetalle vacuno,
         CancellationToken cancellationToken = default)
     {
-        var allowedFormats = await GetAllowedFormatsAsync(vacuno.Id, cancellationToken);
-        if (allowedFormats is null)
-        {
-            return null;
-        }
-
         var candidates = new[]
         {
             vacuno.FotoRuta,
@@ -60,17 +48,6 @@ public sealed class VacunoReportPhotoLoader : IVacunoReportPhotoLoader
                 continue;
             }
 
-            var candidateFormat = NormalizeFormat(Path.GetExtension(path));
-            if (candidateFormat is null)
-            {
-                candidateFormat = NormalizeFormat(vacuno.FotoExtension);
-            }
-
-            if (candidateFormat is null || !allowedFormats.Contains(candidateFormat))
-            {
-                continue;
-            }
-
             var file = new FileInfo(path);
             if (!file.Exists || file.Length <= 0 || file.Length > MaxImageBytes)
             {
@@ -78,9 +55,7 @@ public sealed class VacunoReportPhotoLoader : IVacunoReportPhotoLoader
             }
 
             var content = await File.ReadAllBytesAsync(path, cancellationToken);
-            var detectedFormat = DetectImageFormat(content);
-            if (detectedFormat == candidateFormat &&
-                allowedFormats.Contains(detectedFormat))
+            if (IsSupportedImage(content))
             {
                 return content;
             }
@@ -94,59 +69,6 @@ public sealed class VacunoReportPhotoLoader : IVacunoReportPhotoLoader
         }
 
         return null;
-    }
-
-    private async Task<HashSet<string>?> GetAllowedFormatsAsync(
-        long vacunoId,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            var configuredFormats = await _configurationProvider.GetSettingAsync(
-                Settings.Vacunos.VacunosFotoFormatosPermitidos);
-            var formats = ParseAllowedFormats(configuredFormats);
-            if (formats is not null)
-            {
-                return formats;
-            }
-        }
-        catch (Exception exception) when (exception is not OperationCanceledException)
-        {
-            _logger.LogWarning(
-                exception,
-                "No se pudo obtener la configuración de fotografías del vacuno {VacunoId}; el reporte se generará sin fotografía.",
-                vacunoId);
-            return null;
-        }
-
-        _logger.LogWarning(
-            "La configuración de formatos de fotografía no es válida para el vacuno {VacunoId}; el reporte se generará sin fotografía.",
-            vacunoId);
-        return null;
-    }
-
-    private static HashSet<string>? ParseAllowedFormats(string? configuredFormats)
-    {
-        if (string.IsNullOrWhiteSpace(configuredFormats))
-        {
-            return null;
-        }
-
-        var formats = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var token in configuredFormats.Split(
-                     FormatSeparators,
-                     StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-        {
-            var format = NormalizeFormat(token.Trim('[', ']', '"', '\'', ' '));
-            if (format is null)
-            {
-                return null;
-            }
-
-            formats.Add(format);
-        }
-
-        return formats.Count == 0 ? null : formats;
     }
 
     private string? ResolveAllowedPath(string candidate)
@@ -197,15 +119,7 @@ public sealed class VacunoReportPhotoLoader : IVacunoReportPhotoLoader
                 : Path.Combine(AppContext.BaseDirectory, root));
     }
 
-    private static string? NormalizeFormat(string? format)
-        => format?.Trim().TrimStart('.').ToLowerInvariant() switch
-        {
-            "png" => "png",
-            "jpg" or "jpeg" => "jpeg",
-            _ => null
-        };
-
-    private static string? DetectImageFormat(ReadOnlySpan<byte> content)
+    private static bool IsSupportedImage(ReadOnlySpan<byte> content)
     {
         var isPng = content.Length >= 8 &&
                     content[..8].SequenceEqual(
@@ -214,6 +128,6 @@ public sealed class VacunoReportPhotoLoader : IVacunoReportPhotoLoader
                      content[0] == 0xFF &&
                      content[1] == 0xD8 &&
                      content[2] == 0xFF;
-        return isPng ? "png" : isJpeg ? "jpeg" : null;
+        return isPng || isJpeg;
     }
 }

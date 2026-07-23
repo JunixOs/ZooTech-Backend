@@ -10,17 +10,14 @@ public sealed class UpdateFecundacionInteractor : IUpdateFecundacionInputPort
 {
     private readonly IGanaderiaUnitOfWork _unitOfWork;
     private readonly IAppCacheService _cache;
-    private readonly IFecundacionObservationPolicy _observationPolicy;
 
     public UpdateFecundacionInteractor(
         IGanaderiaUnitOfWork unitOfWork,
-        IAppCacheService cache,
-        IFecundacionObservationPolicy observationPolicy
+        IAppCacheService cache
     )
     {
         _unitOfWork = unitOfWork;
         _cache = cache;
-        _observationPolicy = observationPolicy;
     }
 
     public async Task<UpdateFecundacionOutput> HandleAsync(
@@ -28,9 +25,6 @@ public sealed class UpdateFecundacionInteractor : IUpdateFecundacionInputPort
         CancellationToken cancellationToken = default)
     {
         var repository = _unitOfWork.Fecundaciones;
-        await _observationPolicy.ValidateAsync(
-            command.ObservacionesVeterinarias,
-            cancellationToken);
 
         var existing = await repository.GetForEditAsync(command.Id, cancellationToken);
         if (existing is null)

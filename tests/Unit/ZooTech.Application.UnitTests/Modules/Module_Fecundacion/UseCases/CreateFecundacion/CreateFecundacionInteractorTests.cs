@@ -3,7 +3,6 @@ using FluentAssertions;
 using Xunit;
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Common.Gateway.Caching;
-using ZooTech.Application.Modules.Module_Fecundacion.Common;
 using ZooTech.Application.Modules.Module_Fecundacion.Exceptions;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.CreateFecundacion;
 using ZooTech.Domain.Ganaderia.Module_Fecundacion.Entities;
@@ -17,7 +16,6 @@ public sealed class CreateFecundacionInteractorTests
     private readonly IFecundacionRepository _repositoryMock;
     private readonly IAppCacheService _cacheMock;
     private readonly IGanaderiaUnitOfWork _unitOfWorkMock;
-    private readonly IFecundacionObservationPolicy _observationPolicyMock;
     private readonly CreateFecundacionInteractor _interactor;
     private bool _insideTransaction;
 
@@ -26,7 +24,6 @@ public sealed class CreateFecundacionInteractorTests
         _repositoryMock = Substitute.For<IFecundacionRepository>();
         _cacheMock = Substitute.For<IAppCacheService>();
         _unitOfWorkMock = Substitute.For<IGanaderiaUnitOfWork>();
-        _observationPolicyMock = Substitute.For<IFecundacionObservationPolicy>();
 
         _unitOfWorkMock.Fecundaciones.Returns(_repositoryMock);
 
@@ -53,10 +50,7 @@ public sealed class CreateFecundacionInteractorTests
                 }
             });
 
-        _interactor = new CreateFecundacionInteractor(
-            _unitOfWorkMock,
-            _cacheMock,
-            _observationPolicyMock);
+        _interactor = new CreateFecundacionInteractor(_unitOfWorkMock, _cacheMock);
     }
 
     [Fact]
@@ -147,36 +141,6 @@ public sealed class CreateFecundacionInteractorTests
             Arg.Any<CancellationToken>());
         await _repositoryMock.Received(1).GetByCodigoAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
         await _cacheMock.Received(1).RemoveByPrefixAsync("fecundacion:listar");
-        await _observationPolicyMock.Received(1).ValidateAsync(
-            command.ObservacionesVeterinarias,
-            Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task HandleAsync_NoDebeConsultarNiPersistir_CuandoObservacionesExcedenLimiteTenant()
-    {
-        var command = CreateValidCommand() with
-        {
-            ObservacionesVeterinarias = "Observación fuera del límite"
-        };
-        _observationPolicyMock.ValidateAsync(
-                command.ObservacionesVeterinarias,
-                Arg.Any<CancellationToken>())
-            .Returns(Task.FromException(new ValidationException(
-                ["FECUNDACION-OBSERVACIONES_VETERINARIAS-MAX_LENGTH"],
-                ZooTech.Domain.Shared.Enums.ScopeName.Application)));
-
-        var action = () => _interactor.HandleAsync(command);
-
-        await action.Should().ThrowAsync<ValidationException>();
-        await _repositoryMock.DidNotReceive().ExistsVacunoAsync(
-            Arg.Any<long>(),
-            Arg.Any<CancellationToken>());
-        await _unitOfWorkMock.DidNotReceive().ExecuteInTransactionAsync(
-            Arg.Any<Func<CancellationToken, Task<Fecundacion>>>(),
-            Arg.Any<CancellationToken>(),
-            Arg.Any<Func<Fecundacion, CancellationToken, Task<Fecundacion>>>());
-        await _cacheMock.DidNotReceive().RemoveByPrefixAsync(Arg.Any<string>());
     }
 
     [Fact]
