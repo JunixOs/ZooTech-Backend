@@ -75,7 +75,7 @@ public sealed class VacunoMutationControllerTests : IClassFixture<ZooTechApiFact
     }
 
     [Fact]
-    public async Task EditarVacuno_ImmutableDateChanged_ReturnsBadRequest()
+    public async Task EditarVacuno_ImmutableDateChanged_ReturnsConflict()
     {
         await using var scenario = new VacunoApiScenario(_client);
         var create = await scenario.ValidRequestAsync();
@@ -84,7 +84,7 @@ public sealed class VacunoMutationControllerTests : IClassFixture<ZooTechApiFact
 
         var response = await _client.PatchAsJsonAsync(RequirementApiRoutes.Vacuno(created.Id), update);
 
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
     }
 
     private static UpdateVacunoRequest ToUpdate(CreateVacunoRequest request) => new(

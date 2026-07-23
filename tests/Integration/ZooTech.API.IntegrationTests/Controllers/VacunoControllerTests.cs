@@ -7,6 +7,7 @@ using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses;
 using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities.GetArbolGenealogico;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetVacunoById;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetActivityStats;
+using ZooTech.API.IntegrationTests.Seeders;
 
 namespace ZooTech.API.IntegrationTests.Controllers;
 
@@ -45,9 +46,7 @@ public class VacunoControllerTests : IClassFixture<ZooTechApiFactory>
         using var client = _factory.CreateTenantClient(tenantHost);
 
         // Fetch ID of V001
-        var listResponse = await client.GetFromJsonAsync<PagedResponse<List<VacunoItemResponse>>>(
-            "/api/v1/vacunos?page=1&limit=1&query=V001");
-        var vacuno = listResponse?.Data?.FirstOrDefault();
+        var vacuno = await GetVacunoByCodeAsync(client, GenealogiaSeeder.TargetCode);
         vacuno.Should().NotBeNull("Se espera que el hijo principal V001 esté inyectado en memoria.");
 
         // Requerir hasta 10 niveles (el backend lo clamp a maxNiveles configurado, ej: 4)
@@ -82,8 +81,7 @@ public class VacunoControllerTests : IClassFixture<ZooTechApiFactory>
     {
         using var client = _factory.CreateTenantClient(tenantHost);
         
-        var listResponse = await client.GetFromJsonAsync<PagedResponse<List<VacunoItemResponse>>>("/api/v1/vacunos?page=1&limit=1&query=V001");
-        var vacuno = listResponse?.Data?.FirstOrDefault();
+        var vacuno = await GetVacunoByCodeAsync(client, GenealogiaSeeder.TargetCode);
         vacuno.Should().NotBeNull();
 
         var response = await client.GetAsync($"/api/v1/vacunos/{vacuno!.Id}/genealogia/exportar?formato={formato}");
@@ -98,8 +96,7 @@ public class VacunoControllerTests : IClassFixture<ZooTechApiFactory>
     [Fact]
     public async Task ExportarArbolGenealogico_WhenFormatoIsInvalid_ReturnsBadRequest()
     {
-        var listResponse = await _client.GetFromJsonAsync<PagedResponse<List<VacunoItemResponse>>>("/api/v1/vacunos?page=1&limit=1&query=V001");
-        var vacuno = listResponse?.Data?.FirstOrDefault();
+        var vacuno = await GetVacunoByCodeAsync(_client, GenealogiaSeeder.TargetCode);
         
         var response = await _client.GetAsync($"/api/v1/vacunos/{vacuno!.Id}/genealogia/exportar?formato=csv");
         
@@ -131,9 +128,7 @@ public class VacunoControllerTests : IClassFixture<ZooTechApiFactory>
     [Fact]
     public async Task GetVacunoById_WhenVacunoExists_ReturnsOkAndVacuno()
     {
-        var listResponse = await _client.GetFromJsonAsync<PagedResponse<List<VacunoItemResponse>>>(
-            "/api/v1/vacunos?page=1&limit=1&q=VAC001");
-        var vacuno = listResponse?.Data?.FirstOrDefault();
+        var vacuno = await GetVacunoByCodeAsync(_client, VacunosBasicSeeder.HembraCode);
         vacuno.Should().NotBeNull("the tenant database must contain at least one active vacuno");
 
         var response = await _client.GetAsync($"/api/v1/vacunos/{vacuno!.Id}");
@@ -170,5 +165,13 @@ public class VacunoControllerTests : IClassFixture<ZooTechApiFactory>
         var content = await response.Content.ReadFromJsonAsync<VacunoActivityStatsResponse>();
         content.Should().NotBeNull();
         content!.Points.Should().NotBeNull();
+    }
+
+    private static async Task<VacunoItemResponse?> GetVacunoByCodeAsync(HttpClient client, string code)
+    {
+        var response = await client.GetFromJsonAsync<PagedResponse<List<VacunoItemResponse>>>(
+            $"/api/v1/vacunos?page=1&limit=5&q={Uri.EscapeDataString(code)}");
+
+        return response?.Data?.SingleOrDefault(item => item.Codigo == code);
     }
 }

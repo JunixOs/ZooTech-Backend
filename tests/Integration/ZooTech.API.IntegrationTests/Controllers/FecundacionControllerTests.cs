@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using FluentAssertions;
+using ZooTech.API.IntegrationTests.Seeders;
 using ZooTech.API.IntegrationTests.Support;
 using ZooTech.InterfaceAdapters.DTOs;
 using ZooTech.InterfaceAdapters.Models;
@@ -105,17 +106,17 @@ public class FecundacionControllerTests : IClassFixture<ZooTechApiFactory>
         var options = await _client.GetFromJsonAsync<GeneralResponseDTO<FecundacionOptionsResponse>>(
             "/api/v1/fecundaciones/opciones");
         var hembras = await _client.GetFromJsonAsync<GeneralResponseDTO<IReadOnlyList<FecundacionVacunoOptionResponse>>>(
-            "/api/v1/fecundaciones/vacunos?sexo=HEMBRA&soloDisponibles=true");
+            $"/api/v1/fecundaciones/vacunos?sexo=HEMBRA&q={VacunosBasicSeeder.HembraCode}&soloDisponibles=true");
         var machos = await _client.GetFromJsonAsync<GeneralResponseDTO<IReadOnlyList<FecundacionVacunoOptionResponse>>>(
-            "/api/v1/fecundaciones/vacunos?sexo=MACHO");
+            $"/api/v1/fecundaciones/vacunos?sexo=MACHO&q={VacunosBasicSeeder.MachoCode}");
 
         options?.Data.Should().NotBeNull();
-        var tipo = options!.Data!.Tipos
-            .FirstOrDefault(item => item.Code.Equals("MONTA_NATURAL", StringComparison.OrdinalIgnoreCase))
-            ?? options.Data.Tipos.First();
-        var resultado = options.Data.Resultados.First();
-        var receptor = hembras?.Data?.FirstOrDefault();
-        var donante = machos?.Data?.FirstOrDefault();
+        var tipo = options!.Data!.Tipos.Single(item =>
+            item.Code == FecundacionCatalogSeeder.TipoApiCode);
+        var resultado = options.Data.Resultados.Single(item =>
+            item.Code == FecundacionCatalogSeeder.ResultadoApiCode);
+        var receptor = hembras?.Data?.SingleOrDefault(item => item.Codigo == VacunosBasicSeeder.HembraCode);
+        var donante = machos?.Data?.SingleOrDefault(item => item.Codigo == VacunosBasicSeeder.MachoCode);
 
         receptor.Should().NotBeNull("the tenant must contain an available female vacuno");
         donante.Should().NotBeNull("the tenant must contain an active male vacuno");
