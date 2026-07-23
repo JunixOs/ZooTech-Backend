@@ -10,6 +10,6 @@ public sealed record GenerateTriajesPdfDocument(
     string? Codigo,
     string? Nombre,
     string? TipoPeso,
-    decimal? PesoKg,
+    string? PesoKg,
     long? VacunoId,
     DateTime GeneratedAtUtc);

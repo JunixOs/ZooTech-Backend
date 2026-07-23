@@ -45,7 +45,7 @@ public class TriajeControllerTests
             return Task.FromResult(new GetAllTriajesOutput(new[] { CreateTriajeOutput() }, 1));
         }));
 
-        var result = await controller.GetAll(0, 200, "2026-07-22", "2026-07-01", "2026-07-31", "TRI", "Luna", "CONTROL", 120m, 5, true);
+        var result = await controller.GetAll(0, 200, "2026-07-22", "2026-07-01", "2026-07-31", "TRI", "Luna", "CONTROL", "120", 5, true);
 
         var okResult = Assert.IsType<OkObjectResult>(result);
         var response = AssertGeneralResponseData<PagedTriajeResponse>(okResult.Value);
@@ -58,7 +58,7 @@ public class TriajeControllerTests
         Assert.Equal("TRI", captured.Codigo);
         Assert.Equal("Luna", captured.Nombre);
         Assert.Equal("CONTROL", captured.TipoPeso);
-        Assert.Equal(120m, captured.PesoKg);
+        Assert.Equal("120", captured.PesoKg);
         Assert.Equal(5, captured.VacunoId);
         Assert.True(captured.UniqueVacuno);
         Assert.Equal(1, response.Pagination.Page);
@@ -118,7 +118,7 @@ public class TriajeControllerTests
             return Task.FromResult(new GenerateTriajesPdfOutput(new byte[] { 1 }, "application/pdf", "triajes.pdf"));
         }));
 
-        var result = await controller.GeneratePdf("2026-07-22", "2026-07-01", "2026-07-31", "TRI", "Luna", "CONTROL", 120m, 5, CancellationToken.None);
+        var result = await controller.GeneratePdf("2026-07-22", "2026-07-01", "2026-07-31", "TRI", "Luna", "CONTROL", "120", 5, CancellationToken.None);
 
         var fileResult = Assert.IsType<FileContentResult>(result);
         Assert.Equal("application/pdf", fileResult.ContentType);
@@ -138,13 +138,13 @@ public class TriajeControllerTests
             return Task.FromResult(new GenerateTriajesExcelOutput(new byte[] { 1 }, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "triajes.xlsx"));
         }));
 
-        var result = await controller.GenerateExcel("2026-07-22", "2026-07-01", "2026-07-31", "TRI", "Luna", "CONTROL", 120m, 5, CancellationToken.None);
+        var result = await controller.GenerateExcel("2026-07-22", "2026-07-01", "2026-07-31", "TRI", "Luna", "CONTROL", "120", 5, CancellationToken.None);
 
         var fileResult = Assert.IsType<FileContentResult>(result);
         Assert.Equal("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileResult.ContentType);
         Assert.Equal("triajes.xlsx", fileResult.FileDownloadName);
         Assert.Equal("CONTROL", captured?.TipoPeso);
-        Assert.Equal(120m, captured?.PesoKg);
+        Assert.Equal("120", captured?.PesoKg);
     }
 
     [Fact]

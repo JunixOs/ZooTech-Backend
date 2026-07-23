@@ -14,7 +14,7 @@ public interface ITriajeRepository
     string? codigo = null,
     string? nombre = null,
     string? tipoPeso = null,
-    decimal? pesoKg = null,
+    string? pesoKg = null,
     long? vacunoId = null,
     bool? uniqueVacuno = null,
     CancellationToken cancellationToken = default);

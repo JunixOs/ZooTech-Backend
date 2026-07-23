@@ -25,7 +25,7 @@ public class TriajeRepositoryTests
             codigo: "TRI",
             nombre: "Luna",
             tipoPeso: "CONTROL",
-            pesoKg: 121m,
+            pesoKg: "121",
             vacunoId: 1,
             cancellationToken: CancellationToken.None);
 
@@ -34,6 +34,19 @@ public class TriajeRepositoryTests
         Assert.Equal("TRI002", item.Codigo);
         Assert.Equal("Luna", item.VacunoNombre);
         Assert.Equal(121m, item.PesoKg);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_AppliesPesoKgPartialFilter()
+    {
+        await using var dbContext = CreateDbContext();
+        SeedTriajes(dbContext);
+        var repository = CreateRepository(dbContext);
+
+        var result = await repository.GetAllAsync(1, 10, pesoKg: "12");
+
+        Assert.Equal(2, result.Total);
+        Assert.All(result.Items, item => Assert.Contains("12", item.PesoKg.ToString(System.Globalization.CultureInfo.InvariantCulture)));
     }
 
     [Fact]

@@ -86,7 +86,7 @@ public sealed class TriajeController : ControllerBase
         [FromQuery] string? codigo = null,
         [FromQuery] string? nombre = null,
         [FromQuery] string? tipoPeso = null,
-        [FromQuery] decimal? pesoKg = null,
+        [FromQuery] string? pesoKg = null,
         [FromQuery] long? vacunoId = null,
         [FromQuery] bool? uniqueVacuno = null,
         CancellationToken cancellationToken = default)
@@ -192,7 +192,7 @@ public sealed class TriajeController : ControllerBase
         [FromQuery] string? codigo,
         [FromQuery] string? nombre,
         [FromQuery] string? tipoPeso,
-        [FromQuery] decimal? pesoKg,
+        [FromQuery] string? pesoKg,
         [FromQuery] long? vacunoId,
         CancellationToken cancellationToken)
     {
@@ -215,7 +215,7 @@ public sealed class TriajeController : ControllerBase
         [FromQuery] string? codigo,
         [FromQuery] string? nombre,
         [FromQuery] string? tipoPeso,
-        [FromQuery] decimal? pesoKg,
+        [FromQuery] string? pesoKg,
         [FromQuery] long? vacunoId,
         CancellationToken cancellationToken)
     {

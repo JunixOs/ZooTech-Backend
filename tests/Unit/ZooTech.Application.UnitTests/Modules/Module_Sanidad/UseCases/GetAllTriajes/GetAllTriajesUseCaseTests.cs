@@ -32,7 +32,7 @@ public class GetAllTriajesUseCaseTests
                 It.IsAny<string?>(),
                 It.IsAny<string?>(),
                 It.IsAny<string?>(),
-                It.IsAny<decimal?>(),
+                It.IsAny<string?>(),
                 It.IsAny<long?>(),
                 It.IsAny<bool?>(),
                 It.IsAny<CancellationToken>()))
@@ -62,7 +62,7 @@ public class GetAllTriajesUseCaseTests
                 It.IsAny<string?>(),
                 It.IsAny<string?>(),
                 It.IsAny<string?>(),
-                It.IsAny<decimal?>(),
+                It.IsAny<string?>(),
                 It.IsAny<long?>(),
                 It.IsAny<bool?>(),
                 It.IsAny<CancellationToken>()))

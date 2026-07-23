@@ -41,7 +41,7 @@ public class TriajeRepository : ITriajeRepository
     string? codigo = null,
     string? nombre = null,
     string? tipoPeso = null,
-    decimal? pesoKg = null,
+    string? pesoKg = null,
     long? vacunoId = null,
     bool? uniqueVacuno = null,
     CancellationToken cancellationToken = default)
@@ -83,8 +83,11 @@ public class TriajeRepository : ITriajeRepository
         if (!string.IsNullOrEmpty(tipoPeso))
             query = query.Where(t => t.tipo_peso_code == tipoPeso);
 
-        if (pesoKg.HasValue)
-            query = query.Where(t => t.peso_kg == pesoKg);
+        if (!string.IsNullOrWhiteSpace(pesoKg))
+        {
+            var pesoFilter = pesoKg.Trim();
+            query = query.Where(t => EF.Functions.Like(t.peso_kg.ToString(), $"%{pesoFilter}%"));
+        }
 
         if (uniqueVacuno == true)
         {

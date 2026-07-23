@@ -27,7 +27,7 @@ public class GenerateTriajesPdfInteractorTests
                 "TRI",
                 "Luna",
                 "CONTROL",
-                120m,
+                "120",
                 5,
                 null,
                 It.IsAny<CancellationToken>()))
@@ -36,7 +36,7 @@ public class GenerateTriajesPdfInteractorTests
         var interactor = new GenerateTriajesPdfInteractor(repositoryMock.Object, pdfGeneratorMock.Object, dateTimeProviderMock.Object);
 
         var result = await interactor.HandleAsync(
-            new GenerateTriajesPdfQuery("2026-07-10", "2026-07-01", "2026-07-31", "TRI", "Luna", "CONTROL", 120m, 5),
+            new GenerateTriajesPdfQuery("2026-07-10", "2026-07-01", "2026-07-31", "TRI", "Luna", "CONTROL", "120", 5),
             CancellationToken.None);
 
         Assert.Equal(new byte[] { 1, 2, 3 }, result.Content);

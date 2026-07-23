@@ -27,7 +27,7 @@ public class GenerateTriajesExcelInteractorTests
                 "TRI",
                 "Luna",
                 "CONTROL",
-                120m,
+                "120",
                 5,
                 null,
                 It.IsAny<CancellationToken>()))
@@ -36,7 +36,7 @@ public class GenerateTriajesExcelInteractorTests
         var interactor = new GenerateTriajesExcelInteractor(repositoryMock.Object, excelGeneratorMock.Object, dateTimeProviderMock.Object);
 
         var result = await interactor.HandleAsync(
-            new GenerateTriajesExcelQuery("2026-07-10", "2026-07-01", "2026-07-31", "TRI", "Luna", "CONTROL", 120m, 5),
+            new GenerateTriajesExcelQuery("2026-07-10", "2026-07-01", "2026-07-31", "TRI", "Luna", "CONTROL", "120", 5),
             CancellationToken.None);
 
         Assert.Equal(new byte[] { 4, 5, 6 }, result.Content);
