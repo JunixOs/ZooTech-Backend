@@ -7,13 +7,24 @@ namespace ZooTech.API.IntegrationTests.Seeders;
 
 public static class BaseCatalogSeeder
 {
+    public const long GranjaId = 1;
+    public const string RazaCode = "HOLSTEIN";
+    public const string ColorCode = "BLANCO";
+    public const string SexoHembraCode = "H";
+    public const string SexoMachoCode = "M";
+    public const string TipoAdquisicionCode = "NACIMIENTO";
+    public const string TipoAdquisicionCompraCode = "COMPRA";
+    public const string EstadoVacunoCode = "SANO";
+    public const string EstadoVacunoEliminadoCode = "MUERTO";
+    public const string UtilizacionCode = "PRODUCCION_LECHE";
+
     public static void SeedBaseCatalogs(this GanaderiaDbContext ganaderiaDb)
     {
-        if (!ganaderiaDb.granjas.Any(g => g.id == 1))
+        if (!ganaderiaDb.granjas.Any(g => g.id == GranjaId))
         {
             var granja = new granja
             {
-                id = 1,
+                id = GranjaId,
                 nombre = "Granja de Prueba",
                 distrito_codigo = "010101",
                 activo = true,
@@ -29,29 +40,32 @@ public static class BaseCatalogSeeder
             ganaderiaDb.granjas.Add(granja);
         }
 
-        if (!ganaderiaDb.cat_tipo_fecundacions.Any(t => t.code == "MN"))
-            ganaderiaDb.cat_tipo_fecundacions.Add(new cat_tipo_fecundacion { nombre = "Monta Natural", code = "MN" });
+        if (!ganaderiaDb.cat_razas.Any(x => x.code == RazaCode))
+            ganaderiaDb.cat_razas.Add(new cat_raza { code = RazaCode, nombre = "Holstein", activo = true });
 
-        if (!ganaderiaDb.cat_resultado_fecundacions.Any(r => r.code == "POSITIVO"))
-            ganaderiaDb.cat_resultado_fecundacions.Add(new cat_resultado_fecundacion { nombre = "Positivo", code = "POSITIVO" });
+        if (!ganaderiaDb.cat_colors.Any(x => x.code == ColorCode))
+            ganaderiaDb.cat_colors.Add(new cat_color { code = ColorCode, nombre = "Blanco", activo = true });
 
-        if (!ganaderiaDb.cat_razas.Any(r => r.code == "HOLSTEIN"))
-            ganaderiaDb.cat_razas.Add(new cat_raza { code = "HOLSTEIN", nombre = "Holstein", activo = true });
-
-        if (!ganaderiaDb.cat_sexos.Any(s => s.code == "H"))
+        if (!ganaderiaDb.cat_sexos.Any(x => x.code == SexoHembraCode))
         {
-            ganaderiaDb.cat_sexos.Add(new cat_sexo { code = "H", nombre = "Hembra" });
-            ganaderiaDb.cat_sexos.Add(new cat_sexo { code = "M", nombre = "Macho" });
+            ganaderiaDb.cat_sexos.Add(new cat_sexo { code = SexoHembraCode, nombre = "Hembra" });
+            ganaderiaDb.cat_sexos.Add(new cat_sexo { code = SexoMachoCode, nombre = "Macho" });
         }
 
-        if (!ganaderiaDb.cat_colors.Any(c => c.code == "BLANCO"))
-            ganaderiaDb.cat_colors.Add(new cat_color { code = "BLANCO", nombre = "Blanco", activo = true });
+        if (!ganaderiaDb.cat_tipo_adquisicions.Any(x => x.code == TipoAdquisicionCode))
+            ganaderiaDb.cat_tipo_adquisicions.Add(new cat_tipo_adquisicion { code = TipoAdquisicionCode, nombre = "Nacimiento", activo = true });
 
-        if (!ganaderiaDb.cat_tipo_adquisicions.Any(ta => ta.code == "COMPRA"))
-            ganaderiaDb.cat_tipo_adquisicions.Add(new cat_tipo_adquisicion { code = "COMPRA", nombre = "Compra", activo = true });
+        if (!ganaderiaDb.cat_tipo_adquisicions.Any(x => x.code == TipoAdquisicionCompraCode))
+            ganaderiaDb.cat_tipo_adquisicions.Add(new cat_tipo_adquisicion { code = TipoAdquisicionCompraCode, nombre = "Compra", activo = true });
 
-        if (!ganaderiaDb.cat_tipo_utilizacions.Any(tu => tu.code == "LECHE"))
-            ganaderiaDb.cat_tipo_utilizacions.Add(new cat_tipo_utilizacion { code = "LECHE", nombre = "Leche", activo = true });
+        if (!ganaderiaDb.cat_estado_vacunos.Any(x => x.code == EstadoVacunoCode))
+            ganaderiaDb.cat_estado_vacunos.Add(new cat_estado_vacuno { code = EstadoVacunoCode, nombre = "Sano" });
+
+        if (!ganaderiaDb.cat_estado_vacunos.Any(x => x.code == EstadoVacunoEliminadoCode))
+            ganaderiaDb.cat_estado_vacunos.Add(new cat_estado_vacuno { code = EstadoVacunoEliminadoCode, nombre = "Muerto" });
+
+        if (!ganaderiaDb.cat_tipo_utilizacions.Any(x => x.code == UtilizacionCode))
+            ganaderiaDb.cat_tipo_utilizacions.Add(new cat_tipo_utilizacion { code = UtilizacionCode, nombre = "Produccion de leche", activo = true });
 
         ganaderiaDb.SaveChanges();
     }

@@ -75,7 +75,7 @@ public sealed class VacunoMutationControllerTests : IClassFixture<ZooTechApiFact
     }
 
     [Fact]
-    public async Task EditarVacuno_ImmutableDateChanged_ReturnsBadRequest()
+    public async Task EditarVacuno_ImmutableDateChanged_ReturnsConflict()
     {
         await using var scenario = new VacunoApiScenario(_client);
         var create = await scenario.ValidRequestAsync();

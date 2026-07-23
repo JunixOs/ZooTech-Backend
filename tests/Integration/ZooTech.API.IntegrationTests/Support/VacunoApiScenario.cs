@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
+using ZooTech.API.IntegrationTests.Seeders;
 using ZooTech.InterfaceAdapters.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses;
@@ -17,28 +18,32 @@ internal sealed class VacunoApiScenario : IAsyncDisposable
     public async Task<CreateVacunoRequest> ValidRequestAsync()
     {
         var response = await _client.GetFromJsonAsync<GeneralResponseDTO<VacunoCatalogsResponse>>(
-            $"{RequirementApiRoutes.Vacunos}/catalogos");
+            RequirementApiRoutes.VacunoCatalogos);
         var catalogs = response?.Data;
         catalogs.Should().NotBeNull("the tenant must expose vacuno catalogs");
         catalogs!.Granjas.Should().NotBeEmpty();
 
-        var acquisition = catalogs.TiposAdquisicion
-            .FirstOrDefault(x => !x.Code.Equals("COMPRA", StringComparison.OrdinalIgnoreCase))
-            ?? catalogs.TiposAdquisicion.First();
+        var acquisition = catalogs.TiposAdquisicion.Single(x =>
+            x.Code == BaseCatalogSeeder.TipoAdquisicionCode);
+        var raza = catalogs.Razas.Single(x => x.Code == BaseCatalogSeeder.RazaCode);
+        var color = catalogs.Colores.Single(x => x.Code == BaseCatalogSeeder.ColorCode);
+        var sexo = catalogs.Sexos.Single(x => x.Code == BaseCatalogSeeder.SexoHembraCode);
+        var granja = catalogs.Granjas.Single(x => x.Id == BaseCatalogSeeder.GranjaId);
+        var utilizacion = catalogs.Utilizaciones.Single(x => x.Code == BaseCatalogSeeder.UtilizacionCode);
 
         return new CreateVacunoRequest(
             $"IT{Guid.NewGuid():N}"[..12].ToUpperInvariant(),
             "Vacuno Integracion",
             DateOnly.FromDateTime(DateTime.UtcNow.AddYears(-2)),
             acquisition.Code,
-            catalogs.Razas.First().Code,
-            catalogs.Colores.First().Code,
-            catalogs.Sexos.First().Code,
+            raza.Code,
+            color.Code,
+            sexo.Code,
             null, null,
-            catalogs.Granjas.First().Id,
+            granja.Id,
             null, null, null, null, null,
             acquisition.Code.Equals("COMPRA", StringComparison.OrdinalIgnoreCase) ? 100m : null,
-            catalogs.Utilizaciones.FirstOrDefault()?.Code,
+            utilizacion.Code,
             DateOnly.FromDateTime(DateTime.UtcNow),
             "Prueba de integracion");
     }
