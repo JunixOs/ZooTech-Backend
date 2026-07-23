@@ -74,4 +74,38 @@ public class ExceptionHandlingMiddlewareTests
         var body = await ReadResponseBody(context);
         body.Should().Contain("INTERNAL_SERVER_ERROR");
     }
+
+    [Fact]
+    public async Task Should_Not_Return_500_Or_Audit_When_Client_Aborts_Request()
+    {
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        var middleware = CreateMiddleware(_ => throw new TaskCanceledException());
+        var context = CreateHttpContext();
+        context.RequestAborted = cancellation.Token;
+        var auditServiceMock = new Mock<IAppAuditService>();
+
+        await middleware.InvokeAsync(context, auditServiceMock.Object);
+
+        context.Response.StatusCode.Should().Be(StatusCodes.Status200OK);
+        (await ReadResponseBody(context)).Should().BeEmpty();
+        auditServiceMock.Verify(
+            service => service.AuditErrorAsync(It.IsAny<AuditErrorInfo>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task Should_Return_500_When_Cancellation_Is_Not_From_Request()
+    {
+        var middleware = CreateMiddleware(_ => throw new TaskCanceledException());
+        var context = CreateHttpContext();
+        var auditServiceMock = new Mock<IAppAuditService>();
+
+        await middleware.InvokeAsync(context, auditServiceMock.Object);
+
+        context.Response.StatusCode.Should().Be(StatusCodes.Status500InternalServerError);
+        auditServiceMock.Verify(
+            service => service.AuditErrorAsync(It.IsAny<AuditErrorInfo>()),
+            Times.Once);
+    }
 }
