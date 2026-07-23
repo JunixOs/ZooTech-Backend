@@ -165,6 +165,8 @@ _ReSharper*/
 
 Generated/
 wwwroot/lib/
+uploads/
+storage/media/
 
 # =========================
 # Certificates

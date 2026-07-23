@@ -5,6 +5,7 @@ using ZooTech.Application.Modules.Module_Vacuno.Exceptions;
 using ZooTech.Application.UnitTests.Modules.Module_Vacuno.Support;
 using ZooTech.Domain.Configuration;
 using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Models;
 using ZooTech.Tests.Shared.Factories;
 
 namespace ZooTech.Application.UnitTests.Modules.Module_Vacuno.UseCases;
@@ -21,8 +22,20 @@ public sealed class UpdateVacunoInteractorTests
         _context.Repository.Setup(x => x.GetByIdAsync(existing.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
         _context.Repository
-            .Setup(x => x.UpdateAsync(It.IsAny<Vacuno>(), It.IsAny<decimal?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Vacuno vacuno, decimal? _, string? _, CancellationToken _) => vacuno);
+            .Setup(x => x.UpdateAsync(
+                It.IsAny<Vacuno>(),
+                It.IsAny<decimal?>(),
+                It.IsAny<string?>(),
+                It.IsAny<CancellationToken>(),
+                It.IsAny<DateOnly?>(),
+                It.IsAny<VacunoPhotoMetadata?>()))
+            .ReturnsAsync((
+                Vacuno vacuno,
+                decimal? _,
+                string? _,
+                CancellationToken _,
+                DateOnly? _,
+                VacunoPhotoMetadata? _) => vacuno);
 
         var result = await _context.UpdateInteractor().HandleAsync(command, CancellationToken.None);
 

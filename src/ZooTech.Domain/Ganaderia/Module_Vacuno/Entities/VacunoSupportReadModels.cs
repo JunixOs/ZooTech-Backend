@@ -21,6 +21,10 @@ public sealed record VacunoUtilizacionDetails(
     string TipoUtilizacionCode,
     DateTime CreatedAt);
 
+public sealed record VacunoPhotoDetails(
+    string RelativePath,
+    string ContentType);
+
 public sealed record ActivityAggregatesOutput(
     int InventarioInicial,
     Dictionary<DateOnly, int> AltasPorDia,

@@ -1,5 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text;
+using System.Text.Json;
 using FluentAssertions;
 using ZooTech.API.IntegrationTests.Seeders;
 using ZooTech.InterfaceAdapters.DTOs;
@@ -58,6 +60,31 @@ internal sealed class VacunoApiScenario : IAsyncDisposable
         }
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         var body = await response.Content.ReadFromJsonAsync<GeneralResponseDTO<VacunoResponse>>();
+        body!.Data.Should().NotBeNull();
+        _createdIds.Add(body.Data!.Id);
+        return body.Data;
+    }
+
+    public async Task<VacunoResponse> CreateWithPhotoAsync(
+        CreateVacunoRequest request,
+        byte[] content,
+        string contentType,
+        string fileName)
+    {
+        using var multipart = new MultipartFormDataContent();
+        multipart.Add(
+            new StringContent(
+                JsonSerializer.Serialize(request, new JsonSerializerOptions(JsonSerializerDefaults.Web)),
+                Encoding.UTF8),
+            "payload");
+        var photo = new ByteArrayContent(content);
+        photo.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
+        multipart.Add(photo, "foto", fileName);
+
+        var response = await _client.PostAsync(RequirementApiRoutes.Vacunos, multipart);
+        var body = await response.Content.ReadFromJsonAsync<GeneralResponseDTO<VacunoResponse>>();
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
         body!.Data.Should().NotBeNull();
         _createdIds.Add(body.Data!.Id);
         return body.Data;

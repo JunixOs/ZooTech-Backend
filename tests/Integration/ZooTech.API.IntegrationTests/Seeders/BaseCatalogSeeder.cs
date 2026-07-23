@@ -17,6 +17,8 @@ public static class BaseCatalogSeeder
     public const string EstadoVacunoCode = "SANO";
     public const string EstadoVacunoEliminadoCode = "MUERTO";
     public const string UtilizacionCode = "PRODUCCION_LECHE";
+    public const string VacunoModuleCode = "VACUNO";
+    public const string PngExtensionCode = "PNG";
 
     public static void SeedBaseCatalogs(this GanaderiaDbContext ganaderiaDb)
     {
@@ -66,6 +68,12 @@ public static class BaseCatalogSeeder
 
         if (!ganaderiaDb.cat_tipo_utilizacions.Any(x => x.code == UtilizacionCode))
             ganaderiaDb.cat_tipo_utilizacions.Add(new cat_tipo_utilizacion { code = UtilizacionCode, nombre = "Produccion de leche", activo = true });
+
+        if (!ganaderiaDb.cat_modulos.Any(x => x.code == VacunoModuleCode))
+            ganaderiaDb.cat_modulos.Add(new cat_modulo { code = VacunoModuleCode, nombre = "Vacuno", activo = true });
+
+        if (!ganaderiaDb.cat_tipo_archivos.Any(x => x.extension == PngExtensionCode))
+            ganaderiaDb.cat_tipo_archivos.Add(new cat_tipo_archivo { extension = PngExtensionCode, mime_type = "image/png" });
 
         ganaderiaDb.SaveChanges();
     }

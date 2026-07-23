@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
+using ZooTech.API.IntegrationTests.Seeders;
 using ZooTech.API.IntegrationTests.Support;
 using ZooTech.InterfaceAdapters.DTOs;
 using ZooTech.InterfaceAdapters.Models;
@@ -30,6 +31,46 @@ public sealed class VacunoMutationControllerTests : IClassFixture<ZooTechApiFact
 
         stored!.Data!.Codigo.Should().Be(request.Codigo);
         stored.Data.Nombre.Should().Be(request.Nombre);
+        stored.Data.SexoCode.Should().Be(request.SexoCode);
+        stored.Data.AptoPara.Should().Be(request.AptoPara);
+    }
+
+    [Fact]
+    public async Task RegistrarVacuno_CompraWithPrice_PersistsAndReturnsPrice()
+    {
+        await using var scenario = new VacunoApiScenario(_client);
+        var request = await scenario.ValidRequestAsync() with
+        {
+            TipoAdquisicionCode = BaseCatalogSeeder.TipoAdquisicionCompraCode,
+            PrecioCompra = 275.50m
+        };
+
+        var created = await scenario.CreateAsync(request);
+        var stored = await _client.GetFromJsonAsync<GeneralResponseDTO<VacunoResponse>>(
+            RequirementApiRoutes.Vacuno(created.Id));
+
+        stored!.Data!.TipoAdquisicionCode.Should().Be(request.TipoAdquisicionCode);
+        stored.Data.PrecioCompra.Should().Be(request.PrecioCompra);
+    }
+
+    [Fact]
+    public async Task RegistrarVacuno_WithValidPhoto_PersistsAssociationAndReturnsPhoto()
+    {
+        await using var scenario = new VacunoApiScenario(_client);
+        var request = await scenario.ValidRequestAsync();
+        byte[] pngSignature = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+
+        var created = await scenario.CreateWithPhotoAsync(
+            request,
+            pngSignature,
+            "image/png",
+            "vacuno.png");
+
+        created.FotoUrl.Should().Be(RequirementApiRoutes.VacunoPhoto(created.Id));
+        var photo = await _client.GetAsync(created.FotoUrl);
+        photo.StatusCode.Should().Be(HttpStatusCode.OK);
+        photo.Content.Headers.ContentType!.MediaType.Should().Be("image/png");
+        (await photo.Content.ReadAsByteArrayAsync()).Should().Equal(pngSignature);
     }
 
     [Fact]
@@ -72,6 +113,7 @@ public sealed class VacunoMutationControllerTests : IClassFixture<ZooTechApiFact
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         body!.Data!.Codigo.Should().Be(create.Codigo);
         body.Data.Nombre.Should().Be(update.Nombre);
+        body.Data.PrecioCompra.Should().Be(update.PrecioCompra);
     }
 
     [Fact]

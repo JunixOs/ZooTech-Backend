@@ -5,6 +5,7 @@ using ZooTech.Application.Modules.Module_Vacuno.Exceptions;
 using ZooTech.Application.UnitTests.Modules.Module_Vacuno.Support;
 using ZooTech.Domain.Configuration;
 using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Models;
 using ZooTech.Tests.Shared.Factories;
 
 namespace ZooTech.Application.UnitTests.Modules.Module_Vacuno.UseCases;
@@ -20,8 +21,20 @@ public sealed class CreateVacunoInteractorTests
         _context.Repository.Setup(x => x.ExistsCodigoAsync(command.Codigo, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _context.Repository
-            .Setup(x => x.AddAsync(It.IsAny<Vacuno>(), It.IsAny<decimal?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Vacuno vacuno, decimal? _, string? _, CancellationToken _) =>
+            .Setup(x => x.AddAsync(
+                It.IsAny<Vacuno>(),
+                It.IsAny<decimal?>(),
+                It.IsAny<string?>(),
+                It.IsAny<CancellationToken>(),
+                It.IsAny<DateOnly?>(),
+                It.IsAny<VacunoPhotoMetadata?>()))
+            .ReturnsAsync((
+                Vacuno vacuno,
+                decimal? _,
+                string? _,
+                CancellationToken _,
+                DateOnly? _,
+                VacunoPhotoMetadata? _) =>
                 VacunoTestDataFactory.PersistedFrom(vacuno, 10));
 
         var result = await _context.CreateInteractor().HandleAsync(command, CancellationToken.None);
@@ -36,7 +49,9 @@ public sealed class CreateVacunoInteractorTests
             It.Is<Vacuno>(v => v.Codigo == command.Codigo),
             command.PrecioCompra,
             command.AptoPara,
-            It.IsAny<CancellationToken>()), Times.Once);
+            It.IsAny<CancellationToken>(),
+            command.FechaEspecificacion,
+            null), Times.Once);
         _context.Cache.Verify(x => x.RemoveByPrefixAsync("vacunos:listar"), Times.Once);
     }
 

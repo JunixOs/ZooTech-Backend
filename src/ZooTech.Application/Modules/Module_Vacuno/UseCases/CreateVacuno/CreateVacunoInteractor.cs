@@ -16,17 +16,20 @@ public sealed class CreateVacunoInteractor : ICreateVacunoInputPort
     private readonly IAppCacheService _cache;
     private readonly ITenantConfigurationProvider _tenantConfigurationProvider;
     private readonly IVacunoReferenceResolver _referenceResolver;
+    private readonly IVacunoPhotoStorage? _photoStorage;
 
     public CreateVacunoInteractor(
         IGanaderiaUnitOfWork unitOfWork,
         IAppCacheService cache,
         ITenantConfigurationProvider tenantConfigurationProvider,
-        IVacunoReferenceResolver referenceResolver)
+        IVacunoReferenceResolver referenceResolver,
+        IVacunoPhotoStorage? photoStorage = null)
     {
         _unitOfWork = unitOfWork;
         _cache = cache;
         _tenantConfigurationProvider = tenantConfigurationProvider;
         _referenceResolver = referenceResolver;
+        _photoStorage = photoStorage;
     }
 
     public async Task<CreateVacunoOutput> HandleAsync(CreateVacunoCommand command, CancellationToken cancellationToken)
@@ -50,19 +53,39 @@ public sealed class CreateVacunoInteractor : ICreateVacunoInputPort
         if (await repository.ExistsCodigoAsync(command.Codigo, cancellationToken))
             throw new VacunoAlreadyExistsException("Ya existe un vacuno con ese codigo o datos repetidos.");
 
-        var saved = await _unitOfWork.ExecuteInTransactionAsync(
-            async ct =>
-            {
-                var granjaId = await ResolveGranjaIdForMutationAsync(referenceResolution, ct);
-                var vacuno = CreateDomainVacuno(command, referenceResolution, validationSettings, granjaId);
-                return await repository.AddAsync(vacuno, command.PrecioCompra, command.AptoPara, ct);
-            },
-            cancellationToken,
-            async (_, ct) => await repository.GetByCodigoAsync(command.Codigo, ct)
-                ?? throw new InvalidOperationException("No se pudo recuperar el vacuno creado."));
-        await _cache.RemoveByPrefixAsync(VacunoCacheKeys.ListarPrefix);
+        StoredVacunoPhoto? storedPhoto = null;
+        try
+        {
+            storedPhoto = await SavePhotoAsync(command.Foto, cancellationToken);
+            var saved = await _unitOfWork.ExecuteInTransactionAsync(
+                async ct =>
+                {
+                    var granjaId = await ResolveGranjaIdForMutationAsync(referenceResolution, ct);
+                    var vacuno = CreateDomainVacuno(command, referenceResolution, validationSettings, granjaId);
+                    return await repository.AddAsync(
+                        vacuno,
+                        command.PrecioCompra,
+                        command.AptoPara,
+                        ct,
+                        command.FechaEspecificacion,
+                        ToMetadata(storedPhoto));
+                },
+                cancellationToken,
+                async (_, ct) => await repository.GetByCodigoAsync(command.Codigo, ct)
+                    ?? throw new InvalidOperationException("No se pudo recuperar el vacuno creado."));
+            await _cache.RemoveByPrefixAsync(VacunoCacheKeys.ListarPrefix);
 
-        return new CreateVacunoOutput(VacunoAppMapper.ToOutput(saved));
+            return new CreateVacunoOutput(VacunoAppMapper.ToOutput(saved));
+        }
+        catch
+        {
+            if (storedPhoto is not null && _photoStorage is not null)
+            {
+                await _photoStorage.DeleteAsync(storedPhoto.RelativePath, CancellationToken.None);
+            }
+
+            throw;
+        }
     }
 
     private async Task<long> ResolveGranjaIdForMutationAsync(
@@ -138,4 +161,31 @@ public sealed class CreateVacunoInteractor : ICreateVacunoInputPort
         settings.ValidateInput(command.SexoCode, "sexoCode");
         settings.ValidateObservaciones(command.Observaciones);
     }
+
+    private async Task<StoredVacunoPhoto?> SavePhotoAsync(
+        VacunoPhotoUpload? upload,
+        CancellationToken cancellationToken)
+    {
+        if (upload is null)
+        {
+            return null;
+        }
+
+        var storage = _photoStorage
+            ?? throw new InvalidOperationException("El almacenamiento de fotos no esta configurado.");
+        return await storage.SaveAsync(upload, cancellationToken);
+    }
+
+    private static ZooTech.Domain.Ganaderia.Module_Vacuno.Models.VacunoPhotoMetadata? ToMetadata(
+        StoredVacunoPhoto? photo)
+        => photo is null
+            ? null
+            : new(
+                photo.OriginalName,
+                photo.StoredName,
+                photo.RelativePath,
+                photo.Extension,
+                photo.ContentType,
+                photo.SizeBytes,
+                photo.Sha256);
 }

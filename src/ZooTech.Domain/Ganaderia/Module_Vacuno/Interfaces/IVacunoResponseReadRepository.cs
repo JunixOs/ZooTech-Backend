@@ -22,4 +22,8 @@ public interface IVacunoResponseReadRepository
     Task<VacunoUtilizacionDetails?> GetLatestUtilizacionAsync(
         long vacunoId,
         CancellationToken cancellationToken = default);
+
+    Task<VacunoPhotoDetails?> GetPhotoAsync(
+        long vacunoId,
+        CancellationToken cancellationToken = default);
 }

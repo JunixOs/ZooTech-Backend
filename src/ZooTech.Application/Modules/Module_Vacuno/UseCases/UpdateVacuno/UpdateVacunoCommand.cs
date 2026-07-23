@@ -1,4 +1,5 @@
 using ZooTech.Application.Common.Gateway.Auditing;
+using ZooTech.Application.Modules.Module_Vacuno.Services;
 using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.UpdateVacuno;
@@ -18,7 +19,9 @@ public sealed record UpdateVacunoCommand(
     string? CodigoDistrito,
     string? Observaciones,
     decimal? PrecioCompra,
-    string? AptoPara) : IAuditableRequest
+    string? AptoPara,
+    DateOnly? FechaEspecificacion = null,
+    VacunoPhotoUpload? Foto = null) : IAuditableRequest
 {
     public AuditEventType EventType => AuditEventType.Update;
 

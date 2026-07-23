@@ -1,4 +1,5 @@
 using ZooTech.Application.Modules.Module_Vacuno.Common;
+using ZooTech.Application.Modules.Module_Vacuno.Services;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.CreateVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetVacunoById;
@@ -25,7 +26,9 @@ internal static class VacunoMapper
             Estado: item.IsDeleted ? "eliminado" : "activo",
             FechaRegistro: item.FechaRegistro);
 
-    internal static CreateVacunoCommand ToCommand(CreateVacunoRequest request)
+    internal static CreateVacunoCommand ToCommand(
+        CreateVacunoRequest request,
+        VacunoPhotoUpload? foto = null)
         => new(
             request.Codigo.Trim().ToUpperInvariant(),
             request.Nombre,
@@ -41,9 +44,14 @@ internal static class VacunoMapper
             NormalizeOptionalCode(request.CodigoDistrito),
             request.Observaciones,
             request.PrecioCompra,
-            NormalizeAptoPara(request.AptoPara));
+            NormalizeAptoPara(request.AptoPara),
+            request.FechaEspecificacion,
+            foto);
 
-    internal static UpdateVacunoCommand ToCommand(long id, UpdateVacunoRequest request)
+    internal static UpdateVacunoCommand ToCommand(
+        long id,
+        UpdateVacunoRequest request,
+        VacunoPhotoUpload? foto = null)
         => new(
             id,
             request.Nombre,
@@ -59,7 +67,9 @@ internal static class VacunoMapper
             NormalizeOptionalCode(request.CodigoDistrito),
             request.Observaciones,
             request.PrecioCompra,
-            NormalizeAptoPara(request.AptoPara));
+            NormalizeAptoPara(request.AptoPara),
+            request.FechaEspecificacion,
+            foto);
 
     internal static DeleteVacunoCommand ToCommand(long id, DeleteVacunoRequest request)
         => new(id, request.MotivoEliminacion);
@@ -98,6 +108,8 @@ internal static class VacunoMapper
             null,
             null,
             null,
+            null,
+            null,
             null);
 
     internal static VacunoReferenceResponse ToResponse(VacunoReferenceItem item)
@@ -117,22 +129,7 @@ internal static class VacunoMapper
         => new(option.Code, option.Nombre);
 
     private static string? NormalizeAptoPara(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return null;
-        }
-
-        return value.Trim().ToUpperInvariant() switch
-        {
-            "PRODUCCION_LECHE" => "LECHE",
-            "LECHE" => "LECHE",
-            "PRODUCCION_CARNE" => "CARNE",
-            "CARNE" => "CARNE",
-            "REPRODUCCION" => "REPRODUCCION",
-            _ => value.Trim().ToUpperInvariant()
-        };
-    }
+        => NormalizeOptionalCode(value);
 
     private static string NormalizeCatalogCode(string value)
     {
@@ -145,15 +142,7 @@ internal static class VacunoMapper
     }
 
     private static string NormalizeSexoCode(string value)
-        => value.Trim().ToUpperInvariant() switch
-        {
-            "H" => "HEMBRA",
-            "F" => "HEMBRA",
-            "HEMBRA" => "HEMBRA",
-            "M" => "MACHO",
-            "MACHO" => "MACHO",
-            _ => value.Trim().ToUpperInvariant()
-        };
+        => value.Trim().ToUpperInvariant();
 
     private static string? NormalizeOptionalCode(string? value)
     {

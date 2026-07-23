@@ -7,6 +7,7 @@ internal static class RequirementApiRoutes
     public const long MissingEntityId = 999999;
 
     public static string Vacuno(long id) => $"{Vacunos}/{id}";
+    public static string VacunoPhoto(long id) => $"{Vacuno(id)}/foto";
     public static string VacunosPage(int page, int limit, string? query = null)
         => $"{Vacunos}?page={page}&limit={limit}"
            + (string.IsNullOrWhiteSpace(query) ? string.Empty : $"&q={Uri.EscapeDataString(query)}");

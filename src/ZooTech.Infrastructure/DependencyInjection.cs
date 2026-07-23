@@ -41,6 +41,7 @@ using ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ListarVac
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarArbolGenealogico;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarActividadVacunos;
+using ZooTech.Application.Modules.Module_Vacuno.Services;
 
 using ZooTech.Infrastructure.Auditing.MongoDb;
 using ZooTech.Infrastructure.Caching;
@@ -219,6 +220,7 @@ public static class DependencyInjection
 
         // Servicios de Exportación y Reportes
         services.AddScoped<IReportFileStorage, VacunoReportFileStorage>();
+        services.AddScoped<IVacunoPhotoStorage, VacunoPhotoStorage>();
         services.AddScoped<ITenantReportBrandingProvider, TenantReportBrandingProvider>();
         services.AddScoped<IVacunoReportPhotoLoader, VacunoReportPhotoLoader>();
         services.AddScoped<IStyledExcelReportRenderer, StyledExcelReportRenderer>();

@@ -6,6 +6,7 @@ using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities.ListarVacuno;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Domain.Ganaderia.Module_Vacuno.Models;
 using ZooTech.Infrastructure.Persistence.Entities;
+using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Repositories;
 
@@ -88,7 +89,13 @@ public sealed class VacunoRepository : IVacunoRepository
     public Task<bool> ExistsCodigoAsync(string codigo, CancellationToken cancellationToken = default)
         => _ganaderiaDbContext.vacunos.AnyAsync(v => v.codigo == codigo.Trim(), cancellationToken);
 
-    public async Task<Vacuno> AddAsync(Vacuno vacuno, decimal? precioCompra, string? aptoPara, CancellationToken cancellationToken = default)
+    public async Task<Vacuno> AddAsync(
+        Vacuno vacuno,
+        decimal? precioCompra,
+        string? aptoPara,
+        CancellationToken cancellationToken = default,
+        DateOnly? fechaUtilizacion = null,
+        VacunoPhotoMetadata? foto = null)
     {
         var entity = ToEntity(vacuno);
         _ganaderiaDbContext.vacunos.Add(entity);
@@ -114,25 +121,28 @@ public sealed class VacunoRepository : IVacunoRepository
             {
                 vacuno = entity,
                 tipo_utilizacion_code = aptoPara,
-                created_at = now
+                created_at = ToUtcDateTime(fechaUtilizacion, now)
             };
             _ganaderiaDbContext.vacuno_utilizacion_historials.Add(util);
         }
 
-        var est = new ZooTech.Infrastructure.Persistence.Entities.vacuno_estado_historial
+        if (foto is not null)
         {
-            vacuno = entity,
-            estado_code = "SANO",
-            fecha_estado = DateOnly.FromDateTime(now),
-            created_at = now
-        };
-        _ganaderiaDbContext.vacuno_estado_historials.Add(est);
+            await AddPhotoAsync(entity, foto, cancellationToken);
+        }
 
-        await Task.CompletedTask;
-        return ToDomain(entity);
+        // SQL Server assigns the identity during UnitOfWork.SaveChangesAsync.
+        // The use case reloads the persisted aggregate through afterSave.
+        return vacuno;
     }
 
-    public async Task<Vacuno> UpdateAsync(Vacuno vacuno, decimal? precioCompra, string? aptoPara, CancellationToken cancellationToken = default)
+    public async Task<Vacuno> UpdateAsync(
+        Vacuno vacuno,
+        decimal? precioCompra,
+        string? aptoPara,
+        CancellationToken cancellationToken = default,
+        DateOnly? fechaUtilizacion = null,
+        VacunoPhotoMetadata? foto = null)
     {
         var entity = await _ganaderiaDbContext.vacunos
             .FirstOrDefaultAsync(v => v.id == vacuno.Id, cancellationToken)
@@ -188,10 +198,19 @@ public sealed class VacunoRepository : IVacunoRepository
                 {
                     vacuno_id = entity.id,
                     tipo_utilizacion_code = aptoPara,
-                    created_at = now
+                    created_at = ToUtcDateTime(fechaUtilizacion, now)
                 };
                 _ganaderiaDbContext.vacuno_utilizacion_historials.Add(util);
             }
+        }
+        else if (fechaUtilizacion.HasValue)
+        {
+            currentUtil.created_at = ToUtcDateTime(fechaUtilizacion, now);
+        }
+
+        if (foto is not null)
+        {
+            await ReplacePhotoAsync(entity, foto, cancellationToken);
         }
 
         if (vacuno.IsDeleted)
@@ -212,9 +231,17 @@ public sealed class VacunoRepository : IVacunoRepository
             }
         }
 
-        await Task.CompletedTask;
         return ToDomain(entity);
     }
+
+    public Task<string?> GetPhotoPathAsync(
+        long vacunoId,
+        CancellationToken cancellationToken = default)
+        => _ganaderiaDbContext.vacuno_fotos
+            .AsNoTracking()
+            .Where(item => item.vacuno_id == vacunoId)
+            .Select(item => item.archivo.ruta_archivo)
+            .FirstOrDefaultAsync(cancellationToken);
 
     public async Task<long> EnsureGranjaAsync(
         string nombre,
@@ -483,4 +510,116 @@ public sealed class VacunoRepository : IVacunoRepository
             updatedBy: entity.updated_by,
             deletedBy: entity.deleted_by);
     }
+
+    private async Task AddPhotoAsync(
+        Entities.vacuno vacuno,
+        VacunoPhotoMetadata photo,
+        CancellationToken cancellationToken)
+    {
+        var extensionCode = await ResolveFileExtensionCodeAsync(photo, cancellationToken);
+        var moduleCode = await ResolveVacunoModuleCodeAsync(cancellationToken);
+        var file = new archivo
+        {
+            modulo_code = moduleCode,
+            nombre_original = photo.OriginalName,
+            nombre_almacenado = photo.StoredName,
+            ruta_archivo = photo.RelativePath,
+            extension = extensionCode,
+            tamano_bytes = photo.SizeBytes,
+            hash_sha256 = photo.Sha256,
+            creado_por = vacuno.updated_by ?? vacuno.created_by,
+            created_at = DateTime.UtcNow
+        };
+
+        _ganaderiaDbContext.archivos.Add(file);
+        _ganaderiaDbContext.vacuno_fotos.Add(new vacuno_foto
+        {
+            vacuno = vacuno,
+            archivo = file,
+            es_principal = true,
+            uploaded_by = vacuno.updated_by ?? vacuno.created_by,
+            created_at = DateTime.UtcNow
+        });
+    }
+
+    private async Task ReplacePhotoAsync(
+        Entities.vacuno vacuno,
+        VacunoPhotoMetadata photo,
+        CancellationToken cancellationToken)
+    {
+        var current = await _ganaderiaDbContext.vacuno_fotos
+            .Include(item => item.archivo)
+            .FirstOrDefaultAsync(item => item.vacuno_id == vacuno.id, cancellationToken);
+
+        if (current is not null)
+        {
+            _ganaderiaDbContext.vacuno_fotos.Remove(current);
+            _ganaderiaDbContext.archivos.Remove(current.archivo);
+        }
+
+        await AddPhotoAsync(vacuno, photo, cancellationToken);
+    }
+
+    private async Task<string> ResolveFileExtensionCodeAsync(
+        VacunoPhotoMetadata photo,
+        CancellationToken cancellationToken)
+    {
+        var normalizedContentType = photo.ContentType.Trim().ToLowerInvariant();
+        var normalizedExtension = $".{photo.Extension.Trim().TrimStart('.').ToLowerInvariant()}";
+        var extensionWithoutDot = normalizedExtension.TrimStart('.');
+        var code = await _ganaderiaDbContext.cat_tipo_archivos
+            .AsNoTracking()
+            .Where(item =>
+                item.mime_type.ToLower() == normalizedContentType ||
+                item.extension.ToLower() == normalizedExtension ||
+                item.extension.ToLower() == extensionWithoutDot)
+            .Select(item => item.extension)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (code is not null)
+        {
+            return code;
+        }
+
+        _ganaderiaDbContext.cat_tipo_archivos.Add(new cat_tipo_archivo
+        {
+            extension = normalizedExtension,
+            mime_type = normalizedContentType
+        });
+
+        return normalizedExtension;
+    }
+
+    private async Task<string> ResolveVacunoModuleCodeAsync(CancellationToken cancellationToken)
+    {
+        var expectedCode = ModuleName.Vacuno.ToString().ToUpperInvariant();
+        var pluralCode = $"{expectedCode}S";
+        var code = await _ganaderiaDbContext.cat_modulos
+            .AsNoTracking()
+            .Where(item => item.activo &&
+                           (item.code.ToUpper() == expectedCode ||
+                            item.code.ToUpper() == pluralCode ||
+                            item.nombre.ToUpper().Contains(expectedCode)))
+            .Select(item => item.code)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (code is not null)
+        {
+            return code;
+        }
+
+        _ganaderiaDbContext.cat_modulos.Add(new cat_modulo
+        {
+            code = expectedCode,
+            nombre = ModuleName.Vacuno.ToString(),
+            activo = true
+        });
+
+        return expectedCode;
+    }
+
+    private static DateTime ToUtcDateTime(DateOnly? date, DateTime fallback)
+        => date.HasValue
+            ? DateTime.SpecifyKind(date.Value.ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc)
+            : fallback;
 }

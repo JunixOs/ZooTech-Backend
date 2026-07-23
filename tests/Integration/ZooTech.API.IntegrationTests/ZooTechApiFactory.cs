@@ -34,6 +34,9 @@ public sealed class ZooTechApiFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Development");
+        builder.UseSetting(
+            "ReportStorage:VacunoMediaRoot",
+            Path.Combine(Path.GetTempPath(), "zootech-integration-tests", "vacuno-media"));
         builder.ConfigureTestServices(services =>
         {
             services.RemoveAll<IConnectionMultiplexer>();

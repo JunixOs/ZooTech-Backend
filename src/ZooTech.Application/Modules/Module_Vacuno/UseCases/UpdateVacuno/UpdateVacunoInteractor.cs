@@ -15,17 +15,20 @@ public sealed class UpdateVacunoInteractor : IUpdateVacunoInputPort
     private readonly IAppCacheService _cache;
     private readonly ITenantConfigurationProvider _tenantConfigurationProvider;
     private readonly IVacunoReferenceResolver _referenceResolver;
+    private readonly IVacunoPhotoStorage? _photoStorage;
 
     public UpdateVacunoInteractor(
         IGanaderiaUnitOfWork unitOfWork,
         IAppCacheService cache,
         ITenantConfigurationProvider tenantConfigurationProvider,
-        IVacunoReferenceResolver referenceResolver)
+        IVacunoReferenceResolver referenceResolver,
+        IVacunoPhotoStorage? photoStorage = null)
     {
         _unitOfWork = unitOfWork;
         _cache = cache;
         _tenantConfigurationProvider = tenantConfigurationProvider;
         _referenceResolver = referenceResolver;
+        _photoStorage = photoStorage;
     }
 
     public async Task<UpdateVacunoOutput> HandleAsync(UpdateVacunoCommand command, CancellationToken cancellationToken)
@@ -59,41 +62,72 @@ public sealed class UpdateVacunoInteractor : IUpdateVacunoInputPort
                 error.Message);
         }
 
-        var updated = await _unitOfWork.ExecuteInTransactionAsync(
-            async ct =>
+        StoredVacunoPhoto? storedPhoto = null;
+        var previousPhotoPath = command.Foto is null
+            ? null
+            : await repository.GetPhotoPathAsync(command.Id, cancellationToken);
+
+        try
+        {
+            storedPhoto = await SavePhotoAsync(command.Foto, cancellationToken);
+            var updated = await _unitOfWork.ExecuteInTransactionAsync(
+                async ct =>
+                {
+                    var granjaId = await ResolveGranjaIdForMutationAsync(referenceResolution, ct);
+                    try
+                    {
+                        existing.Update(
+                            command.Nombre,
+                            command.FechaNacimiento,
+                            command.TipoAdquisicionCode,
+                            command.RazaCode,
+                            command.ColorCode,
+                            command.SexoCode,
+                            referenceResolution.PadreId,
+                            referenceResolution.MadreId,
+                            granjaId,
+                            command.Observaciones,
+                            validationSettings.ToDomainLimits(),
+                            null,
+                            DateTime.UtcNow);
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        throw VacunoValidationErrorDetails.CreateException(
+                            "formulario",
+                            "VACUNO-DOMAIN-INVALID",
+                            ex.Message);
+                    }
+
+                    return await repository.UpdateAsync(
+                        existing,
+                        command.PrecioCompra,
+                        command.AptoPara,
+                        ct,
+                        command.FechaEspecificacion,
+                        ToMetadata(storedPhoto));
+                },
+                cancellationToken);
+            await _cache.RemoveByPrefixAsync(VacunoCacheKeys.ListarPrefix);
+
+            if (storedPhoto is not null &&
+                previousPhotoPath is not null &&
+                _photoStorage is not null)
             {
-                var granjaId = await ResolveGranjaIdForMutationAsync(referenceResolution, ct);
-                try
-                {
-                    existing.Update(
-                        command.Nombre,
-                        command.FechaNacimiento,
-                        command.TipoAdquisicionCode,
-                        command.RazaCode,
-                        command.ColorCode,
-                        command.SexoCode,
-                        referenceResolution.PadreId,
-                        referenceResolution.MadreId,
-                        granjaId,
-                        command.Observaciones,
-                        validationSettings.ToDomainLimits(),
-                        null,
-                        DateTime.UtcNow);
-                }
-                catch (ArgumentException ex)
-                {
-                    throw VacunoValidationErrorDetails.CreateException(
-                        "formulario",
-                        "VACUNO-DOMAIN-INVALID",
-                        ex.Message);
-                }
+                await _photoStorage.DeleteAsync(previousPhotoPath, CancellationToken.None);
+            }
 
-                return await repository.UpdateAsync(existing, command.PrecioCompra, command.AptoPara, ct);
-            },
-            cancellationToken);
-        await _cache.RemoveByPrefixAsync(VacunoCacheKeys.ListarPrefix);
+            return new UpdateVacunoOutput(VacunoAppMapper.ToOutput(updated));
+        }
+        catch
+        {
+            if (storedPhoto is not null && _photoStorage is not null)
+            {
+                await _photoStorage.DeleteAsync(storedPhoto.RelativePath, CancellationToken.None);
+            }
 
-        return new UpdateVacunoOutput(VacunoAppMapper.ToOutput(updated));
+            throw;
+        }
     }
 
     private async Task<long> ResolveGranjaIdForMutationAsync(
@@ -135,4 +169,31 @@ public sealed class UpdateVacunoInteractor : IUpdateVacunoInputPort
         settings.ValidateInput(command.SexoCode, "sexoCode");
         settings.ValidateObservaciones(command.Observaciones);
     }
+
+    private async Task<StoredVacunoPhoto?> SavePhotoAsync(
+        VacunoPhotoUpload? upload,
+        CancellationToken cancellationToken)
+    {
+        if (upload is null)
+        {
+            return null;
+        }
+
+        var storage = _photoStorage
+            ?? throw new InvalidOperationException("El almacenamiento de fotos no esta configurado.");
+        return await storage.SaveAsync(upload, cancellationToken);
+    }
+
+    private static ZooTech.Domain.Ganaderia.Module_Vacuno.Models.VacunoPhotoMetadata? ToMetadata(
+        StoredVacunoPhoto? photo)
+        => photo is null
+            ? null
+            : new(
+                photo.OriginalName,
+                photo.StoredName,
+                photo.RelativePath,
+                photo.Extension,
+                photo.ContentType,
+                photo.SizeBytes,
+                photo.Sha256);
 }
