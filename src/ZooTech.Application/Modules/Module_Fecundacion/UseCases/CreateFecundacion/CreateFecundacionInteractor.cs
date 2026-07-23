@@ -13,14 +13,17 @@ public sealed class CreateFecundacionInteractor : ICreateFecundacionInputPort
 {
     private readonly IGanaderiaUnitOfWork _unitOfWork;
     private readonly IAppCacheService _cache;
+    private readonly IFecundacionObservationPolicy _observationPolicy;
 
     public CreateFecundacionInteractor(
         IGanaderiaUnitOfWork unitOfWork,
-        IAppCacheService cache
+        IAppCacheService cache,
+        IFecundacionObservationPolicy observationPolicy
     )
     {
         _unitOfWork = unitOfWork;
         _cache = cache;
+        _observationPolicy = observationPolicy;
     }
 
     public async Task<CreateFecundacionOutput> HandleAsync(
@@ -28,6 +31,9 @@ public sealed class CreateFecundacionInteractor : ICreateFecundacionInputPort
         CancellationToken cancellationToken = default)
     {
         var repository = _unitOfWork.Fecundaciones;
+        await _observationPolicy.ValidateAsync(
+            command.ObservacionesVeterinarias,
+            cancellationToken);
 
         // Validar que el vacuno receptor exista
         if (!await repository.ExistsVacunoAsync(command.VacunoReceptorId, cancellationToken))
