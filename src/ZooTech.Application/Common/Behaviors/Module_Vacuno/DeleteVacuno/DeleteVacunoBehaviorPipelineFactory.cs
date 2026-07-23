@@ -8,6 +8,7 @@ namespace ZooTech.Application.Common.Behaviors.Module_Vacuno.DeleteVacuno
         private readonly ValidationBehavior<DeleteVacunoCommand , EmptyOutput> _validation;
         private readonly LoggingBehavior<DeleteVacunoCommand , EmptyOutput> _logging;
         private readonly AuditBehavior<DeleteVacunoCommand , EmptyOutput> _audit;
+        private readonly EvictCacheBehavior<DeleteVacunoCommand, EmptyOutput> _evictCache;
 
         private readonly IDeleteVacunoInputPort _handler;
 
@@ -15,13 +16,14 @@ namespace ZooTech.Application.Common.Behaviors.Module_Vacuno.DeleteVacuno
             ValidationBehavior<DeleteVacunoCommand , EmptyOutput> validation,
             LoggingBehavior<DeleteVacunoCommand , EmptyOutput> logging,
             AuditBehavior<DeleteVacunoCommand , EmptyOutput> audit,
-
+            EvictCacheBehavior<DeleteVacunoCommand, EmptyOutput> evictCache,
             IDeleteVacunoInputPort handler
         )
         {
             _validation = validation;
             _logging = logging;
             _audit = audit;
+            _evictCache = evictCache;
 
             _handler = handler;
         }
@@ -32,7 +34,8 @@ namespace ZooTech.Application.Common.Behaviors.Module_Vacuno.DeleteVacuno
             [
                 _validation,
                 _logging,
-                _audit
+                _audit,
+                _evictCache
             ],
             _handler.HandleAsync
             );

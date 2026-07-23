@@ -14,7 +14,7 @@ namespace ZooTech.Application.UnitTests.Modules.Module_Fecundacion.UseCases.Crea
 public sealed class CreateFecundacionInteractorTests
 {
     private readonly IFecundacionRepository _repositoryMock;
-    private readonly IAppCacheService _cacheMock;
+    private readonly ZooTech.Application.Common.Gateway.Parametrization.ITenantConfigurationProvider _tenantConfigProviderMock;
     private readonly IGanaderiaUnitOfWork _unitOfWorkMock;
     private readonly CreateFecundacionInteractor _interactor;
     private bool _insideTransaction;
@@ -22,7 +22,9 @@ public sealed class CreateFecundacionInteractorTests
     public CreateFecundacionInteractorTests()
     {
         _repositoryMock = Substitute.For<IFecundacionRepository>();
-        _cacheMock = Substitute.For<IAppCacheService>();
+        _tenantConfigProviderMock = Substitute.For<ZooTech.Application.Common.Gateway.Parametrization.ITenantConfigurationProvider>();
+        _tenantConfigProviderMock.GetSettingAsync(Arg.Any<ZooTech.Domain.Configuration.SettingDefinition<int>>())
+            .Returns(Task.FromResult(250));
         _unitOfWorkMock = Substitute.For<IGanaderiaUnitOfWork>();
 
         _unitOfWorkMock.Fecundaciones.Returns(_repositoryMock);
@@ -50,7 +52,7 @@ public sealed class CreateFecundacionInteractorTests
                 }
             });
 
-        _interactor = new CreateFecundacionInteractor(_unitOfWorkMock, _cacheMock);
+        _interactor = new CreateFecundacionInteractor(_unitOfWorkMock, _tenantConfigProviderMock);
     }
 
     [Fact]

@@ -85,3 +85,17 @@ public sealed class FecundacionInvalidEstadoException : FecundacionException
     {
     }
 }
+
+public sealed class FecundacionValidationException : FecundacionException
+{
+    public FecundacionValidationException(
+        string message,
+        string errorCode = "VALIDATION_ERROR"
+    ) : base(
+        ErrorType.Validation,
+        message,
+        errorCode
+    )
+    {
+    }
+}

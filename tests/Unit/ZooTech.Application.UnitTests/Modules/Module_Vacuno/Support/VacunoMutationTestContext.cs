@@ -15,7 +15,6 @@ internal sealed class VacunoMutationTestContext
 {
     public Mock<IVacunoRepository> Repository { get; } = new();
     public Mock<IGanaderiaUnitOfWork> UnitOfWork { get; } = new();
-    public Mock<IAppCacheService> Cache { get; } = new();
     public Mock<ITenantConfigurationProvider> Settings { get; } = new();
     public Mock<IVacunoReferenceResolver> ReferenceResolver { get; } = new();
 
@@ -39,13 +38,11 @@ internal sealed class VacunoMutationTestContext
 
     public CreateVacunoInteractor CreateInteractor() => new(
         UnitOfWork.Object,
-        Cache.Object,
         Settings.Object,
         ReferenceResolver.Object);
 
     public UpdateVacunoInteractor UpdateInteractor() => new(
         UnitOfWork.Object,
-        Cache.Object,
         Settings.Object,
         ReferenceResolver.Object);
 

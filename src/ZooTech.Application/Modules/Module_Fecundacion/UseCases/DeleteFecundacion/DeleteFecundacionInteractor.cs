@@ -1,4 +1,3 @@
-using ZooTech.Application.Common.Gateway.Caching;
 using ZooTech.Application.Common.Models;
 using ZooTech.Application.Modules.Module_Fecundacion.Common;
 using ZooTech.Application.Modules.Module_Fecundacion.Exceptions;
@@ -9,14 +8,10 @@ namespace ZooTech.Application.Modules.Module_Fecundacion.UseCases.DeleteFecundac
 public sealed class DeleteFecundacionInteractor : IDeleteFecundacionInputPort
 {
     private readonly IGanaderiaUnitOfWork _unitOfWork;
-    private readonly IAppCacheService _cache;
 
-    public DeleteFecundacionInteractor(
-        IGanaderiaUnitOfWork unitOfWork,
-        IAppCacheService cache)
+    public DeleteFecundacionInteractor(IGanaderiaUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
-        _cache = cache;
     }
 
     public async Task<EmptyOutput> HandleAsync(
@@ -43,7 +38,6 @@ public sealed class DeleteFecundacionInteractor : IDeleteFecundacionInputPort
             },
             cancellationToken);
 
-        await _cache.RemoveByPrefixAsync(FecundacionCacheKeys.ListarPrefix);
         return EmptyOutput.Value;
     }
 }

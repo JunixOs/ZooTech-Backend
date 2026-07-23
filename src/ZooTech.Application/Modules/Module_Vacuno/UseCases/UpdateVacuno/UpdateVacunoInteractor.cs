@@ -1,4 +1,3 @@
-using ZooTech.Application.Common.Gateway.Caching;
 using ZooTech.Application.Common.Gateway.Parametrization;
 using ZooTech.Application.Modules.Module_Vacuno.Common;
 using ZooTech.Application.Modules.Module_Vacuno.Exceptions;
@@ -12,18 +11,15 @@ namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.UpdateVacuno;
 public sealed class UpdateVacunoInteractor : IUpdateVacunoInputPort
 {
     private readonly IGanaderiaUnitOfWork _unitOfWork;
-    private readonly IAppCacheService _cache;
     private readonly ITenantConfigurationProvider _tenantConfigurationProvider;
     private readonly IVacunoReferenceResolver _referenceResolver;
 
     public UpdateVacunoInteractor(
         IGanaderiaUnitOfWork unitOfWork,
-        IAppCacheService cache,
         ITenantConfigurationProvider tenantConfigurationProvider,
         IVacunoReferenceResolver referenceResolver)
     {
         _unitOfWork = unitOfWork;
-        _cache = cache;
         _tenantConfigurationProvider = tenantConfigurationProvider;
         _referenceResolver = referenceResolver;
     }
@@ -91,7 +87,6 @@ public sealed class UpdateVacunoInteractor : IUpdateVacunoInputPort
                 return await repository.UpdateAsync(existing, command.PrecioCompra, command.AptoPara, ct);
             },
             cancellationToken);
-        await _cache.RemoveByPrefixAsync(VacunoCacheKeys.ListarPrefix);
 
         return new UpdateVacunoOutput(VacunoAppMapper.ToOutput(updated));
     }

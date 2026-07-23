@@ -33,6 +33,9 @@ public sealed class ZooTechApiFactory : WebApplicationFactory<Program>
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        builder.UseSetting("MultiTenant:BaseDomain", "zentrycorp.local");
+        builder.UseSetting("MultiTenant:AdminSubDomain", "admin");
+        builder.UseSetting("MultiTenant:AdminDatabaseName", "ZooTech_Admin");
         builder.UseEnvironment("Development");
         builder.ConfigureTestServices(services =>
         {

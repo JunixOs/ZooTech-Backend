@@ -7,6 +7,7 @@ namespace ZooTech.Application.Common.Behaviors.Module_Vacuno.CreateVacuno
         private readonly ValidationBehavior<CreateVacunoCommand , CreateVacunoOutput> _validation;
         private readonly LoggingBehavior<CreateVacunoCommand , CreateVacunoOutput> _logging;
         private readonly AuditBehavior<CreateVacunoCommand , CreateVacunoOutput> _audit;
+        private readonly EvictCacheBehavior<CreateVacunoCommand, CreateVacunoOutput> _evictCache;
 
         private readonly ICreateVacunoInputPort _handler;
 
@@ -14,13 +15,14 @@ namespace ZooTech.Application.Common.Behaviors.Module_Vacuno.CreateVacuno
             ValidationBehavior<CreateVacunoCommand , CreateVacunoOutput> validation,
             LoggingBehavior<CreateVacunoCommand , CreateVacunoOutput> logging,
             AuditBehavior<CreateVacunoCommand , CreateVacunoOutput> audit,
-
+            EvictCacheBehavior<CreateVacunoCommand, CreateVacunoOutput> evictCache,
             ICreateVacunoInputPort handler
         )
         {
             _validation = validation;
             _logging = logging;
             _audit = audit;
+            _evictCache = evictCache;
 
             _handler = handler;
         }
@@ -31,7 +33,8 @@ namespace ZooTech.Application.Common.Behaviors.Module_Vacuno.CreateVacuno
             [
                 _validation,
                 _logging,
-                _audit
+                _audit,
+                _evictCache
             ],
             _handler.HandleAsync
             );

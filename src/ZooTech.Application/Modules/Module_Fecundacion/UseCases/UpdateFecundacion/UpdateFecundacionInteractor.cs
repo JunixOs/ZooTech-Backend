@@ -1,6 +1,7 @@
-using ZooTech.Application.Common.Gateway.Caching;
+using ZooTech.Application.Common.Gateway.Parametrization;
 using ZooTech.Application.Modules.Module_Fecundacion.Common;
 using ZooTech.Application.Modules.Module_Fecundacion.Exceptions;
+using ZooTech.Domain.Configuration;
 using ZooTech.Domain.Ganaderia.Module_Fecundacion.Interfaces;
 using ZooTech.Domain.Shared.Interfaces;
 
@@ -9,15 +10,15 @@ namespace ZooTech.Application.Modules.Module_Fecundacion.UseCases.UpdateFecundac
 public sealed class UpdateFecundacionInteractor : IUpdateFecundacionInputPort
 {
     private readonly IGanaderiaUnitOfWork _unitOfWork;
-    private readonly IAppCacheService _cache;
+    private readonly ITenantConfigurationProvider _tenantConfigurationProvider;
 
     public UpdateFecundacionInteractor(
         IGanaderiaUnitOfWork unitOfWork,
-        IAppCacheService cache
+        ITenantConfigurationProvider tenantConfigurationProvider
     )
     {
         _unitOfWork = unitOfWork;
-        _cache = cache;
+        _tenantConfigurationProvider = tenantConfigurationProvider;
     }
 
     public async Task<UpdateFecundacionOutput> HandleAsync(
@@ -25,6 +26,21 @@ public sealed class UpdateFecundacionInteractor : IUpdateFecundacionInputPort
         CancellationToken cancellationToken = default)
     {
         var repository = _unitOfWork.Fecundaciones;
+
+        // Validar observaciones veterinarias contra la configuración del tenant
+        if (!string.IsNullOrWhiteSpace(command.ObservacionesVeterinarias))
+        {
+            var maxLength = await _tenantConfigurationProvider.GetSettingAsync(
+                Settings.Vacunos.VacunosFecundacionObservacionesMaxLength
+            );
+            if (command.ObservacionesVeterinarias.Length > maxLength)
+            {
+                throw new FecundacionValidationException(
+                    $"Las observaciones veterinarias no pueden superar los {maxLength} caracteres.",
+                    "OBSERVACIONES_MAX_LENGTH"
+                );
+            }
+        }
 
         if (!await repository.ExistsVacunoAsync(command.VacunoReceptorId, cancellationToken))
             throw new FecundacionVacunoNotFoundException();
@@ -51,8 +67,6 @@ public sealed class UpdateFecundacionInteractor : IUpdateFecundacionInputPort
 
         var detail = await repository.GetForEditAsync(command.Id, cancellationToken)
             ?? throw new FecundacionNotFoundException();
-
-        await _cache.RemoveByPrefixAsync(FecundacionCacheKeys.ListarPrefix);
 
         return new UpdateFecundacionOutput(
             detail.Id,

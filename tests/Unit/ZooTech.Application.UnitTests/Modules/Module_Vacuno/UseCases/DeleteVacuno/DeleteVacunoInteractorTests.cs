@@ -26,7 +26,6 @@ public class DeleteVacunoInteractorTests
     private readonly ICeloRepository _celoRepository = Substitute.For<ICeloRepository>();
     private readonly ITriajeRepository _triajeRepository = Substitute.For<ITriajeRepository>();
     private readonly IOrdenioRepository _ordenioRepository = Substitute.For<IOrdenioRepository>();
-    private readonly IAppCacheService _cache = Substitute.For<IAppCacheService>();
     private readonly DeleteVacunoInteractor _interactor;
 
     public DeleteVacunoInteractorTests()
@@ -44,8 +43,7 @@ public class DeleteVacunoInteractorTests
             _unitOfWork,
             _celoRepository,
             _triajeRepository,
-            _ordenioRepository,
-            _cache);
+            _ordenioRepository);
     }
 
     private static Vacuno CreateTestVacuno()

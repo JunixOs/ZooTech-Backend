@@ -384,6 +384,8 @@ public static class DependencyInjection
         services.AddTransient(typeof(ValidationBehavior<,>));
         services.AddTransient(typeof(LoggingBehavior<,>));
         services.AddTransient(typeof(AuditBehavior<,>));
+        services.AddTransient(typeof(QueryCacheBehavior<,>));
+        services.AddTransient(typeof(EvictCacheBehavior<,>));
 
         return services;
     }

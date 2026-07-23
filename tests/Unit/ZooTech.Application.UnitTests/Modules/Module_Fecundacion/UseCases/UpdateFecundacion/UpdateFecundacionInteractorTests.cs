@@ -11,14 +11,14 @@ namespace ZooTech.Application.UnitTests.Modules.Module_Fecundacion.UseCases.Upda
 public sealed class UpdateFecundacionInteractorTests
 {
     private readonly IFecundacionRepository _repository = Substitute.For<IFecundacionRepository>();
-    private readonly IAppCacheService _cache = Substitute.For<IAppCacheService>();
+    private readonly ZooTech.Application.Common.Gateway.Parametrization.ITenantConfigurationProvider _tenantConfigurationProvider = Substitute.For<ZooTech.Application.Common.Gateway.Parametrization.ITenantConfigurationProvider>();
     private readonly IGanaderiaUnitOfWork _unitOfWork = Substitute.For<IGanaderiaUnitOfWork>();
     private readonly UpdateFecundacionInteractor _sut;
 
     public UpdateFecundacionInteractorTests()
     {
         _unitOfWork.Fecundaciones.Returns(_repository);
-        _sut = new UpdateFecundacionInteractor(_unitOfWork, _cache);
+        _sut = new UpdateFecundacionInteractor(_unitOfWork, _tenantConfigurationProvider);
     }
 
     [Fact]

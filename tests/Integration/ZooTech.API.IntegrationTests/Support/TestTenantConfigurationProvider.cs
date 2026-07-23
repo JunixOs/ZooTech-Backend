@@ -22,7 +22,8 @@ internal sealed class TestTenantConfigurationProvider : ITenantConfigurationProv
             [Settings.Vacunos.VacunosDefaultFilterDays.Code] = 36500,
             [Settings.Vacunos.VacunosInputMaxLength.Code] = 100,
             [Settings.Vacunos.VacunosObservacionesMaxLength.Code] = 150,
-            [Settings.Vacunos.VacunosObservacionesMaxWords.Code] = 30
+            [Settings.Vacunos.VacunosObservacionesMaxWords.Code] = 30,
+            [Settings.Vacunos.VacunosFecundacionObservacionesMaxLength.Code] = 250
         };
 
     public Task<T> GetSettingAsync<T>(SettingDefinition<T> setting)

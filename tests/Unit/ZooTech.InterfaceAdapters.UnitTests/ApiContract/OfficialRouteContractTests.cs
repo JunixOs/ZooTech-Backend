@@ -16,7 +16,7 @@ public class OfficialRouteContractTests
 
         method.Should().NotBeNull();
         method!.GetCustomAttribute<HttpDeleteAttribute>()!.Template
-            .Should().Be("{id:long}");
+            .Should().Be("{identifier}");
     }
 
     [Fact]

@@ -13,18 +13,15 @@ namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.CreateVacuno;
 public sealed class CreateVacunoInteractor : ICreateVacunoInputPort
 {
     private readonly IGanaderiaUnitOfWork _unitOfWork;
-    private readonly IAppCacheService _cache;
     private readonly ITenantConfigurationProvider _tenantConfigurationProvider;
     private readonly IVacunoReferenceResolver _referenceResolver;
 
     public CreateVacunoInteractor(
         IGanaderiaUnitOfWork unitOfWork,
-        IAppCacheService cache,
         ITenantConfigurationProvider tenantConfigurationProvider,
         IVacunoReferenceResolver referenceResolver)
     {
         _unitOfWork = unitOfWork;
-        _cache = cache;
         _tenantConfigurationProvider = tenantConfigurationProvider;
         _referenceResolver = referenceResolver;
     }
@@ -60,7 +57,6 @@ public sealed class CreateVacunoInteractor : ICreateVacunoInputPort
             cancellationToken,
             async (_, ct) => await repository.GetByCodigoAsync(command.Codigo, ct)
                 ?? throw new InvalidOperationException("No se pudo recuperar el vacuno creado."));
-        await _cache.RemoveByPrefixAsync(VacunoCacheKeys.ListarPrefix);
 
         return new CreateVacunoOutput(VacunoAppMapper.ToOutput(saved));
     }

@@ -8,6 +8,7 @@ namespace ZooTech.Application.Common.Behaviors.Module_Fecundacion.DeleteFecundac
         private readonly ValidationBehavior<DeleteFecundacionCommand, EmptyOutput> _validation;
         private readonly LoggingBehavior<DeleteFecundacionCommand , EmptyOutput> _logging;
         private readonly AuditBehavior<DeleteFecundacionCommand , EmptyOutput> _audit;
+        private readonly EvictCacheBehavior<DeleteFecundacionCommand, EmptyOutput> _evictCache;
 
         private readonly IDeleteFecundacionInputPort _handler;
 
@@ -15,13 +16,14 @@ namespace ZooTech.Application.Common.Behaviors.Module_Fecundacion.DeleteFecundac
             ValidationBehavior<DeleteFecundacionCommand, EmptyOutput> validation,
             LoggingBehavior<DeleteFecundacionCommand , EmptyOutput> logging,
             AuditBehavior<DeleteFecundacionCommand , EmptyOutput> audit,
-
+            EvictCacheBehavior<DeleteFecundacionCommand, EmptyOutput> evictCache,
             IDeleteFecundacionInputPort handler
         )
         {
             _validation = validation;
             _logging = logging;
             _audit = audit;
+            _evictCache = evictCache;
 
             _handler = handler;
         }
@@ -32,7 +34,8 @@ namespace ZooTech.Application.Common.Behaviors.Module_Fecundacion.DeleteFecundac
             [
                 _validation,
                 _logging,
-                _audit
+                _audit,
+                _evictCache
             ],
             _handler.HandleAsync
             );

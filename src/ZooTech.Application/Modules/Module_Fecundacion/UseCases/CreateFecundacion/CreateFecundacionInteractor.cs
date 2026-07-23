@@ -1,7 +1,8 @@
-using ZooTech.Application.Common.Gateway.Caching;
+using ZooTech.Application.Common.Gateway.Parametrization;
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Modules.Module_Fecundacion.Common;
 using ZooTech.Application.Modules.Module_Fecundacion.Exceptions;
+using ZooTech.Domain.Configuration;
 using ZooTech.Domain.Ganaderia.Module_Fecundacion.Entities;
 using ZooTech.Domain.Ganaderia.Module_Fecundacion.Interfaces;
 using ZooTech.Domain.Shared.Enums;
@@ -12,15 +13,15 @@ namespace ZooTech.Application.Modules.Module_Fecundacion.UseCases.CreateFecundac
 public sealed class CreateFecundacionInteractor : ICreateFecundacionInputPort
 {
     private readonly IGanaderiaUnitOfWork _unitOfWork;
-    private readonly IAppCacheService _cache;
+    private readonly ITenantConfigurationProvider _tenantConfigurationProvider;
 
     public CreateFecundacionInteractor(
         IGanaderiaUnitOfWork unitOfWork,
-        IAppCacheService cache
+        ITenantConfigurationProvider tenantConfigurationProvider
     )
     {
         _unitOfWork = unitOfWork;
-        _cache = cache;
+        _tenantConfigurationProvider = tenantConfigurationProvider;
     }
 
     public async Task<CreateFecundacionOutput> HandleAsync(
@@ -28,6 +29,21 @@ public sealed class CreateFecundacionInteractor : ICreateFecundacionInputPort
         CancellationToken cancellationToken = default)
     {
         var repository = _unitOfWork.Fecundaciones;
+
+        // Validar observaciones veterinarias contra la configuración del tenant
+        if (!string.IsNullOrWhiteSpace(command.ObservacionesVeterinarias))
+        {
+            var maxLength = await _tenantConfigurationProvider.GetSettingAsync(
+                Settings.Vacunos.VacunosFecundacionObservacionesMaxLength
+            );
+            if (command.ObservacionesVeterinarias.Length > maxLength)
+            {
+                throw new FecundacionValidationException(
+                    $"Las observaciones veterinarias no pueden superar los {maxLength} caracteres.",
+                    "OBSERVACIONES_MAX_LENGTH"
+                );
+            }
+        }
 
         // Validar que el vacuno receptor exista
         if (!await repository.ExistsVacunoAsync(command.VacunoReceptorId, cancellationToken))
@@ -95,8 +111,6 @@ public sealed class CreateFecundacionInteractor : ICreateFecundacionInputPort
                     ScopeName.Application,
                     ModuleName.Fecundacion,
                     message: "No se pudo recuperar la fecundación persistida."));
-
-        await _cache.RemoveByPrefixAsync(FecundacionCacheKeys.ListarPrefix);
 
         return new CreateFecundacionOutput(
             Id: saved.Id,

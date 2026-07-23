@@ -11,7 +11,6 @@ internal sealed class DeleteFecundacionTestContext
 {
     public Mock<IGanaderiaUnitOfWork> UnitOfWork { get; } = new();
     public Mock<IFecundacionRepository> Repository { get; } = new();
-    public Mock<IAppCacheService> Cache { get; } = new();
 
     public DeleteFecundacionTestContext()
     {
@@ -25,5 +24,5 @@ internal sealed class DeleteFecundacionTestContext
                 Func<EmptyOutput, CancellationToken, Task<EmptyOutput>>? _) => operation(token));
     }
 
-    public DeleteFecundacionInteractor CreateInteractor() => new(UnitOfWork.Object, Cache.Object);
+    public DeleteFecundacionInteractor CreateInteractor() => new(UnitOfWork.Object);
 }

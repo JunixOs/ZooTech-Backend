@@ -1,5 +1,3 @@
-using ZooTech.Application.Common.Gateway.Caching;
-using ZooTech.Application.Modules.Module_Vacuno.Common;
 using ZooTech.Application.Modules.Module_Vacuno.Exceptions;
 using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
 using ZooTech.Domain.Module_Celo.Interfaces;
@@ -17,21 +15,18 @@ public sealed class DeleteVacunoInteractor : IDeleteVacunoInputPort
     private readonly ICeloRepository _celoRepository;
     private readonly ITriajeRepository _triajeRepository;
     private readonly IOrdenioRepository _ordenioRepository;
-    private readonly IAppCacheService _cache;
 
     public DeleteVacunoInteractor(
         IGanaderiaUnitOfWork unitOfWork,
         ICeloRepository celoRepository,
         ITriajeRepository triajeRepository,
-        IOrdenioRepository ordenioRepository,
-        IAppCacheService cache
+        IOrdenioRepository ordenioRepository
     )
     {
         _unitOfWork = unitOfWork;
         _celoRepository = celoRepository;
         _triajeRepository = triajeRepository;
         _ordenioRepository = ordenioRepository;
-        _cache = cache;
     }
 
     public async Task<EmptyOutput> HandleAsync(DeleteVacunoCommand command, CancellationToken cancellationToken)
@@ -73,7 +68,6 @@ public sealed class DeleteVacunoInteractor : IDeleteVacunoInputPort
         _ = await _unitOfWork.ExecuteInTransactionAsync(
             ct => repository.UpdateAsync(existing, null, null, ct),
             cancellationToken);
-        await _cache.RemoveByPrefixAsync(VacunoCacheKeys.ListarPrefix);
 
         return EmptyOutput.Value;
     }

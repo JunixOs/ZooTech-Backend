@@ -205,12 +205,21 @@ public sealed class VacunoController : ControllerBase
         return Ok(GeneralResponseDTO<VacunoResponse>.Ok(response));
     }
 
-    [HttpDelete("{id:long}")]
+    [HttpDelete("{identifier}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Delete([FromRoute] long id, [FromBody] DeleteVacunoRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Delete(
+        [FromRoute] string identifier, 
+        [FromBody] DeleteVacunoRequest request, 
+        CancellationToken cancellationToken)
     {
+        long id = await ResolveIdAsync(identifier, cancellationToken);
+        if (id <= 0)
+        {
+            return NotFound(GeneralResponseDTO<object>.Fail("El vacuno no existe."));
+        }
+
         var behaviorPipeline = _deleteVacunoBehaviorPipelineFactory.Create();
 
         await behaviorPipeline.Execute(VacunoMapper.ToCommand(id, request), cancellationToken);

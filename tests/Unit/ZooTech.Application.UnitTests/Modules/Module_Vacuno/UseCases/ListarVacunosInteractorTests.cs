@@ -14,26 +14,18 @@ public class ListarVacunosInteractorTests
 {
     private readonly Mock<IVacunoRepository> _vacunoRepositoryMock;
     private readonly Mock<ITenantConfigurationProvider> _settingsMock;
-    private readonly Mock<IAppCacheService> _cacheMock;
     private readonly ListarVacunosInteractor _interactor;
 
     public ListarVacunosInteractorTests()
     {
         _vacunoRepositoryMock = new Mock<IVacunoRepository>();
         _settingsMock = new Mock<ITenantConfigurationProvider>();
-        _cacheMock = new Mock<IAppCacheService>();
         
         _settingsMock.Setup(x => x.GetSettingAsync(Settings.Vacunos.VacunosDefaultFilterDays)).ReturnsAsync(30);
-        _cacheMock
-            .Setup(x => x.GetOrCreateAsync(
-                It.IsAny<string>(),
-                It.IsAny<Func<Task<ListarVacunosOutput>>>()))
-            .Returns((string _, Func<Task<ListarVacunosOutput>> factory) => factory());
 
         _interactor = new ListarVacunosInteractor(
             _vacunoRepositoryMock.Object,
-            _settingsMock.Object,
-            _cacheMock.Object);
+            _settingsMock.Object);
     }
 
     [Fact]
