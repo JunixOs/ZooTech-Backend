@@ -81,7 +81,7 @@ public sealed class Triaje
             fechaHora: fechaHora,
             vacunoId: vacunoId,
             vacunoNombre: string.Empty,
-            tipoPesoCode: tipoPesoCode.Trim(),s
+            tipoPesoCode: tipoPesoCode.Trim(),
             pesoKg: pesoKg,
             observaciones: SanitizeObservaciones(observaciones),
             estadoRegistroCode: estadoRegistroCode.Trim(),
