@@ -8,6 +8,7 @@ using ZooTech.InterfaceAdapters.Modules.Module_Celo.Controllers;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Controllers;
 using ZooTech.Infrastructure.Persistence.Context;
+using ZooTech.Application.Common.Gateway.Tenant;
 using ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers;
 using QuestPDF.Infrastructure;
 
@@ -140,6 +141,35 @@ builder.Services.AddCors(options =>
 QuestPDF.Settings.License = LicenseType.Community;
 
 var app = builder.Build();
+
+if (args.Contains("--backfill-fecundacion-estados", StringComparer.OrdinalIgnoreCase))
+{
+    await using var scope = app.Services.CreateAsyncScope();
+    var backfill = scope.ServiceProvider
+        .GetRequiredService<ITenantFecundacionCatalogBackfillService>();
+    var result = await backfill.BackfillAsync();
+
+    foreach (var item in result.Items)
+    {
+        if (item.Success)
+        {
+            app.Logger.LogInformation(
+                "Tenant {TenantCode}: catálogo de fecundación completado ({InsertedCount} filas nuevas).",
+                item.TenantCode,
+                item.InsertedCount);
+        }
+        else
+        {
+            app.Logger.LogError(
+                "Tenant {TenantCode}: {Error}",
+                item.TenantCode,
+                item.Error);
+        }
+    }
+
+    Environment.ExitCode = result.Success ? 0 : 1;
+    return;
+}
 
 // ======= Middleware global de errores =======
 app.UseMiddleware<ExceptionHandlingMiddleware>();

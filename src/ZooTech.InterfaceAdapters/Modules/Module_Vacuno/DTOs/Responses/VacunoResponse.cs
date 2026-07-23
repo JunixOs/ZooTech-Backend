@@ -26,4 +26,5 @@ public sealed record VacunoResponse(
     string? Provincia,
     string? CodigoDistrito,
     string? AptoPara,
-    DateTime? FechaUtilizacion);
+    DateTime? FechaUtilizacion,
+    string? FotoUrl = null);

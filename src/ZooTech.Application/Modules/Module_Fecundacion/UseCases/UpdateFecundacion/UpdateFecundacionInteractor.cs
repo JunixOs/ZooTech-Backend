@@ -49,31 +49,28 @@ public sealed class UpdateFecundacionInteractor : IUpdateFecundacionInputPort
         var updated = await repository.UpdateAsync(command.Id, values, cancellationToken)
             ?? throw new FecundacionNotFoundException();
 
-        var detail = await repository.GetForEditAsync(command.Id, cancellationToken)
-            ?? throw new FecundacionNotFoundException();
-
         await _cache.RemoveByPrefixAsync(FecundacionCacheKeys.ListarPrefix);
 
         return new UpdateFecundacionOutput(
-            detail.Id,
-            detail.Codigo,
-            detail.TipoFecundacionCode,
-            detail.VacunoReceptorId,
-            detail.VacunoReceptorCodigo,
-            detail.VacunoReceptorNombre,
-            detail.TipoDonante,
-            detail.VacunoDonanteId,
-            detail.VacunoDonanteCodigo,
-            detail.VacunoDonanteNombre,
-            detail.ExternoDonanteNombre,
-            detail.FechaProcedimiento,
-            detail.ResponsableNombre,
+            updated.Id,
+            updated.Codigo,
+            updated.TipoFecundacionCode,
+            updated.VacunoReceptorId,
+            updated.VacunoReceptorCodigo,
+            updated.VacunoReceptorNombre,
+            updated.TipoDonante,
+            updated.VacunoDonanteId,
+            updated.VacunoDonanteCodigo,
+            updated.VacunoDonanteNombre,
+            updated.ExternoDonanteNombre,
+            updated.FechaProcedimiento,
+            updated.ResponsableNombre,
             updated.ResultadoCode,
             updated.EstadoFecundacionCode,
-            detail.ObservacionesVeterinarias,
-            detail.CodigoSemen,
-            detail.CodigoEmbrion,
-            detail.ActualizadoEn,
+            updated.ObservacionesVeterinarias,
+            updated.CodigoSemen,
+            updated.CodigoEmbrion,
+            updated.ActualizadoEn,
             updated.Warning);
     }
 }

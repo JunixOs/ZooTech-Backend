@@ -13,16 +13,19 @@ namespace ZooTech.Infrastructure.Tenant
         private readonly ITenantDbContextFactory _tenantDbContextFactory;
         private readonly ITenantDatabaseMigrator _tenantDatabaseMigrator;
         private readonly ITenantDatabaseCreator _tenantDatabaseCreator;
+        private readonly IFecundacionCatalogSeeder _fecundacionCatalogSeeder;
 
         public TenantProvisioningService(
             ITenantDbContextFactory tenantDbContextFactory,
             ITenantDatabaseMigrator tenantDatabaseMigrator,
-            ITenantDatabaseCreator tenantDatabaseCreator
+            ITenantDatabaseCreator tenantDatabaseCreator,
+            IFecundacionCatalogSeeder fecundacionCatalogSeeder
         )
         {
             _tenantDbContextFactory = tenantDbContextFactory;
             _tenantDatabaseMigrator = tenantDatabaseMigrator;
             _tenantDatabaseCreator = tenantDatabaseCreator;
+            _fecundacionCatalogSeeder = fecundacionCatalogSeeder;
         }
 
         public async Task ProvisionAsync(CreateTenantCommand cmd)
@@ -87,6 +90,7 @@ namespace ZooTech.Infrastructure.Tenant
                 databaseCreated = true;
 
                 await _tenantDatabaseMigrator.MigrateAsync(tenantDatabaseConnectionEntity.database_name);
+                await _fecundacionCatalogSeeder.SeedAsync(tenantDatabaseConnectionEntity.database_name);
             }
             catch
             {

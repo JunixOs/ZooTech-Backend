@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ZooTech.Application.Common.Behaviors.Module_Celo.FecundacionEstado.GetFecundacionEstado;
 using ZooTech.Application.Common.Behaviors.Module_Celo.FecundacionEstado.UpdateFecundacionEstado;
+using ZooTech.Application.Common.Gateway.Identity;
 using ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.GetFecundacionEstado;
 using ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.UpdateFecundacionEstado;
 using ZooTech.InterfaceAdapters.DTOs;
@@ -13,21 +14,24 @@ using ApiErrorResponse = ZooTech.InterfaceAdapters.DTOs.Responses.ErrorResponse;
 namespace ZooTech.InterfaceAdapters.Modules.Module_Celo.Controllers;
 
 [ApiController]
+[Route("api/v1/reproduccion/fecundacion/estado")]
 [Route("api/reproduccion/fecundacion/estado")]
 [ApiExplorerSettings(GroupName = "celo - fecundacion_estado")]
 public sealed class FecundacionEstadoController : ControllerBase
 {
-    private const string UpdatedByHeaderName = "X-User-Id";
     private readonly IGetFecundacionEstadoBehaviorPipelineFactory _getFecundacionEstadoBehaviorPipelineFactory;
     private readonly IUpdateFecundacionEstadoBehaviorPipelineFactory _updateFecundacionEstadoBehaviorPipelineFactory;
+    private readonly ICurrentUserService _currentUserService;
 
     public FecundacionEstadoController(
         IGetFecundacionEstadoBehaviorPipelineFactory getFecundacionEstadoBehaviorPipelineFactory,
-        IUpdateFecundacionEstadoBehaviorPipelineFactory updateFecundacionEstadoBehaviorPipelineFactory
+        IUpdateFecundacionEstadoBehaviorPipelineFactory updateFecundacionEstadoBehaviorPipelineFactory,
+        ICurrentUserService currentUserService
     )
     {
         _getFecundacionEstadoBehaviorPipelineFactory = getFecundacionEstadoBehaviorPipelineFactory;
         _updateFecundacionEstadoBehaviorPipelineFactory = updateFecundacionEstadoBehaviorPipelineFactory;
+        _currentUserService = currentUserService;
     }
 
     [HttpGet("{vacunoId:long}")]
@@ -67,22 +71,11 @@ public sealed class FecundacionEstadoController : ControllerBase
             new UpdateFecundacionEstadoCommand(
                 fecundacionId,
                 request?.EstadoFecundacion,
-                GetUpdatedByFromHeader()),
+                _currentUserService.UserId),
             cancellationToken);
 
         return Ok(GeneralResponseDTO<FecundacionEstadoResponse>.Ok(
             FecundacionEstadoMapper.ToResponse(output)));
     }
 
-    private long? GetUpdatedByFromHeader()
-    {
-        if (!Request.Headers.TryGetValue(UpdatedByHeaderName, out var values))
-        {
-            return null;
-        }
-
-        return long.TryParse(values.FirstOrDefault(), out var updatedBy)
-            ? updatedBy
-            : -1;
-    }
 }

@@ -133,6 +133,8 @@ public static class DependencyInjection
         services.AddScoped<ITenantProvisioningService, TenantProvisioningService>();
         services.AddScoped<ITenantDatabaseMigrator, TenantDatabaseMigrator>();
         services.AddScoped<ITenantDatabaseCreator , TenantDatabaseCreator>();
+        services.AddScoped<IFecundacionCatalogSeeder, FecundacionCatalogSeeder>();
+        services.AddScoped<ITenantFecundacionCatalogBackfillService, TenantFecundacionCatalogBackfillService>();
         services.AddScoped<ITenantParameterSynchronizer , TenantParameterSynchronizer>();
         services.AddScoped<IGanaderiaDbContextFactory, GanaderiaDbContextFactory>();
         services.AddScoped<ITenantDbContextFactory, TenantDbContextFactory>();

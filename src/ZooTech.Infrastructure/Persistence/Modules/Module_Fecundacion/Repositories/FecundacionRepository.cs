@@ -453,7 +453,7 @@ public sealed class FecundacionRepository : IFecundacionRepository
             return null;
 
         await ValidateCatalogsAsync(values, cancellationToken);
-        await ValidateVacunosAsync(id, values, cancellationToken);
+        var validatedVacunos = await ValidateVacunosAsync(id, values, cancellationToken);
 
         var previousResult = entity.resultado_code;
         var responsable = await GetOrCreateResponsableAsync(values.ResponsableNombre.Trim(), cancellationToken);
@@ -482,8 +482,23 @@ public sealed class FecundacionRepository : IFecundacionRepository
         return new FecundacionUpdateData(
             entity.id,
             entity.codigo,
+            entity.tipo_fecundacion_code,
+            entity.vacuno_receptor_id,
+            validatedVacunos.ReceptorCodigo,
+            validatedVacunos.ReceptorNombre,
+            values.TipoDonante,
+            values.VacunoDonanteId,
+            validatedVacunos.DonanteCodigo,
+            validatedVacunos.DonanteNombre,
+            values.ExternoDonanteNombre,
+            entity.fecha_procedimiento,
+            responsable.nombre_completo ?? values.ResponsableNombre.Trim(),
             entity.resultado_code,
             values.EstadoFecundacionCode,
+            entity.observaciones_veterinarias,
+            entity.fecundacion_inseminacion?.codigo_semen,
+            entity.fecundacion_embrion?.codigo_embrion,
+            entity.updated_at,
             warning);
     }
 
@@ -505,7 +520,7 @@ public sealed class FecundacionRepository : IFecundacionRepository
             throw new FecundacionInvalidEstadoException();
     }
 
-    private async Task ValidateVacunosAsync(
+    private async Task<ValidatedVacunos> ValidateVacunosAsync(
         long fecundacionId,
         FecundacionUpdateValues values,
         CancellationToken cancellationToken)
@@ -518,6 +533,8 @@ public sealed class FecundacionRepository : IFecundacionRepository
         if (receptor is null || !IsSexo(receptor.sexo_code, receptor.sexo_codeNavigation.nombre, "hembra"))
             throw new ArgumentException("El receptor debe ser una hembra activa.");
 
+        string? donanteCodigo = null;
+        string? donanteNombre = null;
         if (string.Equals(values.TipoDonante, FecundacionRules.TipoDonanteInterno, StringComparison.OrdinalIgnoreCase))
         {
             var donante = await _context.vacunos
@@ -527,11 +544,26 @@ public sealed class FecundacionRepository : IFecundacionRepository
 
             if (donante is null || !IsSexo(donante.sexo_code, donante.sexo_codeNavigation.nombre, "macho"))
                 throw new ArgumentException("El donante interno debe ser un macho activo.");
+
+            donanteCodigo = donante.codigo;
+            donanteNombre = donante.nombre;
         }
 
         if (await HasActiveFecundacionAsync(fecundacionId, values.VacunoReceptorId, cancellationToken))
             throw new ArgumentException("La hembra ya tiene otra fecundación activa pendiente o en confirmación.");
+
+        return new ValidatedVacunos(
+            receptor.codigo,
+            receptor.nombre,
+            donanteCodigo,
+            donanteNombre);
     }
+
+    private sealed record ValidatedVacunos(
+        string ReceptorCodigo,
+        string ReceptorNombre,
+        string? DonanteCodigo,
+        string? DonanteNombre);
 
     public async Task<bool> HasActiveFecundacionAsync(
         long? fecundacionId,

@@ -11,7 +11,11 @@ namespace ZooTech.Infrastructure.UnitTests.Tenant
 {
     public class TenantProvisioningServiceUnitTests
     {
-        private static (Mock<ITenantDbContextFactory> DbFactoryMock, Mock<ITenantDatabaseMigrator> MigratorMock, Mock<ITenantDatabaseCreator> CreatorMock) CreateDependencies()
+        private static (
+            Mock<ITenantDbContextFactory> DbFactoryMock,
+            Mock<ITenantDatabaseMigrator> MigratorMock,
+            Mock<ITenantDatabaseCreator> CreatorMock,
+            Mock<IFecundacionCatalogSeeder> CatalogSeederMock) CreateDependencies()
         {
             var options = new DbContextOptionsBuilder<TenantCatalogDb>()
                 .UseInMemoryDatabase(Guid.NewGuid().ToString())
@@ -24,18 +28,27 @@ namespace ZooTech.Infrastructure.UnitTests.Tenant
 
             var migratorMock = new Mock<ITenantDatabaseMigrator>();
             var creatorMock = new Mock<ITenantDatabaseCreator>();
+            var catalogSeederMock = new Mock<IFecundacionCatalogSeeder>();
 
-            return (dbFactoryMock, migratorMock, creatorMock);
+            return (dbFactoryMock, migratorMock, creatorMock, catalogSeederMock);
         }
 
         [Fact]
         public async Task ProvisionAsync_Should_Executes_Normally_When_Migration_Succeeds()
         {
             // Arrange
-            var (dbFactoryMock, migratorMock, creatorMock) = CreateDependencies();
+            var (dbFactoryMock, migratorMock, creatorMock, catalogSeederMock) = CreateDependencies();
             migratorMock.Setup(x => x.MigrateAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
+            catalogSeederMock
+                .Setup(x => x.SeedAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((string databaseName, CancellationToken _) =>
+                    new FecundacionCatalogSeedResult(databaseName, 3));
 
-            var service = new TenantProvisioningService(dbFactoryMock.Object, migratorMock.Object, creatorMock.Object);
+            var service = new TenantProvisioningService(
+                dbFactoryMock.Object,
+                migratorMock.Object,
+                creatorMock.Object,
+                catalogSeederMock.Object);
             var cmd = TenantTestDataFactory.CreateValidCommand();
 
             // Act
@@ -43,16 +56,23 @@ namespace ZooTech.Infrastructure.UnitTests.Tenant
 
             // Assert
             migratorMock.Verify(m => m.MigrateAsync(It.IsAny<string>()), Times.Once);
+            catalogSeederMock.Verify(
+                seeder => seeder.SeedAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+                Times.Once);
         }
 
         [Fact]
         public async Task ProvisionAsync_Should_Throw_TenantProvisioningException_When_Migration_Fails()
         {
             // Arrange
-            var (dbFactoryMock, migratorMock, creatorMock) = CreateDependencies();
+            var (dbFactoryMock, migratorMock, creatorMock, catalogSeederMock) = CreateDependencies();
             migratorMock.Setup(x => x.MigrateAsync(It.IsAny<string>())).ThrowsAsync(new Exception("Migration failed"));
 
-            var service = new TenantProvisioningService(dbFactoryMock.Object, migratorMock.Object, creatorMock.Object);
+            var service = new TenantProvisioningService(
+                dbFactoryMock.Object,
+                migratorMock.Object,
+                creatorMock.Object,
+                catalogSeederMock.Object);
             var cmd = TenantTestDataFactory.CreateValidCommand();
 
             // Act

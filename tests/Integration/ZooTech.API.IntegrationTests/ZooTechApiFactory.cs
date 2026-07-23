@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
@@ -14,6 +15,7 @@ using ZooTech.API.IntegrationTests.Seeders;
 using ZooTech.API.IntegrationTests.Support;
 using ZooTech.Application.Common.Gateway.Auditing;
 using ZooTech.Application.Common.Gateway.Caching;
+using ZooTech.Application.Common.Gateway.Context;
 using ZooTech.Application.Common.Gateway.Parametrization;
 using ZooTech.Infrastructure.Caching;
 using ZooTech.Infrastructure.Persistence.Context;
@@ -25,10 +27,9 @@ public sealed class ZooTechApiFactory : WebApplicationFactory<Program>
 {
     public const string DefaultTenantHost = "zootecniaunas.zentrycorp.local";
     private const string CatalogDatabaseName = "IntegrationTest_Catalog";
-    private const string GanaderiaDatabaseName = "IntegrationTest_Ganaderia";
 
     private static readonly InMemoryDatabaseRoot CatalogDatabaseRoot = new();
-    private static readonly InMemoryDatabaseRoot GanaderiaDatabaseRoot = new();
+    private static readonly ConcurrentDictionary<string, InMemoryDatabaseRoot> GanaderiaDatabaseRoots = new();
     private static readonly object SeedLock = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -85,13 +86,19 @@ public sealed class ZooTechApiFactory : WebApplicationFactory<Program>
             catalogDb.SaveChanges();
 
             var ganaderiaFactory = scope.ServiceProvider.GetRequiredService<IGanaderiaDbContextFactory>();
-            using var ganaderiaDb = ganaderiaFactory.CreateDbContextBySpecificDatabaseName(GanaderiaDatabaseName);
-            ganaderiaDb.SeedBaseCatalogs();
-            ganaderiaDb.SeedVacunosBasic();
-            ganaderiaDb.SeedGenealogia();
-            ganaderiaDb.SeedFecundacionCatalogs();
-            ganaderiaDb.SeedVacunosReportes();
-            ganaderiaDb.SaveChanges();
+            for (var tenantIndex = 0; tenantIndex < TenantCatalogSeeder.TenantSubdomains.Length; tenantIndex++)
+            {
+                var subdomain = TenantCatalogSeeder.TenantSubdomains[tenantIndex];
+                using var ganaderiaDb = ganaderiaFactory.CreateDbContextBySpecificDatabaseName(
+                    $"ZooTech_{subdomain}_Db");
+                ganaderiaDb.SeedBaseCatalogs();
+                ganaderiaDb.SeedVacunosBasic();
+                ganaderiaDb.SeedGenealogia();
+                ganaderiaDb.SeedFecundacionCatalogs();
+                ganaderiaDb.SeedVacunosReportes();
+                ganaderiaDb.SeedTenantMarker(subdomain, tenantIndex);
+                ganaderiaDb.SaveChanges();
+            }
         }
 
         return host;
@@ -122,17 +129,27 @@ public sealed class ZooTechApiFactory : WebApplicationFactory<Program>
 
     private sealed class InMemoryGanaderiaDbContextFactory : IGanaderiaDbContextFactory
     {
-        private static DbContextOptions<GanaderiaDbContext> CreateOptions()
+        private readonly ITenantContext _tenantContext;
+
+        public InMemoryGanaderiaDbContextFactory(ITenantContext tenantContext)
+        {
+            _tenantContext = tenantContext;
+        }
+
+        private static DbContextOptions<GanaderiaDbContext> CreateOptions(string databaseName)
             => new DbContextOptionsBuilder<GanaderiaDbContext>()
-                .UseInMemoryDatabase(GanaderiaDatabaseName, GanaderiaDatabaseRoot)
+                .UseInMemoryDatabase(
+                    databaseName,
+                    GanaderiaDatabaseRoots.GetOrAdd(databaseName, _ => new InMemoryDatabaseRoot()))
                 .ConfigureWarnings(x => x.Ignore(InMemoryEventId.TransactionIgnoredWarning))
                 .Options;
 
-        public GanaderiaDbContext CreateDbContextByTenantContext() => new(CreateOptions());
+        public GanaderiaDbContext CreateDbContextByTenantContext()
+            => new(CreateOptions(_tenantContext.DatabaseName));
 
         public GanaderiaDbContext CreateDbContextBySpecificDatabaseName(
             string databaseName,
-            bool useAdminLogin = false) => new(CreateOptions());
+            bool useAdminLogin = false) => new(CreateOptions(databaseName));
     }
 
     private sealed class NoOpAuditService : IAppAuditService

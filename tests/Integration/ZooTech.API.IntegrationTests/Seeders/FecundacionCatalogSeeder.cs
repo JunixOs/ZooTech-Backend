@@ -31,13 +31,31 @@ public static class FecundacionCatalogSeeder
             });
         }
 
-        if (!context.cat_estado_fecundacion_vacunos.Any(x => x.code == EstadoCode))
+        var states = new[]
         {
-            context.cat_estado_fecundacion_vacunos.Add(new cat_estado_fecundacion_vacuno
+            new cat_estado_fecundacion_vacuno
             {
                 code = EstadoCode,
-                nombre = "En espera"
-            });
+                nombre = "En Espera"
+            },
+            new cat_estado_fecundacion_vacuno
+            {
+                code = "GESTANTE",
+                nombre = "Gestante"
+            },
+            new cat_estado_fecundacion_vacuno
+            {
+                code = "VACIA",
+                nombre = "Vacía"
+            }
+        };
+
+        foreach (var state in states)
+        {
+            if (!context.cat_estado_fecundacion_vacunos.Any(x => x.code == state.code))
+            {
+                context.cat_estado_fecundacion_vacunos.Add(state);
+            }
         }
     }
 }

@@ -48,4 +48,24 @@ public sealed record FecundacionUpdateValues(
     string TipoFecundacionCode, long VacunoReceptorId, string TipoDonante, long? VacunoDonanteId,
     string? ExternoDonanteNombre, DateOnly FechaProcedimiento, string ResponsableNombre, string ResultadoCode,
     string EstadoFecundacionCode, string? ObservacionesVeterinarias, string? CodigoSemen, string? CodigoEmbrion);
-public sealed record FecundacionUpdateData(long Id, string Codigo, string ResultadoCode, string EstadoFecundacionCode, string? Warning);
+public sealed record FecundacionUpdateData(
+    long Id,
+    string Codigo,
+    string TipoFecundacionCode,
+    long VacunoReceptorId,
+    string VacunoReceptorCodigo,
+    string VacunoReceptorNombre,
+    string TipoDonante,
+    long? VacunoDonanteId,
+    string? VacunoDonanteCodigo,
+    string? VacunoDonanteNombre,
+    string? ExternoDonanteNombre,
+    DateOnly FechaProcedimiento,
+    string ResponsableNombre,
+    string ResultadoCode,
+    string EstadoFecundacionCode,
+    string? ObservacionesVeterinarias,
+    string? CodigoSemen,
+    string? CodigoEmbrion,
+    DateTime ActualizadoEn,
+    string? Warning);

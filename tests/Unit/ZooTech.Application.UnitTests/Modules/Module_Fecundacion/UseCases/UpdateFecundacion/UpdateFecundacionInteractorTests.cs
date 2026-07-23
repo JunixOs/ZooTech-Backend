@@ -22,7 +22,7 @@ public sealed class UpdateFecundacionInteractorTests
     }
 
     [Fact]
-    public async Task HandleAsync_DebeConsultarDetalleSoloDespuesDeActualizar()
+    public async Task HandleAsync_DebeConstruirRespuestaSinConsultarDetalle()
     {
         var command = CreateCommand();
         var detail = CreateDetail(command);
@@ -37,29 +37,15 @@ public sealed class UpdateFecundacionInteractorTests
                 command.Id,
                 Arg.Any<FecundacionUpdateValues>(),
                 Arg.Any<CancellationToken>())
-            .Returns(new FecundacionUpdateData(
-                command.Id,
-                detail.Codigo,
-                command.ResultadoCode,
-                command.EstadoFecundacionCode,
-                null));
-        _repository.GetForEditAsync(command.Id, Arg.Any<CancellationToken>())
-            .Returns(detail);
+            .Returns(CreateUpdateData(command, detail));
 
         var result = await _sut.HandleAsync(command);
 
         result.Id.Should().Be(command.Id);
-        await _repository.Received(1).GetForEditAsync(
-            command.Id,
+        result.VacunoReceptorCodigo.Should().Be(detail.VacunoReceptorCodigo);
+        await _repository.DidNotReceive().GetForEditAsync(
+            Arg.Any<long>(),
             Arg.Any<CancellationToken>());
-        Received.InOrder(() =>
-        {
-            _repository.UpdateAsync(
-                command.Id,
-                Arg.Any<FecundacionUpdateValues>(),
-                Arg.Any<CancellationToken>());
-            _repository.GetForEditAsync(command.Id, Arg.Any<CancellationToken>());
-        });
     }
 
     [Fact]
@@ -127,4 +113,29 @@ public sealed class UpdateFecundacionInteractorTests
             CodigoEmbrion: command.CodigoEmbrion,
             CreadoEn: new DateTime(2026, 7, 20),
             ActualizadoEn: new DateTime(2026, 7, 21));
+
+    private static FecundacionUpdateData CreateUpdateData(
+        UpdateFecundacionCommand command,
+        FecundacionEditData detail)
+        => new(
+            detail.Id,
+            detail.Codigo,
+            detail.TipoFecundacionCode,
+            detail.VacunoReceptorId,
+            detail.VacunoReceptorCodigo,
+            detail.VacunoReceptorNombre,
+            detail.TipoDonante,
+            detail.VacunoDonanteId,
+            detail.VacunoDonanteCodigo,
+            detail.VacunoDonanteNombre,
+            detail.ExternoDonanteNombre,
+            detail.FechaProcedimiento,
+            detail.ResponsableNombre,
+            command.ResultadoCode,
+            command.EstadoFecundacionCode,
+            detail.ObservacionesVeterinarias,
+            detail.CodigoSemen,
+            detail.CodigoEmbrion,
+            detail.ActualizadoEn,
+            null);
 }
