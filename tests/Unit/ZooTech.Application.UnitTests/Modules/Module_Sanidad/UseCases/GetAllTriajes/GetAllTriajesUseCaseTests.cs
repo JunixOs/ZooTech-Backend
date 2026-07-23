@@ -18,7 +18,7 @@ public class GetAllTriajesUseCaseTests
     public async Task ExecuteAsync_DebeRetornarListaDeTriajes()
     {
         // Arrange
-        var triajes = new List<Triaje>
+        var triajes = new List<TriajeListadoItem>
         {
             CreateTriaje(1, "TRI001", 1, "Estrella", "CONTROL", 100),
             CreateTriaje(2, "TRI002", 2, "Luna", "FINAL", 200)
@@ -32,8 +32,9 @@ public class GetAllTriajesUseCaseTests
                 It.IsAny<string?>(),
                 It.IsAny<string?>(),
                 It.IsAny<string?>(),
-                It.IsAny<decimal?>(),
+                It.IsAny<string?>(),
                 It.IsAny<long?>(),
+                It.IsAny<bool?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync((triajes, triajes.Count));
         var useCase = new GetAllTriajesInteractor(_repositoryMock.Object);
@@ -61,10 +62,11 @@ public class GetAllTriajesUseCaseTests
                 It.IsAny<string?>(),
                 It.IsAny<string?>(),
                 It.IsAny<string?>(),
-                It.IsAny<decimal?>(),
+                It.IsAny<string?>(),
                 It.IsAny<long?>(),
+                It.IsAny<bool?>(),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync((new List<Triaje>(), 0));
+            .ReturnsAsync((new List<TriajeListadoItem>(), 0));
         var useCase = new GetAllTriajesInteractor(_repositoryMock.Object);
 
         // Act
@@ -75,27 +77,23 @@ public class GetAllTriajesUseCaseTests
         Assert.Empty(result.Data);
     }
 
-    private static Triaje CreateTriaje(long id, string codigo, long vacunoId, string vacunoNombre, string tipoPesoCode, decimal pesoKg)
+    private static TriajeListadoItem CreateTriaje(long id, string codigo, long vacunoId, string vacunoNombre, string tipoPesoCode, decimal pesoKg)
     {
         var now = DateTime.UtcNow;
 
-        return Triaje.Rehydrate(
-            id: id,
-            codigo: codigo,
-            fechaHora: now,
-            vacunoId: vacunoId,
-            vacunoNombre: vacunoNombre,
-            tipoPesoCode: tipoPesoCode,
-            pesoKg: pesoKg,
-            observaciones: null,
-            estadoRegistroCode: "ACTIVO",
-            encargadoUsuarioId: null,
-            createdBy: null,
-            updatedBy: null,
-            deletedBy: null,
-            createdAt: now,
-            updatedAt: now,
-            deletedAt: null,
-            motivoEliminacion: null);
+        return new TriajeListadoItem
+        {
+            Id = id,
+            Codigo = codigo,
+            FechaHora = now,
+            VacunoId = vacunoId,
+            VacunoNombre = vacunoNombre,
+            TipoPesoCode = tipoPesoCode,
+            PesoKg = pesoKg,
+            Observaciones = null,
+            EstadoRegistroCode = "ACTIVO",
+            EncargadoUsuarioId = null,
+            CreatedAt = now,
+        };
     }
 }

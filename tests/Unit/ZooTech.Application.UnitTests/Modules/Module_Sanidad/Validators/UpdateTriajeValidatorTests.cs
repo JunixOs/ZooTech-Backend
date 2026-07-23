@@ -52,12 +52,12 @@ public class UpdateTriajeValidatorTests
         Assert.NotEmpty(result);
     }
 
-    [Fact(Skip = "UpdateTriajeValidator does not implement an Observaciones max-length rule yet. Pending product decision on whether to add it.")]
+    [Fact]
     public void Validate_WhenObservacionesExceedsMaxLength_HasError()
     {
         var validator = new UpdateTriajeValidator();
 
-        var result = validator.Validate(ValidCommand(observaciones: new string('A', 151)));
+        var result = validator.Validate(ValidCommand(observaciones: new string('A', 501)));
 
         Assert.NotEmpty(result);
     }
@@ -70,5 +70,25 @@ public class UpdateTriajeValidatorTests
         var result = validator.Validate(ValidCommand(observaciones: null));
 
         Assert.Empty(result);
+    }
+
+    [Fact]
+    public void Validate_WhenIdIsInvalid_HasError()
+    {
+        var validator = new UpdateTriajeValidator();
+
+        var result = validator.Validate(ValidCommand(id: 0));
+
+        Assert.NotEmpty(result);
+    }
+
+    [Fact]
+    public void Validate_WhenEncargadoUsuarioIdIsInvalid_HasError()
+    {
+        var validator = new UpdateTriajeValidator();
+
+        var result = validator.Validate(ValidCommand(encargadoUsuarioId: 0));
+
+        Assert.NotEmpty(result);
     }
 }

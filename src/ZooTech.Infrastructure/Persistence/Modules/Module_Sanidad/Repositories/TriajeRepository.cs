@@ -1,5 +1,5 @@
-using Microsoft.EntityFrameworkCore;
 using System.Globalization;
+using Microsoft.EntityFrameworkCore;
 using ZooTech.Application.Common.Gateway.Time;
 using ZooTech.Domain.Module_Sanidad.Entities;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
@@ -14,11 +14,18 @@ public class TriajeRepository : ITriajeRepository
     private readonly IDateTimeProvider _dateTimeProvider;
 
     public TriajeRepository(
-        IGanaderiaDbContextFactory ganaderiaDbContextFactory, 
+        IGanaderiaDbContextFactory ganaderiaDbContextFactory,
+        IDateTimeProvider dateTimeProvider
+    ) : this(ganaderiaDbContextFactory.CreateDbContextByTenantContext(), dateTimeProvider)
+    {
+    }
+
+    public TriajeRepository(
+        GanaderiaDbContext ganaderiaDbContext,
         IDateTimeProvider dateTimeProvider
     )
     {
-        _ganaderiaDbContext = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
+        _ganaderiaDbContext = ganaderiaDbContext;
         _dateTimeProvider = dateTimeProvider;
     }
 
@@ -32,22 +39,32 @@ public class TriajeRepository : ITriajeRepository
         return entity is null ? null : ToTriaje(entity);
     }
 
-    public async Task<(IEnumerable<Triaje> Items, int Total)> GetAllAsync(
-        int pagina,
-        int tamano,
-        string? fecha = null,
-        string? fechaDesde = null,
-        string? fechaHasta = null,
-        string? codigo = null,
-        string? nombre = null,
-        string? tipoPeso = null,
-        decimal? pesoKg = null,
-        long? vacunoId = null,
-        CancellationToken cancellationToken = default)
+    public async Task<Triaje?> GetByCodigoAsync(string codigo, CancellationToken cancellationToken = default)
+    {
+        var entity = await _ganaderiaDbContext.triajes
+            .Include(t => t.vacuno)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.codigo == codigo.Trim() && t.deleted_at == null, cancellationToken);
+
+        return entity is null ? null : ToTriaje(entity);
+    }
+
+    public async Task<(IEnumerable<TriajeListadoItem> Items, int Total)> GetAllAsync(
+    int pagina,
+    int tamano,
+    string? fecha = null,
+    string? fechaDesde = null,
+    string? fechaHasta = null,
+    string? codigo = null,
+    string? nombre = null,
+    string? tipoPeso = null,
+    string? pesoKg = null,
+    long? vacunoId = null,
+    bool? uniqueVacuno = null,
+    CancellationToken cancellationToken = default)
     {
         var query = _ganaderiaDbContext.triajes
             .AsNoTracking()
-            .Include(t => t.vacuno)
             .Where(t => t.deleted_at == null)
             .AsQueryable();
 
@@ -61,7 +78,7 @@ public class TriajeRepository : ITriajeRepository
             query = query.Where(t => t.vacuno.nombre.Contains(nombre));
 
         if (!string.IsNullOrEmpty(fecha) &&
-    DateTime.TryParseExact(fecha, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var fechaExacta))
+            DateTime.TryParseExact(fecha, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var fechaExacta))
         {
             var desdeExacta = fechaExacta.Date;
             var hastaExacta = desdeExacta.AddDays(1);
@@ -83,43 +100,60 @@ public class TriajeRepository : ITriajeRepository
         if (!string.IsNullOrEmpty(tipoPeso))
             query = query.Where(t => t.tipo_peso_code == tipoPeso);
 
-        if (pesoKg.HasValue)
-            query = query.Where(t => t.peso_kg == pesoKg);
+        if (!string.IsNullOrWhiteSpace(pesoKg))
+        {
+            var pesoFilter = pesoKg.Trim();
+            query = query.Where(t => EF.Functions.Like(t.peso_kg.ToString(), $"%{pesoFilter}%"));
+        }
 
-
+        if (uniqueVacuno == true)
+        {
+            query = query.Where(t => t.id == _ganaderiaDbContext.triajes
+                .Where(inner => inner.vacuno_id == t.vacuno_id && inner.deleted_at == null)
+                .OrderByDescending(inner => inner.fecha_hora)
+                .Select(inner => inner.id)
+                .FirstOrDefault());
+        }
 
         query = query.OrderByDescending(t => t.fecha_hora);
 
         var total = await query.CountAsync(cancellationToken);
 
-        var entities = await query
+        var items = await query
             .Skip((pagina - 1) * tamano)
             .Take(tamano)
+            .Select(t => new TriajeListadoItem
+            {
+                Id = t.id,
+                Codigo = t.codigo,
+                FechaHora = t.fecha_hora,
+                VacunoId = t.vacuno_id,
+                VacunoNombre = t.vacuno.nombre,
+                TipoPesoCode = t.tipo_peso_code,
+                PesoKg = t.peso_kg,
+                Observaciones = t.observaciones,
+                EstadoRegistroCode = t.estado_registro_code,
+                EncargadoUsuarioId = t.encargado_usuario_id,
+                CreatedAt = t.created_at
+            })
             .ToListAsync(cancellationToken);
 
-        return (entities.Select(ToTriaje), total);
+        return (items, total);
     }
 
     public async Task<Triaje> AddAsync(Triaje triaje, CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var entity = ToEntity(triaje);
-            _ganaderiaDbContext.triajes.Add(entity);
-            await _ganaderiaDbContext.SaveChangesAsync(cancellationToken);
-            return ToTriaje(entity);
-        }
-        catch (DbUpdateException)
-        {
-            throw new InvalidOperationException("No se pudo registrar el triaje. Verifique que no exista un registro con el mismo vacuno, tipo de peso y fecha.");
-        }
+        var entity = ToEntity(triaje);
+        _ganaderiaDbContext.triajes.Add(entity);
+        await Task.CompletedTask;
+        return ToTriaje(entity);
     }
 
     public async Task<Triaje> UpdateAsync(Triaje triaje, CancellationToken cancellationToken = default)
     {
         var entity = ToEntity(triaje);
         _ganaderiaDbContext.triajes.Update(entity);
-        await _ganaderiaDbContext.SaveChangesAsync(cancellationToken);
+        await Task.CompletedTask;
         return ToTriaje(entity);
     }
 
@@ -134,7 +168,7 @@ public class TriajeRepository : ITriajeRepository
         entity.deleted_at = now;
         entity.updated_at = now;
 
-        await _ganaderiaDbContext.SaveChangesAsync(cancellationToken);
+        await Task.CompletedTask;
     }
 
     public async Task<string> GenerateCodigoAsync(CancellationToken cancellationToken = default)

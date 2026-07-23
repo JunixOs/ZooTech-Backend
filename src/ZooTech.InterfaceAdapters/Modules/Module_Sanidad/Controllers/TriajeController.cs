@@ -2,35 +2,34 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ZooTech.Application.Common.Behaviors.Module_Sanidad.CreateTriaje;
 using ZooTech.Application.Common.Behaviors.Module_Sanidad.DeleteTriaje;
+using ZooTech.Application.Common.Behaviors.Module_Sanidad.GenerateTriajesExcel;
+using ZooTech.Application.Common.Behaviors.Module_Sanidad.GenerateTriajesPdf;
 using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetAllTipoPesos;
 using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetAllTriajes;
 using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetAllVacunosSanidad;
 using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetHistorialByVacunoId;
+using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetHistorialGeneral;
 using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetTriajeById;
 using ZooTech.Application.Common.Behaviors.Module_Sanidad.UpdateTriaje;
 using ZooTech.Application.Common.Models;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.DeleteTriaje;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GenerateTriajesExcel;
+using ZooTech.Application.Modules.Module_Sanidad.UseCases.GenerateTriajesPdf;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllTriajes;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetHistorialByVacunoId;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetHistorialGeneral;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetTriajeById;
 using ZooTech.Domain.Shared.Enums;
-using ZooTech.Application.Modules.Module_Sanidad.UseCases.GenerateTriajesPdf;
-using ZooTech.Application.Modules.Module_Sanidad.UseCases.GenerateTriajesExcel;
 using ZooTech.InterfaceAdapters.DTOs;
-
 using ZooTech.InterfaceAdapters.Modules.Module_Sanidad.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_Sanidad.DTOs.Responses;
 using ZooTech.InterfaceAdapters.Modules.Module_Sanidad.Mappers;
-using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetHistorialGeneral;
-using ZooTech.Application.Common.Behaviors.Module_Sanidad.GenerateTriajesPdf;
-using ZooTech.Application.Common.Behaviors.Module_Sanidad.GenerateTriajesExcel;
 
 namespace ZooTech.InterfaceAdapters.Module_Sanidad.Controllers;
 
 [ApiController]
 [Route("api/v1/triaje")]
-[ApiExplorerSettings(GroupName = "triaje")]
+[ApiExplorerSettings(GroupName = "public")]
 public sealed class TriajeController : ControllerBase
 {
     private readonly IGetAllTriajesBehaviorPipelineFactory _getAllTriajesBehaviorPipelineFactory;
@@ -44,7 +43,7 @@ public sealed class TriajeController : ControllerBase
 
     private readonly IGetHistorialGeneralBehaviorPipelineFactory _getHistorialGeneralBehaviorPipelineFactory;
     private readonly IGenerateTriajesPdfBehaviorPipelineFactory _generateTriajesPdfBehaviorPipelineFactory;
-    private readonly IGenerateTriajesExcelBehaviorPipelineFactory _generateTriajesExcelBehaviorPipelineFactory;    
+    private readonly IGenerateTriajesExcelBehaviorPipelineFactory _generateTriajesExcelBehaviorPipelineFactory;
 
     public TriajeController(
         IGetAllTriajesBehaviorPipelineFactory getAllTriajesBehaviorPipelineFactory,
@@ -58,7 +57,7 @@ public sealed class TriajeController : ControllerBase
 
         IGetHistorialGeneralBehaviorPipelineFactory getHistorialGeneralBehaviorPipelineFactory,
         IGenerateTriajesPdfBehaviorPipelineFactory generateTriajesPdfBehaviorPipelineFactory,
-        IGenerateTriajesExcelBehaviorPipelineFactory generateTriajesExcelBehaviorPipelineFactory    
+        IGenerateTriajesExcelBehaviorPipelineFactory generateTriajesExcelBehaviorPipelineFactory
 
     )
     {
@@ -87,7 +86,9 @@ public sealed class TriajeController : ControllerBase
         [FromQuery] string? codigo = null,
         [FromQuery] string? nombre = null,
         [FromQuery] string? tipoPeso = null,
-        [FromQuery] decimal? pesoKg = null,
+        [FromQuery] string? pesoKg = null,
+        [FromQuery] long? vacunoId = null,
+        [FromQuery] bool? uniqueVacuno = null,
         CancellationToken cancellationToken = default)
     {
         var behaviorPipeline = _getAllTriajesBehaviorPipelineFactory.Create();
@@ -97,13 +98,17 @@ public sealed class TriajeController : ControllerBase
 
         var query = new GetAllTriajesQuery
         {
-            Pagina = pagina, 
-            Tamano = tamano, 
-            Fecha = fecha, 
-            Codigo = codigo, 
-            Nombre = nombre, 
-            TipoPeso = tipoPeso, 
-            PesoKg = pesoKg
+            Pagina = pagina,
+            Tamano = tamano,
+            Fecha = fecha,
+            FechaDesde = fechaDesde,
+            FechaHasta = fechaHasta,
+            Codigo = codigo,
+            Nombre = nombre,
+            TipoPeso = tipoPeso,
+            PesoKg = pesoKg,
+            VacunoId = vacunoId,
+            UniqueVacuno = uniqueVacuno
         };
 
         var output = await behaviorPipeline.Execute(query, cancellationToken);
@@ -153,7 +158,7 @@ public sealed class TriajeController : ControllerBase
         command.Id = id;
 
         var output = await behaviorPipeline.Execute(command, cancellationToken);
-        
+
         return Ok(GeneralResponseDTO<TriajeResponse>.Ok(TriajeMapper.ToResponse(output)));
     }
 
@@ -166,10 +171,11 @@ public sealed class TriajeController : ControllerBase
         var behaviorPipeline = _deleteTriajeBehaviorPipelineFactory.Create();
 
         await behaviorPipeline.Execute(
-            new DeleteTriajeCommand{
+            new DeleteTriajeCommand
+            {
                 Id = id,
                 MotivoEliminacion = request.MotivoEliminacion
-            }, 
+            },
             cancellationToken
         );
 
@@ -186,7 +192,7 @@ public sealed class TriajeController : ControllerBase
         [FromQuery] string? codigo,
         [FromQuery] string? nombre,
         [FromQuery] string? tipoPeso,
-        [FromQuery] decimal? pesoKg,
+        [FromQuery] string? pesoKg,
         [FromQuery] long? vacunoId,
         CancellationToken cancellationToken)
     {
@@ -209,7 +215,7 @@ public sealed class TriajeController : ControllerBase
         [FromQuery] string? codigo,
         [FromQuery] string? nombre,
         [FromQuery] string? tipoPeso,
-        [FromQuery] decimal? pesoKg,
+        [FromQuery] string? pesoKg,
         [FromQuery] long? vacunoId,
         CancellationToken cancellationToken)
     {
@@ -289,9 +295,9 @@ public sealed class TriajeController : ControllerBase
         var output = await behaviorPipeline.Execute(
             new GetHistorialGeneralCommand
             {
-                FechaDesde = desde, 
+                FechaDesde = desde,
                 FechaHasta = hasta
-            }, 
+            },
             cancellationToken
         );
         return Ok(GeneralResponseDTO<object>.Ok(output.Items.Select(t => new { id = t.Id, fechaHora = t.FechaHora, tipoPesoCode = t.TipoPesoCode, pesoKg = t.PesoKg })));

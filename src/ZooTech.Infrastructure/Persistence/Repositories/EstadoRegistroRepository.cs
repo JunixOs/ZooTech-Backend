@@ -21,4 +21,13 @@ public sealed class EstadoRegistroRepository : IEstadoRegistroRepository
             .Select(e => e.code)
             .FirstAsync(cancellationToken);
     }
+
+    public async Task<string> GetDeletedCodeAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.cat_estado_registros
+            .AsNoTracking()
+            .Where(e => e.code == "ELIMINADO")
+            .Select(e => e.code)
+            .FirstAsync(cancellationToken);
+    }
 }

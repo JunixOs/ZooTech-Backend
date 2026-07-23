@@ -84,7 +84,7 @@ public sealed class ExcelGeneratorService : IExcelGeneratorService
             ("Código", document.Codigo),
             ("Nombre", document.Nombre),
             ("Tipo peso", document.TipoPeso),
-            ("Peso", document.PesoKg.HasValue ? $"{document.PesoKg.Value} Kg" : null));
+            ("Peso", !string.IsNullOrWhiteSpace(document.PesoKg) ? $"{document.PesoKg} Kg" : null));
     }
 
     private static void RenderHeader(IXLWorksheet worksheet, string title, DateTime generatedAtUtc, string filterLine)

@@ -164,7 +164,7 @@ if (app.Environment.IsDevelopment())
     // IMPORTANTE: debe ir antes de TenantResolution, Authentication y Authorization.
     app.UseCors("DevelopmentCorsPolicy");
 }
-if(app.Environment.IsProduction())
+if (app.Environment.IsProduction())
 {
     app.UseCors("ProductionCorsPolicy");
 }

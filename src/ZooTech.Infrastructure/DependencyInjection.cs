@@ -92,14 +92,7 @@ public static class DependencyInjection
         services.AddScoped<ITriajeRepository, TriajeRepository>();
         services.AddScoped<ITipoPesoRepository, TipoPesoRepository>();
         
-        var garnetConnectionString = configuration["Garnet:ConnectionString"]
-            ?? throw new InvalidOperationException("Garnet:ConnectionString no configurado");
-
-        services.AddSingleton<IConnectionMultiplexer>(sp =>
-            ConnectionMultiplexer.Connect(garnetConnectionString));
-
-        services.AddSingleton<GarnetCacheConnection>();
-        services.AddScoped<IAppCacheService, GarnetCacheService>();
+        services.AddSingleton<IAppCacheService, InMemoryCacheService>();
         services.AddSingleton<
             IConcurrentCache<string, DbContextOptions<GanaderiaDbContext>>,
             ConcurrentCache<string, DbContextOptions<GanaderiaDbContext>>
@@ -147,7 +140,7 @@ public static class DependencyInjection
         services.AddScoped<IRuleRepository, RuleRepository>();
 
         // Multi-Instance Sync (Phase 4)
-        services.AddHostedService<ConfigInvalidationSubscriber>();
+        // services.AddHostedService<ConfigInvalidationSubscriber>();
 
         // JWT
         var jwt = configuration.GetSection("Jwt");

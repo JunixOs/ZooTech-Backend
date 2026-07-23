@@ -86,7 +86,7 @@ public sealed class PdfGeneratorService : IPdfGeneratorService
             ("Código", document.Codigo),
             ("Nombre", document.Nombre),
             ("Tipo peso", document.TipoPeso),
-            ("Peso", document.PesoKg.HasValue ? $"{document.PesoKg.Value} Kg" : null));
+            ("Peso", !string.IsNullOrWhiteSpace(document.PesoKg) ? $"{document.PesoKg} Kg" : null));
     }
 
     private static byte[] ComposeReport(

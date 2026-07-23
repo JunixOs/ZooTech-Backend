@@ -10,7 +10,7 @@ public sealed record GenerateTriajesExcelQuery(
     string? Codigo,
     string? Nombre,
     string? TipoPeso,
-    decimal? PesoKg,
+    string? PesoKg,
     long? VacunoId) : IAuditableRequest
 {
     public AuditEventType EventType => AuditEventType.DataExport;
