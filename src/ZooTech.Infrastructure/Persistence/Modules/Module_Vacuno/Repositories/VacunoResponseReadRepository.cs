@@ -79,4 +79,18 @@ public sealed class VacunoResponseReadRepository : IVacunoResponseReadRepository
                 u.created_at))
             .FirstOrDefaultAsync(cancellationToken);
     }
+
+    public async Task<string?> GetFotoUrlAsync(
+        long vacunoId,
+        CancellationToken cancellationToken = default)
+    {
+        var foto = await _context.vacuno_fotos
+            .AsNoTracking()
+            .Include(f => f.archivo)
+            .Where(f => f.vacuno_id == vacunoId && f.es_principal)
+            .Select(f => f.archivo.ruta_archivo)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return foto;
+    }
 }
