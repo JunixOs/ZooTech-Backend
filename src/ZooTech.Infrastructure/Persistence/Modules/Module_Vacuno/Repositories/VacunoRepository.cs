@@ -392,19 +392,24 @@ public sealed class VacunoRepository : IVacunoRepository
     {
         return await _ganaderiaDbContext.vacunos
             .AsNoTracking()
-            .Where(v => v.deleted_at == null
-                && !_ganaderiaDbContext.v_vacuno_estado_vigentes
-                    .Any(e => e.vacuno_id == v.id && e.estado_code == "MUERTO"))
-            .OrderBy(v => v.codigo)
-            .Select(v => new VacunoReferenceItem(
-                v.id,
-                v.codigo,
-                v.nombre,
-                v.sexo_code,
-                _ganaderiaDbContext.v_vacuno_estado_vigentes
-                    .Where(e => e.vacuno_id == v.id)
-                    .Select(e => e.estado_code)
-                    .FirstOrDefault()))
+            .Where(v => v.deleted_at == null)
+            .Select(v => new
+            {
+                Vacuno = v,
+                EstadoCode = v.vacuno_estado_historials
+                    .OrderByDescending(h => h.fecha_estado)
+                    .ThenByDescending(h => h.id)
+                    .Select(h => h.estado_code)
+                    .FirstOrDefault(),
+            })
+            .Where(item => item.EstadoCode == null || item.EstadoCode != "MUERTO")
+            .OrderBy(item => item.Vacuno.codigo)
+            .Select(item => new VacunoReferenceItem(
+                item.Vacuno.id,
+                item.Vacuno.codigo,
+                item.Vacuno.nombre,
+                item.Vacuno.sexo_code,
+                item.EstadoCode))
             .ToListAsync(cancellationToken);
     }
 
