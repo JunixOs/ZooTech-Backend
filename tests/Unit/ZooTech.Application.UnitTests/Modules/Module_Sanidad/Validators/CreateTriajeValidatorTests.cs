@@ -64,12 +64,12 @@ public class CreateTriajeValidatorTests
         Assert.NotEmpty(result);
     }
 
-    [Fact(Skip = "CreateTriajeValidator does not implement an Observaciones max-length rule yet. Pending product decision on whether to add it.")]
+    [Fact]
     public void Validate_WhenObservacionesExceedsMaxLength_HasError()
     {
         var validator = new CreateTriajeValidator();
 
-        var result = validator.Validate(ValidCommand(observaciones: new string('A', 151)));
+        var result = validator.Validate(ValidCommand(observaciones: new string('A', 501)));
 
         Assert.NotEmpty(result);
     }
@@ -82,6 +82,34 @@ public class CreateTriajeValidatorTests
         var result = validator.Validate(ValidCommand(observaciones: null));
 
         Assert.Empty(result);
+    }
+
+    [Fact]
+    public void Validate_WhenFechaHoraIsNull_HasError()
+    {
+        var validator = new CreateTriajeValidator();
+
+        var result = validator.Validate(new CreateTriajeCommand
+        {
+            VacunoId = 1,
+            TipoPesoCode = "NACIMIENTO",
+            PesoKg = 10,
+            Observaciones = null,
+            EncargadoUsuarioId = null,
+            FechaHora = null,
+        });
+
+        Assert.NotEmpty(result);
+    }
+
+    [Fact]
+    public void Validate_WhenEncargadoUsuarioIdIsInvalid_HasError()
+    {
+        var validator = new CreateTriajeValidator();
+
+        var result = validator.Validate(ValidCommand(encargadoUsuarioId: 0));
+
+        Assert.NotEmpty(result);
     }
 
     [Fact(Skip = "CreateTriajeValidator does not implement a future-date rule for FechaHora yet. Pending product decision on whether to add it.")]
