@@ -1,9 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System.Globalization;
-using System.Net;
-using System.Text;
 // Removed obsolete Animals import
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.CreateVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
@@ -13,6 +10,7 @@ using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ListarVacunosReporte;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.UpdateVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarArbolGenealogico;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarActividadVacunos;
 using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
 // Removed GanaderiaDbContext dependency
 using ZooTech.InterfaceAdapters.DTOs;
@@ -26,10 +24,14 @@ using ZooTech.Application.Common.Behaviors.Module_Vacuno.GetVacunoById;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.UpdateVacuno;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.DeleteVacuno;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.ExportarArbolGenealogico;
+using ZooTech.Application.Common.Behaviors.Module_Vacuno.ExportarActividadVacunos;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.ReporteVacuno.ListarVacunosReporte;
+using ZooTech.Application.Common.Behaviors.Module_Vacuno.ReporteVacuno.ObtenerRegistroVacunoReporte;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.GetArbolGenealogico;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.GetActivityStats;
+using ZooTech.Application.Common.Gateway.Reports;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetActivityStats;
+using ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Controllers;
 
@@ -45,8 +47,11 @@ public sealed class VacunoController : ControllerBase
     private readonly IDeleteVacunoBehaviorPipelineFactory _deleteVacunoBehaviorPipelineFactory;
     private readonly IExportarArbolGenealogicoBehaviorPipelineFactory _exportarArbolGenealogicoBehaviorPipelineFactory;
     private readonly IListarVacunosReporteBehaviorPipelineFactory _listarVacunosReporteBehaviorPipelineFactory;
+    private readonly IObtenerRegistroVacunoReporteBehaviorPipelineFactory _obtenerRegistroVacunoReporteBehaviorPipelineFactory;
     private readonly IGetArbolGenealogicoBehaviorPipelineFactory _getArbolGenealogicoBehaviorPipelineFactory;
     private readonly IGetActivityStatsBehaviorPipelineFactory _getActivityStatsBehaviorPipelineFactory;
+    private readonly IExportarActividadVacunosBehaviorPipelineFactory _exportarActividadVacunosBehaviorPipelineFactory;
+    private readonly IReportFileStorage _reportFileStorage;
     private readonly IVacunoRepository _vacunoRepository;
 
     public VacunoController(
@@ -57,8 +62,11 @@ public sealed class VacunoController : ControllerBase
         IDeleteVacunoBehaviorPipelineFactory deleteVacunoBehaviorPipelineFactory,
         IExportarArbolGenealogicoBehaviorPipelineFactory exportarArbolGenealogicoBehaviorPipelineFactory,
         IListarVacunosReporteBehaviorPipelineFactory listarVacunosReporteBehaviorPipelineFactory,
+        IObtenerRegistroVacunoReporteBehaviorPipelineFactory obtenerRegistroVacunoReporteBehaviorPipelineFactory,
         IGetArbolGenealogicoBehaviorPipelineFactory getArbolGenealogicoBehaviorPipelineFactory,
         IGetActivityStatsBehaviorPipelineFactory getActivityStatsBehaviorPipelineFactory,
+        IExportarActividadVacunosBehaviorPipelineFactory exportarActividadVacunosBehaviorPipelineFactory,
+        IReportFileStorage reportFileStorage,
         IVacunoRepository vacunoRepository)
     {
         _listarVacunosBehaviorPipelineFactory = listarVacunosBehaviorPipelineFactory;
@@ -68,9 +76,11 @@ public sealed class VacunoController : ControllerBase
         _deleteVacunoBehaviorPipelineFactory = deleteVacunoBehaviorPipelineFactory;
         _exportarArbolGenealogicoBehaviorPipelineFactory = exportarArbolGenealogicoBehaviorPipelineFactory;
         _listarVacunosReporteBehaviorPipelineFactory = listarVacunosReporteBehaviorPipelineFactory;
+        _obtenerRegistroVacunoReporteBehaviorPipelineFactory = obtenerRegistroVacunoReporteBehaviorPipelineFactory;
         _getArbolGenealogicoBehaviorPipelineFactory = getArbolGenealogicoBehaviorPipelineFactory;
         _getActivityStatsBehaviorPipelineFactory = getActivityStatsBehaviorPipelineFactory;
-
+        _exportarActividadVacunosBehaviorPipelineFactory = exportarActividadVacunosBehaviorPipelineFactory;
+        _reportFileStorage = reportFileStorage;
         _vacunoRepository = vacunoRepository;
     }
 
@@ -237,24 +247,10 @@ public sealed class VacunoController : ControllerBase
     {
         var behaviorPipeline = _listarVacunosReporteBehaviorPipelineFactory.Create();
 
+        var query = RegistroVacunoReporteMapper.ToApplicationQuery(request) with { Formato = formato };
         var response = await behaviorPipeline.Execute(
-            RegistroVacunoReporteMapper.ToApplicationQuery(request),
+            query,
             cancellationToken);
-
-        var normalizedFormato = NormalizeFormat(formato);
-        if (normalizedFormato is "excel" or "pdf")
-        {
-            var rows = await LoadAllListadoReporteItemsAsync(request, response.TotalCount, cancellationToken);
-            var downloadUrl = await GenerateListadoReportFileAsync(
-                rows,
-                normalizedFormato,
-                response.Filtros.FechaDesde,
-                response.Filtros.FechaHasta,
-                response.Filtros.Q,
-                cancellationToken);
-
-            response = response with { DownloadUrl = downloadUrl };
-        }
 
         return Ok(RegistroVacunoReporteMapper.ToResponse(response));
     }
@@ -265,54 +261,30 @@ public sealed class VacunoController : ControllerBase
     public async Task<IActionResult> ReporteIndividual(
         [FromRoute] long vacunoId,
         [FromQuery] string? formato,
-        [FromServices] IRegistroVacunoReadRepository registroReadRepository,
-        [FromServices] IVacunoResponseReadRepository responseReadRepository,
         CancellationToken cancellationToken)
     {
-        var behaviorPipeline = _getVacunoByIdBehaviorPipelineFactory.Create();
+        var behaviorPipeline = _obtenerRegistroVacunoReporteBehaviorPipelineFactory.Create();
+        var response = await behaviorPipeline.Execute(
+            new ObtenerRegistroVacunoReporteQuery(vacunoId, formato),
+            cancellationToken);
 
-        var output = await behaviorPipeline.Execute(
-            new GetVacunoByIdCommand(vacunoId), 
-            cancellationToken
-        );
-        var response = await EnrichResponseAsync(output.Data, responseReadRepository, cancellationToken);
-        var normalizedFormato = NormalizeFormat(formato);
-        var detalle = await BuildRegistroVacunoDetalleAsync(response, registroReadRepository, cancellationToken);
-
-        string? downloadUrl = null;
-        if (normalizedFormato is "excel" or "pdf")
-        {
-            downloadUrl = await GenerateRegistroReportFileAsync(detalle, normalizedFormato, cancellationToken);
-        }
-
-        return Ok(new
-        {
-            vacuno = detalle,
-            historial = Array.Empty<object>(),
-            downloadUrl
-        });
+        return Ok(RegistroVacunoReporteMapper.ToResponse(response));
     }
 
     [HttpGet("reportes/descargas/{fileName}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public IActionResult DescargarReporte([FromRoute] string fileName)
+    public async Task<IActionResult> DescargarReporte(
+        [FromRoute] string fileName,
+        CancellationToken cancellationToken)
     {
-        var safeFileName = Path.GetFileName(fileName);
-        var path = Path.Combine(GetReportOutputDirectory(), safeFileName);
-
-        if (!System.IO.File.Exists(path))
+        var report = await _reportFileStorage.ReadAsync(fileName, cancellationToken);
+        if (report is null)
         {
             return NotFound();
         }
 
-        var contentType = safeFileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase)
-            ? "application/pdf"
-            : safeFileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase)
-                ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                : "text/csv";
-
-        return PhysicalFile(path, contentType, safeFileName);
+        return File(report.Content, report.ContentType, report.FileName);
     }
 
     [HttpGet("granjas")]
@@ -354,6 +326,22 @@ public sealed class VacunoController : ControllerBase
             output.Mayor,
             output.Menor
         ));
+    }
+
+    [HttpGet("estadisticas/actividad/exportar")]
+    [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ExportActivityStats(
+        [FromQuery] DateOnly? fechaInicio,
+        [FromQuery] DateOnly? fechaFin,
+        [FromQuery] string formato,
+        CancellationToken cancellationToken)
+    {
+        var query = new ExportarActividadVacunosQuery(fechaInicio, fechaFin, formato);
+        var pipeline = _exportarActividadVacunosBehaviorPipelineFactory.Create();
+        var document = await pipeline.Execute(query, cancellationToken);
+
+        return File(document.Content, document.ContentType, document.FileName);
     }
 
     private async Task<VacunoResponse> EnrichResponseAsync(
@@ -430,225 +418,6 @@ public sealed class VacunoController : ControllerBase
         return -1;
     }
 
-    private async Task<object> BuildRegistroVacunoDetalleAsync(
-        VacunoResponse response,
-        IRegistroVacunoReadRepository registroReadRepository,
-        CancellationToken cancellationToken)
-    {
-        string? codigoAbuelo = null;
-        string? codigoAbuela = null;
-
-        if (response.PadreId.HasValue)
-        {
-            var padre = await registroReadRepository.ObtenerRegistroAsync(response.PadreId.Value, cancellationToken);
-
-            if (padre?.PadreId is not null)
-            {
-                var codigos = await registroReadRepository.ObtenerCodigosVacunoBatchAsync(new[] { padre.PadreId.Value }, cancellationToken);
-                codigoAbuelo = codigos.GetValueOrDefault(padre.PadreId.Value);
-            }
-
-            if (padre?.MadreId is not null)
-            {
-                var codigos = await registroReadRepository.ObtenerCodigosVacunoBatchAsync(new[] { padre.MadreId.Value }, cancellationToken);
-                codigoAbuela = codigos.GetValueOrDefault(padre.MadreId.Value);
-            }
-        }
-
-        return new
-        {
-            id = response.Id,
-            codigo = response.Codigo,
-            nombre = response.Nombre,
-            fechaNacimiento = response.FechaNacimiento.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-            adquisicionPor = response.TipoAdquisicionCode,
-            precioCompra = (decimal?)null,
-            raza = response.RazaCode,
-            color = response.ColorCode,
-            sexo = (string?)null,
-            codigoPadre = response.CodigoPadre,
-            codigoMadre = response.CodigoMadre,
-            codigoAbuelo,
-            codigoAbuela,
-            granja = response.Granja,
-            distrito = response.Distrito,
-            departamento = response.Departamento,
-            provincia = response.Provincia,
-            procedencia = response.Granja,
-            aptoPara = (string?)null,
-            fechaEspecificacion = response.FechaRegistro.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-            observaciones = response.Observaciones,
-            fotoUrl = (string?)null,
-            estado = "vivo",
-            fechaRegistro = response.FechaRegistro.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-            creadoEn = response.CreatedAt.ToString("O", CultureInfo.InvariantCulture),
-            actualizadoEn = response.UpdatedAt.ToString("O", CultureInfo.InvariantCulture)
-        };
-    }
-
-    private async Task<IReadOnlyCollection<VacunoListadoReporteItem>> LoadAllListadoReporteItemsAsync(
-        ListadoVacunosRequest request,
-        int totalCount,
-        CancellationToken cancellationToken)
-    {
-        const int exportPageSize = 100;
-
-        if (totalCount <= 0)
-        {
-            return [];
-        }
-
-        var rows = new List<VacunoListadoReporteItem>(totalCount);
-        var totalPages = (int)Math.Ceiling((double)totalCount / exportPageSize);
-
-        for (var page = 1; page <= totalPages; page++)
-        {
-            var behaviorPipeline = _listarVacunosReporteBehaviorPipelineFactory.Create();
-
-            var pageRequest = CloneListadoRequest(request, page, exportPageSize);
-            var pageResponse = await behaviorPipeline.Execute(
-                RegistroVacunoReporteMapper.ToApplicationQuery(pageRequest),
-                cancellationToken);
-
-            rows.AddRange(pageResponse.Data);
-        }
-
-        return rows;
-    }
-
-    private static ListadoVacunosRequest CloneListadoRequest(
-        ListadoVacunosRequest request,
-        int page,
-        int pageSize)
-    {
-        return new ListadoVacunosRequest
-        {
-            FechaDesde = request.FechaDesde,
-            FechaHasta = request.FechaHasta,
-            Search = request.Search,
-            Q = request.Q,
-            Codigo = request.Codigo,
-            FechaRegistro = request.FechaRegistro,
-            Nombre = request.Nombre,
-            Raza = request.Raza,
-            Procedencia = request.Procedencia,
-            Estado = request.Estado,
-            EstadoRegistro = request.EstadoRegistro,
-            AptoPara = request.AptoPara,
-            Formato = "json",
-            Page = page.ToString(CultureInfo.InvariantCulture),
-            PageSize = pageSize.ToString(CultureInfo.InvariantCulture)
-        };
-    }
-
-    private Task<string> GenerateListadoReportFileAsync(
-        IReadOnlyCollection<VacunoListadoReporteItem> rows,
-        string formato,
-        DateOnly? fechaDesde,
-        DateOnly? fechaHasta,
-        string? keyword,
-        CancellationToken cancellationToken)
-    {
-        throw new NotSupportedException("El formato de reporte en PDF o Excel del listado general no está soportado temporalmente.");
-    }
-
-    private async Task<string> GenerateRegistroReportFileAsync(
-        object detalle,
-        string formato,
-        CancellationToken cancellationToken)
-    {
-        dynamic item = detalle;
-        var fileName = $"reporte_registro_vacuno_{item.codigo}_{DateTime.UtcNow:yyyyMMddHHmmss}.{(formato == "pdf" ? "pdf" : "csv")}";
-        var path = Path.Combine(GetReportOutputDirectory(), fileName);
-        var content = BuildRegistroReportContent(detalle);
-
-        if (formato == "pdf")
-        {
-            await System.IO.File.WriteAllBytesAsync(path, BuildSimplePdf("Reporte registro por vacuno", content), cancellationToken);
-        }
-        else
-        {
-            await System.IO.File.WriteAllTextAsync(path, content, Encoding.UTF8, cancellationToken);
-        }
-
-        return $"/api/v1/vacunos/reportes/descargas/{Uri.EscapeDataString(fileName)}";
-    }
-
-    private static string BuildRegistroReportContent(object detalle)
-    {
-        dynamic item = detalle;
-        var sb = new StringBuilder();
-        sb.AppendLine("Campo,Valor");
-        sb.AppendLine($"Codigo,{Csv(item.codigo)}");
-        sb.AppendLine($"Nombre,{Csv(item.nombre)}");
-        sb.AppendLine($"Fecha nacimiento,{Csv(item.fechaNacimiento)}");
-        sb.AppendLine($"Raza,{Csv(item.raza)}");
-        sb.AppendLine($"Color,{Csv(item.color)}");
-        sb.AppendLine($"Sexo,{Csv(item.sexo)}");
-        sb.AppendLine($"Padre,{Csv(item.codigoPadre)}");
-        sb.AppendLine($"Madre,{Csv(item.codigoMadre)}");
-        sb.AppendLine($"Procedencia,{Csv(item.procedencia)}");
-        sb.AppendLine($"Observaciones,{Csv(item.observaciones)}");
-        return sb.ToString();
-    }
-
-    private static byte[] BuildSimplePdf(string title, string content)
-    {
-        var lines = new[] { title, $"Generado: {DateTime.Now:yyyy-MM-dd HH:mm:ss}" }
-            .Concat(content.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries))
-            .Take(44)
-            .Select((line, index) => $"BT /F1 9 Tf 50 {760 - (index * 16)} Td ({PdfText(line)}) Tj ET");
-        var streamContent = string.Join("\n", lines);
-        var streamBytes = Encoding.ASCII.GetBytes(streamContent);
-        var objects = new List<string>
-        {
-            "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n",
-            "2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj\n",
-            "3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >> endobj\n",
-            "4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj\n",
-            $"5 0 obj << /Length {streamBytes.Length} >> stream\n{streamContent}\nendstream endobj\n"
-        };
-
-        using var stream = new MemoryStream();
-        using var writer = new StreamWriter(stream, Encoding.ASCII, leaveOpen: true);
-        writer.Write("%PDF-1.4\n");
-
-        var offsets = new List<long> { 0 };
-        foreach (var obj in objects)
-        {
-            writer.Flush();
-            offsets.Add(stream.Position);
-            writer.Write(obj);
-        }
-
-        writer.Flush();
-        var xrefPosition = stream.Position;
-        writer.WriteLine("xref");
-        writer.WriteLine($"0 {objects.Count + 1}");
-        writer.WriteLine("0000000000 65535 f ");
-
-        foreach (var offset in offsets.Skip(1))
-        {
-            writer.WriteLine($"{offset:0000000000} 00000 n ");
-        }
-
-        writer.WriteLine("trailer");
-        writer.WriteLine($"<< /Size {objects.Count + 1} /Root 1 0 R >>");
-        writer.WriteLine("startxref");
-        writer.WriteLine(xrefPosition);
-        writer.WriteLine("%%EOF");
-        writer.Flush();
-
-        return stream.ToArray();
-    }
-
-    private static string GetReportOutputDirectory()
-    {
-        var path = Path.Combine(AppContext.BaseDirectory, "reportes", "vacunos");
-        Directory.CreateDirectory(path);
-        return path;
-    }
-
     private static DateOnly? ParseDateOrNull(string? value)
     {
         return DateOnly.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date)
@@ -667,25 +436,6 @@ public sealed class VacunoController : ControllerBase
     private static string? FirstNonBlank(params string?[] values)
         => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value))?.Trim();
 
-    private static string NormalizeFormat(string? formato)
-    {
-        var normalized = formato?.Trim().ToLowerInvariant();
-        return normalized is "excel" or "pdf" ? normalized : "json";
-    }
-
-    private static string Csv(object? value)
-    {
-        var text = Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty;
-        return $"\"{text.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";
-    }
-
-    private static string PdfText(string value)
-    {
-        return WebUtility.HtmlDecode(value)
-            .Replace("\\", "\\\\", StringComparison.Ordinal)
-            .Replace("(", "\\(", StringComparison.Ordinal)
-            .Replace(")", "\\)", StringComparison.Ordinal);
-    }
 
     [HttpGet("catalogos")]
     [ProducesResponseType(typeof(GeneralResponseDTO<VacunoCatalogsResponse>), StatusCodes.Status200OK)]

@@ -35,16 +35,6 @@ public sealed class VacunoRepository : IVacunoRepository
 
     }
 
-    public async Task<List<Vacuno>> ListAllWithDeletedAsync(CancellationToken cancellationToken = default)
-    {
-        var entities = await _ganaderiaDbContext.vacunos
-            .AsNoTracking()
-            .OrderBy(v => v.codigo)
-            .ToListAsync(cancellationToken);
-
-        return entities.Select(ToDomain).ToList();
-    }
-
     public async Task<List<(Vacuno Vacuno, string? Procedencia)>> ListAllForDisplayAsync(CancellationToken cancellationToken = default)
     {
         var entities = await _ganaderiaDbContext.vacunos
@@ -393,16 +383,20 @@ public sealed class VacunoRepository : IVacunoRepository
         return await _ganaderiaDbContext.vacunos
             .AsNoTracking()
             .Where(v => v.deleted_at == null
-                && !_ganaderiaDbContext.v_vacuno_estado_vigentes
-                    .Any(e => e.vacuno_id == v.id && e.estado_code == "MUERTO"))
+                && !v.vacuno_estado_historials
+                    .OrderByDescending(e => e.fecha_estado)
+                    .ThenByDescending(e => e.id)
+                    .Take(1)
+                    .Any(e => e.estado_code == "MUERTO"))
             .OrderBy(v => v.codigo)
             .Select(v => new VacunoReferenceItem(
                 v.id,
                 v.codigo,
                 v.nombre,
                 v.sexo_code,
-                _ganaderiaDbContext.v_vacuno_estado_vigentes
-                    .Where(e => e.vacuno_id == v.id)
+                v.vacuno_estado_historials
+                    .OrderByDescending(e => e.fecha_estado)
+                    .ThenByDescending(e => e.id)
                     .Select(e => e.estado_code)
                     .FirstOrDefault()))
             .ToListAsync(cancellationToken);

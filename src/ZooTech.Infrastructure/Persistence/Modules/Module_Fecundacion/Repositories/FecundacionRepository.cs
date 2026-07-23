@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using ZooTech.Application.Modules.Module_Fecundacion.Exceptions;
 using ZooTech.Domain.Ganaderia.Module_Fecundacion.Entities;
 using ZooTech.Domain.Ganaderia.Module_Fecundacion.Interfaces;
 using ZooTech.Infrastructure.Persistence.Context;
@@ -460,7 +461,7 @@ public sealed class FecundacionRepository : IFecundacionRepository
         entity.tipo_fecundacion_code = values.TipoFecundacionCode.Trim();
         entity.vacuno_receptor_id = values.VacunoReceptorId;
         entity.fecha_procedimiento = values.FechaProcedimiento;
-        entity.responsable_id = responsable.id;
+        entity.responsable = responsable;
         entity.resultado_code = values.ResultadoCode.Trim();
         entity.observaciones_veterinarias = string.IsNullOrWhiteSpace(values.ObservacionesVeterinarias)
             ? null
@@ -501,7 +502,7 @@ public sealed class FecundacionRepository : IFecundacionRepository
         var estadoExists = await _context.cat_estado_fecundacion_vacunos
             .AnyAsync(e => e.code == values.EstadoFecundacionCode, cancellationToken);
         if (!estadoExists)
-            throw new ArgumentException("El estado de fecundación indicado no existe.");
+            throw new FecundacionInvalidEstadoException();
     }
 
     private async Task ValidateVacunosAsync(

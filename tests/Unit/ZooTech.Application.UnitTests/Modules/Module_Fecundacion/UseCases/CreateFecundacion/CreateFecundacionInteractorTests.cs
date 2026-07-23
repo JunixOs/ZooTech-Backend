@@ -17,6 +17,7 @@ public sealed class CreateFecundacionInteractorTests
     private readonly IAppCacheService _cacheMock;
     private readonly IGanaderiaUnitOfWork _unitOfWorkMock;
     private readonly CreateFecundacionInteractor _interactor;
+    private bool _insideTransaction;
 
     public CreateFecundacionInteractorTests()
     {
@@ -34,11 +35,19 @@ public sealed class CreateFecundacionInteractorTests
             {
                 var operation = callInfo.Arg<Func<CancellationToken, Task<Fecundacion>>>();
                 var afterSave = callInfo.Arg<Func<Fecundacion, CancellationToken, Task<Fecundacion>>>();
-                
-                var operationResult = await operation(CancellationToken.None);
-                return afterSave == null 
-                    ? operationResult 
-                    : await afterSave(operationResult, CancellationToken.None);
+
+                _insideTransaction = true;
+                try
+                {
+                    var operationResult = await operation(CancellationToken.None);
+                    return afterSave == null
+                        ? operationResult
+                        : await afterSave(operationResult, CancellationToken.None);
+                }
+                finally
+                {
+                    _insideTransaction = false;
+                }
             });
 
         _interactor = new CreateFecundacionInteractor(_unitOfWorkMock, _cacheMock);
@@ -67,7 +76,11 @@ public sealed class CreateFecundacionInteractorTests
         _repositoryMock.ExistsVacunoAsync(command.VacunoDonanteId!.Value, Arg.Any<CancellationToken>())
             .Returns(true);
         _repositoryMock.GetOrCreateResponsableByNameAsync(command.ResponsableName, Arg.Any<CancellationToken>())
-            .Returns(10);
+            .Returns(_ =>
+            {
+                _insideTransaction.Should().BeTrue();
+                return 10;
+            });
         _repositoryMock.ExistsCodigoAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(false);
 
@@ -104,7 +117,11 @@ public sealed class CreateFecundacionInteractorTests
         );
 
         _repositoryMock.AddAsync(Arg.Any<Fecundacion>(), Arg.Any<CancellationToken>())
-            .Returns(domainFecundacion);
+            .Returns(_ =>
+            {
+                _insideTransaction.Should().BeTrue();
+                return domainFecundacion;
+            });
 
         // Mock para el nuevo método GetByCodigoAsync usado en afterSave
         _repositoryMock.GetByCodigoAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
@@ -119,8 +136,59 @@ public sealed class CreateFecundacionInteractorTests
         result.Codigo.Should().Be("FEC-123456");
 
         await _repositoryMock.Received(1).AddAsync(Arg.Any<Fecundacion>(), Arg.Any<CancellationToken>());
+        await _repositoryMock.Received(1).GetOrCreateResponsableByNameAsync(
+            command.ResponsableName,
+            Arg.Any<CancellationToken>());
         await _repositoryMock.Received(1).GetByCodigoAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
         await _cacheMock.Received(1).RemoveByPrefixAsync("fecundacion:listar");
+    }
+
+    [Fact]
+    public async Task HandleAsync_NoDebeInvalidarCache_CuandoFallaLaPersistencia()
+    {
+        var command = CreateValidCommand();
+        ConfigureValidReferences(command);
+        _repositoryMock.GetOrCreateResponsableByNameAsync(
+                command.ResponsableName,
+                Arg.Any<CancellationToken>())
+            .Returns(10);
+        _repositoryMock.AddAsync(
+                Arg.Any<Fecundacion>(),
+                Arg.Any<CancellationToken>())
+            .Returns(_ => Task.FromException<Fecundacion>(
+                new InvalidOperationException("Fallo de persistencia")));
+
+        var action = () => _interactor.HandleAsync(command);
+
+        await action.Should().ThrowAsync<InvalidOperationException>();
+        await _repositoryMock.DidNotReceive().GetByCodigoAsync(
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>());
+        await _cacheMock.DidNotReceive().RemoveByPrefixAsync(Arg.Any<string>());
+    }
+
+    [Fact]
+    public async Task HandleAsync_DebePropagarConflictException_CuandoNoRecuperaLaFecundacion()
+    {
+        var command = CreateValidCommand();
+        ConfigureValidReferences(command);
+        _repositoryMock.GetOrCreateResponsableByNameAsync(
+                command.ResponsableName,
+                Arg.Any<CancellationToken>())
+            .Returns(10);
+        _repositoryMock.AddAsync(
+                Arg.Any<Fecundacion>(),
+                Arg.Any<CancellationToken>())
+            .Returns(callInfo => callInfo.Arg<Fecundacion>());
+        _repositoryMock.GetByCodigoAsync(
+                Arg.Any<string>(),
+                Arg.Any<CancellationToken>())
+            .Returns((Fecundacion?)null);
+
+        var action = () => _interactor.HandleAsync(command);
+
+        await action.Should().ThrowAsync<ConflictException>();
+        await _cacheMock.DidNotReceive().RemoveByPrefixAsync(Arg.Any<string>());
     }
 
     [Fact]
@@ -150,4 +218,34 @@ public sealed class CreateFecundacionInteractorTests
         // Assert
         await action.Should().ThrowAsync<FecundacionVacunoNotFoundException>();
     }
+
+    private void ConfigureValidReferences(CreateFecundacionCommand command)
+    {
+        _repositoryMock.ExistsVacunoAsync(
+                command.VacunoReceptorId,
+                Arg.Any<CancellationToken>())
+            .Returns(true);
+        _repositoryMock.ExistsVacunoAsync(
+                command.VacunoDonanteId!.Value,
+                Arg.Any<CancellationToken>())
+            .Returns(true);
+        _repositoryMock.ExistsCodigoAsync(
+                Arg.Any<string>(),
+                Arg.Any<CancellationToken>())
+            .Returns(false);
+    }
+
+    private static CreateFecundacionCommand CreateValidCommand()
+        => new(
+            TipoFecundacionCode: "MN",
+            VacunoReceptorId: 1,
+            CeloRegistroId: null,
+            FechaProcedimiento: DateTime.UtcNow,
+            ResponsableName: "Juan Perez",
+            ResultadoCode: "pendiente",
+            ObservacionesVeterinarias: "Ninguna",
+            MachoExterno: false,
+            MachoExternoNombre: null,
+            VacunoDonanteId: 2,
+            CreatedById: 1);
 }

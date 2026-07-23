@@ -64,7 +64,7 @@ builder.Services.AddMemoryCache();
 // ======= Configuracion CORS =======
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowFrontend", policy =>
+    options.AddPolicy("ProductionCorsPolicy", policy =>
     {
         policy
             .SetIsOriginAllowed(origin =>
@@ -80,30 +80,49 @@ builder.Services.AddCors(options =>
                         uri.Host.EndsWith(".zentrycorp.dev")
                     );
 
-                // Desarrollo local por tenant: admin.zentrycorp.local:4200, zootecniaunas.zentrycorp.local:4200, etc.
+                // Desarrollo local
+                var isLocalhost =
+                    (uri.Scheme == "http" || uri.Scheme == "https") &&
+                    (
+                        uri.Host == "localhost" ||
+                        uri.Host == "127.0.0.1"
+                    );
+
+                return isZentryDomain || isLocalhost;
+            })
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+
+    options.AddPolicy("DevelopmentCorsPolicy", policy =>
+    {
+        policy
+            .SetIsOriginAllowed(origin =>
+            {
+                var uri = new Uri(origin);
+
+                var isZentryDomain =
+                    uri.Host.EndsWith(".zentrycorp.local");
+
                 var isLocal =
                     uri.Scheme == "http" &&
                     uri.Port == 4200 &&
                     (
                         uri.Host == "localhost" ||
                         uri.Host == "127.0.0.1" ||
-                        uri.Host == "admin.zentrycorp.local" ||
-                        uri.Host == "zootecniaunas.zentrycorp.local" ||
-                        uri.Host == "elroble.zentrycorp.local" ||
-                        uri.Host == "lacteosdelvalle.zentrycorp.local" ||
-                        uri.Host == "losandes.zentrycorp.local"
+                        uri.Host.EndsWith(".zentrycorp.local")
                     );
 
                 return isZentryDomain || isLocal;
             })
             .AllowAnyHeader()
             .AllowAnyMethod()
+            .AllowCredentials()
             .WithExposedHeaders(
                 "X-Tenant-Id",
                 "X-Tenant-Name",
                 "X-Tenant-Legal-Name",
-                "X-Tenant-Type"
-            );
+                "X-Tenant-Type");
     });
 });
 
@@ -120,11 +139,8 @@ app.UseHttpsRedirection();
 // ======= Routing =======
 app.UseRouting();
 
-// ======= CORS =======
-// IMPORTANTE: debe ir antes de TenantResolution, Authentication y Authorization.
-app.UseCors("AllowFrontend");
-
-// ======= Swagger =======
+// ======= Swagger + CORS (por entorno) =======
+// IMPORTANTE: CORS debe ir antes de TenantResolution, Authentication y Authorization.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -143,6 +159,12 @@ if (app.Environment.IsDevelopment())
             "/swagger/users/swagger.json",
             "Users API");
     });
+
+    app.UseCors("DevelopmentCorsPolicy");
+}
+if (app.Environment.IsProduction())
+{
+    app.UseCors("ProductionCorsPolicy");
 }
 
 // ======= Tenant Middleware =======

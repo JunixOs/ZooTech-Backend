@@ -72,3 +72,16 @@ public sealed class FecundacionVacunoNotFoundException : FecundacionException
     {
     }
 }
+
+public sealed class FecundacionInvalidEstadoException : FecundacionException
+{
+    public FecundacionInvalidEstadoException(
+        string message = "El estado de fecundacion indicado no existe."
+    ) : base(
+        ErrorType.Validation,
+        message,
+        "INVALID_ESTADO_ERROR"
+    )
+    {
+    }
+}

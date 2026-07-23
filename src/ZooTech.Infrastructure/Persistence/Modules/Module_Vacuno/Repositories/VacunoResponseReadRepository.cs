@@ -79,36 +79,4 @@ public sealed class VacunoResponseReadRepository : IVacunoResponseReadRepository
                 u.created_at))
             .FirstOrDefaultAsync(cancellationToken);
     }
-    public async Task<ActivityAggregatesOutput> GetActivityAggregatesAsync(
-        DateOnly start, DateOnly end, CancellationToken cancellationToken = default)
-    {
-        var query = _context.vacunos.AsNoTracking();
-
-        var inventarioInicialTask = query.CountAsync(v => 
-            v.fecha_registro < start && 
-            (v.deleted_at == null || DateOnly.FromDateTime(v.deleted_at.Value) >= start), 
-            cancellationToken);
-
-        var altasTask = query
-            .Where(v => v.fecha_registro >= start && v.fecha_registro <= end)
-            .GroupBy(v => v.fecha_registro)
-            .Select(g => new { Fecha = g.Key, Cantidad = g.Count() })
-            .ToDictionaryAsync(k => k.Fecha, v => v.Cantidad, cancellationToken);
-
-        var bajasTask = query
-            .Where(v => v.deleted_at != null && 
-                        DateOnly.FromDateTime(v.deleted_at.Value) >= start && 
-                        DateOnly.FromDateTime(v.deleted_at.Value) <= end)
-            .GroupBy(v => DateOnly.FromDateTime(v.deleted_at.Value))
-            .Select(g => new { Fecha = g.Key, Cantidad = g.Count() })
-            .ToDictionaryAsync(k => k.Fecha, v => v.Cantidad, cancellationToken);
-
-        await Task.WhenAll(inventarioInicialTask, altasTask, bajasTask);
-
-        return new ActivityAggregatesOutput(
-            inventarioInicialTask.Result,
-            altasTask.Result,
-            bajasTask.Result
-        );
-    }
 }

@@ -1,89 +1,75 @@
-using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
-using Moq;
 using StackExchange.Redis;
 using ZooTech.API.IntegrationTests.Seeders;
+using ZooTech.API.IntegrationTests.Support;
 using ZooTech.Application.Common.Gateway.Auditing;
 using ZooTech.Application.Common.Gateway.Caching;
+using ZooTech.Application.Common.Gateway.Parametrization;
 using ZooTech.Infrastructure.Caching;
-using Microsoft.EntityFrameworkCore;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Tenant;
-using ZooTech.Infrastructure.Persistence.Entities.MainTenantsDb;
 
 namespace ZooTech.API.IntegrationTests;
 
 public sealed class ZooTechApiFactory : WebApplicationFactory<Program>
 {
     public const string DefaultTenantHost = "zootecniaunas.zentrycorp.local";
+    private const string CatalogDatabaseName = "IntegrationTest_Catalog";
+    private const string GanaderiaDatabaseName = "IntegrationTest_Ganaderia";
+
+    private static readonly InMemoryDatabaseRoot CatalogDatabaseRoot = new();
+    private static readonly InMemoryDatabaseRoot GanaderiaDatabaseRoot = new();
+    private static readonly object SeedLock = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Development");
-        builder.ConfigureAppConfiguration((context, configBuilder) =>
-        {
-            configBuilder.AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                { "ConnectionStrings:TenantCatalogConnection", "Server=(localdb)\\mssqllocaldb;Database=ZooTech_Catalog;Trusted_Connection=True;" },
-                { "ConnectionStrings:AdminTenantTemplate", "Server=(localdb)\\mssqllocaldb;Database={TenantDb};Trusted_Connection=True;" }
-            });
-        });
         builder.ConfigureTestServices(services =>
         {
             services.RemoveAll<IConnectionMultiplexer>();
             services.RemoveAll<GarnetCacheConnection>();
             services.RemoveAll<IAppCacheService>();
             services.RemoveAll<IAppAuditService>();
+            services.RemoveAll<ITenantConfigurationProvider>();
+            services.RemoveAll<ITenantDbContextFactory>();
+            services.RemoveAll<IGanaderiaDbContextFactory>();
+            services.RemoveAll<DbContextOptions<TenantCatalogDb>>();
+            services.RemoveAll<TenantCatalogDb>();
 
             services.AddSingleton<IAppCacheService, NullCacheService>();
             services.AddSingleton<IAppAuditService, NoOpAuditService>();
-
-            // Reemplazar bases de datos por InMemory
-            services.RemoveAll<ITenantDbContextFactory>();
-            services.RemoveAll<IGanaderiaDbContextFactory>();
-
-            services.RemoveAll<DbContextOptions<TenantCatalogDb>>();
-            services.RemoveAll<DbContextOptions>();
-            services.RemoveAll<TenantCatalogDb>();
-
-            // Bypass Authorization for Integration Tests
-            services.AddAuthorization(options =>
-            {
-                options.DefaultPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
-                    .RequireAssertion(_ => true)
-                    .Build();
-            });
-
-            var catalogOptions = new DbContextOptionsBuilder<TenantCatalogDb>()
-                .UseInMemoryDatabase("IntegrationTest_Catalog")
-                .ConfigureWarnings(x => x.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning))
-                .Options;
-            services.AddSingleton(catalogOptions);
-            services.AddScoped<TenantCatalogDb>();
-
-            // Seed TenantCatalogDb with settings
-            // Use Mock TenantConfigurationProvider to provide default settings for testing
-            services.AddScoped<ZooTech.Application.Common.Gateway.Parametrization.ITenantConfigurationProvider>(sp =>
-            {
-                var mockProvider = new Moq.Mock<ZooTech.Application.Common.Gateway.Parametrization.ITenantConfigurationProvider>();
-                
-                // Configurar valores por defecto requeridos por las pruebas
-                mockProvider.Setup(p => p.GetSettingAsync(Moq.It.Is<ZooTech.Domain.Configuration.SettingDefinition<int>>(s => s.Code == "VACUNOS_ARBOL_MAX_NIVELES")))
-                            .ReturnsAsync(4);
-                mockProvider.Setup(p => p.GetSettingAsync(Moq.It.Is<ZooTech.Domain.Configuration.SettingDefinition<int>>(s => s.Code == "VACUNOS_ARBOL_MIN_NIVELES")))
-                            .ReturnsAsync(1);
-                            
-                return mockProvider.Object;
-            });
-
+            services.AddScoped<ITenantConfigurationProvider, TestTenantConfigurationProvider>();
             services.AddScoped<ITenantDbContextFactory, InMemoryTenantDbContextFactory>();
             services.AddScoped<IGanaderiaDbContextFactory, InMemoryGanaderiaDbContextFactory>();
 
+            services.AddAuthentication(options =>
+                {
+                    options.DefaultAuthenticateScheme = TestAuthHandler.SchemeName;
+                    options.DefaultChallengeScheme = TestAuthHandler.SchemeName;
+                })
+                .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(
+                    TestAuthHandler.SchemeName,
+                    _ => { });
+
+            services.AddSingleton(CreateCatalogOptions());
+            services.AddScoped<TenantCatalogDb>();
+
+            services.AddAuthorization(options =>
+            {
+                options.DefaultPolicy = new AuthorizationPolicyBuilder()
+                    .RequireAssertion(_ => true)
+                    .Build();
+            });
         });
     }
 
@@ -91,93 +77,25 @@ public sealed class ZooTechApiFactory : WebApplicationFactory<Program>
     {
         var host = base.CreateHost(builder);
 
-        using var scope = host.Services.CreateScope();
-        var catalogDb = scope.ServiceProvider.GetRequiredService<TenantCatalogDb>();
-        
-        if (!catalogDb.tenants.Any())
+        lock (SeedLock)
         {
-            var tenantsToSeed = new[] { "zootecniaunas", "elroble", "lacteosdelvalle", "losandes", "tenant-int" };
-            foreach(var subdomain in tenantsToSeed)
-            {
-                var newTenant = new tenant
-                {
-                    subdomain = subdomain,
-                    code = subdomain.Substring(0, Math.Min(4, subdomain.Length)).ToUpper(),
-                    status = "ACTIVE",
-                    email = $"admin@{subdomain}.zentrycorp.local",
-                    display_name = subdomain,
-                    legal_name = $"{subdomain} SAC",
-                    phone = "123456",
-                    timezone = "UTC"
-                };
-                catalogDb.tenants.Add(newTenant);
-                
-                catalogDb.tenant_database_connections.Add(new tenant_database_connection
-                {
-                    tenant = newTenant,
-                    database_name = $"ZooTech_{subdomain}_Db",
-                    is_active = true
-                });
-            }
+            using var scope = host.Services.CreateScope();
+            var catalogDb = scope.ServiceProvider.GetRequiredService<TenantCatalogDb>();
+            catalogDb.SeedIntegrationTenants();
             catalogDb.SaveChanges();
-        }
 
-        // Sembrar GanaderiaDbContext (Tenant Db)
-        var ganaderiaFactory = scope.ServiceProvider.GetRequiredService<IGanaderiaDbContextFactory>();
-        using var ganaderiaDb = ganaderiaFactory.CreateDbContextBySpecificDatabaseName("IntegrationTest_Ganaderia");
-        
-        lock (_seedLock)
-        {
-            // --- SEEDERS ---
+            var ganaderiaFactory = scope.ServiceProvider.GetRequiredService<IGanaderiaDbContextFactory>();
+            using var ganaderiaDb = ganaderiaFactory.CreateDbContextBySpecificDatabaseName(GanaderiaDatabaseName);
             ganaderiaDb.SeedBaseCatalogs();
             ganaderiaDb.SeedVacunosBasic();
             ganaderiaDb.SeedGenealogia();
-
-            if (!ganaderiaDb.cat_tipo_fecundacions.Any(t => t.code == "MN"))
-            {
-                var tipoFecundacion = new ZooTech.Infrastructure.Persistence.Entities.cat_tipo_fecundacion
-                {
-                    nombre = "Monta Natural",
-                    code = "MN"
-                };
-                ganaderiaDb.cat_tipo_fecundacions.Add(tipoFecundacion);
-            }
-
-            if (!ganaderiaDb.cat_resultado_fecundacions.Any(r => r.code == "POSITIVO"))
-            {
-                var resultado = new ZooTech.Infrastructure.Persistence.Entities.cat_resultado_fecundacion
-                {
-                    nombre = "Positivo",
-                    code = "POSITIVO"
-                };
-                ganaderiaDb.cat_resultado_fecundacions.Add(resultado);
-            }
-
-            if (!ganaderiaDb.cat_razas.Any(r => r.code == "HOLSTEIN"))
-            {
-                ganaderiaDb.cat_razas.Add(new ZooTech.Infrastructure.Persistence.Entities.cat_raza { code = "HOLSTEIN", nombre = "Holstein" });
-            }
-            if (!ganaderiaDb.cat_sexos.Any(s => s.code == "H"))
-            {
-                ganaderiaDb.cat_sexos.Add(new ZooTech.Infrastructure.Persistence.Entities.cat_sexo { code = "H", nombre = "Hembra" });
-                ganaderiaDb.cat_sexos.Add(new ZooTech.Infrastructure.Persistence.Entities.cat_sexo { code = "M", nombre = "Macho" });
-            }
-            if (!ganaderiaDb.cat_colors.Any(c => c.code == "BLANCO"))
-            {
-                ganaderiaDb.cat_colors.Add(new ZooTech.Infrastructure.Persistence.Entities.cat_color { code = "BLANCO", nombre = "Blanco" });
-            }
-            if (!ganaderiaDb.cat_tipo_adquisicions.Any(ta => ta.code == "COMPRA"))
-            {
-                ganaderiaDb.cat_tipo_adquisicions.Add(new ZooTech.Infrastructure.Persistence.Entities.cat_tipo_adquisicion { code = "COMPRA", nombre = "Compra" });
-            }
-
+            ganaderiaDb.SeedFecundacionCatalogs();
+            ganaderiaDb.SeedVacunosReportes();
             ganaderiaDb.SaveChanges();
         }
 
         return host;
     }
-
-    private static readonly object _seedLock = new object();
 
     public HttpClient CreateTenantClient(string tenantHost = DefaultTenantHost)
     {
@@ -189,37 +107,38 @@ public sealed class ZooTechApiFactory : WebApplicationFactory<Program>
         return client;
     }
 
-    private sealed class NoOpAuditService : IAppAuditService
-    {
-        public Task AuditEventAsync(AuditEventInfo auditEventInfo) => Task.CompletedTask;
-        public Task AuditErrorAsync(AuditErrorInfo auditErrorInfo) => Task.CompletedTask;
-    }
+    private static DbContextOptions<TenantCatalogDb> CreateCatalogOptions()
+        => new DbContextOptionsBuilder<TenantCatalogDb>()
+            .UseInMemoryDatabase(CatalogDatabaseName, CatalogDatabaseRoot)
+            .ConfigureWarnings(x => x.Ignore(InMemoryEventId.TransactionIgnoredWarning))
+            .Options;
 
     private sealed class InMemoryTenantDbContextFactory : ITenantDbContextFactory
     {
-        private readonly DbContextOptions<TenantCatalogDb> _options;
-        public InMemoryTenantDbContextFactory()
-        {
-            _options = new DbContextOptionsBuilder<TenantCatalogDb>()
-                .UseInMemoryDatabase("IntegrationTest_Catalog")
-                .ConfigureWarnings(x => x.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning))
-                .Options;
-        }
-        public TenantCatalogDb CreateDbContextByTenantContext() => new TenantCatalogDb(_options);
-        public TenantCatalogDb CreateDbContextBySettingsValue() => new TenantCatalogDb(_options);
+        public TenantCatalogDb CreateDbContextByTenantContext() => new(CreateCatalogOptions());
+
+        public TenantCatalogDb CreateDbContextBySettingsValue() => new(CreateCatalogOptions());
     }
 
     private sealed class InMemoryGanaderiaDbContextFactory : IGanaderiaDbContextFactory
     {
-        private readonly DbContextOptions<GanaderiaDbContext> _options;
-        public InMemoryGanaderiaDbContextFactory()
-        {
-            _options = new DbContextOptionsBuilder<GanaderiaDbContext>()
-                .UseInMemoryDatabase("IntegrationTest_Ganaderia")
-                .ConfigureWarnings(x => x.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning))
+        private static DbContextOptions<GanaderiaDbContext> CreateOptions()
+            => new DbContextOptionsBuilder<GanaderiaDbContext>()
+                .UseInMemoryDatabase(GanaderiaDatabaseName, GanaderiaDatabaseRoot)
+                .ConfigureWarnings(x => x.Ignore(InMemoryEventId.TransactionIgnoredWarning))
                 .Options;
-        }
-        public GanaderiaDbContext CreateDbContextByTenantContext() => new GanaderiaDbContext(_options);
-        public GanaderiaDbContext CreateDbContextBySpecificDatabaseName(string databaseName, bool useAdminLogin = false) => new GanaderiaDbContext(_options);
+
+        public GanaderiaDbContext CreateDbContextByTenantContext() => new(CreateOptions());
+
+        public GanaderiaDbContext CreateDbContextBySpecificDatabaseName(
+            string databaseName,
+            bool useAdminLogin = false) => new(CreateOptions());
+    }
+
+    private sealed class NoOpAuditService : IAppAuditService
+    {
+        public Task AuditEventAsync(AuditEventInfo auditEventInfo) => Task.CompletedTask;
+
+        public Task AuditErrorAsync(AuditErrorInfo auditErrorInfo) => Task.CompletedTask;
     }
 }
