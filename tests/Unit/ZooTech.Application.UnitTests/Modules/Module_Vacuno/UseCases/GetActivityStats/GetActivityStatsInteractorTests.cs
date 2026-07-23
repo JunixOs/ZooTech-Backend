@@ -2,6 +2,8 @@ using FluentAssertions;
 using NSubstitute;
 using Xunit;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetActivityStats;
+using ZooTech.Application.Common.Exceptions;
+using ZooTech.Application.Common.Gateway.Time;
 using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
 using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities;
 
@@ -9,13 +11,17 @@ namespace ZooTech.Application.UnitTests.Modules.Module_Vacuno.UseCases.GetActivi
 
 public class GetActivityStatsInteractorTests
 {
-    private readonly IVacunoResponseReadRepository _vacunoReadRepository;
+    private readonly IVacunoActivityStatsReadRepository _repository;
+    private readonly IDateTimeProvider _dateTimeProvider;
     private readonly GetActivityStatsInteractor _sut;
 
     public GetActivityStatsInteractorTests()
     {
-        _vacunoReadRepository = Substitute.For<IVacunoResponseReadRepository>();
-        _sut = new GetActivityStatsInteractor(_vacunoReadRepository);
+        _repository = Substitute.For<IVacunoActivityStatsReadRepository>();
+        _dateTimeProvider = Substitute.For<IDateTimeProvider>();
+        _dateTimeProvider.ServerNow.Returns(new DateTime(2023, 1, 30, 12, 0, 0, DateTimeKind.Utc));
+        _sut = new GetActivityStatsInteractor(
+            new VacunoActivityStatsService(_repository, _dateTimeProvider));
     }
 
     [Fact]
@@ -39,7 +45,7 @@ public class GetActivityStatsInteractorTests
         
         var mockAggregates = new ActivityAggregatesOutput(10, altasPorDia, bajasPorDia);
 
-        _vacunoReadRepository.GetActivityAggregatesAsync(
+        _repository.GetActivityAggregatesAsync(
             Arg.Any<DateOnly>(), 
             Arg.Any<DateOnly>(), 
             Arg.Any<CancellationToken>())
@@ -76,7 +82,7 @@ public class GetActivityStatsInteractorTests
         
         var mockAggregates = new ActivityAggregatesOutput(5, new Dictionary<DateOnly, int>(), new Dictionary<DateOnly, int>());
 
-        _vacunoReadRepository.GetActivityAggregatesAsync(
+        _repository.GetActivityAggregatesAsync(
             Arg.Any<DateOnly>(), 
             Arg.Any<DateOnly>(), 
             Arg.Any<CancellationToken>())
@@ -94,5 +100,49 @@ public class GetActivityStatsInteractorTests
 
         result.Mayor.Should().Be(5);
         result.Menor.Should().Be(5);
+    }
+
+    [Fact]
+    public async Task HandleAsync_WithoutDates_UsesThirtyInclusiveDays()
+    {
+        _repository.GetActivityAggregatesAsync(
+                new DateOnly(2023, 1, 1),
+                new DateOnly(2023, 1, 30),
+                Arg.Any<CancellationToken>())
+            .Returns(new ActivityAggregatesOutput(3, [], []));
+
+        var result = await _sut.HandleAsync(new GetActivityStatsQuery(null, null));
+
+        result.FechaInicio.Should().Be("2023-01-01");
+        result.FechaFin.Should().Be("2023-01-30");
+        result.Points.Should().HaveCount(30);
+    }
+
+    [Fact]
+    public async Task HandleAsync_WithOnlyEndDate_UsesThirtyInclusiveDaysEndingThere()
+    {
+        _repository.GetActivityAggregatesAsync(
+                new DateOnly(2023, 2, 1),
+                new DateOnly(2023, 3, 2),
+                Arg.Any<CancellationToken>())
+            .Returns(new ActivityAggregatesOutput(0, [], []));
+
+        var result = await _sut.HandleAsync(
+            new GetActivityStatsQuery(null, new DateOnly(2023, 3, 2)));
+
+        result.Points.Should().HaveCount(30);
+        result.FechaInicio.Should().Be("2023-02-01");
+        result.FechaFin.Should().Be("2023-03-02");
+    }
+
+    [Fact]
+    public async Task HandleAsync_WithFutureStartAndNoEnd_ThrowsStructuredValidationException()
+    {
+        var action = () => _sut.HandleAsync(
+            new GetActivityStatsQuery(new DateOnly(2023, 1, 31), null));
+
+        await action.Should().ThrowAsync<ValidationException>();
+        await _repository.DidNotReceiveWithAnyArgs()
+            .GetActivityAggregatesAsync(default, default, default);
     }
 }

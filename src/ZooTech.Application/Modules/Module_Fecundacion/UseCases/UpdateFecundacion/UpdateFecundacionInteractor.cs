@@ -26,10 +26,6 @@ public sealed class UpdateFecundacionInteractor : IUpdateFecundacionInputPort
     {
         var repository = _unitOfWork.Fecundaciones;
 
-        var existing = await repository.GetForEditAsync(command.Id, cancellationToken);
-        if (existing is null)
-            throw new FecundacionNotFoundException();
-
         if (!await repository.ExistsVacunoAsync(command.VacunoReceptorId, cancellationToken))
             throw new FecundacionVacunoNotFoundException();
 

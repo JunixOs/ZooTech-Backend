@@ -32,6 +32,13 @@ namespace ZooTech.InterfaceAdapters.Middleware
             {
                 await _next(context);
             }
+            catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
+            {
+                _logger.LogDebug(
+                    "Request canceled by the client: {Method} {Path}",
+                    context.Request.Method,
+                    context.Request.Path);
+            }
             catch (AppDomainException ex)
             {
                 _logger.LogWarning(ex, "ZooTechException: {Code} - {Type} - {Message} - {Scope}", ex.ErrorCode.ToString(), ex.ErrorType.ToString(), ex.Message.ToString(), ex.ScopeName.ToString());

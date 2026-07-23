@@ -90,6 +90,7 @@ public sealed class ZooTechApiFactory : WebApplicationFactory<Program>
             ganaderiaDb.SeedVacunosBasic();
             ganaderiaDb.SeedGenealogia();
             ganaderiaDb.SeedFecundacionCatalogs();
+            ganaderiaDb.SeedVacunosReportes();
             ganaderiaDb.SaveChanges();
         }
 

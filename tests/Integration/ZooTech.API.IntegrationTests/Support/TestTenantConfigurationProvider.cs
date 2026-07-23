@@ -5,6 +5,13 @@ namespace ZooTech.API.IntegrationTests.Support;
 
 internal sealed class TestTenantConfigurationProvider : ITenantConfigurationProvider
 {
+    private readonly ZooTech.Application.Common.Gateway.Context.ITenantContext _tenantContext;
+
+    public TestTenantConfigurationProvider(ZooTech.Application.Common.Gateway.Context.ITenantContext tenantContext)
+    {
+        _tenantContext = tenantContext;
+    }
+
     private static readonly IReadOnlyDictionary<string, object> Values =
         new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase)
         {
@@ -20,6 +27,12 @@ internal sealed class TestTenantConfigurationProvider : ITenantConfigurationProv
 
     public Task<T> GetSettingAsync<T>(SettingDefinition<T> setting)
     {
+        if (setting.Code == "VACUNOS_REPORTE_FORMATOS_DESCARGA")
+        {
+            var allowedFormats = _tenantContext.Code == "LOSA" ? "excel" : "excel,pdf";
+            return Task.FromResult((T)(object)allowedFormats);
+        }
+
         if (!Values.TryGetValue(setting.Code, out var value) || value is not T typedValue)
         {
             throw new InvalidOperationException(
