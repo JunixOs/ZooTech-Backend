@@ -56,9 +56,6 @@ public sealed class CreateFecundacionInteractor : ICreateFecundacionInputPort
                 );
         }
 
-        // Obtener o crear responsable
-        var responsableId = await repository.GetOrCreateResponsableByNameAsync(command.ResponsableName, cancellationToken);
-
         // Generar código único para la fecundación (Límite de la base de datos: 15 caracteres)
         var codigo = $"F{DateTime.UtcNow:yyMMddHHmmss}";
         if (await repository.ExistsCodigoAsync(codigo, cancellationToken))
@@ -66,36 +63,38 @@ public sealed class CreateFecundacionInteractor : ICreateFecundacionInputPort
 
         var utcNow = DateTime.UtcNow;
 
-        // Crear la entidad de dominio
-        var fecundacion = Fecundacion.CreateNew(
-            codigo: codigo,
-            tipoFecundacionCode: command.TipoFecundacionCode,
-            vacunoReceptorId: command.VacunoReceptorId,
-            celoRegistroId: command.CeloRegistroId,
-            fechaProcedimiento: command.FechaProcedimiento,
-            responsableId: responsableId,
-            resultadoCode: command.ResultadoCode,
-            observacionesVeterinarias: command.ObservacionesVeterinarias,
-            actorUsuarioId: command.CreatedById,
-            utcNow: utcNow,
-            machoExterno: command.MachoExterno,
-            machoExternoNombre: command.MachoExternoNombre,
-            vacunoDonanteId: command.VacunoDonanteId,
-            codigoSemen: command.CodigoSemen,
-            codigoEmbrion: command.CodigoEmbrion);
-
-        // Persistir en base de datos de manera transaccional
         var saved = await _unitOfWork.ExecuteInTransactionAsync(
-            operation: ct => repository.AddAsync(fecundacion, ct),
-            cancellationToken: cancellationToken,
-            afterSave: async (domainBeforeSave, ct) => 
+            operation: async ct =>
             {
-                return await repository.GetByCodigoAsync(fecundacion.Codigo, ct) 
-                    ?? throw new ConflictException(
-                        ScopeName.Application, 
-                        ModuleName.Fecundacion, 
-                        message: "No se pudo recuperar la fecundación persistida.");
-            });
+                var responsableId = await repository.GetOrCreateResponsableByNameAsync(
+                    command.ResponsableName,
+                    ct);
+                var fecundacion = Fecundacion.CreateNew(
+                    codigo: codigo,
+                    tipoFecundacionCode: command.TipoFecundacionCode,
+                    vacunoReceptorId: command.VacunoReceptorId,
+                    celoRegistroId: command.CeloRegistroId,
+                    fechaProcedimiento: command.FechaProcedimiento,
+                    responsableId: responsableId,
+                    resultadoCode: command.ResultadoCode,
+                    observacionesVeterinarias: command.ObservacionesVeterinarias,
+                    actorUsuarioId: command.CreatedById,
+                    utcNow: utcNow,
+                    machoExterno: command.MachoExterno,
+                    machoExternoNombre: command.MachoExternoNombre,
+                    vacunoDonanteId: command.VacunoDonanteId,
+                    codigoSemen: command.CodigoSemen,
+                    codigoEmbrion: command.CodigoEmbrion);
+
+                return await repository.AddAsync(fecundacion, ct);
+            },
+            cancellationToken: cancellationToken,
+            afterSave: async (domainBeforeSave, ct) =>
+                await repository.GetByCodigoAsync(domainBeforeSave.Codigo, ct)
+                ?? throw new ConflictException(
+                    ScopeName.Application,
+                    ModuleName.Fecundacion,
+                    message: "No se pudo recuperar la fecundación persistida."));
 
         await _cache.RemoveByPrefixAsync(FecundacionCacheKeys.ListarPrefix);
 
