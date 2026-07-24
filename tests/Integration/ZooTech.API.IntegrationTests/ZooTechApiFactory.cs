@@ -8,7 +8,6 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using StackExchange.Redis;
 using ZooTech.API.IntegrationTests.Seeders;
@@ -35,16 +34,6 @@ public sealed class ZooTechApiFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Development");
-        
-        builder.ConfigureAppConfiguration((context, config) =>
-        {
-            config.AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                { "MultiTenant:BaseDomain", "zentrycorp.local" },
-                { "MultiTenant:AdminSubDomain", "admin" }
-            });
-        });
-
         builder.ConfigureTestServices(services =>
         {
             services.RemoveAll<IConnectionMultiplexer>();
