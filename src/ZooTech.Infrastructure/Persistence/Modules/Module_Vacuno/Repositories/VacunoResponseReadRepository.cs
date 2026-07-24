@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using ZooTech.Domain.Module_Vacuno.Interfaces;
-using ZooTech.Domain.Module_Vacuno.Entities;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities;
 using ZooTech.Infrastructure.Persistence.Context;
 
 namespace ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Repositories;
@@ -72,6 +72,7 @@ public sealed class VacunoResponseReadRepository : IVacunoResponseReadRepository
         return _context.vacuno_utilizacion_historials
             .AsNoTracking()
             .Where(u => u.vacuno_id == vacunoId)
+
             .OrderByDescending(u => u.created_at)
             .Select(u => new VacunoUtilizacionDetails(
                 u.tipo_utilizacion_code,
