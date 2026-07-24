@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
-using ZooTech.Application.Modules.Module_Vacuno.Services;
 using ZooTech.InterfaceAdapters.Filters;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Services;
 

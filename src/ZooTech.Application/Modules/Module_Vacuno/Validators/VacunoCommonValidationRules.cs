@@ -16,15 +16,17 @@ internal static class VacunoCommonValidationRules
         string razaCode,
         string colorCode,
         string sexoCode,
-        long? granjaId,
-        string? granja,
-        string? codigoDistrito,
+        long granjaId,
         string? observaciones,
         decimal? precioCompra)
     {
         if (string.IsNullOrWhiteSpace(nombre))
         {
             errors.Add($"VACUNO-VACUNO-{operation}-NOMBRE-NULL");
+        }
+        else if (nombre.Length > 15)
+        {
+            errors.Add($"VACUNO-VACUNO-{operation}-NOMBRE-INVALID");
         }
 
         if (fechaNacimiento == default)
@@ -36,29 +38,56 @@ internal static class VacunoCommonValidationRules
         {
             errors.Add($"VACUNO-VACUNO-{operation}-TIPO_ADQUISICION_CODE-NULL");
         }
+        else if (tipoAdquisicionCode.Length > 30)
+        {
+            errors.Add($"VACUNO-VACUNO-{operation}-TIPO_ADQUISICION_CODE-INVALID");
+        }
 
         if (string.IsNullOrWhiteSpace(razaCode))
         {
             errors.Add($"VACUNO-VACUNO-{operation}-RAZA_CODE-NULL");
+        }
+        else if (razaCode.Length > 30)
+        {
+            errors.Add($"VACUNO-VACUNO-{operation}-RAZA_CODE-INVALID");
         }
 
         if (string.IsNullOrWhiteSpace(colorCode))
         {
             errors.Add($"VACUNO-VACUNO-{operation}-COLOR_CODE-NULL");
         }
+        else if (colorCode.Length > 30)
+        {
+            errors.Add($"VACUNO-VACUNO-{operation}-COLOR_CODE-INVALID");
+        }
 
         if (string.IsNullOrWhiteSpace(sexoCode))
         {
             errors.Add($"VACUNO-VACUNO-{operation}-SEXO_CODE-NULL");
         }
+        else if (sexoCode.Length > 10)
+        {
+            errors.Add($"VACUNO-VACUNO-{operation}-SEXO_CODE-INVALID");
+        }
 
-        var hasExistingGranja = granjaId.HasValue && granjaId.Value > 0;
-        var hasNewGranja = !string.IsNullOrWhiteSpace(granja)
-            && !string.IsNullOrWhiteSpace(codigoDistrito);
-
-        if (!hasExistingGranja && !hasNewGranja)
+        if (granjaId <= 0)
         {
             errors.Add($"VACUNO-VACUNO-{operation}-GRANJA_ID-INVALID");
+        }
+
+        if (!string.IsNullOrWhiteSpace(observaciones))
+        {
+            if (observaciones.Length > 150)
+            {
+                errors.Add($"VACUNO-VACUNO-{operation}-OBSERVACIONES-INVALID");
+            }
+
+            if (observaciones
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .Length > 30)
+            {
+                errors.Add($"VACUNO-VACUNO-{operation}-OBSERVACIONES-WORD_LIMIT");
+            }
         }
 
         if (tipoAdquisicionCode == "COMPRA" && !precioCompra.HasValue)

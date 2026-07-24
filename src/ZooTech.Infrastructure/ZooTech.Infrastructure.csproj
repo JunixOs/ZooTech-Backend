@@ -17,6 +17,7 @@
     </PackageReference>
     <PackageReference Include="QuestPDF" Version="2026.7.0" />
     <PackageReference Include="SkiaSharp" Version="3.119.1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.7" />
     <PackageReference Include="MongoDB.Driver" Version="3.9.0" />
     <PackageReference Include="StackExchange.Redis" Version="2.13.17" />
   </ItemGroup>

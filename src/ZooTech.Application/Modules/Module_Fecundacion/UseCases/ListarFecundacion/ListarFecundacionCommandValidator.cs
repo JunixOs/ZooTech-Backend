@@ -6,7 +6,7 @@ namespace ZooTech.Application.Modules.Module_Fecundacion.UseCases.ListarFecundac
 public sealed class ListarFecundacionCommandValidator : ICommandValidator<ListarFecundacionCommand>
 {
 
-    public ModuleName ModuleName => ModuleName.Fecundacion;
+    public ModuleName ModuleName => throw new NotImplementedException();
 
     public List<string> Validate(ListarFecundacionCommand request)
     {

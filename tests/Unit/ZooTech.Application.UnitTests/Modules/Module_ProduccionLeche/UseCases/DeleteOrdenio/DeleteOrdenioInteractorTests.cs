@@ -1,5 +1,4 @@
 using ZooTech.Application.Common.Exceptions;
-using ZooTech.Application.UnitTests.Modules.Module_ProduccionLeche.UseCases;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.DeleteOrdenio;
 using ZooTech.Domain.Module_ProduccionLeche.Entities;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
@@ -16,7 +15,7 @@ public class DeleteOrdenioInteractorTests
         var fecha = new DateTime(2026, 6, 18, 8, 0, 0, DateTimeKind.Utc);
         var existing = CreateOrdenio(fecha);
         var repository = new FakeOrdenioRepository(existing);
-        var interactor = new DeleteOrdenioInteractor(new FakeGanaderiaUnitOfWork(repository));
+        var interactor = new DeleteOrdenioInteractor(new FakeOrdenioUnitOfWork(repository));
 
         await interactor.Handle(new DeleteOrdenioCommand { Id = 10, MotivoEliminacion = "Registro duplicado" }, CancellationToken.None);
 
@@ -29,7 +28,7 @@ public class DeleteOrdenioInteractorTests
     public async Task HandleAsync_WhenOrdenioDoesNotExist_ThrowsNotFoundException()
     {
         var repository = new FakeOrdenioRepository(null);
-        var interactor = new DeleteOrdenioInteractor(new FakeGanaderiaUnitOfWork(repository));
+        var interactor = new DeleteOrdenioInteractor(new FakeOrdenioUnitOfWork(repository));
 
         await Assert.ThrowsAsync<NotFoundException>(() => interactor.Handle(new DeleteOrdenioCommand { Id = 99, MotivoEliminacion = "Motivo" }, CancellationToken.None));
     }
@@ -92,8 +91,6 @@ public class DeleteOrdenioInteractorTests
         }
 
         public IOrdenioRepository Ordenios { get; }
-        public ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces.IVacunoRepository Vacunos => throw new NotSupportedException();
-        public ZooTech.Domain.Ganaderia.Module_Fecundacion.Interfaces.IFecundacionRepository Fecundaciones => throw new NotSupportedException();
         public ITriajeRepository Triajes => throw new NotSupportedException();
 
         public Task<T> ExecuteInTransactionAsync<T>(

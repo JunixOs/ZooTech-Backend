@@ -4,9 +4,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.Validators;
 
-internal sealed class UpdateVacunoValidator :
-    ICommandValidator<UpdateVacunoCommand>,
-    IValidationErrorDetailsProvider
+internal sealed class UpdateVacunoValidator : ICommandValidator<UpdateVacunoCommand>
 {
     public ModuleName ModuleName => ModuleName.Vacuno;
 
@@ -29,15 +27,9 @@ internal sealed class UpdateVacunoValidator :
             request.ColorCode,
             request.SexoCode,
             request.GranjaId,
-            request.Granja,
-            request.CodigoDistrito,
             request.Observaciones,
             request.PrecioCompra);
 
         return errors;
     }
-
-    public IReadOnlyList<Application.Common.Exceptions.FieldValidationError> GetFieldErrors(
-        IReadOnlyCollection<string> errorCodes)
-        => VacunoValidationErrorDetails.FromCodes(errorCodes);
 }

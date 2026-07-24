@@ -65,7 +65,7 @@ public sealed class UpdateFecundacionValidatorTests
             FechaProcedimiento: fechaProcedimiento ?? DateOnly.FromDateTime(DateTime.Today),
             ResponsableNombre: "Tec. Ruiz",
             ResultadoCode: "PENDIENTE",
-            EstadoFecundacionCode: "EN_ESPERA",
+            EstadoFecundacionCode: "PENDIENTE",
             ObservacionesVeterinarias: null,
             CodigoSemen: codigoSemen,
             CodigoEmbrion: codigoEmbrion);

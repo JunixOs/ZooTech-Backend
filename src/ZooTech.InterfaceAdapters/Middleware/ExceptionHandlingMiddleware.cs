@@ -1,7 +1,7 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using ZooTech.Application.Common.Gateway.Auditing;
-using ZooTech.Application.Common.Exceptions;
 using ZooTech.Domain.Shared.Enums;
 using ZooTech.Domain.Shared.Exceptions;
 using ZooTech.InterfaceAdapters.Models;
@@ -31,13 +31,6 @@ namespace ZooTech.InterfaceAdapters.Middleware
             try
             {
                 await _next(context);
-            }
-            catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
-            {
-                _logger.LogDebug(
-                    "Request canceled by the client: {Method} {Path}",
-                    context.Request.Method,
-                    context.Request.Path);
             }
             catch (AppDomainException ex)
             {
@@ -79,16 +72,11 @@ namespace ZooTech.InterfaceAdapters.Middleware
                     {
                         ErrorCode = ex.CompleteErrorCode,
                         Message = ex.Message,
-                        Details = ex.Details,
-                        FieldErrors = ex is IFieldValidationException validationException
-                            ? validationException.FieldErrors
-                                .Select(error => new FieldErrorContent(error.Field, error.Code, error.Message))
-                                .ToList()
-                            : []
+                        Details = ex.Details
                     }
                 };
 
-                await context.Response.WriteAsJsonAsync(response);
+                await context.Response.WriteAsync(JsonSerializer.Serialize(response));
             }
             catch (Exception ex)
             {
@@ -124,7 +112,7 @@ namespace ZooTech.InterfaceAdapters.Middleware
                     }
                 };
 
-                await context.Response.WriteAsJsonAsync(response);
+                await context.Response.WriteAsync(JsonSerializer.Serialize(response));
             }
         }
 

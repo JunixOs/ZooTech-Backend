@@ -96,7 +96,7 @@ public sealed class OrdenioRepository : IOrdenioRepository
     {
         var entity = ToEntity(ordenio);
         _ganaderiaDbContext.ordenios.Add(entity);
-        await Task.CompletedTask;
+        await _ganaderiaDbContext.SaveChangesAsync(cancellationToken);
         return ToDomain(entity);
     }
 
@@ -117,7 +117,7 @@ public sealed class OrdenioRepository : IOrdenioRepository
         entity.deleted_by = ordenio.DeletedBy;
         entity.motivo_eliminacion = ordenio.MotivoEliminacion;
 
-        await Task.CompletedTask;
+        await _ganaderiaDbContext.SaveChangesAsync(cancellationToken);
         return ToDomain(entity);
     }
     public async Task<IReadOnlyList<OrdenioList>> ListReportAsync(

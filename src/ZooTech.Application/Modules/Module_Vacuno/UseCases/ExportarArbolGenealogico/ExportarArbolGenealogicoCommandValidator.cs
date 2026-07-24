@@ -17,14 +17,9 @@ public sealed class ExportarArbolGenealogicoCommandValidator : ICommandValidator
             errors.Add("VACUNO-VACUNO-EXPORTAR_ARBOL_GENEALOGICO-VACUNO_ID-INVALID");
         }
 
-        if (request.Niveles < 1)
+        if (request.Niveles < 1 || request.Niveles > 4)
         {
             errors.Add("VACUNO-VACUNO-EXPORTAR_ARBOL_GENEALOGICO-NIVELES-INVALID");
-        }
-
-        if (request.Formato?.ToLowerInvariant() is not "excel" and not "pdf")
-        {
-            errors.Add("VACUNO-VACUNO-EXPORTAR_ARBOL_GENEALOGICO-FORMATO-INVALID");
         }
 
         return errors;

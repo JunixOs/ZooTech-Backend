@@ -5,8 +5,7 @@ namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarArbolGeneal
 
 public sealed record ExportarArbolGenealogicoCommand(
     long VacunoId,
-    int Niveles = 4,
-    string Formato = "excel"
+    int Niveles = 4
 ) : IAuditableRequest
 {
     public AuditEventType EventType => AuditEventType.DataExport;

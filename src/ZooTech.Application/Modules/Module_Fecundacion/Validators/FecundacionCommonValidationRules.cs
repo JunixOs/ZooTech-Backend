@@ -1,4 +1,4 @@
-using ZooTech.Domain.Ganaderia.Module_Fecundacion.Rules;
+using ZooTech.Domain.Module_Fecundacion.Rules;
 
 namespace ZooTech.Application.Modules.Module_Fecundacion.Validators;
 

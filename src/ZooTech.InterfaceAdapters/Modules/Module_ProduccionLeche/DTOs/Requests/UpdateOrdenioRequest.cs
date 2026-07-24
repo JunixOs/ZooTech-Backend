@@ -1,5 +1,5 @@
 using System.Text.Json.Serialization;
-using ZooTech.InterfaceAdapters.Utils;
+using ZooTech.InterfaceAdapters.Common.Json;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.DTOs.Requests;
 

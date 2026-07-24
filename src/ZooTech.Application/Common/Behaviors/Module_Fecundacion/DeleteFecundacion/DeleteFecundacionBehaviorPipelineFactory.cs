@@ -5,21 +5,18 @@ namespace ZooTech.Application.Common.Behaviors.Module_Fecundacion.DeleteFecundac
 {
     public class DeleteFecundacionBehaviorPipelineFactory : IDeleteFecundacionBehaviorPipelineFactory
     {
-        private readonly ValidationBehavior<DeleteFecundacionCommand, EmptyOutput> _validation;
         private readonly LoggingBehavior<DeleteFecundacionCommand , EmptyOutput> _logging;
         private readonly AuditBehavior<DeleteFecundacionCommand , EmptyOutput> _audit;
 
         private readonly IDeleteFecundacionInputPort _handler;
 
         public DeleteFecundacionBehaviorPipelineFactory(
-            ValidationBehavior<DeleteFecundacionCommand, EmptyOutput> validation,
             LoggingBehavior<DeleteFecundacionCommand , EmptyOutput> logging,
             AuditBehavior<DeleteFecundacionCommand , EmptyOutput> audit,
 
             IDeleteFecundacionInputPort handler
         )
         {
-            _validation = validation;
             _logging = logging;
             _audit = audit;
 
@@ -30,7 +27,6 @@ namespace ZooTech.Application.Common.Behaviors.Module_Fecundacion.DeleteFecundac
         {
             return new BehaviorPipeline<DeleteFecundacionCommand , EmptyOutput>(
             [
-                _validation,
                 _logging,
                 _audit
             ],

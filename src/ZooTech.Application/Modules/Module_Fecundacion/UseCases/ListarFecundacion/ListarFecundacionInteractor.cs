@@ -1,6 +1,4 @@
-using ZooTech.Application.Common.Gateway.Caching;
-using ZooTech.Application.Modules.Module_Fecundacion.Common;
-using ZooTech.Domain.Ganaderia.Module_Fecundacion.Interfaces;
+﻿using ZooTech.Domain.Module_Fecundacion.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_Fecundacion.UseCases.ListarFecundacion;
 
@@ -11,15 +9,11 @@ public sealed class ListarFecundacionInteractor : IListarFecundacionInputPort
     private const int MaxPageSize = 100;
 
     private readonly IFecundacionRepository _fecundacionRepository;
-    private readonly IAppCacheService _cache;
-
     public ListarFecundacionInteractor(
-        IFecundacionRepository fecundacionRepository,
-        IAppCacheService cache
+        IFecundacionRepository fecundacionRepository
     )
     {
         _fecundacionRepository = fecundacionRepository;
-        _cache = cache;
     }
 
     public async Task<ListarFecundacionOutput> HandleAsync(
@@ -28,28 +22,15 @@ public sealed class ListarFecundacionInteractor : IListarFecundacionInputPort
         var page = command.Page <= 0 ? DefaultPage : command.Page;
         var pageSize = command.Limit <= 0 ? DefaultPageSize : Math.Min(command.Limit, MaxPageSize);
         
-        var cacheKey = FecundacionCacheKeys.Listar(
+        var (items, totalCount) = await _fecundacionRepository.GetPagedAsync(
             command.Query,
             command.FechaDesde,
             command.FechaHasta,
             command.Resultado,
             page,
-            pageSize);
+            pageSize,
+            cancellationToken);
 
-        return await _cache.GetOrCreateAsync(
-            cacheKey,
-            async () =>
-            {
-                var (items, totalCount) = await _fecundacionRepository.GetPagedAsync(
-                    command.Query,
-                    command.FechaDesde,
-                    command.FechaHasta,
-                    command.Resultado,
-                    page,
-                    pageSize,
-                    cancellationToken);
-
-                return new ListarFecundacionOutput(items, totalCount);
-            });
+        return new ListarFecundacionOutput(items, totalCount);
     }
 }

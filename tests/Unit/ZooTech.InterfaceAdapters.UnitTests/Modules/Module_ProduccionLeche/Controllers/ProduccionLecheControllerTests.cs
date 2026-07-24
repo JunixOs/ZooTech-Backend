@@ -18,7 +18,7 @@ using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GetOr
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.ListOrdenios;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.UpdateOrdenio;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
-using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities.ListarVacuno;
+using ZooTech.Domain.Module_Vacuno.Entities.ListarVacuno;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.DTOs.Responses;

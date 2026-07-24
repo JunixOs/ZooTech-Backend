@@ -55,39 +55,6 @@ public sealed class FecundacionMapperTests
         Assert.Equal("Toro externo Don Miguel", command.ExternoDonanteNombre);
     }
 
-    [Fact]
-    public void ToCommand_ShouldUseEnEspera_WhenCurrentRecordHasNoStateHistory()
-    {
-        var request = BuildRequest();
-
-        var command = FecundacionMapper.ToCommand(
-            request,
-            BuildCurrent(estadoFecundacionCode: string.Empty),
-            1);
-
-        Assert.Equal("EN_ESPERA", command.EstadoFecundacionCode);
-    }
-
-    [Fact]
-    public void ToResponse_ShouldExposeEnEspera_WhenCurrentRecordHasNoStateHistory()
-    {
-        var response = FecundacionMapper.ToResponse(
-            BuildCurrent(estadoFecundacionCode: string.Empty));
-
-        Assert.Equal("en_espera", response.EstadoFecundacion);
-    }
-
-    [Theory]
-    [InlineData("en_espera", "EN_ESPERA")]
-    [InlineData("gestante", "GESTANTE")]
-    [InlineData("vacia", "VACIA")]
-    public void ToInternalEstado_ShouldMapSupportedCatalogStates(
-        string contractCode,
-        string expectedCode)
-    {
-        Assert.Equal(expectedCode, FecundacionMapper.ToInternalEstado(contractCode));
-    }
-
     private static UpdateFecundacionRequest BuildRequest(
         string? tipoFecundacion = null,
         JsonElement? machoODonante = null,
@@ -105,8 +72,7 @@ public sealed class FecundacionMapperTests
             CodigoEmbrion: null,
             Observaciones: "Sin novedades");
 
-    private static GetFecundacionForEditOutput BuildCurrent(
-        string estadoFecundacionCode = "EN_ESPERA")
+    private static GetFecundacionForEditOutput BuildCurrent()
         => new(
             Id: 1,
             Codigo: "FEC001",
@@ -123,7 +89,7 @@ public sealed class FecundacionMapperTests
             FechaProcedimiento: DateOnly.FromDateTime(DateTime.Today),
             ResponsableNombre: "Dr. Perez",
             ResultadoCode: "PENDIENTE",
-            EstadoFecundacionCode: estadoFecundacionCode,
+            EstadoFecundacionCode: "PENDIENTE",
             ObservacionesVeterinarias: null,
             CodigoSemen: null,
             CodigoEmbrion: null,

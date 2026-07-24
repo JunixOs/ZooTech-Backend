@@ -16,7 +16,7 @@ public sealed class GetArbolGenealogicoCommandValidator : ICommandValidator<GetA
             errors.Add("VACUNO-VACUNO-GET_ARBOL_GENEALOGICO-ID-INVALID");
         }
 
-        if (request.Niveles < 1)
+        if (request.Niveles < 1 || request.Niveles > 4)
         {
             errors.Add("VACUNO-VACUNO-GET_ARBOL_GENEALOGICO-NIVELES-INVALID");
         }

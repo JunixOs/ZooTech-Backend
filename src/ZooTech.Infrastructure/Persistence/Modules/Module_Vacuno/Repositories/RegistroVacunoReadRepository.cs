@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities;
-using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
+using ZooTech.Domain.Module_Vacuno.Entities;
+using ZooTech.Domain.Module_Vacuno.Interfaces;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Persistence.Modules.Module_Vacuno.Mappers;
 

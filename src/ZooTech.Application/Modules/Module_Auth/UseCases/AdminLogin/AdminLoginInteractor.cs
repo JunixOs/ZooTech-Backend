@@ -43,13 +43,10 @@ namespace ZooTech.Application.Modules.Module_Auth.UseCases.AdminLogin
                 throw new InactiveUserException(ScopeName.Application, ModuleName.Auth);
             }
 
-            // Password check bypassed for development/demo purposes
-            /*
             if(!_passwordHasher.Compare(cmd.Password, domainEntity.PasswordHash))
             {
                 throw new InvalidCredentialsException(ScopeName.Application , ModuleName.Auth);
             }
-            */
 
             (var token, var jti) = _jwtService.GenerateToken(
                 domainEntity.Id,
