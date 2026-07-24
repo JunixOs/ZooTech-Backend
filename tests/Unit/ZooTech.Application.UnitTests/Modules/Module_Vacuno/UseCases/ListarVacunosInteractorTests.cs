@@ -1,31 +1,28 @@
 using Moq;
 using FluentAssertions;
-using ZooTech.Application.Common.Gateway.Caching;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
-using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
-using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities.ListarVacuno;
+using ZooTech.Domain.Module_Vacuno.Interfaces;
+using ZooTech.Domain.Module_Vacuno.Entities.ListarVacuno;
+using ZooTech.Application.Common.Gateway.Parametrization;
+using MongoDB.Driver;
+using ZooTech.Domain.Configuration;
 
 namespace ZooTech.Application.UnitTests.Modules.Module_Vacuno.UseCases;
 
 public class ListarVacunosInteractorTests
 {
     private readonly Mock<IVacunoRepository> _vacunoRepositoryMock;
-    private readonly Mock<IAppCacheService> _cacheMock;
+    private readonly Mock<ITenantConfigurationProvider> _settingsMock;
     private readonly ListarVacunosInteractor _interactor;
 
     public ListarVacunosInteractorTests()
     {
         _vacunoRepositoryMock = new Mock<IVacunoRepository>();
-        _cacheMock = new Mock<IAppCacheService>();
-        _cacheMock
-            .Setup(x => x.GetOrCreateAsync(
-                It.IsAny<string>(),
-                It.IsAny<Func<Task<ListarVacunosOutput>>>()))
-            .Returns((string _, Func<Task<ListarVacunosOutput>> factory) => factory());
+        _settingsMock = new Mock<ITenantConfigurationProvider>();
+        
+        _settingsMock.Setup(x => x.GetSettingAsync(Settings.Vacunos.VacunosDefaultFilterDays)).ReturnsAsync(30);
 
-        _interactor = new ListarVacunosInteractor(
-            _vacunoRepositoryMock.Object,
-            _cacheMock.Object);
+        _interactor = new ListarVacunosInteractor(_vacunoRepositoryMock.Object, _settingsMock.Object);
     }
 
     [Fact]
@@ -48,28 +45,6 @@ public class ListarVacunosInteractorTests
         result.TotalCount.Should().Be(1);
         result.Items.Should().HaveCount(1);
         result.Items.First().Codigo.Should().Be("V-001");
-        _cacheMock.Verify(x => x.GetOrCreateAsync(
-            It.Is<string>(key => key.StartsWith("vacunos:listar")),
-            It.IsAny<Func<Task<ListarVacunosOutput>>>()), Times.Once);
-    }
-
-    [Fact]
-    public async Task HandleAsync_WithoutDates_DoesNotApplyAnImplicitDateFilter()
-    {
-        _vacunoRepositoryMock.Setup(x => x.GetPagedAsync(
-                It.IsAny<string?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(([], 0));
-
-        await _interactor.HandleAsync(new ListarVacunosCommand());
-
-        _vacunoRepositoryMock.Verify(x => x.GetPagedAsync(
-            null,
-            null,
-            null,
-            null,
-            1,
-            20,
-            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

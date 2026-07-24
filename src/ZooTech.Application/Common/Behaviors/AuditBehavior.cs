@@ -31,9 +31,7 @@ namespace ZooTech.Application.Common.Behaviors
 
             if(auditEventInfo is not null)
             {
-                auditEventInfo.ResponseValues = response is IAuditResponseMetadataProvider metadataProvider
-                    ? metadataProvider.GetAuditMetadata()
-                    : response;
+                auditEventInfo.ResponseValues = response;
 
                 await _appAuditService.AuditEventAsync(auditEventInfo);
             }

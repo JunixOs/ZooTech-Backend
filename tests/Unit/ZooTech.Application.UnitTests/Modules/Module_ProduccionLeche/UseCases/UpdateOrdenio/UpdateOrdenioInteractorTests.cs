@@ -1,4 +1,3 @@
-using ZooTech.Application.UnitTests.Modules.Module_ProduccionLeche.UseCases;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.UpdateOrdenio;
 using ZooTech.Domain.Module_ProduccionLeche.Entities;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
@@ -38,7 +37,7 @@ public class UpdateOrdenioInteractorTests
             ExistsUsuarioResult = true,
             ExistsEstadoResult = true
         };
-        var interactor = new UpdateOrdenioInteractor(new FakeGanaderiaUnitOfWork(repository));
+        var interactor = new UpdateOrdenioInteractor(new FakeOrdenioUnitOfWork(repository));
         var nuevaFecha = fecha.AddHours(2);
 
         var command = new UpdateOrdenioCommand
@@ -131,8 +130,6 @@ public class UpdateOrdenioInteractorTests
         }
 
         public IOrdenioRepository Ordenios { get; }
-        public ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces.IVacunoRepository Vacunos => throw new NotSupportedException();
-        public ZooTech.Domain.Ganaderia.Module_Fecundacion.Interfaces.IFecundacionRepository Fecundaciones => throw new NotSupportedException();
         public ITriajeRepository Triajes => throw new NotSupportedException();
 
         public Task<T> ExecuteInTransactionAsync<T>(

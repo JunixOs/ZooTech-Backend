@@ -39,24 +39,6 @@ public sealed class TenantConfigurationProvider : ITenantConfigurationProvider
 
         if (config.Settings.TryGetValue(setting.Code, out var raw) && raw is not null)
         {
-            try
-            {
-                using var doc = JsonDocument.Parse(raw);
-                if (doc.RootElement.ValueKind == JsonValueKind.Object && doc.RootElement.TryGetProperty("value", out var valElement))
-                {
-                    if (typeof(T) == typeof(string))
-                    {
-                        var strVal = valElement.ValueKind == JsonValueKind.String ? valElement.GetString() : valElement.GetRawText();
-                        return (strVal == null ? default! : (T)(object)strVal);
-                    }
-                    return JsonSerializer.Deserialize<T>(valElement.GetRawText())!;
-                }
-            }
-            catch (JsonException)
-            {
-                // Si no se puede parsear como JSON, continuar con la deserialización estándar
-            }
-
             if (typeof(T) == typeof(string))
                 return (T)(object)raw;
             return JsonSerializer.Deserialize<T>(raw)!;

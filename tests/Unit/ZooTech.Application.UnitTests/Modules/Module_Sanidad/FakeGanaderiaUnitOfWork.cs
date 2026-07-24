@@ -1,5 +1,3 @@
-using ZooTech.Domain.Ganaderia.Module_Fecundacion.Interfaces;
-using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
 using ZooTech.Domain.Shared.Interfaces;
@@ -14,8 +12,6 @@ internal sealed class FakeGanaderiaUnitOfWork : IGanaderiaUnitOfWork
     }
 
     public IOrdenioRepository Ordenios => throw new NotSupportedException();
-    public IVacunoRepository Vacunos => throw new NotSupportedException();
-    public IFecundacionRepository Fecundaciones => throw new NotSupportedException();
     public ITriajeRepository Triajes { get; }
 
     public Task<T> ExecuteInTransactionAsync<T>(

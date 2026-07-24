@@ -1,8 +1,5 @@
 using ZooTech.Application.Common.Exceptions;
-using ZooTech.Application.Common.Gateway.Reports;
-using ZooTech.Application.Common.Gateway.Time;
-using ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.Common;
-using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
+using ZooTech.Domain.Module_Vacuno.Interfaces;
 using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte;
@@ -10,30 +7,32 @@ namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.Obten
 public sealed class ObtenerRegistroVacunoReporteUseCase : IObtenerRegistroVacunoReporteUseCase
 {
     private readonly IRegistroVacunoReadRepository _repository;
-    private readonly IReportStrategyResolver<RegistroVacunoDetalle> _strategyResolver;
-    private readonly IVacunoReportFormatPolicy _formatPolicy;
-    private readonly IReportFileStorage _fileStorage;
-    private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly IRegistroVacunoExcelReportService _excelReportService;
+    private readonly IRegistroVacunoPdfReportService _pdfReportService;
     
     public ObtenerRegistroVacunoReporteUseCase(
         IRegistroVacunoReadRepository repository,
-        IReportStrategyResolver<RegistroVacunoDetalle> strategyResolver,
-        IVacunoReportFormatPolicy formatPolicy,
-        IReportFileStorage fileStorage,
-        IDateTimeProvider dateTimeProvider)
+        IRegistroVacunoExcelReportService excelReportService,
+        IRegistroVacunoPdfReportService pdfReportService)
     {
         _repository = repository;
-        _strategyResolver = strategyResolver;
-        _formatPolicy = formatPolicy;
-        _fileStorage = fileStorage;
-        _dateTimeProvider = dateTimeProvider;
+        _excelReportService = excelReportService;
+        _pdfReportService = pdfReportService;
     }
 
     public async Task<RegistroVacunoReporteResponse> HandleAsync(
         ObtenerRegistroVacunoReporteQuery query,
         CancellationToken cancellationToken = default)
     {
+        if (query.VacunoId <= 0)
+        {
+            throw new ArgumentException("El ID del vacuno debe ser mayor que cero.");
+        }
+
+        string[] allowedFormats = ["json", "pdf", "excel"];
+
         var formato = Normalize(query.Formato) ?? "json";
+        EnsureFormatoValido(formato, allowedFormats);
 
         var domainEntity = await _repository.ObtenerRegistroAsync(query.VacunoId, cancellationToken);
 
@@ -68,7 +67,7 @@ public sealed class ObtenerRegistroVacunoReporteUseCase : IObtenerRegistroVacuno
         var foto = await _repository.ObtenerFotoPrincipalAsync(v.Id, cancellationToken);
         var creadoPor = v.CreatedBy.HasValue ? await _repository.ObtenerNombreUsuarioAsync(v.CreatedBy, cancellationToken) : null;
         var actualizadoPor = v.UpdatedBy.HasValue ? await _repository.ObtenerNombreUsuarioAsync(v.UpdatedBy, cancellationToken) : null;
-        var today = DateOnly.FromDateTime(_dateTimeProvider.ServerNow);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var diasRegistrado = CalculateDaysRegistered(v.FechaRegistro, today);
 
 
@@ -135,23 +134,24 @@ public sealed class ObtenerRegistroVacunoReporteUseCase : IObtenerRegistroVacuno
             actualizadoPor,
             v.UpdatedAt);
 
-        if (formato is "excel" or "pdf")
+        if (formato is "excel")
         {
-            var reportFormat = await _formatPolicy.EnsureAllowedAsync(formato);
-            var document = await _strategyResolver
-                .Resolve(reportFormat)
-                .GenerateAsync(detalle, cancellationToken);
-            var storedFile = await _fileStorage.SaveAsync(
-                $"registro_vacuno_{detalle.Codigo}",
-                document.Extension,
-                document.ContentType,
-                document.Content,
-                cancellationToken);
+            var excel = await _excelReportService.GenerateAsync(detalle, cancellationToken);
 
             return new RegistroVacunoReporteResponse(
                 detalle,
                 Array.Empty<object>(),
-                storedFile.DownloadUrl);
+                excel.DownloadUrl);
+        }
+
+        if (formato is "pdf")
+        {
+            var pdf = await _pdfReportService.GenerateAsync(detalle, cancellationToken);
+
+            return new RegistroVacunoReporteResponse(
+                detalle,
+                Array.Empty<object>(),
+                pdf.DownloadUrl);
         }
 
         return new RegistroVacunoReporteResponse(
@@ -164,6 +164,14 @@ public sealed class ObtenerRegistroVacunoReporteUseCase : IObtenerRegistroVacuno
     {
         var normalized = value?.Trim();
         return string.IsNullOrWhiteSpace(normalized) ? null : normalized.ToLowerInvariant();
+    }
+
+    private static void EnsureFormatoValido(string formato, string[] allowedFormats)
+    {
+        if (!allowedFormats.Contains(formato, StringComparer.OrdinalIgnoreCase))
+        {
+            throw new ArgumentException($"El formato debe ser uno de los permitidos: {string.Join(", ", allowedFormats)}.");
+        }
     }
 
     private static string? GetCatalogValue(Dictionary<string, string> catalog, string code)

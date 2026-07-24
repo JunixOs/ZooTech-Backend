@@ -1,4 +1,4 @@
-using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities.ListarVacuno;
+using ZooTech.Domain.Module_Vacuno.Entities.ListarVacuno;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
 

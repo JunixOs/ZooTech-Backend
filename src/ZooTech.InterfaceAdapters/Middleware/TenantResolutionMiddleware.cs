@@ -36,18 +36,9 @@ namespace ZooTech.InterfaceAdapters.Middleware
             ITenantContext tenantContext
         )
         {
-            var path = context.Request.Path.Value ?? "";
-            if (path.StartsWith("/swagger", StringComparison.OrdinalIgnoreCase) ||
-                path.Equals("/favicon.ico", StringComparison.OrdinalIgnoreCase) ||
-                context.Request.Method == "OPTIONS")
-            {
-                await _next(context);
-                return;
-            }
-
             var domain = context.Request.Headers["X-Tenant-Url"].FirstOrDefault();
 
-            if (string.IsNullOrWhiteSpace(domain))
+            if(domain == null)
             {
                 throw new NotFoundException(ScopeName.Interface_Adapters);
             }
@@ -81,23 +72,13 @@ namespace ZooTech.InterfaceAdapters.Middleware
 
         private string? ExtractSubDomain(string host)
         {
-            var cleanHost = host.Contains(":") ? host.Split(':')[0] : host;
 
-            if (cleanHost.EndsWith(".localhost"))
-            {
-                return cleanHost[..^(".localhost".Length)];
-            }
-            if (cleanHost.EndsWith(".zentrycorp.dev"))
-            {
-                return cleanHost[..^(".zentrycorp.dev".Length)];
-            }
-
-            if (!cleanHost.EndsWith("." + _baseDomain))
+            if (!host.EndsWith("." + _baseDomain))
             {
                 return null;
             }
 
-            return cleanHost[..^(_baseDomain.Length + 1)];
+            return host[..^(_baseDomain.Length + 1)];
         }
     }
 }

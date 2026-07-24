@@ -1,5 +1,5 @@
-using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
-using ZooTech.Application.Modules.Module_Vacuno.Services;
+using ZooTech.Domain.Module_Vacuno.Interfaces;
+using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Requests;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Services;
 
@@ -12,14 +12,15 @@ public sealed class VacunoReferenceResolver : IVacunoReferenceResolver
         _referenceReadRepository = referenceReadRepository;
     }
 
-    public async Task<VacunoReferenceResolution> ResolveAsync(
-        VacunoReferenceData referenceData,
+    public async Task<VacunoReferenceResolution> ResolveForCreateAsync(
+        CreateVacunoRequest request,
         CancellationToken cancellationToken = default)
     {
+        var ownCodigo = request.Codigo.Trim();
         var kinship = await ResolveKinshipAsync(
-            referenceData.CodigoPadre,
-            referenceData.CodigoMadre,
-            referenceData.OwnCodigo,
+            request.CodigoPadre,
+            request.CodigoMadre,
+            ownCodigo,
             cancellationToken);
 
         if (kinship.Error is not null)
@@ -28,9 +29,44 @@ public sealed class VacunoReferenceResolver : IVacunoReferenceResolver
         }
 
         var granja = await ResolveGranjaAsync(
-            referenceData.GranjaId,
-            referenceData.GranjaNombre,
-            referenceData.CodigoDistrito,
+            request.GranjaId,
+            request.Granja,
+            request.CodigoDistrito,
+            cancellationToken);
+
+        return BuildResolution(kinship.PadreId, kinship.MadreId, granja);
+    }
+
+    public async Task<VacunoReferenceResolution> ResolveForUpdateAsync(
+        long vacunoId,
+        UpdateVacunoRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var existingVacuno = await _referenceReadRepository.GetActiveByIdAsync(vacunoId, cancellationToken);
+
+        if (existingVacuno is null)
+        {
+            return VacunoReferenceResolution.Fail(new VacunoReferenceError(
+                null,
+                "El vacuno no existe.",
+                VacunoReferenceErrorKind.NotFound));
+        }
+
+        var kinship = await ResolveKinshipAsync(
+            request.CodigoPadre,
+            request.CodigoMadre,
+            existingVacuno.Codigo,
+            cancellationToken);
+
+        if (kinship.Error is not null)
+        {
+            return VacunoReferenceResolution.Fail(kinship.Error);
+        }
+
+        var granja = await ResolveGranjaAsync(
+            request.GranjaId,
+            request.Granja,
+            request.CodigoDistrito,
             cancellationToken);
 
         return BuildResolution(kinship.PadreId, kinship.MadreId, granja);

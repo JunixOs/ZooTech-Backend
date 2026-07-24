@@ -2,21 +2,20 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using ZooTech.Application.Common.Gateway.Tenant;
 using ZooTech.Domain.Admin.Enums;
-using ZooTech.Infrastructure.Persistence.Context;
 
 namespace ZooTech.Infrastructure.Tenant
 {
     public class TenantStore : ITenantStore
     {
-        private readonly TenantCatalogDb _tenantCatalogDb;
+        private readonly ITenantDbContextFactory _tenantDbContextFactory;
         private readonly IMemoryCache _cache;
 
         public TenantStore(
-            TenantCatalogDb tenantCatalogDb, 
+            ITenantDbContextFactory tenantDbContextFactory, 
             IMemoryCache cache
         )
         {
-            _tenantCatalogDb = tenantCatalogDb;
+            _tenantDbContextFactory = tenantDbContextFactory;
             _cache = cache;
         }
 
@@ -29,7 +28,11 @@ namespace ZooTech.Infrastructure.Tenant
                 return tenantCached;
             }
 
-            var tenantInfo = await _tenantCatalogDb.tenants
+            // Esto es para acceder al database plane
+            // Se usa un valor de configuracion que no depende del Context actual aaaa :)
+            var tenantDbContext = _tenantDbContextFactory.CreateDbContextBySettingsValue();
+
+            var tenantInfo = await tenantDbContext.tenants
                 .AsNoTracking()
                 .Where(t => t.subdomain == subDomain)
                 .Select((t) =>
