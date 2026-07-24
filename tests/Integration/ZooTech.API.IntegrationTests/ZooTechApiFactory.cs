@@ -23,7 +23,7 @@ namespace ZooTech.API.IntegrationTests;
 
 public sealed class ZooTechApiFactory : WebApplicationFactory<Program>
 {
-    public const string DefaultTenantHost = "zootecniaunas.zentrycorp.local";
+    public const string DefaultTenantHost = "zootecniaunas.zootech.test";
     private const string CatalogDatabaseName = "IntegrationTest_Catalog";
     private const string GanaderiaDatabaseName = "IntegrationTest_Ganaderia";
 
@@ -34,6 +34,9 @@ public sealed class ZooTechApiFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Development");
+        builder.UseSetting("MultiTenant:BaseDomain", "zootech.test");
+        builder.UseSetting("MultiTenant:AdminSubDomain", "admin");
+
         builder.ConfigureTestServices(services =>
         {
             services.RemoveAll<IConnectionMultiplexer>();

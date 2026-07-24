@@ -40,9 +40,9 @@ public class VacunoControllerTests : IClassFixture<ZooTechApiFactory>
     }
 
     [Theory]
-    [InlineData("zootecniaunas.zentrycorp.local")]
-    [InlineData("elroble.zentrycorp.local")]
-    [InlineData("lacteosdelvalle.zentrycorp.local")]
+    [InlineData("zootecniaunas.zootech.test")]
+    [InlineData("elroble.zootech.test")]
+    [InlineData("lacteosdelvalle.zootech.test")]
     public async Task GetArbolGenealogico_WhenVacunoHasLineage_ReturnsTreeUpToMaxLevels(string tenantHost)
     {
         using var client = _factory.CreateTenantClient(tenantHost);
@@ -100,10 +100,10 @@ public class VacunoControllerTests : IClassFixture<ZooTechApiFactory>
     }
 
     [Theory]
-    [InlineData("zootecniaunas.zentrycorp.local")]
-    [InlineData("elroble.zentrycorp.local")]
-    [InlineData("lacteosdelvalle.zentrycorp.local")]
-    [InlineData("losandes.zentrycorp.local")]
+    [InlineData("zootecniaunas.zootech.test")]
+    [InlineData("elroble.zootech.test")]
+    [InlineData("lacteosdelvalle.zootech.test")]
+    [InlineData("losandes.zootech.test")]
     public async Task ListarVacunos_ForConfiguredTenant_ReturnsOk(string tenantHost)
     {
         using var client = _factory.CreateTenantClient(tenantHost);
@@ -224,10 +224,10 @@ public class VacunoControllerTests : IClassFixture<ZooTechApiFactory>
     }
 
     [Theory]
-    [InlineData("zootecniaunas.zentrycorp.local", "excel", ".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")]
-    [InlineData("zootecniaunas.zentrycorp.local", "pdf", ".pdf", "application/pdf")]
-    [InlineData("elroble.zentrycorp.local", "excel", ".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")]
-    [InlineData("elroble.zentrycorp.local", "pdf", ".pdf", "application/pdf")]
+    [InlineData("zootecniaunas.zootech.test", "excel", ".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")]
+    [InlineData("zootecniaunas.zootech.test", "pdf", ".pdf", "application/pdf")]
+    [InlineData("elroble.zootech.test", "excel", ".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")]
+    [InlineData("elroble.zootech.test", "pdf", ".pdf", "application/pdf")]
     public async Task ExportarGenealogia_WithSupportedFormat_ReturnsBinaryFile(
         string tenantHost,
         string formato,
@@ -300,7 +300,7 @@ public class VacunoControllerTests : IClassFixture<ZooTechApiFactory>
     [Fact]
     public async Task ReportesListado_WhenTenantDisablesPdf_ReturnsBadRequest()
     {
-        using var client = _factory.CreateTenantClient("losandes.zentrycorp.local");
+        using var client = _factory.CreateTenantClient("losandes.zootech.test");
 
         var response = await client.GetAsync(
             "/api/v1/vacunos/reportes/listado?formato=pdf");

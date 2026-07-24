@@ -28,7 +28,7 @@ public static class TenantCatalogSeeder
                 subdomain = subdomain,
                 code = subdomain[..Math.Min(4, subdomain.Length)].ToUpperInvariant(),
                 status = "ACTIVE",
-                email = $"admin@{subdomain}.zentrycorp.local",
+                email = $"admin@{subdomain}.zootech.test",
                 display_name = subdomain,
                 legal_name = $"{subdomain} SAC",
                 phone = "123456",
