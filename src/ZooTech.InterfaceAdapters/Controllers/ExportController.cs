@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using ZooTech.Application.Common.Gateway.Export;
 using ZooTech.InterfaceAdapters.DTOs;
 
-namespace ZooTech.InterfaceAdapters.Modules.Shared.Controllers;
+namespace ZooTech.InterfaceAdapters.Controllers;
 
 [ApiController]
 [Route("api/v1/export")]

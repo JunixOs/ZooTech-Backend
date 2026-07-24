@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Text;
 using ZooTech.InterfaceAdapters.DTOs;
 
-namespace ZooTech.InterfaceAdapters.Modules.Shared.Controllers;
+namespace ZooTech.InterfaceAdapters.Controllers;
 
 [ApiController]
 [Route("api/v1/home")]
