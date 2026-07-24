@@ -4,6 +4,7 @@ using ZooTech.Application.Modules.Module_Tenancing.UseCases.ListTenants;
 using ZooTech.Domain.Admin.Entities;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Persistence.Mappers.MainTenantsDb;
+using ZooTech.Infrastructure.Tenant;
 
 namespace ZooTech.Infrastructure.Persistence.Repositories.MainTenantsDb
 {
@@ -12,10 +13,10 @@ namespace ZooTech.Infrastructure.Persistence.Repositories.MainTenantsDb
         private readonly TenantCatalogDb _tenantDbContext;
 
         public TenantRepository(
-            TenantCatalogDb tenantCatalogDb
+            ITenantDbContextFactory tenantDbContextFactory
         )
         {
-            _tenantDbContext = tenantCatalogDb;
+            _tenantDbContext = tenantDbContextFactory.CreateDbContextByTenantContext();
         }
 
         public async Task<TenantDomainEntity?> GetByIdAsync(int id)

@@ -51,13 +51,6 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddInterfaceAdapters();
 
-// ======= Configuracion Context BD Tenant Principal =======
-builder.Services.AddDbContext<TenantCatalogDb>(options =>
-{
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("TenantCatalogConnection"));
-});
-
 // ======= Configuracion DI =======
 builder.Services.AddMemoryCache();
 

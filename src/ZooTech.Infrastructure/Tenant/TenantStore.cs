@@ -12,11 +12,11 @@ namespace ZooTech.Infrastructure.Tenant
         private readonly IMemoryCache _cache;
 
         public TenantStore(
-            TenantCatalogDb tenantCatalogDb, 
+            ITenantDbContextFactory tenantDbContextFactory, 
             IMemoryCache cache
         )
         {
-            _tenantCatalogDb = tenantCatalogDb;
+            _tenantCatalogDb = tenantDbContextFactory.CreateDbContextBySettingsValue();
             _cache = cache;
         }
 
