@@ -1,155 +1,66 @@
+using FluentAssertions;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.CreateVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.Validators;
+using ZooTech.Tests.Shared.Factories;
 
 namespace ZooTech.Application.UnitTests.Modules.Module_Vacuno.Validators;
 
-public class CreateVacunoValidatorTests
+public sealed class CreateVacunoValidatorTests
 {
-    private static CreateVacunoCommand ValidCommand(
-        string codigo = "VAC001",
-        string nombre = "Lola",
-        string tipoAdquisicionCode = "COMPRA",
-        string razaCode = "HOLSTEIN",
-        string colorCode = "NEGRO",
-        string sexoCode = "H",
-        long granjaId = 1,
-        string? observaciones = null)
+    private readonly CreateVacunoValidator _validator = new();
+
+    public static TheoryData<CreateVacunoCommand, string> RequiredFieldCases => new()
     {
-        return new CreateVacunoCommand(
-            Codigo: codigo,
-            Nombre: nombre,
-            FechaNacimiento: new DateOnly(2020, 1, 1),
-            TipoAdquisicionCode: tipoAdquisicionCode,
-            RazaCode: razaCode,
-            ColorCode: colorCode,
-            SexoCode: sexoCode,
-            PadreId: null,
-            MadreId: null,
-            GranjaId: granjaId,
-            PrecioCompra: 1000m,
-            AptoPara: "Carne",
-            Observaciones: observaciones);
-    }
+        { VacunoTestDataFactory.CreateCommand() with { Codigo = string.Empty }, "VACUNO-VACUNO-CREATE-CODIGO-NULL" },
+        { VacunoTestDataFactory.CreateCommand() with { Nombre = string.Empty }, "VACUNO-VACUNO-CREATE-NOMBRE-NULL" },
+        { VacunoTestDataFactory.CreateCommand() with { FechaNacimiento = default }, "VACUNO-VACUNO-CREATE-FECHA_NACIMIENTO-NULL" },
+        { VacunoTestDataFactory.CreateCommand() with { TipoAdquisicionCode = string.Empty }, "VACUNO-VACUNO-CREATE-TIPO_ADQUISICION_CODE-NULL" },
+        { VacunoTestDataFactory.CreateCommand() with { RazaCode = string.Empty }, "VACUNO-VACUNO-CREATE-RAZA_CODE-NULL" },
+        { VacunoTestDataFactory.CreateCommand() with { ColorCode = string.Empty }, "VACUNO-VACUNO-CREATE-COLOR_CODE-NULL" },
+        { VacunoTestDataFactory.CreateCommand() with { SexoCode = string.Empty }, "VACUNO-VACUNO-CREATE-SEXO_CODE-NULL" },
+        { VacunoTestDataFactory.CreateCommand() with { GranjaId = null }, "VACUNO-VACUNO-CREATE-GRANJA_ID-INVALID" },
+        { VacunoTestDataFactory.CreateCommand() with { TipoAdquisicionCode = "COMPRA", PrecioCompra = null }, "VACUNO-VACUNO-CREATE-PRECIO_COMPRA-NULL" }
+    };
 
     [Fact]
-    public void Validate_WhenCommandIsValid_HasNoErrors()
+    public void Validate_WhenCommandIsValid_ReturnsNoErrors()
     {
-        var validator = new CreateVacunoValidator();
-
-        var result = validator.Validate(ValidCommand());
-
-        Assert.Empty(result);
+        _validator.Validate(VacunoTestDataFactory.CreateCommand()).Should().BeEmpty();
     }
 
     [Theory]
-    [InlineData("")]
-    [InlineData(null)]
-    public void Validate_WhenCodigoIsEmpty_HasError(string? codigo)
+    [MemberData(nameof(RequiredFieldCases))]
+    public void Validate_WhenRequiredFieldIsMissing_ReturnsExpectedCode(
+        CreateVacunoCommand command,
+        string expectedCode)
     {
-        var validator = new CreateVacunoValidator();
-
-        var result = validator.Validate(ValidCommand(codigo: codigo!));
-
-        Assert.NotEmpty(result);
+        _validator.Validate(command).Should().Contain(expectedCode);
     }
 
     [Fact]
-    public void Validate_WhenCodigoExceedsMaxLength_HasError()
+    public void Validate_WhenNewGranjaHasNameAndDistrict_DoesNotRequireExistingGranja()
     {
-        var validator = new CreateVacunoValidator();
+        var command = VacunoTestDataFactory.CreateCommand() with
+        {
+            GranjaId = null,
+            Granja = "Granja Nueva",
+            CodigoDistrito = "010101"
+        };
 
-        var result = validator.Validate(ValidCommand(codigo: new string('A', 16)));
-
-        Assert.NotEmpty(result);
+        _validator.Validate(command)
+            .Should().NotContain("VACUNO-VACUNO-CREATE-GRANJA_ID-INVALID");
     }
 
     [Fact]
-    public void Validate_WhenNombreIsEmpty_HasError()
+    public void Validate_WhenTenantManagedLengthIsExceeded_LeavesRuleToTenantValidation()
     {
-        var validator = new CreateVacunoValidator();
+        var command = VacunoTestDataFactory.CreateCommand() with
+        {
+            Codigo = new string('A', 21),
+            Nombre = new string('B', 101),
+            Observaciones = new string('C', 151)
+        };
 
-        var result = validator.Validate(ValidCommand(nombre: string.Empty));
-
-        Assert.NotEmpty(result);
-    }
-
-    [Fact]
-    public void Validate_WhenNombreExceedsMaxLength_HasError()
-    {
-        var validator = new CreateVacunoValidator();
-
-        var result = validator.Validate(ValidCommand(nombre: new string('A', 101)));
-
-        Assert.NotEmpty(result);
-    }
-
-    [Fact]
-    public void Validate_WhenTipoAdquisicionCodeIsEmpty_HasError()
-    {
-        var validator = new CreateVacunoValidator();
-
-        var result = validator.Validate(ValidCommand(tipoAdquisicionCode: string.Empty));
-
-        Assert.NotEmpty(result);
-    }
-
-    [Fact]
-    public void Validate_WhenRazaCodeIsEmpty_HasError()
-    {
-        var validator = new CreateVacunoValidator();
-
-        var result = validator.Validate(ValidCommand(razaCode: string.Empty));
-
-        Assert.NotEmpty(result);
-    }
-
-    [Fact]
-    public void Validate_WhenColorCodeIsEmpty_HasError()
-    {
-        var validator = new CreateVacunoValidator();
-
-        var result = validator.Validate(ValidCommand(colorCode: string.Empty));
-
-        Assert.NotEmpty(result);
-    }
-
-    [Fact]
-    public void Validate_WhenSexoCodeIsEmpty_HasError()
-    {
-        var validator = new CreateVacunoValidator();
-
-        var result = validator.Validate(ValidCommand(sexoCode: string.Empty));
-
-        Assert.NotEmpty(result);
-    }
-
-    [Fact]
-    public void Validate_WhenGranjaIdIsZero_HasError()
-    {
-        var validator = new CreateVacunoValidator();
-
-        var result = validator.Validate(ValidCommand(granjaId: 0));
-
-        Assert.NotEmpty(result);
-    }
-
-    [Fact]
-    public void Validate_WhenObservacionesExceedsMaxLength_HasError()
-    {
-        var validator = new CreateVacunoValidator();
-
-        var result = validator.Validate(ValidCommand(observaciones: new string('A', 151)));
-
-        Assert.NotEmpty(result);
-    }
-
-    [Fact]
-    public void Validate_WhenObservacionesIsNull_HasNoError()
-    {
-        var validator = new CreateVacunoValidator();
-
-        var result = validator.Validate(ValidCommand(observaciones: null));
-
-        Assert.Empty(result);
+        _validator.Validate(command).Should().BeEmpty();
     }
 }

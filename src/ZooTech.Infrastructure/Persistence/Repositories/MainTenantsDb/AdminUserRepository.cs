@@ -19,6 +19,7 @@ namespace ZooTech.Infrastructure.Persistence.Repositories.MainTenantsDb
             _tenantDbContextFactory = tenantDbContextFactory;
         }
 
+
         public async Task Create(AdminUserDomainEntity adminUserDomainEntity)
         {
             var tenantDbContext = _tenantDbContextFactory.CreateDbContextByTenantContext();

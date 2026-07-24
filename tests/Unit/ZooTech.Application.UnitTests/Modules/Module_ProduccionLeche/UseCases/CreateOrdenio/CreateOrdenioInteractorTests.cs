@@ -1,4 +1,5 @@
 using ZooTech.Application.Common.Exceptions;
+using ZooTech.Application.UnitTests.Modules.Module_ProduccionLeche.UseCases;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.CreateOrdenio;
 using ZooTech.Domain.Module_ProduccionLeche.Entities;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
@@ -19,7 +20,7 @@ public class CreateOrdenioInteractorTests
             ExistsUsuarioResult = true,
             ExistsEstadoResult = true
         };
-        var interactor = new CreateOrdenioInteractor(new FakeOrdenioUnitOfWork(repository));
+        var interactor = new CreateOrdenioInteractor(new FakeGanaderiaUnitOfWork(repository));
 
         var command = new CreateOrdenioCommand
         {
@@ -102,6 +103,8 @@ public class CreateOrdenioInteractorTests
         }
 
         public IOrdenioRepository Ordenios { get; }
+        public ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces.IVacunoRepository Vacunos => throw new NotSupportedException();
+        public ZooTech.Domain.Ganaderia.Module_Fecundacion.Interfaces.IFecundacionRepository Fecundaciones => throw new NotSupportedException();
         public ITriajeRepository Triajes => throw new NotSupportedException();
 
         public Task<T> ExecuteInTransactionAsync<T>(

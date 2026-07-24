@@ -1,8 +1,8 @@
 using Moq;
 using ZooTech.Application.Common.Models;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllVacunosSanidad;
-using ZooTech.Domain.Module_Vacuno.Entities;
-using ZooTech.Domain.Module_Vacuno.Interfaces;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
 using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.UnitTests.Modules.Module_Sanidad.UseCases.GetAllVacunosSanidad;
