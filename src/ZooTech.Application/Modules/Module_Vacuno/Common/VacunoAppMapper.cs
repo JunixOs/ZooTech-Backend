@@ -1,4 +1,4 @@
-using ZooTech.Domain.Module_Vacuno.Entities;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Entities;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.Common;
 

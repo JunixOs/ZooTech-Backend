@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Threading.Tasks;
 using ZooTech.Application.Common.Gateway.Caching;
 
@@ -40,6 +41,16 @@ namespace ZooTech.Infrastructure.Caching
         public Task RemoveByKeyAsync(string key)
         {
             _cache.TryRemove(key, out _);
+            return Task.CompletedTask;
+        }
+
+        public Task RemoveByPrefixAsync(string keyPrefix)
+        {
+            foreach (var key in _cache.Keys.Where(key => key.StartsWith(keyPrefix, StringComparison.Ordinal)))
+            {
+                _cache.TryRemove(key, out _);
+            }
+
             return Task.CompletedTask;
         }
 
