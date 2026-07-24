@@ -6,6 +6,7 @@ namespace ZooTech.Application.Common.Gateway.Caching
         Task<T> GetOrCreateAsync<T>(string key, Func<Task<T>> factory, TimeSpan ttl);
         Task<(bool Found, T? Value)> TryGetAsync<T>(string key);
         Task RemoveByKeyAsync(string key);
+        Task RemoveByPrefixAsync(string keyPrefix);
         Task SaveAsync<T>(string key, T valueToCaching, TimeSpan ttl);
     }
 }

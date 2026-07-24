@@ -31,8 +31,12 @@ namespace ZooTech.Infrastructure.UnitTests.Persistence.Context
             var inMemorySettings = new Dictionary<string , string>
             {
                 {
-                    "ConnectionStrings:TenantTemplate",
+                    "ConnectionStrings:AdminTenantTemplate",
                     "Server=.;TrustServerCertificate=True;User Id=userfalse;Password=123456;MultipleActiveResultSets=true"
+                },
+                {
+                    "MultiTenant:AdminDatabaseName",
+                    "ZooTech_Admin_Test"
                 }
             };
 
@@ -56,6 +60,37 @@ namespace ZooTech.Infrastructure.UnitTests.Persistence.Context
 
             // Assert
             act.Should().Throw<DatabaseConnectionException>();
+        }
+
+        [Fact]
+        public void CreateDbContext_Should_Require_Admin_Connection_Template()
+        {
+            var tenantContextMock = new Mock<ITenantContext>();
+            tenantContextMock.Setup(t => t.Type).Returns(TenantType.Admin);
+
+            IConfiguration configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["ConnectionStrings:TenantTemplate"] =
+                        "Server=.;TrustServerCertificate=True;User Id=tenant;Password=tenant-password",
+                    ["MultiTenant:AdminDatabaseName"] = "ZooTech_Admin_Test"
+                })
+                .Build();
+
+            var cacheMock = new Mock<IConcurrentCache<string, DbContextOptions<TenantCatalogDb>>>();
+            cacheMock
+                .Setup(c => c.GetOrAdd(It.IsAny<string>(), It.IsAny<Func<string, DbContextOptions<TenantCatalogDb>>>() ))
+                .Returns((string key, Func<string, DbContextOptions<TenantCatalogDb>> factory) => factory(key));
+
+            var factory = new TenantDbContextFactory(
+                tenantContextMock.Object,
+                configuration,
+                cacheMock.Object);
+
+            var act = () => factory.CreateDbContextByTenantContext();
+
+            act.Should().Throw<UndefinedConfigurationValue>()
+                .WithMessage("*ConnectionStrings:AdminTenantTemplate*");
         }
     }
 }

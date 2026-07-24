@@ -1,7 +1,7 @@
 
-using ZooTech.Application.Common.Gateway.Parametrization;
-using ZooTech.Domain.Configuration;
-using ZooTech.Domain.Module_Vacuno.Interfaces;
+using ZooTech.Application.Common.Gateway.Caching;
+using ZooTech.Application.Modules.Module_Vacuno.Common;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
 
@@ -12,41 +12,44 @@ public sealed class ListarVacunosInteractor : IListarVacunosInputPort
     private const int MaxPageSize = 100;
 
     private readonly IVacunoRepository _vacunoRepository;
-    private readonly ITenantConfigurationProvider _tenantConfigurationProvider;
+    private readonly IAppCacheService _cache;
 
     public ListarVacunosInteractor(
-        IVacunoRepository vacunoRepository, 
-        ITenantConfigurationProvider tenantConfigurationProvider
+        IVacunoRepository vacunoRepository,
+        IAppCacheService cache
     )
     {
         _vacunoRepository = vacunoRepository;
-        _tenantConfigurationProvider = tenantConfigurationProvider;
+        _cache = cache;
     }
 
     public async Task<ListarVacunosOutput> HandleAsync(ListarVacunosCommand command, CancellationToken cancellationToken = default)
     {
-        var fechaDesde = command.FechaDesde;
-        if (!fechaDesde.HasValue && !command.FechaHasta.HasValue)
-        {
-            var defaultFilterDays = await _tenantConfigurationProvider.GetSettingAsync(
-                Settings.Vacunos.VacunosDefaultFilterDays
-            );
-
-            fechaDesde = DateTime.UtcNow.AddDays(-defaultFilterDays);
-        }
-
         var page = command.Page <= 0 ? DefaultPage : command.Page;
         var pageSize = command.Limit <= 0 ? DefaultPageSize : Math.Min(command.Limit, MaxPageSize);
 
-        var (items, totalCount) = await _vacunoRepository.GetPagedAsync(
+        var cacheKey = VacunoCacheKeys.Listar(
             command.Query,
-            fechaDesde,
+            command.FechaDesde,
             command.FechaHasta,
             command.Estado,
             page,
-            pageSize,
-            cancellationToken);
+            pageSize);
 
-        return new ListarVacunosOutput(items, totalCount);
+        return await _cache.GetOrCreateAsync(
+            cacheKey,
+            async () =>
+            {
+                var (items, totalCount) = await _vacunoRepository.GetPagedAsync(
+                    command.Query,
+                    command.FechaDesde,
+                    command.FechaHasta,
+                    command.Estado,
+                    page,
+                    pageSize,
+                    cancellationToken);
+
+                return new ListarVacunosOutput(items, totalCount);
+            });
     }
 }
