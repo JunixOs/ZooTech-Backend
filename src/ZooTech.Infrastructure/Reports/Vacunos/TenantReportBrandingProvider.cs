@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using ZooTech.Application.Common.Gateway.Context;
 using ZooTech.Application.Common.Gateway.Reports;
 using ZooTech.Infrastructure.Persistence.Context;
+using ZooTech.Infrastructure.Tenant;
 
 namespace ZooTech.Infrastructure.Reports.Vacunos;
 
@@ -19,13 +20,13 @@ public sealed class TenantReportBrandingProvider : ITenantReportBrandingProvider
     private readonly ILogger<TenantReportBrandingProvider> _logger;
 
     public TenantReportBrandingProvider(
-        TenantCatalogDb tenantCatalogDb,
+        ITenantDbContextFactory tenantDbContextFactory,
         ITenantContext tenantContext,
         IHttpClientFactory httpClientFactory,
         IMemoryCache memoryCache,
         ILogger<TenantReportBrandingProvider> logger)
     {
-        _tenantCatalogDb = tenantCatalogDb;
+        _tenantCatalogDb = tenantDbContextFactory.CreateDbContextBySettingsValue();
         _tenantContext = tenantContext;
         _httpClientFactory = httpClientFactory;
         _memoryCache = memoryCache;
