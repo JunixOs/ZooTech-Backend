@@ -10,6 +10,10 @@ public interface ICeloRepository
     Task<List<CeloReporteItem>> GetAllForReporteAsync(
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<CeloHistorialItem>> GetHistorialPorVacunoAsync(
+        string codigoVacuno,
+        CancellationToken cancellationToken = default);
+
     Task<(IReadOnlyList<CeloListItem> Items, int TotalCount)> GetPagedAsync(
         string? search,
         int page,

@@ -10,4 +10,6 @@ public sealed class CeloItemDto
     public string CodigoVacuno { get; set; } = null!;
     public string NombreVacuno { get; set; } = null!;
     public int VecesEnCelo { get; set; }
+    public string? Observaciones { get; set; }
+    public IReadOnlyList<string> CaracteristicaCodes { get; set; } = [];
 }

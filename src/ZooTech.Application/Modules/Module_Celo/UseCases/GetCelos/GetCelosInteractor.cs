@@ -30,6 +30,8 @@ public sealed class GetCelosInteractor : IGetCelosInputPort
             CodigoVacuno = c.VacunoCodigo,
             NombreVacuno = c.NombreVacuno,
             VecesEnCelo = counts.GetValueOrDefault(c.VacunoId, 1),
+            Observaciones = c.Observaciones,
+            CaracteristicaCodes = c.CaracteristicaCodes,
         }).ToList();
 
         return new GetCelosOutput(items);

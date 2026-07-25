@@ -28,7 +28,7 @@ public sealed class UpdateCeloInteractor : IUpdateCeloInputPort
         celo.Update(
             observaciones: command.Observaciones,
             caracteristicaCodes: command.CaracteristicaCodes,
-            actorUsuarioId: null,
+            actorUsuarioId: command.ActorUsuarioId,
             utcNow: DateTime.UtcNow);
 
         var updated = await _celoRepository.UpdateAsync(celo, cancellationToken);

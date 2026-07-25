@@ -28,13 +28,14 @@ internal static class CeloMapper
         };
     }
 
-    public static UpdateCeloCommand ToCommand(UpdateCeloRequest request)
+    public static UpdateCeloCommand ToCommand(long id, UpdateCeloRequest request, long? actorUsuarioId)
     {
         return new UpdateCeloCommand
         {
-            Id = request.Id,
+            Id = id,
             Observaciones = request.Observaciones,
             CaracteristicaCodes = request.CaracteristicaCodes
+            ,ActorUsuarioId = actorUsuarioId
         };
     }
 
@@ -73,6 +74,8 @@ internal static class CeloMapper
             CodigoVacuno = item.CodigoVacuno,
             NombreVacuno = item.NombreVacuno,
             VecesEnCelo = item.VecesEnCelo,
+            Observaciones = item.Observaciones,
+            CaracteristicaCodes = item.CaracteristicaCodes,
         };
     }
 
@@ -92,6 +95,21 @@ internal static class CeloMapper
             Crias = item.Crias
         };
     }
+
+    public static CeloHistorialPorVacunoResponse ToResponse(
+        ZooTech.Application.Modules.Module_Celo.UseCases.GetHistorialCeloPorVacuno.GetHistorialCeloPorVacunoOutput output) =>
+        new(
+            output.Encargado,
+            output.Historial.Select(item => new CeloHistorialPorVacunoItemResponse(
+                item.Numero, item.FechaHora, item.Resultado)).ToList(),
+            new CeloResumenReproductivoResponse(
+                output.Resumen.Celos,
+                output.Resumen.Embarazos,
+                output.Resumen.Fecundaciones,
+                output.Resumen.Crias,
+                output.Resumen.Montas,
+                output.Resumen.Inseminaciones,
+                output.Resumen.UltimoParto));
 
     public static ComparacionCelosResponse ToResponse(
     ComparacionCelosItemDto item)

@@ -226,6 +226,8 @@ public static class DependencyInjection
 
         services.AddScoped<IGetReporteCelosInputPort, GetReporteCelosInteractor>();
         services.AddScoped<IGetReporteCelosBehaviorPipelineFactory, GetReporteCelosBehaviorPipelineFactory>();
+        services.AddScoped<ZooTech.Application.Modules.Module_Celo.UseCases.GetHistorialCeloPorVacuno.IGetHistorialCeloPorVacunoInputPort, ZooTech.Application.Modules.Module_Celo.UseCases.GetHistorialCeloPorVacuno.GetHistorialCeloPorVacunoInteractor>();
+        services.AddScoped<ZooTech.Application.Common.Behaviors.Module_Celo.GetHistorialCeloPorVacuno.IGetHistorialCeloPorVacunoBehaviorPipelineFactory, ZooTech.Application.Common.Behaviors.Module_Celo.GetHistorialCeloPorVacuno.GetHistorialCeloPorVacunoBehaviorPipelineFactory>();
 
         services.AddScoped<IGetVacasEnCeloInputPort, GetVacasEnCeloInteractor>();
         services.AddScoped<IGetVacasEnCeloBehaviorPipelineFactory, GetVacasEnCeloBehaviorPipelineFactory>();
