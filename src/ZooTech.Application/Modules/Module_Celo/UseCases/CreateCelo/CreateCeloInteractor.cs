@@ -1,17 +1,17 @@
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Domain.Module_Celo.Entities;
-using ZooTech.Domain.Module_Celo.Interfaces;
 using ZooTech.Domain.Shared.Enums;
+using ZooTech.Domain.Shared.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_Celo.UseCases.CreateCelo;
 
 public sealed class CreateCeloInteractor : ICreateCeloInputPort
 {
-    private readonly ICeloRepository _celoRepository;
+    private readonly IGanaderiaUnitOfWork _unitOfWork;
 
-    public CreateCeloInteractor(ICeloRepository celoRepository)
+    public CreateCeloInteractor(IGanaderiaUnitOfWork unitOfWork)
     {
-        _celoRepository = celoRepository;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<CreateCeloOutput> Handle(
@@ -19,7 +19,9 @@ public sealed class CreateCeloInteractor : ICreateCeloInputPort
         CancellationToken cancellationToken = default
     )
     {
-        if (!await _celoRepository.ExistsVacunoAsync(command.VacunoId, cancellationToken))
+        var repository = _unitOfWork.Celos;
+
+        if (!await repository.ExistsVacunoAsync(command.VacunoId, cancellationToken))
             throw new ConflictException(
                 ScopeName.Application,
                 ModuleName.Celo,
@@ -30,23 +32,28 @@ public sealed class CreateCeloInteractor : ICreateCeloInputPort
             );
 
         var codigo = $"C{DateTime.UtcNow:yyMMddHHmmss}";
-        if (await _celoRepository.ExistsCodigoAsync(codigo, cancellationToken))
+        if (await repository.ExistsCodigoAsync(codigo, cancellationToken))
             codigo = $"C{DateTime.UtcNow:yyMMddHHmmssff}";
 
         var utcNow = DateTime.UtcNow;
 
-        var celo = Celo.CreateNew(
-            codigo: codigo,
-            fechaHora: command.FechaHora.GetValueOrDefault(),
-            vacunoId: command.VacunoId,
-            encargadoUsuarioId: command.EncargadoUsuarioId,
-            observaciones: command.Observaciones,
-            estadoRegistroCode: "ACTIVO",
-            caracteristicaCodes: command.CaracteristicaCodes,
-            actorUsuarioId: command.EncargadoUsuarioId,
-            utcNow: utcNow);
+        var saved = await _unitOfWork.ExecuteInTransactionAsync(
+            operation: ct =>
+            {
+                var celo = Celo.CreateNew(
+                    codigo: codigo,
+                    fechaHora: command.FechaHora.GetValueOrDefault(),
+                    vacunoId: command.VacunoId,
+                    encargadoUsuarioId: command.EncargadoUsuarioId,
+                    observaciones: command.Observaciones,
+                    estadoRegistroCode: "ACTIVO",
+                    caracteristicaCodes: command.CaracteristicaCodes,
+                    actorUsuarioId: command.EncargadoUsuarioId,
+                    utcNow: utcNow);
 
-        var saved = await _celoRepository.AddAsync(celo, cancellationToken);
+                return repository.AddAsync(celo, ct);
+            },
+            cancellationToken: cancellationToken);
 
         return new CreateCeloOutput(
             Id: saved.Id,

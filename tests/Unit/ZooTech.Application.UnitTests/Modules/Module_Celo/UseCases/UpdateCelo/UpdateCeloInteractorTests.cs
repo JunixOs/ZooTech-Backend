@@ -1,6 +1,7 @@
 using NSubstitute;
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Modules.Module_Celo.UseCases.UpdateCelo;
+using ZooTech.Application.UnitTests.Modules.Module_Celo.UseCases;
 using ZooTech.Domain.Module_Celo.Entities;
 using ZooTech.Domain.Module_Celo.Interfaces;
 using ZooTech.Domain.Shared.Enums;
@@ -15,7 +16,7 @@ public sealed class UpdateCeloInteractorTests
     public UpdateCeloInteractorTests()
     {
         _repository = Substitute.For<ICeloRepository>();
-        _interactor = new UpdateCeloInteractor(_repository);
+        _interactor = new UpdateCeloInteractor(new FakeGanaderiaUnitOfWork(_repository));
     }
 
     [Fact]

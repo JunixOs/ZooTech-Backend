@@ -44,6 +44,8 @@ public sealed class ListCelosInteractor : IListCelosInputPort
             CodigoVacuno = c.VacunoCodigo,
             NombreVacuno = c.NombreVacuno,
             VecesEnCelo = counts.GetValueOrDefault(c.VacunoId, 1),
+            Observaciones = c.Observaciones,
+            CaracteristicaCodes = c.CaracteristicaCodes,
         }).ToList();
 
         var result = new PagedResult<CeloItemDto>(items, totalCount, currentPage, currentPageSize);

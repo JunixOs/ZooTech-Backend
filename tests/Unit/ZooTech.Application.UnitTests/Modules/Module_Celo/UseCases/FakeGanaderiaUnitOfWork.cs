@@ -5,24 +5,20 @@ using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
 using ZooTech.Domain.Shared.Interfaces;
 
-namespace ZooTech.Application.UnitTests.Modules.Module_ProduccionLeche.UseCases;
+namespace ZooTech.Application.UnitTests.Modules.Module_Celo.UseCases;
 
 internal sealed class FakeGanaderiaUnitOfWork : IGanaderiaUnitOfWork
 {
-    public FakeGanaderiaUnitOfWork(IOrdenioRepository ordenios)
+    public FakeGanaderiaUnitOfWork(ICeloRepository celos)
     {
-        Ordenios = ordenios;
+        Celos = celos;
     }
 
     public IVacunoRepository Vacunos => throw new NotSupportedException();
-
     public IFecundacionRepository Fecundaciones => throw new NotSupportedException();
-
-    public IOrdenioRepository Ordenios { get; }
-
+    public IOrdenioRepository Ordenios => throw new NotSupportedException();
     public ITriajeRepository Triajes => throw new NotSupportedException();
-
-    public ICeloRepository Celos => throw new NotSupportedException();
+    public ICeloRepository Celos { get; }
 
     public async Task<T> ExecuteInTransactionAsync<T>(
         Func<CancellationToken, Task<T>> operation,

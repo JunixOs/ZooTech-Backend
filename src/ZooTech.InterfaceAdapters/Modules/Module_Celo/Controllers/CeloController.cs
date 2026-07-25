@@ -39,6 +39,8 @@ public sealed class CeloController : ControllerBase
     private readonly IListCelosBehaviorPipelineFactory _listCelosBehaviorPipelineFactory;
     private readonly IListReporteCeloGeneralBehaviorPipelineFactory _listReporteCeloGeneralBehaviorPipelineFactory;
     private readonly IGetReporteCelosBehaviorPipelineFactory _getReporteCelosBehaviorPipelineFactory;
+    private readonly ZooTech.Application.Common.Gateway.Identity.ICurrentUserService _currentUserService;
+    private readonly ZooTech.Application.Common.Behaviors.Module_Celo.GetHistorialCeloPorVacuno.IGetHistorialCeloPorVacunoBehaviorPipelineFactory _getHistorialCeloPorVacunoBehaviorPipelineFactory;
 
     public CeloController(
         IGetCelosBehaviorPipelineFactory getCelosBehaviorPipelineFactory,
@@ -50,7 +52,9 @@ public sealed class CeloController : ControllerBase
         IGetVacasEnCeloBehaviorPipelineFactory getVacasEnCeloBehaviorPipelineFactory,
         IListCelosBehaviorPipelineFactory listCelosBehaviorPipelineFactory,
         IListReporteCeloGeneralBehaviorPipelineFactory listReporteCeloGeneralBehaviorPipelineFactory,
-        IGetReporteCelosBehaviorPipelineFactory getReporteCelosBehaviorPipelineFactory
+        IGetReporteCelosBehaviorPipelineFactory getReporteCelosBehaviorPipelineFactory,
+        ZooTech.Application.Common.Gateway.Identity.ICurrentUserService currentUserService,
+        ZooTech.Application.Common.Behaviors.Module_Celo.GetHistorialCeloPorVacuno.IGetHistorialCeloPorVacunoBehaviorPipelineFactory getHistorialCeloPorVacunoBehaviorPipelineFactory
     )
     {
         _getCelosBehaviorPipelineFactory = getCelosBehaviorPipelineFactory;
@@ -64,6 +68,8 @@ public sealed class CeloController : ControllerBase
         _listCelosBehaviorPipelineFactory = listCelosBehaviorPipelineFactory;
         _listReporteCeloGeneralBehaviorPipelineFactory = listReporteCeloGeneralBehaviorPipelineFactory;
         _getReporteCelosBehaviorPipelineFactory = getReporteCelosBehaviorPipelineFactory;
+        _currentUserService = currentUserService;
+        _getHistorialCeloPorVacunoBehaviorPipelineFactory = getHistorialCeloPorVacunoBehaviorPipelineFactory;
     }
 
     [HttpGet]
@@ -191,6 +197,16 @@ public sealed class CeloController : ControllerBase
         return Ok(GeneralResponseDTO<List<CeloReporteItemResponse>>.Ok(response));
     }
 
+    [HttpGet("vacunos/{codigoVacuno}/historial")]
+    [ProducesResponseType(typeof(GeneralResponseDTO<CeloHistorialPorVacunoResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetHistorialPorVacuno(string codigoVacuno, [FromQuery] long registroId, CancellationToken cancellationToken)
+    {
+        var output = await _getHistorialCeloPorVacunoBehaviorPipelineFactory.Create().Execute(
+            new ZooTech.Application.Modules.Module_Celo.UseCases.GetHistorialCeloPorVacuno.GetHistorialCeloPorVacunoCommand(codigoVacuno, registroId),
+            cancellationToken);
+        return Ok(GeneralResponseDTO<CeloHistorialPorVacunoResponse>.Ok(CeloMapper.ToResponse(output)));
+    }
+
     [HttpGet("vacas-en-celo")]
     [ProducesResponseType(typeof(GeneralResponseDTO<List<VacaEnCeloResponse>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetVacasEnCelo(
@@ -298,7 +314,7 @@ public sealed class CeloController : ControllerBase
     {
         var behaviorPipeline = _updateCeloBehaviorPipelineFactory.Create();
 
-        var command = CeloMapper.ToCommand(request);
+        var command = CeloMapper.ToCommand(id, request, _currentUserService.UserId);
         var output = await behaviorPipeline.Execute(command, cancellationToken);
         var response = CeloMapper.ToResponse(output);
 

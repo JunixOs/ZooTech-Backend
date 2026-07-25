@@ -12,5 +12,6 @@ public class UpdateCeloCommand : IAuditableRequest
     public long Id { get; set; }
     public string? Observaciones { get; set; }
     public List<string>? CaracteristicaCodes { get; set; }
+    public long? ActorUsuarioId { get; set; }
 
 }
