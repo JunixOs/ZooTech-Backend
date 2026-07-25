@@ -11,11 +11,14 @@ public sealed class CeloRepository : ICeloRepository, ICeloDetalleRepository
 {
     private readonly GanaderiaDbContext _ganaderiaDbContext;
 
-    public CeloRepository(
-        IGanaderiaDbContextFactory ganaderiaDbContextFactory
-    )
+    public CeloRepository(IGanaderiaDbContextFactory ganaderiaDbContextFactory)
+        : this(ganaderiaDbContextFactory.CreateDbContextByTenantContext())
     {
-        _ganaderiaDbContext  = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
+    }
+
+    public CeloRepository(GanaderiaDbContext ganaderiaDbContext)
+    {
+        _ganaderiaDbContext = ganaderiaDbContext;
     }
 
     public async Task<List<CeloListItem>> GetAllAsync(CancellationToken cancellationToken = default)
