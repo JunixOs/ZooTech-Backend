@@ -100,6 +100,7 @@ internal static class CeloMapper
         ZooTech.Application.Modules.Module_Celo.UseCases.GetHistorialCeloPorVacuno.GetHistorialCeloPorVacunoOutput output) =>
         new(
             output.Encargado,
+            output.CaracteristicaCodes,
             output.Historial.Select(item => new CeloHistorialPorVacunoItemResponse(
                 item.Numero, item.FechaHora, item.Resultado)).ToList(),
             new CeloResumenReproductivoResponse(

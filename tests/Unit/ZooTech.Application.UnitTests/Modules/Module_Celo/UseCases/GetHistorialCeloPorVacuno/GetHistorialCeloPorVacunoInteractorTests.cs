@@ -14,6 +14,7 @@ public sealed class GetHistorialCeloPorVacunoInteractorTests
         var fechaHora = new DateTime(2026, 7, 24, 10, 30, 0, DateTimeKind.Utc);
         var detalle = new CeloDetallePorVacuno(
             "Ana",
+            ["MUGE", "INQUIETA"],
             [
                 new CeloHistorialResumenItem(3, fechaHora, true),
                 new CeloHistorialResumenItem(2, fechaHora.AddDays(-21), false),
@@ -28,6 +29,7 @@ public sealed class GetHistorialCeloPorVacunoInteractorTests
 
         Assert.Equal(3, output.Historial.Count);
         Assert.Equal("Ana", output.Encargado);
+        Assert.Equal(["MUGE", "INQUIETA"], output.CaracteristicaCodes);
         Assert.True(output.Historial[0].Resultado);
         Assert.False(output.Historial[1].Resultado);
         Assert.Null(output.Historial[2].Resultado);
@@ -41,7 +43,7 @@ public sealed class GetHistorialCeloPorVacunoInteractorTests
     {
         var repository = Substitute.For<ICeloDetalleRepository>();
         repository.GetDetallePorVacunoAsync("VAC-404", 404, Arg.Any<CancellationToken>())
-            .Returns(new CeloDetallePorVacuno(null, [], CeloResumenReproductivo.Empty));
+            .Returns(new CeloDetallePorVacuno(null, [], [], CeloResumenReproductivo.Empty));
         var interactor = new GetHistorialCeloPorVacunoInteractor(repository);
 
         var output = await interactor.HandleAsync(new GetHistorialCeloPorVacunoCommand("VAC-404", 404));

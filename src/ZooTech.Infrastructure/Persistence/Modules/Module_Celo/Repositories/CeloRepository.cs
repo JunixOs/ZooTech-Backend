@@ -135,10 +135,14 @@ public sealed class CeloRepository : ICeloRepository, ICeloDetalleRepository
             .Select(v => v.fecha_nacimiento)
             .ToListAsync(cancellationToken);
 
-        var encargado = await _ganaderiaDbContext.celo_registros
+        var registroSeleccionado = await _ganaderiaDbContext.celo_registros
             .AsNoTracking()
             .Where(c => c.id == registroId && c.vacuno.codigo == codigoVacuno && c.deleted_at == null)
-            .Select(c => c.encargado_usuario.nombre_completo)
+            .Select(c => new
+            {
+                Encargado = c.encargado_usuario.nombre_completo,
+                CaracteristicaCodes = c.caracteristica_codes.Select(item => item.code).ToList(),
+            })
             .FirstOrDefaultAsync(cancellationToken);
 
         var resumen = new CeloResumenReproductivo(
@@ -154,7 +158,8 @@ public sealed class CeloRepository : ICeloRepository, ICeloDetalleRepository
             crias.Count == 0 ? null : crias.Max());
 
         return new CeloDetallePorVacuno(
-            encargado,
+            registroSeleccionado?.Encargado,
+            registroSeleccionado?.CaracteristicaCodes ?? [],
             historial.Select((item, index) => new CeloHistorialResumenItem(
                 historial.Count - index,
                 item.fecha_hora,

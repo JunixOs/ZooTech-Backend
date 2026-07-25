@@ -9,6 +9,7 @@ public sealed class GetHistorialCeloPorVacunoInteractor(ICeloDetalleRepository r
         var detalle = await repository.GetDetallePorVacunoAsync(command.CodigoVacuno, command.RegistroId, cancellationToken);
         return new GetHistorialCeloPorVacunoOutput(
             detalle.Encargado,
+            detalle.CaracteristicaCodes,
             detalle.Historial.Select(item => new CeloHistorialCeloPorVacunoDto(
                 item.Numero, item.FechaHora, item.Resultado)).ToList(),
             new CeloResumenReproductivoDto(

@@ -7,5 +7,6 @@ public sealed record CeloResumenReproductivoDto(
 
 public sealed record GetHistorialCeloPorVacunoOutput(
     string? Encargado,
+    IReadOnlyList<string> CaracteristicaCodes,
     IReadOnlyList<CeloHistorialCeloPorVacunoDto> Historial,
     CeloResumenReproductivoDto Resumen);
