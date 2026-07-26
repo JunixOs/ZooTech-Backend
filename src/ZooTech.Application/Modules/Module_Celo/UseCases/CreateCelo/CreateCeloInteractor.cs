@@ -14,7 +14,7 @@ public sealed class CreateCeloInteractor : ICreateCeloInputPort
         _celoRepository = celoRepository;
     }
 
-    public async Task<CreateCeloOutput> Handle(
+    public async Task<CreateCeloOutput> HandleAsync(
         CreateCeloCommand command,
         CancellationToken cancellationToken = default
     )

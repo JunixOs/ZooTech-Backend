@@ -12,7 +12,7 @@ public sealed class GetCelosInteractor : IGetCelosInputPort
         _celoRepository = celoRepository;
     }
 
-    public async Task<GetCelosOutput> Handle(
+    public async Task<GetCelosOutput> HandleAsync(
         EmptyCommand emptyCommand,
         CancellationToken cancellationToken = default
     )

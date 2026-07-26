@@ -14,12 +14,12 @@ public sealed class GetComparacionCelosRealVsEstandarInteractor
     }
 
     public async Task<GetComparacionCelosRealVsEstandarOutput> HandleAsync(
-        GetComparacionCelosRealVsEstandarCommand cmd,
+        GetComparacionCelosRealVsEstandarQuery query,
         CancellationToken cancellationToken = default)
     {
         var registros = await _repository.GetByDateRangeAsync(
-            cmd.FechaInicio,
-            cmd.FechaFin,
+            query.FechaInicio,
+            query.FechaFin,
             cancellationToken);
 
         var promedio = registros.Any()

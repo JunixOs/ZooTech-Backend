@@ -1,8 +1,8 @@
-﻿namespace ZooTech.Application.Modules.Module_Celo.UseCases.GetComparacionCelosRealVsEstandar;
+﻿using ZooTech.Application.Common.Behaviors;
 
-public interface IGetComparacionCelosRealVsEstandarInputPort
+namespace ZooTech.Application.Modules.Module_Celo.UseCases.GetComparacionCelosRealVsEstandar;
+
+public interface IGetComparacionCelosRealVsEstandarInputPort 
+    : IRequestHandler<GetComparacionCelosRealVsEstandarQuery , GetComparacionCelosRealVsEstandarOutput>
 {
-    Task<GetComparacionCelosRealVsEstandarOutput> HandleAsync(
-        GetComparacionCelosRealVsEstandarCommand cmd,
-        CancellationToken cancellationToken = default);
 }

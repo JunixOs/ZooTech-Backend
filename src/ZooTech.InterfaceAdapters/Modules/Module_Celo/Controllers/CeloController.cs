@@ -1,9 +1,5 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using ZooTech.Application.Common.Behaviors.Module_Celo.CreateCelo;
-using ZooTech.Application.Common.Behaviors.Module_Celo.DeleteCelo;
-using ZooTech.Application.Common.Behaviors.Module_Celo.GetCelos;
-using ZooTech.Application.Common.Behaviors.Module_Celo.UpdateCelo;
 using ZooTech.Application.Common.Models;
 using ZooTech.Domain.Shared.Enums;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetComparacionCelosRealVsEstandar;
@@ -14,12 +10,13 @@ using ZooTech.InterfaceAdapters.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.DTOs.Responses;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.Mappers;
-using ZooTech.Application.Common.Behaviors.Module_Celo.GetComparacionCelosRealVsEstandar;
-using ZooTech.Application.Common.Behaviors.Module_Celo.GetVacasEnCelo;
-using ZooTech.Application.Common.Behaviors.Module_Celo.ListCelos;
-using ZooTech.Application.Common.Behaviors.Module_Celo.ListReporteCeloGeneral;
-using ZooTech.Application.Common.Behaviors.Module_Celo.GetReporteCelos;
-using ZooTech.Application.Common.Behaviors.Module_Celo.GetComparacionCelosRealVsEstandarPorVacuno;
+using ZooTech.Application.Common.Behaviors;
+using ZooTech.Application.Modules.Module_Celo.UseCases.ListCelos;
+using ZooTech.Application.Modules.Module_Celo.UseCases.GetCelos;
+using ZooTech.Application.Modules.Module_Celo.UseCases.GetReporteCelos;
+using ZooTech.Application.Modules.Module_Celo.UseCases.CreateCelo;
+using ZooTech.Application.Modules.Module_Celo.UseCases.UpdateCelo;
+using ZooTech.Application.Modules.Module_Celo.UseCases.DeleteCelo;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_Celo.Controllers;
 
@@ -28,42 +25,12 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Celo.Controllers;
 [ApiExplorerSettings(GroupName = "celo")]
 public sealed class CeloController : ControllerBase
 {
-    private readonly IGetCelosBehaviorPipelineFactory _getCelosBehaviorPipelineFactory;
-    private readonly ICreateCeloBehaviorPipelineFactory _createCeloBehaviorPipelineFactory;
-    private readonly IUpdateCeloBehaviorPipelineFactory _updateCeloBehaviorPipelineFactory;
-    private readonly IDeleteCeloBehaviorPipelineFactory _deleteCeloBehaviorPipelineFactory;
-
-    private readonly IGetComparacionCelosRealVsEstandarBehaviorPipelineFactory _getComparacionCelosRealVsEstandarBehaviorPipelineFactory;
-    private readonly IGetComparacionCelosRealVsEstandarPorVacunoBehaviorPipelineFactory _getComparacionCelosRealVsEstandarPorVacunoBehaviorPipelineFactory;
-    private readonly IGetVacasEnCeloBehaviorPipelineFactory _getVacasEnCeloBehaviorPipelineFactory;
-    private readonly IListCelosBehaviorPipelineFactory _listCelosBehaviorPipelineFactory;
-    private readonly IListReporteCeloGeneralBehaviorPipelineFactory _listReporteCeloGeneralBehaviorPipelineFactory;
-    private readonly IGetReporteCelosBehaviorPipelineFactory _getReporteCelosBehaviorPipelineFactory;
-
+    private readonly IBehaviorDispatcher _behaviorDispatcher;
     public CeloController(
-        IGetCelosBehaviorPipelineFactory getCelosBehaviorPipelineFactory,
-        ICreateCeloBehaviorPipelineFactory createCeloBehaviorPipelineFactory,
-        IUpdateCeloBehaviorPipelineFactory updateCeloBehaviorPipelineFactory,
-        IDeleteCeloBehaviorPipelineFactory deleteCeloBehaviorPipelineFactory,
-        IGetComparacionCelosRealVsEstandarBehaviorPipelineFactory getComparacionCelosRealVsEstandarBehaviorPipelineFactory,
-        IGetComparacionCelosRealVsEstandarPorVacunoBehaviorPipelineFactory getComparacionCelosRealVsEstandarPorVacunoBehaviorPipelineFactory,
-        IGetVacasEnCeloBehaviorPipelineFactory getVacasEnCeloBehaviorPipelineFactory,
-        IListCelosBehaviorPipelineFactory listCelosBehaviorPipelineFactory,
-        IListReporteCeloGeneralBehaviorPipelineFactory listReporteCeloGeneralBehaviorPipelineFactory,
-        IGetReporteCelosBehaviorPipelineFactory getReporteCelosBehaviorPipelineFactory
+        IBehaviorDispatcher behaviorDispatcher
     )
     {
-        _getCelosBehaviorPipelineFactory = getCelosBehaviorPipelineFactory;
-        _createCeloBehaviorPipelineFactory = createCeloBehaviorPipelineFactory;;
-        _updateCeloBehaviorPipelineFactory = updateCeloBehaviorPipelineFactory;
-        _deleteCeloBehaviorPipelineFactory = deleteCeloBehaviorPipelineFactory;
-
-        _getComparacionCelosRealVsEstandarBehaviorPipelineFactory = getComparacionCelosRealVsEstandarBehaviorPipelineFactory;
-        _getComparacionCelosRealVsEstandarPorVacunoBehaviorPipelineFactory = getComparacionCelosRealVsEstandarPorVacunoBehaviorPipelineFactory;
-        _getVacasEnCeloBehaviorPipelineFactory = getVacasEnCeloBehaviorPipelineFactory;
-        _listCelosBehaviorPipelineFactory = listCelosBehaviorPipelineFactory;
-        _listReporteCeloGeneralBehaviorPipelineFactory = listReporteCeloGeneralBehaviorPipelineFactory;
-        _getReporteCelosBehaviorPipelineFactory = getReporteCelosBehaviorPipelineFactory;
+        _behaviorDispatcher = behaviorDispatcher;
     }
 
     [HttpGet]
@@ -77,10 +44,8 @@ public sealed class CeloController : ControllerBase
         [FromQuery] Dictionary<string, string>? columnFilters = null,
         CancellationToken cancellationToken = default)
     {
-        var behaviorPipeline = _listCelosBehaviorPipelineFactory.Create();
-
-        var output = await behaviorPipeline.Execute(
-            CeloMapper.ToCommand(
+        var output = await _behaviorDispatcher.Send<ListCelosQuery , ListCelosOutput>(
+            CeloMapper.ToQuery(
                 search,
                 page,
                 pageSize,
@@ -106,10 +71,8 @@ public sealed class CeloController : ControllerBase
         [FromQuery] Dictionary<string, string>? columnFilters = null,
         CancellationToken cancellationToken = default)
     {
-        var behaviorPipeline = _listReporteCeloGeneralBehaviorPipelineFactory.Create();
-
-        var output = await behaviorPipeline.Execute(
-            new ListReporteCeloGeneralCommand
+        var output = await _behaviorDispatcher.Send<ListReporteCeloGeneralQuery , ListReporteCeloGeneralOutput>(
+            new ListReporteCeloGeneralQuery
             {
                 Search = search, 
                 Page = page, 
@@ -132,9 +95,7 @@ public sealed class CeloController : ControllerBase
         [FromQuery] DateTime? fechaFin,
         CancellationToken cancellationToken)
     {
-        var behaviorPipeline = _getCelosBehaviorPipelineFactory.Create();
-
-        var output = await behaviorPipeline.Execute(
+        var output = await _behaviorDispatcher.Send<EmptyCommand , GetCelosOutput>(
             EmptyCommand.Value(AuditEventType.Read , "Get celos"),
             cancellationToken
         );
@@ -171,12 +132,10 @@ public sealed class CeloController : ControllerBase
     string codigoVacuno,
     CancellationToken cancellationToken)
     {
-        var behaviorPipeline = _getReporteCelosBehaviorPipelineFactory.Create();
-
-        var output = await behaviorPipeline.Execute(
+        var output = await _behaviorDispatcher.Send<EmptyCommand , GetReporteCelosOutput>(
             EmptyCommand.Value(
                 AuditEventType.Read,
-                "Get reporte celos por vacuno"
+                "Get reporte celos"
             ),
             cancellationToken
         );
@@ -198,10 +157,8 @@ public sealed class CeloController : ControllerBase
         [FromQuery] DateTime? fechaFin,
         CancellationToken cancellationToken)
     {
-        var behaviorPipeline = _getVacasEnCeloBehaviorPipelineFactory.Create();
-
-        var output = await behaviorPipeline.Execute(
-            new GetVacasEnCeloCommand
+        var output = await _behaviorDispatcher.Send<GetVacasEnCeloQuery , GetVacasEnCeloOutput>(
+            new GetVacasEnCeloQuery
             {
                 FechaInicio = fechaInicio,
                 FechaFin = fechaFin
@@ -221,10 +178,8 @@ public sealed class CeloController : ControllerBase
         [FromQuery] DateTime? fechaFin,
         CancellationToken cancellationToken)
     {
-        var behaviorPipeline = _getComparacionCelosRealVsEstandarBehaviorPipelineFactory.Create();
-
-        var output = await behaviorPipeline.Execute(
-            new GetComparacionCelosRealVsEstandarCommand
+        var output = await _behaviorDispatcher.Send<GetComparacionCelosRealVsEstandarQuery , GetComparacionCelosRealVsEstandarOutput>(
+            new GetComparacionCelosRealVsEstandarQuery
             {
                 FechaInicio = fechaInicio,
                 FechaFin = fechaFin
@@ -248,10 +203,8 @@ public sealed class CeloController : ControllerBase
         [FromQuery] DateTime? fechaFin,
         CancellationToken cancellationToken)
     {
-        var behaviorPipeline = _getComparacionCelosRealVsEstandarPorVacunoBehaviorPipelineFactory.Create();
-
-        var output = await behaviorPipeline.Execute(
-            new GetComparacionCelosRealVsEstandarPorVacunoCommand
+        var output = await _behaviorDispatcher.Send<GetComparacionCelosRealVsEstandarPorVacunoQuery , GetComparacionCelosRealVsEstandarPorVacunoOutput>(
+            new GetComparacionCelosRealVsEstandarPorVacunoQuery
             {
                 CodigoVacuno = codigoVacuno,
                 FechaInicio = fechaInicio,
@@ -275,10 +228,8 @@ public sealed class CeloController : ControllerBase
         [FromBody] CreateCeloRequest request,
         CancellationToken cancellationToken)
     {
-        var behaviorPipeline = _createCeloBehaviorPipelineFactory.Create();
-
         var command = CeloMapper.ToCommand(request);
-        var output = await behaviorPipeline.Execute(command, cancellationToken);
+        var output = await _behaviorDispatcher.Send<CreateCeloCommand , CreateCeloOutput>(command, cancellationToken);
         var response = CeloMapper.ToResponse(output);
 
         return CreatedAtAction(
@@ -296,10 +247,8 @@ public sealed class CeloController : ControllerBase
         [FromBody] UpdateCeloRequest request,
         CancellationToken cancellationToken)
     {
-        var behaviorPipeline = _updateCeloBehaviorPipelineFactory.Create();
-
-        var command = CeloMapper.ToCommand(request);
-        var output = await behaviorPipeline.Execute(command, cancellationToken);
+        var command = CeloMapper.ToCommand(request , id);
+        var output = await _behaviorDispatcher.Send<UpdateCeloCommand , UpdateCeloOutput>(command, cancellationToken);
         var response = CeloMapper.ToResponse(output);
 
         return Ok(GeneralResponseDTO<UpdateCeloResponse>.Ok(response));
@@ -314,10 +263,8 @@ public sealed class CeloController : ControllerBase
         [FromBody] DeleteCeloRequest request,
         CancellationToken cancellationToken)
     {
-        var behaviorPipeline = _deleteCeloBehaviorPipelineFactory.Create();
-
         var command = CeloMapper.ToCommand(request, id);
-        await behaviorPipeline.Execute(command, cancellationToken);
+        await _behaviorDispatcher.Send<DeleteCeloCommand , EmptyOutput>(command, cancellationToken);
 
         return Ok(GeneralResponseDTO<object>.Ok(new
         {

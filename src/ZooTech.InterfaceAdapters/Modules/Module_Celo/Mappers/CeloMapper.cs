@@ -28,11 +28,11 @@ internal static class CeloMapper
         };
     }
 
-    public static UpdateCeloCommand ToCommand(UpdateCeloRequest request)
+    public static UpdateCeloCommand ToCommand(UpdateCeloRequest request , long id)
     {
         return new UpdateCeloCommand
         {
-            Id = request.Id,
+            Id = id,
             Observaciones = request.Observaciones,
             CaracteristicaCodes = request.CaracteristicaCodes
         };
@@ -115,7 +115,7 @@ internal static class CeloMapper
         };
     }
 
-    public static ListCelosCommand ToCommand(
+    public static ListCelosQuery ToQuery(
         string? search,
         int page,
         int pageSize,
@@ -124,7 +124,7 @@ internal static class CeloMapper
         Dictionary<string, string>? columnFilters
     )
     {
-        return new ListCelosCommand
+        return new ListCelosQuery
         {
             Search = search, 
             Page = page, 

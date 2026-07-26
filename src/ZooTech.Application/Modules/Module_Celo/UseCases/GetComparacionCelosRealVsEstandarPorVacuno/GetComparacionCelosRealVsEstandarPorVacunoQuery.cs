@@ -3,7 +3,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Celo.UseCases.GetComparacionCelosRealVsEstandarPorVacuno
 {
-    public class GetComparacionCelosRealVsEstandarPorVacunoCommand : IAuditableRequest
+    public class GetComparacionCelosRealVsEstandarPorVacunoQuery : IAuditableRequest
     {
         public AuditEventType EventType => AuditEventType.Read;
         public string Action => "Get comparacion celos real vs estandar por vacuno";

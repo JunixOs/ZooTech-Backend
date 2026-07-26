@@ -1,7 +1,6 @@
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetActivityStats;
-using ZooTech.Application.Common.Behaviors.Module_Vacuno.GetActivityStats;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 // Removed Animals references
@@ -63,10 +62,6 @@ using ZooTech.Application.Modules.Module_Tenancing.UseCases.DeleteAdminUser;
 using ZooTech.Application.Modules.Module_Tenancing.UseCases.DeleteAdminUser.Ports;
 using ZooTech.Application.Modules.Module_Tenancing.UseCases.ListAdminUsers;
 using ZooTech.Application.Modules.Module_Tenancing.UseCases.ListAdminUsers.Ports;
-using ZooTech.Application.Common.Behaviors.Module_Celo.CreateCelo;
-using ZooTech.Application.Common.Behaviors.Module_Celo.DeleteCelo;
-using ZooTech.Application.Common.Behaviors.Module_Celo.UpdateCelo;
-using ZooTech.Application.Common.Behaviors.Module_Celo.GetCelos;
 using ZooTech.Application.Modules.Module_Celo.Validators;
 using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.CreateOrdenio;
 using ZooTech.Application.Modules.Module_ProduccionLeche.Validators;
@@ -85,12 +80,6 @@ using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetAllVacunosSanidad;
 using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetHistorialByVacunoId;
 using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetTriajeById;
 using ZooTech.Application.Common.Behaviors.Module_Sanidad.UpdateTriaje;
-using ZooTech.Application.Common.Behaviors.Module_Celo.GetComparacionCelosRealVsEstandar;
-using ZooTech.Application.Common.Behaviors.Module_Celo.GetComparacionCelosRealVsEstandarPorVacuno;
-using ZooTech.Application.Common.Behaviors.Module_Celo.GetReporteCelos;
-using ZooTech.Application.Common.Behaviors.Module_Celo.GetVacasEnCelo;
-using ZooTech.Application.Common.Behaviors.Module_Celo.ListCelos;
-using ZooTech.Application.Common.Behaviors.Module_Celo.ListReporteCeloGeneral;
 using ZooTech.Application.Common.Behaviors.Module_Sanidad.GenerateTriajesExcel;
 using ZooTech.Application.Common.Behaviors.Module_Sanidad.GenerateTriajesPdf;
 using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetHistorialGeneral;
@@ -102,7 +91,6 @@ using ZooTech.Application.Common.Behaviors.Module_Vacuno.CreateVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.Validators;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.DeleteVacuno;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.ExportarArbolGenealogico;
-using ZooTech.Application.Common.Behaviors.Module_Vacuno.ExportarActividadVacunos;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.GetArbolGenealogico;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.GetVacunoById;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetVacunoCatalogs;
@@ -208,37 +196,10 @@ public static class DependencyInjection
         // ============================================
         // Use Cases - Module_Celo
         // ============================================
-        services.AddScoped<IGetCelosInputPort, GetCelosInteractor>();
-        services.AddScoped<IGetCelosBehaviorPipelineFactory, GetCelosBehaviorPipelineFactory>();
-
-        services.AddScoped<IGetComparacionCelosRealVsEstandarInputPort, GetComparacionCelosRealVsEstandarInteractor>();
-        services.AddScoped<IGetComparacionCelosRealVsEstandarBehaviorPipelineFactory, GetComparacionCelosRealVsEstandarBehaviorPipelineFactory>();
-        
-        services.AddScoped<IGetComparacionCelosRealVsEstandarPorVacunoInputPort, GetComparacionCelosRealVsEstandarPorVacunoInteractor>();
-        services.AddScoped<IGetComparacionCelosRealVsEstandarPorVacunoBehaviorPipelineFactory, GetComparacionCelosRealVsEstandarPorVacunoBehaviorPipelineFactory>();
-
-        services.AddScoped<IGetReporteCelosInputPort, GetReporteCelosInteractor>();
-        services.AddScoped<IGetReporteCelosBehaviorPipelineFactory, GetReporteCelosBehaviorPipelineFactory>();
-
-        services.AddScoped<IGetVacasEnCeloInputPort, GetVacasEnCeloInteractor>();
-        services.AddScoped<IGetVacasEnCeloBehaviorPipelineFactory, GetVacasEnCeloBehaviorPipelineFactory>();
-
-        services.AddScoped<IListCelosInputPort, ListCelosInteractor>();
-        services.AddScoped<IListCelosBehaviorPipelineFactory, ListCelosBehaviorPipelineFactory>();
-
-        services.AddScoped<IListReporteCeloGeneralInputPort, ListReporteCeloGeneralInteractor>();
-        services.AddScoped<IListReporteCeloGeneralBehaviorPipelineFactory, ListReporteCeloGeneralBehaviorPipelineFactory>();
-
-        services.AddScoped<ICreateCeloInputPort, CreateCeloInteractor>();
-        services.AddScoped<ICreateCeloBehaviorPipelineFactory, CreateCeloBehaviorPipelineFactory>();
         services.AddScoped<ICommandValidator<CreateCeloCommand>, CreateCeloValidator>();
 
-        services.AddScoped<IDeleteCeloInputPort, DeleteCeloInteractor>();
-        services.AddScoped<IDeleteCeloBehaviorPipelineFactory, DeleteCeloBehaviorPipelineFactory>();
         services.AddScoped<ICommandValidator<DeleteCeloCommand>, DeleteCeloValidator>();
 
-        services.AddScoped<IUpdateCeloInputPort, UpdateCeloInteractor>();
-        services.AddScoped<IUpdateCeloBehaviorPipelineFactory, UpdateCeloBehaviorPipelineFactory>();
         services.AddScoped<ICommandValidator<UpdateCeloCommand>, UpdateCeloValidator>();
 
         services.AddScoped<IUpdateFecundacionEstadoInputPort, UpdateFecundacionEstadoInteractor>();
@@ -299,7 +260,6 @@ public static class DependencyInjection
         services.AddScoped<ICommandValidator<ExportarArbolGenealogicoCommand>, ExportarArbolGenealogicoCommandValidator>();
 
         services.AddScoped<IExportarActividadVacunosInputPort, ExportarActividadVacunosInteractor>();
-        services.AddScoped<IExportarActividadVacunosBehaviorPipelineFactory, ExportarActividadVacunosBehaviorPipelineFactory>();
         services.AddScoped<ICommandValidator<ExportarActividadVacunosQuery>, ExportarActividadVacunosQueryValidator>();
         
         services.AddScoped<IGetArbolGenealogicoInputPort, GetArbolGenealogicoInteractor>();
@@ -318,7 +278,6 @@ public static class DependencyInjection
         
         services.AddScoped<IGetActivityStatsInputPort, GetActivityStatsInteractor>();
         services.AddScoped<IVacunoActivityStatsService, VacunoActivityStatsService>();
-        services.AddScoped<IGetActivityStatsBehaviorPipelineFactory, GetActivityStatsBehaviorPipelineFactory>();
         services.AddScoped<ICommandValidator<GetActivityStatsQuery>, GetActivityStatsQueryValidator>();
 
         services.AddScoped(typeof(IReportStrategyResolver<>), typeof(ReportStrategyResolver<>));

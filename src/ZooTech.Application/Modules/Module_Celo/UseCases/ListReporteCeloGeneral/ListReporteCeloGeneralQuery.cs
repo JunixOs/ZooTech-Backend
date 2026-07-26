@@ -3,7 +3,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Celo.UseCases.ListReporteCeloGeneral
 {
-    public class ListReporteCeloGeneralCommand : IAuditableRequest
+    public class ListReporteCeloGeneralQuery : IAuditableRequest
     {
         public AuditEventType EventType => AuditEventType.Read;
         public string Action => "List reporte celo general";

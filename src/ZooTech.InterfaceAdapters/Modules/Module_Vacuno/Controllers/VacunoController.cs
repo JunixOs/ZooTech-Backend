@@ -24,14 +24,13 @@ using ZooTech.Application.Common.Behaviors.Module_Vacuno.GetVacunoById;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.UpdateVacuno;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.DeleteVacuno;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.ExportarArbolGenealogico;
-using ZooTech.Application.Common.Behaviors.Module_Vacuno.ExportarActividadVacunos;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.ReporteVacuno.ListarVacunosReporte;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.ReporteVacuno.ObtenerRegistroVacunoReporte;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.GetArbolGenealogico;
-using ZooTech.Application.Common.Behaviors.Module_Vacuno.GetActivityStats;
 using ZooTech.Application.Common.Gateway.Reports;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetActivityStats;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte;
+using ZooTech.Application.Common.Behaviors;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Controllers;
 
@@ -49,10 +48,10 @@ public sealed class VacunoController : ControllerBase
     private readonly IListarVacunosReporteBehaviorPipelineFactory _listarVacunosReporteBehaviorPipelineFactory;
     private readonly IObtenerRegistroVacunoReporteBehaviorPipelineFactory _obtenerRegistroVacunoReporteBehaviorPipelineFactory;
     private readonly IGetArbolGenealogicoBehaviorPipelineFactory _getArbolGenealogicoBehaviorPipelineFactory;
-    private readonly IGetActivityStatsBehaviorPipelineFactory _getActivityStatsBehaviorPipelineFactory;
-    private readonly IExportarActividadVacunosBehaviorPipelineFactory _exportarActividadVacunosBehaviorPipelineFactory;
     private readonly IReportFileStorage _reportFileStorage;
     private readonly IVacunoRepository _vacunoRepository;
+
+    private readonly IBehaviorDispatcher _behaviorDispatcher;
 
     public VacunoController(
         IListarVacunosBehaviorPipelineFactory listarVacunosBehaviorPipelineFactory,
@@ -64,10 +63,11 @@ public sealed class VacunoController : ControllerBase
         IListarVacunosReporteBehaviorPipelineFactory listarVacunosReporteBehaviorPipelineFactory,
         IObtenerRegistroVacunoReporteBehaviorPipelineFactory obtenerRegistroVacunoReporteBehaviorPipelineFactory,
         IGetArbolGenealogicoBehaviorPipelineFactory getArbolGenealogicoBehaviorPipelineFactory,
-        IGetActivityStatsBehaviorPipelineFactory getActivityStatsBehaviorPipelineFactory,
-        IExportarActividadVacunosBehaviorPipelineFactory exportarActividadVacunosBehaviorPipelineFactory,
         IReportFileStorage reportFileStorage,
-        IVacunoRepository vacunoRepository)
+        IVacunoRepository vacunoRepository,
+
+        IBehaviorDispatcher behaviorDispatcher
+    )
     {
         _listarVacunosBehaviorPipelineFactory = listarVacunosBehaviorPipelineFactory;
         _createVacunoBehaviorPipelineFactory = createVacunoBehaviorPipelineFactory;
@@ -78,10 +78,10 @@ public sealed class VacunoController : ControllerBase
         _listarVacunosReporteBehaviorPipelineFactory = listarVacunosReporteBehaviorPipelineFactory;
         _obtenerRegistroVacunoReporteBehaviorPipelineFactory = obtenerRegistroVacunoReporteBehaviorPipelineFactory;
         _getArbolGenealogicoBehaviorPipelineFactory = getArbolGenealogicoBehaviorPipelineFactory;
-        _getActivityStatsBehaviorPipelineFactory = getActivityStatsBehaviorPipelineFactory;
-        _exportarActividadVacunosBehaviorPipelineFactory = exportarActividadVacunosBehaviorPipelineFactory;
         _reportFileStorage = reportFileStorage;
         _vacunoRepository = vacunoRepository;
+
+        _behaviorDispatcher = behaviorDispatcher;
     }
 
     [HttpGet]
@@ -327,8 +327,7 @@ public sealed class VacunoController : ControllerBase
         CancellationToken cancellationToken)
     {
         var query = new GetActivityStatsQuery(fechaInicio, fechaFin);
-        var pipeline = _getActivityStatsBehaviorPipelineFactory.Create();
-        var output = await pipeline.Execute(query, cancellationToken);
+        var output = await _behaviorDispatcher.Send<GetActivityStatsQuery , GetActivityStatsOutput>(query, cancellationToken);
 
         return Ok(new VacunoActivityStatsResponse(
             output.FechaInicio,
@@ -349,8 +348,7 @@ public sealed class VacunoController : ControllerBase
         CancellationToken cancellationToken)
     {
         var query = new ExportarActividadVacunosQuery(fechaInicio, fechaFin, formato);
-        var pipeline = _exportarActividadVacunosBehaviorPipelineFactory.Create();
-        var document = await pipeline.Execute(query, cancellationToken);
+        var document = await _behaviorDispatcher.Send<ExportarActividadVacunosQuery , GeneratedReportDocument>(query, cancellationToken);
 
         return File(document.Content, document.ContentType, document.FileName);
     }
