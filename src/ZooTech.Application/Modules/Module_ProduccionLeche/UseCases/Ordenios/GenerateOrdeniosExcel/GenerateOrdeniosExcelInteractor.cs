@@ -24,7 +24,7 @@ internal sealed class GenerateOrdeniosExcelInteractor : IGetOrdeniosExcelInputPo
         _dateTimeProvider = dateTimeProvider;
     }
 
-    public async Task<GenerateOrdeniosExcelOutput> Handle(
+    public async Task<GenerateOrdeniosExcelOutput> HandleAsync(
         GenerateOrdeniosComparationExcelQuery query,
         CancellationToken cancellationToken
     )

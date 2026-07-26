@@ -15,7 +15,7 @@ public sealed class CreateOrdenioInteractor : ICreateOrdenioInputPort
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<CreateOrdenioOutput> Handle(
+    public async Task<CreateOrdenioOutput> HandleAsync(
         CreateOrdenioCommand command, 
         CancellationToken cancellationToken
     )

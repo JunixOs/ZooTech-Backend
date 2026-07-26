@@ -18,7 +18,7 @@ public class DeleteOrdenioInteractorTests
         var repository = new FakeOrdenioRepository(existing);
         var interactor = new DeleteOrdenioInteractor(new FakeGanaderiaUnitOfWork(repository));
 
-        await interactor.Handle(new DeleteOrdenioCommand { Id = 10, MotivoEliminacion = "Registro duplicado" }, CancellationToken.None);
+        await interactor.HandleAsync(new DeleteOrdenioCommand { Id = 10, MotivoEliminacion = "Registro duplicado" }, CancellationToken.None);
 
         Assert.True(repository.UpdateWasCalled);
         Assert.True(existing.IsDeleted);
@@ -31,7 +31,7 @@ public class DeleteOrdenioInteractorTests
         var repository = new FakeOrdenioRepository(null);
         var interactor = new DeleteOrdenioInteractor(new FakeGanaderiaUnitOfWork(repository));
 
-        await Assert.ThrowsAsync<NotFoundException>(() => interactor.Handle(new DeleteOrdenioCommand { Id = 99, MotivoEliminacion = "Motivo" }, CancellationToken.None));
+        await Assert.ThrowsAsync<NotFoundException>(() => interactor.HandleAsync(new DeleteOrdenioCommand { Id = 99, MotivoEliminacion = "Motivo" }, CancellationToken.None));
     }
 
     private static Ordenio CreateOrdenio(DateTime fecha)

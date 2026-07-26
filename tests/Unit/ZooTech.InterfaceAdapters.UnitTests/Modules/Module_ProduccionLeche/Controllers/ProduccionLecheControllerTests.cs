@@ -211,9 +211,9 @@ public class ProduccionLecheControllerTests
 
     private sealed class FakeGetOrdenioByIdBehaviorPipelineFactory : IGetOrdenioByIdBehaviorPipelineFactory
     {
-        public BehaviorPipeline<GetOrdenioByIdCommand, GetOrdenioByIdOutput> Create()
+        public BehaviorPipeline<GetOrdenioByIdQuery, GetOrdenioByIdOutput> Create()
             => new(
-                Array.Empty<IBehavior<GetOrdenioByIdCommand, GetOrdenioByIdOutput>>(),
+                Array.Empty<IBehavior<GetOrdenioByIdQuery, GetOrdenioByIdOutput>>(),
                 (_, _) => Task.FromResult(new GetOrdenioByIdOutput(CreateOrdenioOutput())));
     }
 

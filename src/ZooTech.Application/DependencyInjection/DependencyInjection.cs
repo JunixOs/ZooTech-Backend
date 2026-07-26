@@ -63,14 +63,7 @@ using ZooTech.Application.Modules.Module_Tenancing.UseCases.DeleteAdminUser.Port
 using ZooTech.Application.Modules.Module_Tenancing.UseCases.ListAdminUsers;
 using ZooTech.Application.Modules.Module_Tenancing.UseCases.ListAdminUsers.Ports;
 using ZooTech.Application.Modules.Module_Celo.Validators;
-using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.CreateOrdenio;
 using ZooTech.Application.Modules.Module_ProduccionLeche.Validators;
-using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.DeleteOrdenio;
-using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.GenerateOrdeniosExcel;
-using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.GenerateOrdeniosPdf;
-using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.GetOrdenioById;
-using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.ListOrdenios;
-using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.UpdateOrdenio;
 using ZooTech.Application.Common.Behaviors.Module_Sanidad.CreateTriaje;
 using ZooTech.Application.Modules.Module_Sanidad.Validators;
 using ZooTech.Application.Common.Behaviors.Module_Sanidad.DeleteTriaje;
@@ -155,28 +148,10 @@ public static class DependencyInjection
         // ============================================
         // Use Cases - Module_ProduccionLeche
         // ============================================
-        services.AddScoped<ICreateOrdenioInputPort, CreateOrdenioInteractor>();
-        services.AddScoped<ICreateOrdenioBehaviorPipelineFactory, CreateOrdenioBehaviorPipelineFactory>();
         services.AddScoped<ICommandQueryValidator<CreateOrdenioCommand>, CreateOrdenioValidator>();
         
-        services.AddScoped<IDeleteOrdenioInputPort, DeleteOrdenioInteractor>();
-        services.AddScoped<IDeleteOrdenioBehaviorPipelineFactory, DeleteOrdenioBehaviorPipelineFactory>();
         services.AddScoped<ICommandQueryValidator<DeleteOrdenioCommand>, DeleteOrdenioValidator>();
 
-        services.AddScoped<IGetOrdeniosExcelInputPort, GenerateOrdeniosExcelInteractor>();
-        services.AddScoped<IGenerateOrdeniosExcelBehaviorPipelineFactory, GenerateOrdeniosExcelBehaviorPipelineFactory>();
-        
-        services.AddScoped<IGetOrdeniosPdfInputPort, GenerateOrdeniosPdfInteractor>();
-        services.AddScoped<IGenerateOrdeniosPdfBehaviorPipelineFactory, GenerateOrdeniosPdfBehaviorPipelineFactory>();
-        
-        services.AddScoped<IGetOrdenioByIdInputPort, GetOrdenioByIdInteractor>();
-        services.AddScoped<IGetOrdenioByIdBehaviorPipelineFactory, GetOrdenioByIdBehaviorPipelineFactory>();
-        
-        services.AddScoped<IListOrdeniosInputPort, ListOrdeniosInteractor>();
-        services.AddScoped<IListOrdeniosBehaviorPipelineFactory, ListOrdeniosBehaviorPipelineFactory>();
-
-        services.AddScoped<IUpdateOrdenioInputPort, UpdateOrdenioInteractor>();
-        services.AddScoped<IUpdateOrdenioBehaviorPipelineFactory, UpdateOrdenioBehaviorPipelineFactory>();
         services.AddScoped<ICommandQueryValidator<UpdateOrdenioCommand>, UpdateOrdenioValidator>();
 
         // ============================================

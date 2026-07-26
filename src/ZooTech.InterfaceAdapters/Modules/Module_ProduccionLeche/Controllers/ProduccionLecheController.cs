@@ -9,14 +9,12 @@ using ZooTech.InterfaceAdapters.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.DTOs.Responses;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Mappers;
-using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.CreateOrdenio;
-using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.DeleteOrdenio;
-using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.GenerateOrdeniosExcel;
-using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.GenerateOrdeniosPdf;
-using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.GetOrdenioById;
-using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.ListOrdenios;
-using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.UpdateOrdenio;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.ListarVacunos;
+using ZooTech.Application.Common.Behaviors;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.CreateOrdenio;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.UpdateOrdenio;
+using ZooTech.Application.Common.Models;
+using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.DeleteOrdenio;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
 
@@ -26,35 +24,18 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
 public sealed class ProduccionLecheController : ControllerBase
 {
     private readonly IListarVacunosBehaviorPipelineFactory _listarVacunosBehaviorPipelineFactory;
-    private readonly ICreateOrdenioBehaviorPipelineFactory _createOrdenioBehaviorPipelineFactory;
-    private readonly IGetOrdenioByIdBehaviorPipelineFactory _getOrdenioByIdBehaviorPipelineFactory;
-    private readonly IGenerateOrdeniosPdfBehaviorPipelineFactory _generateOrdeniosPdfBehaviorPipelineFactory;
-    private readonly IGenerateOrdeniosExcelBehaviorPipelineFactory _generateOrdeniosExcelBehaviorPipelineFactory;
-    private readonly IListOrdeniosBehaviorPipelineFactory _listOrdeniosBehaviorPipelineFactory;
-    private readonly IUpdateOrdenioBehaviorPipelineFactory _updateOrdenioBehaviorPipelineFactory;
-    private readonly IDeleteOrdenioBehaviorPipelineFactory _deleteOrdenioBehaviorPipelineFactory;
+
+    private readonly IBehaviorDispatcher _behaviorDispatcher;
 
     public ProduccionLecheController(
         IListarVacunosBehaviorPipelineFactory listarVacunosBehaviorPipelineFactory,
-        ICreateOrdenioBehaviorPipelineFactory createOrdenioBehaviorPipelineFactory,
-        IGetOrdenioByIdBehaviorPipelineFactory getOrdenioByIdBehaviorPipelineFactory,
-        IGenerateOrdeniosPdfBehaviorPipelineFactory generateOrdeniosPdfBehaviorPipelineFactory,
-        IGenerateOrdeniosExcelBehaviorPipelineFactory generateOrdeniosExcelBehaviorPipelineFactory,
-        IListOrdeniosBehaviorPipelineFactory listOrdeniosBehaviorPipelineFactory,
-        IUpdateOrdenioBehaviorPipelineFactory updateOrdenioBehaviorPipelineFactory,
-        IDeleteOrdenioBehaviorPipelineFactory deleteOrdenioBehaviorPipelineFactory
 
+        IBehaviorDispatcher behaviorDispatcher
     )
     {
         _listarVacunosBehaviorPipelineFactory = listarVacunosBehaviorPipelineFactory;
         
-        _createOrdenioBehaviorPipelineFactory = createOrdenioBehaviorPipelineFactory;
-        _getOrdenioByIdBehaviorPipelineFactory = getOrdenioByIdBehaviorPipelineFactory;
-        _generateOrdeniosPdfBehaviorPipelineFactory = generateOrdeniosPdfBehaviorPipelineFactory;
-        _generateOrdeniosExcelBehaviorPipelineFactory = generateOrdeniosExcelBehaviorPipelineFactory;
-        _listOrdeniosBehaviorPipelineFactory = listOrdeniosBehaviorPipelineFactory;
-        _updateOrdenioBehaviorPipelineFactory = updateOrdenioBehaviorPipelineFactory;
-        _deleteOrdenioBehaviorPipelineFactory = deleteOrdenioBehaviorPipelineFactory;
+        _behaviorDispatcher = behaviorDispatcher;
     }
 
     [HttpGet("health")]
@@ -86,10 +67,8 @@ public sealed class ProduccionLecheController : ControllerBase
         [FromBody] CreateOrdenioRequest request,
         CancellationToken cancellationToken)
     {
-        var behaviorPipeline = _createOrdenioBehaviorPipelineFactory.Create();
-
         var data = ProduccionLecheMapper.ToResponse(
-            await behaviorPipeline.Execute(ProduccionLecheMapper.ToCommand(request), cancellationToken));
+            await _behaviorDispatcher.Send<CreateOrdenioCommand , CreateOrdenioOutput>(ProduccionLecheMapper.ToCommand(request), cancellationToken));
         return Created($"/api/v1/produccion-leche/{data.Id}", GeneralResponseDTO<OrdenioResponse>.Ok(data));
     }
 
@@ -98,10 +77,8 @@ public sealed class ProduccionLecheController : ControllerBase
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById([FromRoute] long id, CancellationToken cancellationToken)
     {
-        var behaviorPipeline = _getOrdenioByIdBehaviorPipelineFactory.Create();
-
-        var data = ProduccionLecheMapper.ToResponse(await behaviorPipeline.Execute(
-                new GetOrdenioByIdCommand
+        var data = ProduccionLecheMapper.ToResponse(await _behaviorDispatcher.Send<GetOrdenioByIdQuery , GetOrdenioByIdOutput>(
+                new GetOrdenioByIdQuery
                 {
                     Id = id
                 }, 
@@ -122,12 +99,10 @@ public sealed class ProduccionLecheController : ControllerBase
         [FromQuery] int? pageSize,
         CancellationToken cancellationToken)
     {
-        var behaviorPipeline = _listOrdeniosBehaviorPipelineFactory.Create();
-
         var currentPage = page ?? 1;
         var currentPageSize = pageSize ?? 20;
         var data = ProduccionLecheMapper.ToResponse(
-            await behaviorPipeline.Execute(
+            await _behaviorDispatcher.Send<ListOrdeniosQuery , ListOrdeniosOutput>(
                 new ListOrdeniosQuery
                 {
                     VacunoId = vacunoId, 
@@ -154,9 +129,7 @@ public sealed class ProduccionLecheController : ControllerBase
         [FromQuery] bool comparativo,
         CancellationToken cancellationToken)
     {
-        var behaviorPipeline = _generateOrdeniosPdfBehaviorPipelineFactory.Create();
-
-        var report = await behaviorPipeline.Execute(
+        var report = await _behaviorDispatcher.Send<GenerateOrdeniosComparationPdfQuery , GenerateOrdeniosPdfOutput>(
             new GenerateOrdeniosComparationPdfQuery
             {
                 VacunoId = vacunoId, 
@@ -181,9 +154,7 @@ public sealed class ProduccionLecheController : ControllerBase
         [FromQuery] bool comparativo,
         CancellationToken cancellationToken)
     {
-        var behaviorPipeline = _generateOrdeniosExcelBehaviorPipelineFactory.Create();
-
-        var report = await behaviorPipeline.Execute(
+        var report = await _behaviorDispatcher.Send<GenerateOrdeniosComparationExcelQuery , GenerateOrdeniosExcelOutput>(
             new GenerateOrdeniosComparationExcelQuery
             {
                 VacunoId = vacunoId, 
@@ -207,13 +178,11 @@ public sealed class ProduccionLecheController : ControllerBase
         [FromBody] UpdateOrdenioRequest request,
         CancellationToken cancellationToken)
     {
-        var behaviorPipeline = _updateOrdenioBehaviorPipelineFactory.Create();
-
         var command = ProduccionLecheMapper.ToCommand(request);
         command.Id = id;
 
         var data = ProduccionLecheMapper.ToResponse(
-            await behaviorPipeline.Execute(command, cancellationToken));
+            await _behaviorDispatcher.Send<UpdateOrdenioCommand , UpdateOrdenioOutput>(command, cancellationToken));
         return Ok(GeneralResponseDTO<OrdenioResponse>.Ok(data));
     }
 
@@ -226,12 +195,10 @@ public sealed class ProduccionLecheController : ControllerBase
         [FromBody] DeleteOrdenioRequest request,
         CancellationToken cancellationToken)
     {
-        var behaviorPipeline = _deleteOrdenioBehaviorPipelineFactory.Create();
-
         var command = ProduccionLecheMapper.ToCommand(request);
         command.Id = id;
 
-        await behaviorPipeline.Execute(command, cancellationToken);
+        await _behaviorDispatcher.Send<DeleteOrdenioCommand , EmptyOutput>(command, cancellationToken);
         return NoContent();
     }
 }
