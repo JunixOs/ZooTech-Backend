@@ -3,7 +3,6 @@ using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Modules.Module_Fecundacion.Common;
 using ZooTech.Application.Modules.Module_Fecundacion.Exceptions;
 using ZooTech.Domain.Ganaderia.Module_Fecundacion.Entities;
-using ZooTech.Domain.Ganaderia.Module_Fecundacion.Interfaces;
 using ZooTech.Domain.Shared.Enums;
 using ZooTech.Domain.Shared.Interfaces;
 

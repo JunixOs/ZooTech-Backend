@@ -5,14 +5,14 @@ namespace ZooTech.Application.Common.Behaviors.Module_Sanidad.GetAllVacunosSanid
 {
     public class GetAllVacunosSanidadBehaviorPipelineFactory : IGetAllVacunosSanidadBehaviorPipelineFactory
     {
-        private readonly LoggingBehavior<EmptyCommand , GetAllVacunosSanidadOutput> _logging;
-        private readonly AuditBehavior<EmptyCommand , GetAllVacunosSanidadOutput> _audit;
+        private readonly LoggingBehavior<EmptyCommandQuery , GetAllVacunosSanidadOutput> _logging;
+        private readonly AuditBehavior<EmptyCommandQuery , GetAllVacunosSanidadOutput> _audit;
 
         private readonly IGetAllVacunosSanidadInputPort _handler;
 
         public GetAllVacunosSanidadBehaviorPipelineFactory(
-            LoggingBehavior<EmptyCommand , GetAllVacunosSanidadOutput> logging,
-            AuditBehavior<EmptyCommand , GetAllVacunosSanidadOutput> audit,
+            LoggingBehavior<EmptyCommandQuery , GetAllVacunosSanidadOutput> logging,
+            AuditBehavior<EmptyCommandQuery , GetAllVacunosSanidadOutput> audit,
 
             IGetAllVacunosSanidadInputPort handler
         )
@@ -23,9 +23,9 @@ namespace ZooTech.Application.Common.Behaviors.Module_Sanidad.GetAllVacunosSanid
             _handler = handler;
         }
 
-        public BehaviorPipeline<EmptyCommand , GetAllVacunosSanidadOutput> Create()
+        public BehaviorPipeline<EmptyCommandQuery , GetAllVacunosSanidadOutput> Create()
         {
-            return new BehaviorPipeline<EmptyCommand , GetAllVacunosSanidadOutput>(
+            return new BehaviorPipeline<EmptyCommandQuery , GetAllVacunosSanidadOutput>(
             [
                 _logging,
                 _audit

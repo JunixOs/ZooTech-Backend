@@ -5,14 +5,14 @@ namespace ZooTech.Application.Common.Behaviors.Module_Sanidad.GetAllTipoPesos
 {
     public class GetAllTipoPesosBehaviorPipelineFactory : IGetAllTipoPesosBehaviorPipelineFactory
     {
-        private readonly LoggingBehavior<EmptyCommand , GetAllTipoPesosOutput> _logging;
-        private readonly AuditBehavior<EmptyCommand , GetAllTipoPesosOutput> _audit;
+        private readonly LoggingBehavior<EmptyCommandQuery , GetAllTipoPesosOutput> _logging;
+        private readonly AuditBehavior<EmptyCommandQuery , GetAllTipoPesosOutput> _audit;
 
         private readonly IGetAllTipoPesosInputPort _handler;
 
         public GetAllTipoPesosBehaviorPipelineFactory(
-            LoggingBehavior<EmptyCommand , GetAllTipoPesosOutput> logging,
-            AuditBehavior<EmptyCommand , GetAllTipoPesosOutput> audit,
+            LoggingBehavior<EmptyCommandQuery , GetAllTipoPesosOutput> logging,
+            AuditBehavior<EmptyCommandQuery , GetAllTipoPesosOutput> audit,
 
             IGetAllTipoPesosInputPort handler
         )
@@ -23,9 +23,9 @@ namespace ZooTech.Application.Common.Behaviors.Module_Sanidad.GetAllTipoPesos
             _handler = handler;
         }
 
-        public BehaviorPipeline<EmptyCommand , GetAllTipoPesosOutput> Create()
+        public BehaviorPipeline<EmptyCommandQuery , GetAllTipoPesosOutput> Create()
         {
-            return new BehaviorPipeline<EmptyCommand , GetAllTipoPesosOutput>(
+            return new BehaviorPipeline<EmptyCommandQuery , GetAllTipoPesosOutput>(
             [
                 _logging,
                 _audit

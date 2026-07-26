@@ -17,7 +17,7 @@ namespace ZooTech.Application.Common.Behaviors
         {
             AuditEventInfo? auditEventInfo = null;
             
-            if(request is IAuditableRequest auditable)
+            if(request is IAuditableCommandQueryRequest auditable)
             {
                 auditEventInfo = new AuditEventInfo
                 {

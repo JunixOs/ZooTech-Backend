@@ -11,7 +11,7 @@ public class ValidationBehaviorTests
 {
     public record TestRequest;
 
-    private class TestValidator : ICommandValidator<TestRequest>, IValidationErrorDetailsProvider
+    private class TestValidator : ICommandQueryValidator<TestRequest>, IValidationErrorDetailsProvider
     {
         private readonly List<string> _errors;
         public ModuleName ModuleName => ModuleName.Tenancing;

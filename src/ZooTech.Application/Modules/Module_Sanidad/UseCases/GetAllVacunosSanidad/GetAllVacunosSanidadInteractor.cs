@@ -13,7 +13,7 @@ public sealed class GetAllVacunosSanidadInteractor : IGetAllVacunosSanidadInputP
     }
 
     public async Task<GetAllVacunosSanidadOutput> Handle(
-        EmptyCommand emptyCommand,
+        EmptyCommandQuery emptyCommand,
         CancellationToken cancellationToken = default
     )
     {

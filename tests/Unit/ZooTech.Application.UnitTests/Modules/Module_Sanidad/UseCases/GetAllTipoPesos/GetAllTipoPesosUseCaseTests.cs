@@ -30,7 +30,7 @@ public class GetAllTipoPesosUseCaseTests
         var useCase = new GetAllTipoPesosInteractor(_repositoryMock.Object);
 
         // Act
-        var result = await useCase.Handle(EmptyCommand.Value(AuditEventType.Read, "Get all tipo pesos"));
+        var result = await useCase.Handle(EmptyCommandQuery.Value(AuditEventType.Read, "Get all tipo pesos"));
 
         // Assert
         Assert.NotNull(result);
@@ -47,7 +47,7 @@ public class GetAllTipoPesosUseCaseTests
         var useCase = new GetAllTipoPesosInteractor(_repositoryMock.Object);
 
         // Act
-        var result = await useCase.Handle(EmptyCommand.Value(AuditEventType.Read, "Get all tipo pesos"));
+        var result = await useCase.Handle(EmptyCommandQuery.Value(AuditEventType.Read, "Get all tipo pesos"));
 
         // Assert
         Assert.NotNull(result);

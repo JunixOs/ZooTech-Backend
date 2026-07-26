@@ -5,5 +5,5 @@ namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.GetVacunoCatalogs;
 
 public interface IGetVacunoCatalogsInputPort
 {
-    Task<VacunoCatalogs> HandleAsync(EmptyCommand emptyCommand, CancellationToken cancellationToken = default);
+    Task<VacunoCatalogs> HandleAsync(EmptyCommandQuery emptyCommand, CancellationToken cancellationToken = default);
 }

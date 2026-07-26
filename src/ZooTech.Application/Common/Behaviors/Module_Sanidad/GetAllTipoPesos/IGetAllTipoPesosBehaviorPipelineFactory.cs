@@ -5,6 +5,6 @@ namespace ZooTech.Application.Common.Behaviors.Module_Sanidad.GetAllTipoPesos
 {
     public interface IGetAllTipoPesosBehaviorPipelineFactory
     {
-        BehaviorPipeline<EmptyCommand , GetAllTipoPesosOutput> Create();
+        BehaviorPipeline<EmptyCommandQuery , GetAllTipoPesosOutput> Create();
     }
 }

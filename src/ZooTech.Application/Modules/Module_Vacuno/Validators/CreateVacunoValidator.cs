@@ -5,7 +5,7 @@ using ZooTech.Domain.Shared.Enums;
 namespace ZooTech.Application.Modules.Module_Vacuno.Validators;
 
 internal sealed class CreateVacunoValidator :
-    ICommandValidator<CreateVacunoCommand>,
+    ICommandQueryValidator<CreateVacunoCommand>,
     IValidationErrorDetailsProvider
 {
 

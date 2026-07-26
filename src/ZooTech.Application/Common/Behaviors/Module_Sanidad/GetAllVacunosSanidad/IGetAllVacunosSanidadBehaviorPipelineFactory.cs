@@ -5,6 +5,6 @@ namespace ZooTech.Application.Common.Behaviors.Module_Sanidad.GetAllVacunosSanid
 {
     public interface IGetAllVacunosSanidadBehaviorPipelineFactory
     {
-        BehaviorPipeline<EmptyCommand , GetAllVacunosSanidadOutput> Create();
+        BehaviorPipeline<EmptyCommandQuery , GetAllVacunosSanidadOutput> Create();
     }
 }

@@ -3,12 +3,12 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Fecundacion.UseCases.ListarFecundacion;
 
-public sealed class ListarFecundacionCommandValidator : ICommandValidator<ListarFecundacionCommand>
+public sealed class ListarFecundacionQueryValidator : ICommandQueryValidator<ListarFecundacionQuery>
 {
 
     public ModuleName ModuleName => ModuleName.Fecundacion;
 
-    public List<string> Validate(ListarFecundacionCommand request)
+    public List<string> Validate(ListarFecundacionQuery request)
     {
         var errors = new List<string>();
 

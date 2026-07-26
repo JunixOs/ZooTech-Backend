@@ -5,6 +5,6 @@ namespace ZooTech.Application.Common.Behaviors.Module_Vacuno.GetVacunoCatalogs
 {
     public interface IGetVacunoCatalogsBehaviorPipelineFactory
     {
-        BehaviorPipeline<EmptyCommand , VacunoCatalogs> Create();
+        BehaviorPipeline<EmptyCommandQuery , VacunoCatalogs> Create();
     }
 }

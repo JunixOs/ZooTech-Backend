@@ -311,14 +311,14 @@ public class TriajeApiIntegrationTests
 
     private sealed class TipoPesoFactory : IGetAllTipoPesosBehaviorPipelineFactory
     {
-        public BehaviorPipeline<EmptyCommand, GetAllTipoPesosOutput> Create()
-            => Pipeline<EmptyCommand, GetAllTipoPesosOutput>(_ => Task.FromResult(new GetAllTipoPesosOutput(new[] { new TipoPesoItemOutput("CONTROL", "Peso Control") })));
+        public BehaviorPipeline<EmptyCommandQuery, GetAllTipoPesosOutput> Create()
+            => Pipeline<EmptyCommandQuery, GetAllTipoPesosOutput>(_ => Task.FromResult(new GetAllTipoPesosOutput(new[] { new TipoPesoItemOutput("CONTROL", "Peso Control") })));
     }
 
     private sealed class VacunosFactory : IGetAllVacunosSanidadBehaviorPipelineFactory
     {
-        public BehaviorPipeline<EmptyCommand, GetAllVacunosSanidadOutput> Create()
-            => Pipeline<EmptyCommand, GetAllVacunosSanidadOutput>(_ => Task.FromResult(new GetAllVacunosSanidadOutput(new[] { new VacunoSanidadItemOutput(5, "VAC005", "Luna") })));
+        public BehaviorPipeline<EmptyCommandQuery, GetAllVacunosSanidadOutput> Create()
+            => Pipeline<EmptyCommandQuery, GetAllVacunosSanidadOutput>(_ => Task.FromResult(new GetAllVacunosSanidadOutput(new[] { new VacunoSanidadItemOutput(5, "VAC005", "Luna") })));
     }
 
     private sealed class HistorialFactory(SanidadApiTestState state) : IGetHistorialByVacunoIdBehaviorPipelineFactory

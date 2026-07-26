@@ -95,8 +95,8 @@ public sealed class CeloController : ControllerBase
         [FromQuery] DateTime? fechaFin,
         CancellationToken cancellationToken)
     {
-        var output = await _behaviorDispatcher.Send<EmptyCommand , GetCelosOutput>(
-            EmptyCommand.Value(AuditEventType.Read , "Get celos"),
+        var output = await _behaviorDispatcher.Send<EmptyCommandQuery , GetCelosOutput>(
+            EmptyCommandQuery.Value(AuditEventType.Read , "Get celos"),
             cancellationToken
         );
 
@@ -132,8 +132,8 @@ public sealed class CeloController : ControllerBase
     string codigoVacuno,
     CancellationToken cancellationToken)
     {
-        var output = await _behaviorDispatcher.Send<EmptyCommand , GetReporteCelosOutput>(
-            EmptyCommand.Value(
+        var output = await _behaviorDispatcher.Send<EmptyCommandQuery , GetReporteCelosOutput>(
+            EmptyCommandQuery.Value(
                 AuditEventType.Read,
                 "Get reporte celos"
             ),

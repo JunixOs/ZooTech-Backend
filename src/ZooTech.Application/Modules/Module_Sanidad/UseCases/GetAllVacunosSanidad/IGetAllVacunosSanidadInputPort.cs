@@ -4,5 +4,5 @@ namespace ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllVacunosSanid
 
 public interface IGetAllVacunosSanidadInputPort
 {
-    Task<GetAllVacunosSanidadOutput> Handle(EmptyCommand emptyCommand, CancellationToken cancellationToken = default);
+    Task<GetAllVacunosSanidadOutput> Handle(EmptyCommandQuery emptyCommand, CancellationToken cancellationToken = default);
 }

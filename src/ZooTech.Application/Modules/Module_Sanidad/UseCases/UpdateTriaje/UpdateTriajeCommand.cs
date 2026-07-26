@@ -3,7 +3,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Sanidad.UseCases.UpdateTriaje;
 
-public class UpdateTriajeCommand : IAuditableRequest
+public class UpdateTriajeCommand : IAuditableCommandQueryRequest
 {
     public AuditEventType EventType => AuditEventType.Update;
     public string Action => "Update a triaje";

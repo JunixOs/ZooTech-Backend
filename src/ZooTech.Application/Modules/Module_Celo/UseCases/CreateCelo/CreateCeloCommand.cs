@@ -3,7 +3,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Celo.UseCases.CreateCelo;
 
-public class CreateCeloCommand : IAuditableRequest
+public class CreateCeloCommand : IAuditableCommandQueryRequest
 {
     public AuditEventType EventType => AuditEventType.Create;
     public string Action => "Creating a celo record";

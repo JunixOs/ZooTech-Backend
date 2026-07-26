@@ -7,7 +7,7 @@ public sealed record ExportarArbolGenealogicoCommand(
     long VacunoId,
     int Niveles = 4,
     string Formato = "excel"
-) : IAuditableRequest
+) : IAuditableCommandQueryRequest
 {
     public AuditEventType EventType => AuditEventType.DataExport;
 

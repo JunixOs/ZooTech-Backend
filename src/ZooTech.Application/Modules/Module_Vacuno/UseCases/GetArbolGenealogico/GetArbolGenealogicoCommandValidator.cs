@@ -3,7 +3,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.GetArbolGenealogico;
 
-public sealed class GetArbolGenealogicoCommandValidator : ICommandValidator<GetArbolGenealogicoCommand>
+public sealed class GetArbolGenealogicoCommandValidator : ICommandQueryValidator<GetArbolGenealogicoCommand>
 {
     public ModuleName ModuleName => ModuleName.Vacuno;
 

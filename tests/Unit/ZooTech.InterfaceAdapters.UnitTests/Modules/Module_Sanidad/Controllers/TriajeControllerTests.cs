@@ -267,14 +267,14 @@ public class TriajeControllerTests
         public BehaviorPipeline<DeleteTriajeCommand, EmptyOutput> Create() => Pipeline(handler);
     }
 
-    private sealed class TipoPesoFactory(Func<EmptyCommand, Task<GetAllTipoPesosOutput>> handler) : IGetAllTipoPesosBehaviorPipelineFactory
+    private sealed class TipoPesoFactory(Func<EmptyCommandQuery, Task<GetAllTipoPesosOutput>> handler) : IGetAllTipoPesosBehaviorPipelineFactory
     {
-        public BehaviorPipeline<EmptyCommand, GetAllTipoPesosOutput> Create() => Pipeline(handler);
+        public BehaviorPipeline<EmptyCommandQuery, GetAllTipoPesosOutput> Create() => Pipeline(handler);
     }
 
-    private sealed class VacunosFactory(Func<EmptyCommand, Task<GetAllVacunosSanidadOutput>> handler) : IGetAllVacunosSanidadBehaviorPipelineFactory
+    private sealed class VacunosFactory(Func<EmptyCommandQuery, Task<GetAllVacunosSanidadOutput>> handler) : IGetAllVacunosSanidadBehaviorPipelineFactory
     {
-        public BehaviorPipeline<EmptyCommand, GetAllVacunosSanidadOutput> Create() => Pipeline(handler);
+        public BehaviorPipeline<EmptyCommandQuery, GetAllVacunosSanidadOutput> Create() => Pipeline(handler);
     }
 
     private sealed class HistorialFactory(Func<GetHistorialByVacunoIdCommand, Task<GetHistorialByVacunoIdOutput>> handler) : IGetHistorialByVacunoIdBehaviorPipelineFactory

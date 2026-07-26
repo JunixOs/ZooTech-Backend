@@ -3,7 +3,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Celo.UseCases.GetVacasEnCelo
 {
-    public class GetVacasEnCeloQuery : IAuditableRequest
+    public class GetVacasEnCeloQuery : IAuditableCommandQueryRequest
     {
         public AuditEventType EventType => AuditEventType.Read;
         public string Action => "Get vacas en celo";

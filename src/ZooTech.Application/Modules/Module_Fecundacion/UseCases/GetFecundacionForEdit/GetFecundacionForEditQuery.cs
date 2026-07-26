@@ -3,9 +3,9 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Fecundacion.UseCases.GetFecundacionForEdit
 {
-    public record GetFecundacionForEditCommand(
+    public record GetFecundacionForEditQuery(
         long Id
-    ) : IAuditableRequest
+    ) : IAuditableCommandQueryRequest
     {
         public AuditEventType EventType => AuditEventType.Read;
 

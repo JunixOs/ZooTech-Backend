@@ -235,7 +235,7 @@ public sealed class TriajeController : ControllerBase
         var behaviorPipeline = _getAllTipoPesosBehaviorPipelineFactory.Create();
 
         var output = await behaviorPipeline.Execute(
-            EmptyCommand.Value(
+            EmptyCommandQuery.Value(
                 AuditEventType.Read,
                 "Get all tipos peso"
             ),
@@ -251,7 +251,7 @@ public sealed class TriajeController : ControllerBase
         var behaviorPipeline = _getAllVacunosSanidadBehaviorPipelineFactory.Create();
 
         var output = await behaviorPipeline.Execute(
-            EmptyCommand.Value(
+            EmptyCommandQuery.Value(
                 AuditEventType.Read,
                 "Get all vacunos sanidad"
             ),

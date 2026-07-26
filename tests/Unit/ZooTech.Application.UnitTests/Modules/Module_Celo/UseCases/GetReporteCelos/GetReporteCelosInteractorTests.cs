@@ -30,7 +30,7 @@ public sealed class GetReporteCelosInteractorTests
         };
         var interactor = new GetReporteCelosInteractor(repository);
 
-        var output = await interactor.HandleAsync(EmptyCommand.Value(AuditEventType.Read, "Get reporte celos"), CancellationToken.None);
+        var output = await interactor.HandleAsync(EmptyCommandQuery.Value(AuditEventType.Read, "Get reporte celos"), CancellationToken.None);
 
         var item = Assert.Single(output.Items);
         Assert.Equal("CEL-001", item.CodigoRegistro);
@@ -61,7 +61,7 @@ public sealed class GetReporteCelosInteractorTests
         var repository = new FakeCeloReporteRepository { Celos = [celo] };
         var interactor = new GetReporteCelosInteractor(repository);
 
-        var output = await interactor.HandleAsync(EmptyCommand.Value(AuditEventType.Read, "Get reporte celos"), CancellationToken.None);
+        var output = await interactor.HandleAsync(EmptyCommandQuery.Value(AuditEventType.Read, "Get reporte celos"), CancellationToken.None);
 
         var item = Assert.Single(output.Items);
         Assert.Equal(1, item.VecesEnCelo);

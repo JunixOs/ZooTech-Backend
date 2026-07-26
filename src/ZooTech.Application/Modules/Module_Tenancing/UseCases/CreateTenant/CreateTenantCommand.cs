@@ -4,7 +4,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant
 {
-    public class CreateTenantCommand : IAuditableRequest
+    public class CreateTenantCommand : IAuditableCommandQueryRequest
     {
         public AuditEventType EventType => AuditEventType.Create;
         public string Action => "Create a new tenant";

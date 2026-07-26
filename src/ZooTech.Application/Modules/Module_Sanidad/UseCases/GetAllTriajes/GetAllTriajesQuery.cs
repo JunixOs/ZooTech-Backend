@@ -3,7 +3,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllTriajes;
 
-public class GetAllTriajesQuery : IAuditableRequest
+public class GetAllTriajesQuery : IAuditableCommandQueryRequest
 {
     public AuditEventType EventType => AuditEventType.Read;
     public string Action => "Get all triajes";

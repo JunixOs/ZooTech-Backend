@@ -6,7 +6,7 @@ namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarActividadVa
 public sealed record ExportarActividadVacunosQuery(
     DateOnly? FechaInicio,
     DateOnly? FechaFin,
-    string Formato) : IAuditableRequest
+    string Formato) : IAuditableCommandQueryRequest
 {
     public AuditEventType EventType => AuditEventType.DataExport;
 

@@ -6,14 +6,14 @@ namespace ZooTech.Application.Common.Behaviors.Module_Vacuno.GetVacunoCatalogs
 {
     public class GetVacunoCatalogsBehaviorPipelineFactory : IGetVacunoCatalogsBehaviorPipelineFactory
     {
-        private readonly LoggingBehavior<EmptyCommand , VacunoCatalogs> _logging;
-        private readonly AuditBehavior<EmptyCommand , VacunoCatalogs> _audit;
+        private readonly LoggingBehavior<EmptyCommandQuery , VacunoCatalogs> _logging;
+        private readonly AuditBehavior<EmptyCommandQuery , VacunoCatalogs> _audit;
 
         private readonly IGetVacunoCatalogsInputPort _handler;
 
         public GetVacunoCatalogsBehaviorPipelineFactory(
-            LoggingBehavior<EmptyCommand , VacunoCatalogs> logging,
-            AuditBehavior<EmptyCommand , VacunoCatalogs> audit,
+            LoggingBehavior<EmptyCommandQuery , VacunoCatalogs> logging,
+            AuditBehavior<EmptyCommandQuery , VacunoCatalogs> audit,
 
             IGetVacunoCatalogsInputPort handler
         )
@@ -24,9 +24,9 @@ namespace ZooTech.Application.Common.Behaviors.Module_Vacuno.GetVacunoCatalogs
             _handler = handler;
         }
 
-        public BehaviorPipeline<EmptyCommand , VacunoCatalogs> Create()
+        public BehaviorPipeline<EmptyCommandQuery , VacunoCatalogs> Create()
         {
-            return new BehaviorPipeline<EmptyCommand , VacunoCatalogs>(
+            return new BehaviorPipeline<EmptyCommandQuery , VacunoCatalogs>(
             [
                 _logging,
                 _audit

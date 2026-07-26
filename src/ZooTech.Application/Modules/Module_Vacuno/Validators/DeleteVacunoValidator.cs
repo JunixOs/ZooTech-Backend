@@ -5,7 +5,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.Validators;
 
-internal sealed class DeleteVacunoValidator : ICommandValidator<DeleteVacunoCommand>
+internal sealed class DeleteVacunoValidator : ICommandQueryValidator<DeleteVacunoCommand>
 {
     public ModuleName ModuleName => ModuleName.Vacuno;
 

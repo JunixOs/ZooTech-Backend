@@ -85,8 +85,6 @@ using ZooTech.Application.Common.Behaviors.Module_Sanidad.GenerateTriajesPdf;
 using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetHistorialGeneral;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetDetalleTriajeByVacunoId;
 using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetDetallesTriajeByVacunoId;
-using ZooTech.Application.Common.Behaviors.Module_Celo.FecundacionEstado.UpdateFecundacionEstado;
-using ZooTech.Application.Common.Behaviors.Module_Celo.FecundacionEstado.GetFecundacionEstado;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.CreateVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.Validators;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.DeleteVacuno;
@@ -100,14 +98,7 @@ using ZooTech.Application.Common.Behaviors.Module_Vacuno.ReporteVacuno.ListarVac
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.ReporteVacuno.ObtenerRegistroVacunoReporte;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.UpdateVacuno;
-using ZooTech.Application.Common.Behaviors.Module_Fecundacion.CreateFecundacion;
 using ZooTech.Application.Modules.Module_Fecundacion.Validators;
-using ZooTech.Application.Common.Behaviors.Module_Fecundacion.DeleteFecundacion;
-using ZooTech.Application.Common.Behaviors.Module_Fecundacion.GetFecundacionForEdit;
-using ZooTech.Application.Common.Behaviors.Module_Fecundacion.GetFecundacionOptions;
-using ZooTech.Application.Common.Behaviors.Module_Fecundacion.ListarFecundacion;
-using ZooTech.Application.Common.Behaviors.Module_Fecundacion.SearchFecundacionVacunos;
-using ZooTech.Application.Common.Behaviors.Module_Fecundacion.UpdateFecundacion;
 using ZooTech.Application.Common.Gateway.Reports;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.Common;
 
@@ -124,11 +115,11 @@ public static class DependencyInjection
         // ============================================
         services.AddScoped<ICreateTriajeInputPort, CreateTriajeInteractor>();
         services.AddScoped<ICreateTriajeBehaviorPipelineFactory, CreateTriajeBehaviorPipelineFactory>();
-        services.AddScoped<ICommandValidator<CreateTriajeCommand>, CreateTriajeValidator>();
+        services.AddScoped<ICommandQueryValidator<CreateTriajeCommand>, CreateTriajeValidator>();
 
         services.AddScoped<IDeleteTriajeInputPort, DeleteTriajeInteractor>();
         services.AddScoped<IDeleteTriajeBehaviorPipelineFactory, DeleteTriajeBehaviorPipelineFactory>();
-        services.AddScoped<ICommandValidator<DeleteTriajeCommand>, DeleteTriajeValidator>();
+        services.AddScoped<ICommandQueryValidator<DeleteTriajeCommand>, DeleteTriajeValidator>();
 
         services.AddScoped<IGetAllTipoPesosInputPort, GetAllTipoPesosInteractor>();
         services.AddScoped<IGetAllTipoPesosBehaviorPipelineFactory, GetAllTipoPesosBehaviorPipelineFactory>();
@@ -147,7 +138,7 @@ public static class DependencyInjection
 
         services.AddScoped<IUpdateTriajeInputPort, UpdateTriajeInteractor>();
         services.AddScoped<IUpdateTriajeBehaviorPipelineFactory, UpdateTriajeBehaviorPipelineFactory>();
-        services.AddScoped<ICommandValidator<UpdateTriajeCommand>, UpdateTriajeValidator>();
+        services.AddScoped<ICommandQueryValidator<UpdateTriajeCommand>, UpdateTriajeValidator>();
 
         services.AddScoped<IGenerateTriajesExcelInputPort, GenerateTriajesExcelInteractor>();
         services.AddScoped<IGenerateTriajesExcelBehaviorPipelineFactory, GenerateTriajesExcelBehaviorPipelineFactory>();
@@ -166,11 +157,11 @@ public static class DependencyInjection
         // ============================================
         services.AddScoped<ICreateOrdenioInputPort, CreateOrdenioInteractor>();
         services.AddScoped<ICreateOrdenioBehaviorPipelineFactory, CreateOrdenioBehaviorPipelineFactory>();
-        services.AddScoped<ICommandValidator<CreateOrdenioCommand>, CreateOrdenioValidator>();
+        services.AddScoped<ICommandQueryValidator<CreateOrdenioCommand>, CreateOrdenioValidator>();
         
         services.AddScoped<IDeleteOrdenioInputPort, DeleteOrdenioInteractor>();
         services.AddScoped<IDeleteOrdenioBehaviorPipelineFactory, DeleteOrdenioBehaviorPipelineFactory>();
-        services.AddScoped<ICommandValidator<DeleteOrdenioCommand>, DeleteOrdenioValidator>();
+        services.AddScoped<ICommandQueryValidator<DeleteOrdenioCommand>, DeleteOrdenioValidator>();
 
         services.AddScoped<IGetOrdeniosExcelInputPort, GenerateOrdeniosExcelInteractor>();
         services.AddScoped<IGenerateOrdeniosExcelBehaviorPipelineFactory, GenerateOrdeniosExcelBehaviorPipelineFactory>();
@@ -186,7 +177,7 @@ public static class DependencyInjection
 
         services.AddScoped<IUpdateOrdenioInputPort, UpdateOrdenioInteractor>();
         services.AddScoped<IUpdateOrdenioBehaviorPipelineFactory, UpdateOrdenioBehaviorPipelineFactory>();
-        services.AddScoped<ICommandValidator<UpdateOrdenioCommand>, UpdateOrdenioValidator>();
+        services.AddScoped<ICommandQueryValidator<UpdateOrdenioCommand>, UpdateOrdenioValidator>();
 
         // ============================================
         // FluentValidation â€” all assemblies
@@ -196,18 +187,13 @@ public static class DependencyInjection
         // ============================================
         // Use Cases - Module_Celo
         // ============================================
-        services.AddScoped<ICommandValidator<CreateCeloCommand>, CreateCeloValidator>();
+        services.AddScoped<ICommandQueryValidator<CreateCeloCommand>, CreateCeloValidator>();
 
-        services.AddScoped<ICommandValidator<DeleteCeloCommand>, DeleteCeloValidator>();
+        services.AddScoped<ICommandQueryValidator<DeleteCeloCommand>, DeleteCeloValidator>();
 
-        services.AddScoped<ICommandValidator<UpdateCeloCommand>, UpdateCeloValidator>();
+        services.AddScoped<ICommandQueryValidator<UpdateCeloCommand>, UpdateCeloValidator>();
 
-        services.AddScoped<IUpdateFecundacionEstadoInputPort, UpdateFecundacionEstadoInteractor>();
-        services.AddScoped<IUpdateFecundacionEstadoBehaviorPipelineFactory, UpdateFecundacionEstadoBehaviorPipelineFactory>();
-        services.AddScoped<ICommandValidator<UpdateFecundacionEstadoCommand>, UpdateFecundacionEstadoValidator>();
-
-        services.AddScoped<IGetFecundacionEstadoInputPort, GetFecundacionEstadoInteractor>();
-        services.AddScoped<IGetFecundacionEstadoBehaviorPipelineFactory, GetFecundacionEstadoBehaviorPipelineFactory>();
+        services.AddScoped<ICommandQueryValidator<UpdateFecundacionEstadoCommand>, UpdateFecundacionEstadoValidator>();
 
         services.AddScoped<UpdateFecundacionEstadoValidator>();
         services.AddScoped<FecundacionEstadoTransitionValidator>();
@@ -217,54 +203,35 @@ public static class DependencyInjection
         // ============================================
         // Use Cases - Module_Fecundacion
         // ============================================
-        services.AddScoped<ICreateFecundacionInputPort, CreateFecundacionInteractor>();
-        services.AddScoped<ICreateFecundacionBehaviorPipelineFactory, CreateFecundacionBehaviorPipelineFactory>();
-        services.AddScoped<ICommandValidator<CreateFecundacionCommand>, CreateFecundacionValidator>();
+        services.AddScoped<ICommandQueryValidator<CreateFecundacionCommand>, CreateFecundacionValidator>();
 
-        services.AddScoped<IDeleteFecundacionInputPort, DeleteFecundacionInteractor>();
-        services.AddScoped<IDeleteFecundacionBehaviorPipelineFactory, DeleteFecundacionBehaviorPipelineFactory>();
-        services.AddScoped<ICommandValidator<DeleteFecundacionCommand>, DeleteFecundacionValidator>();
-
-        services.AddScoped<IGetFecundacionForEditInputPort, GetFecundacionForEditInteractor>();
-        services.AddScoped<IGetFecundacionForEditBehaviorPipelineFactory, GetFecundacionForEditBehaviorPipelineFactory>();
+        services.AddScoped<ICommandQueryValidator<DeleteFecundacionCommand>, DeleteFecundacionValidator>();
+                
+        services.AddScoped<ICommandQueryValidator<ListarFecundacionQuery>, ListarFecundacionQueryValidator>();
         
-        services.AddScoped<IGetFecundacionOptionsInputPort, GetFecundacionOptionsInteractor>();
-        services.AddScoped<IGetFecundacionOptionsBehaviorPipelineFactory, GetFecundacionOptionsBehaviorPipelineFactory>();
-        
-        services.AddScoped<IListarFecundacionInputPort, ListarFecundacionInteractor>();
-        services.AddScoped<IListarFecundacionBehaviorPipelineFactory, ListarFecundacionBehaviorPipelineFactory>();
-        services.AddScoped<ICommandValidator<ListarFecundacionCommand>, ListarFecundacionCommandValidator>();
-
-        services.AddScoped<ISearchFecundacionVacunosInputPort, SearchFecundacionVacunosInteractor>();
-        services.AddScoped<ISearchFecundacionVacunosBehaviorPipelineFactory, SearchFecundacionVacunosBehaviorPipelineFactory>();
-        
-        services.AddScoped<IUpdateFecundacionInputPort, UpdateFecundacionInteractor>();
-        services.AddScoped<IUpdateFecundacionBehaviorPipelineFactory, UpdateFecundacionBehaviorPipelineFactory>();
-        services.AddScoped<IUpdateFecundacionBehaviorPipelineFactory, UpdateFecundacionBehaviorPipelineFactory>();
-        services.AddScoped<ICommandValidator<UpdateFecundacionCommand>, UpdateFecundacionValidator>();
-
+        services.AddScoped<ICommandQueryValidator<UpdateFecundacionCommand>, UpdateFecundacionValidator>();
 
         // ============================================
         // Use Cases - Module_Vacuno
         // ============================================
         services.AddScoped<ICreateVacunoInputPort, CreateVacunoInteractor>();
         services.AddScoped<ICreateVacunoBehaviorPipelineFactory, CreateVacunoBehaviorPipelineFactory>();
-        services.AddScoped<ICommandValidator<CreateVacunoCommand>, CreateVacunoValidator>();
+        services.AddScoped<ICommandQueryValidator<CreateVacunoCommand>, CreateVacunoValidator>();
 
         services.AddScoped<IDeleteVacunoInputPort, DeleteVacunoInteractor>();
         services.AddScoped<IDeleteVacunoBehaviorPipelineFactory, DeleteVacunoBehaviorPipelineFactory>();
-        services.AddScoped<ICommandValidator<DeleteVacunoCommand>, DeleteVacunoValidator>();
+        services.AddScoped<ICommandQueryValidator<DeleteVacunoCommand>, DeleteVacunoValidator>();
         
         services.AddScoped<IExportarArbolGenealogicoInputPort,ExportarArbolGenealogicoInteractor>();
         services.AddScoped<IExportarArbolGenealogicoBehaviorPipelineFactory, ExportarArbolGenealogicoBehaviorPipelineFactory>();
-        services.AddScoped<ICommandValidator<ExportarArbolGenealogicoCommand>, ExportarArbolGenealogicoCommandValidator>();
+        services.AddScoped<ICommandQueryValidator<ExportarArbolGenealogicoCommand>, ExportarArbolGenealogicoCommandValidator>();
 
         services.AddScoped<IExportarActividadVacunosInputPort, ExportarActividadVacunosInteractor>();
-        services.AddScoped<ICommandValidator<ExportarActividadVacunosQuery>, ExportarActividadVacunosQueryValidator>();
+        services.AddScoped<ICommandQueryValidator<ExportarActividadVacunosQuery>, ExportarActividadVacunosQueryValidator>();
         
         services.AddScoped<IGetArbolGenealogicoInputPort, GetArbolGenealogicoInteractor>();
         services.AddScoped<IGetArbolGenealogicoBehaviorPipelineFactory, GetArbolGenealogicoBehaviorPipelineFactory>();
-        services.AddScoped<ICommandValidator<GetArbolGenealogicoCommand>, GetArbolGenealogicoCommandValidator>();
+        services.AddScoped<ICommandQueryValidator<GetArbolGenealogicoCommand>, GetArbolGenealogicoCommandValidator>();
         
         services.AddScoped<IGetVacunoByIdInputPort, GetVacunoByIdInteractor>();
         services.AddScoped<IGetVacunoByIdBehaviorPipelineFactory, GetVacunoByIdBehaviorPipelineFactory>();
@@ -274,43 +241,43 @@ public static class DependencyInjection
         
         services.AddScoped<IListarVacunosInputPort, ListarVacunosInteractor>();
         services.AddScoped<IListarVacunosBehaviorPipelineFactory, ListarVacunosBehaviorPipelineFactory>();
-        services.AddScoped<ICommandValidator<ListarVacunosCommand>, ListarVacunosCommandValidator>();
+        services.AddScoped<ICommandQueryValidator<ListarVacunosCommand>, ListarVacunosCommandValidator>();
         
         services.AddScoped<IGetActivityStatsInputPort, GetActivityStatsInteractor>();
         services.AddScoped<IVacunoActivityStatsService, VacunoActivityStatsService>();
-        services.AddScoped<ICommandValidator<GetActivityStatsQuery>, GetActivityStatsQueryValidator>();
+        services.AddScoped<ICommandQueryValidator<GetActivityStatsQuery>, GetActivityStatsQueryValidator>();
 
         services.AddScoped(typeof(IReportStrategyResolver<>), typeof(ReportStrategyResolver<>));
         services.AddScoped<IVacunoReportFormatPolicy, VacunoReportFormatPolicy>();
         
         services.AddScoped<IListarVacunosReporteUseCase, ListarVacunosReporteUseCase>();
         services.AddScoped<IListarVacunosReporteBehaviorPipelineFactory, ListarVacunosReporteBehaviorPipelineFactory>();
-        services.AddScoped<ICommandValidator<ListarVacunosReporteQuery>, ListarVacunosReporteQueryValidator>();
+        services.AddScoped<ICommandQueryValidator<ListarVacunosReporteQuery>, ListarVacunosReporteQueryValidator>();
         
         services.AddScoped<IObtenerRegistroVacunoReporteUseCase, ObtenerRegistroVacunoReporteUseCase>();
         services.AddScoped<IObtenerRegistroVacunoReporteBehaviorPipelineFactory, ObtenerRegistroVacunoReporteBehaviorPipelineFactory>();
-        services.AddScoped<ICommandValidator<ObtenerRegistroVacunoReporteQuery>, ObtenerRegistroVacunoReporteQueryValidator>();
+        services.AddScoped<ICommandQueryValidator<ObtenerRegistroVacunoReporteQuery>, ObtenerRegistroVacunoReporteQueryValidator>();
 
 
 
         services.AddScoped<IUpdateVacunoInputPort, UpdateVacunoInteractor>();
         services.AddScoped<IUpdateVacunoBehaviorPipelineFactory, UpdateVacunoBehaviorPipelineFactory>();
-        services.AddScoped<ICommandValidator<UpdateVacunoCommand>, UpdateVacunoValidator>();
+        services.AddScoped<ICommandQueryValidator<UpdateVacunoCommand>, UpdateVacunoValidator>();
 
         // ============================================
         // Use Cases - Module_Auth
         // ============================================
-        services.AddScoped<ICommandValidator<AdminLoginCommand>, AdminLoginValidator>();
-        services.AddScoped<ICommandValidator<RegularLoginCommand>, RegularLoginValidator>();
+        services.AddScoped<ICommandQueryValidator<AdminLoginCommand>, AdminLoginValidator>();
+        services.AddScoped<ICommandQueryValidator<RegularLoginCommand>, RegularLoginValidator>();
 
         // ============================================
         // Use Cases - Module_Tenancing
         // ============================================                
-        services.AddScoped<ICommandValidator<CreateTenantCommand>, CreateTenantValidation>();
-        services.AddScoped<ICommandValidator<CreateUserInTenantCommand>, CreateUserInTenantValidator>();
+        services.AddScoped<ICommandQueryValidator<CreateTenantCommand>, CreateTenantValidation>();
+        services.AddScoped<ICommandQueryValidator<CreateUserInTenantCommand>, CreateUserInTenantValidator>();
         
-        services.AddScoped<ICommandValidator<DeleteAdminUserCommand>, DeleteAdminUserValidator>();
-        services.AddScoped<ICommandValidator<CreateAdminUserCommand> , CreateAdminUserValidator>();
+        services.AddScoped<ICommandQueryValidator<DeleteAdminUserCommand>, DeleteAdminUserValidator>();
+        services.AddScoped<ICommandQueryValidator<CreateAdminUserCommand> , CreateAdminUserValidator>();
         
         services.AddScoped(typeof(ValidationBehavior<,>));
         services.AddScoped(typeof(LoggingBehavior<,>));

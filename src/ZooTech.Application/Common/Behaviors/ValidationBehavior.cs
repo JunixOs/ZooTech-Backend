@@ -7,10 +7,10 @@ namespace ZooTech.Application.Common.Behaviors
     public class ValidationBehavior<TRequest, TResponse>
         : IBehavior<TRequest, TResponse>
     {
-        private readonly IEnumerable<ICommandValidator<TRequest>> _validators;
+        private readonly IEnumerable<ICommandQueryValidator<TRequest>> _validators;
 
         public ValidationBehavior(
-            IEnumerable<ICommandValidator<TRequest>> validators)
+            IEnumerable<ICommandQueryValidator<TRequest>> validators)
         {
             _validators = validators;
         }

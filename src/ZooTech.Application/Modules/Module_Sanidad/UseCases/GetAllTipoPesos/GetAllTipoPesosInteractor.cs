@@ -13,7 +13,7 @@ public sealed class GetAllTipoPesosInteractor : IGetAllTipoPesosInputPort
     }
 
     public async Task<GetAllTipoPesosOutput> Handle(
-        EmptyCommand emptyCommand,
+        EmptyCommandQuery emptyCommand,
         CancellationToken cancellationToken = default
     )
     {

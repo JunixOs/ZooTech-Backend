@@ -4,5 +4,5 @@ namespace ZooTech.Application.Modules.Module_Sanidad.UseCases.GetAllTipoPesos;
 
 public interface IGetAllTipoPesosInputPort
 {
-    Task<GetAllTipoPesosOutput> Handle(EmptyCommand emptyCommand, CancellationToken cancellationToken = default);
+    Task<GetAllTipoPesosOutput> Handle(EmptyCommandQuery emptyCommand, CancellationToken cancellationToken = default);
 }

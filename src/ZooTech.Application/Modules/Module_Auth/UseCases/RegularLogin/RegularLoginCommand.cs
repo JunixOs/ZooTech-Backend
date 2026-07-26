@@ -3,7 +3,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Auth.UseCases.RegularLogin
 {
-    public class RegularLoginCommand : IAuditableRequest
+    public class RegularLoginCommand : IAuditableCommandQueryRequest
     {
         public AuditEventType EventType => AuditEventType.Login;
         public string Action => "A user is login into the application.";

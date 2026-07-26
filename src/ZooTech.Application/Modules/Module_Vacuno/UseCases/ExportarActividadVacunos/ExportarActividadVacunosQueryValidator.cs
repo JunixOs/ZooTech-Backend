@@ -4,7 +4,7 @@ using ZooTech.Domain.Shared.Enums;
 namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarActividadVacunos;
 
 public sealed class ExportarActividadVacunosQueryValidator
-    : ICommandValidator<ExportarActividadVacunosQuery>
+    : ICommandQueryValidator<ExportarActividadVacunosQuery>
 {
     public ModuleName ModuleName => ModuleName.Vacuno;
 

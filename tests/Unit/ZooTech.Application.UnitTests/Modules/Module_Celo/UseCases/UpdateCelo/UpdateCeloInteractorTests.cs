@@ -34,7 +34,7 @@ public sealed class UpdateCeloInteractorTests
         _repository.UpdateAsync(Arg.Any<Celo>(), Arg.Any<CancellationToken>())
             .Returns(c => c.Arg<Celo>());
 
-        var output = await _interactor.Handle(command, CancellationToken.None);
+        var output = await _interactor.HandleAsync(command, CancellationToken.None);
 
         Assert.Equal(celo.Id, output.Id);
         Assert.Equal("Nueva observación", output.Observaciones);
@@ -60,7 +60,7 @@ public sealed class UpdateCeloInteractorTests
         _repository.UpdateAsync(Arg.Any<Celo>(), Arg.Any<CancellationToken>())
             .Returns(c => c.Arg<Celo>());
 
-        var output = await _interactor.Handle(command, CancellationToken.None);
+        var output = await _interactor.HandleAsync(command, CancellationToken.None);
 
         Assert.Equal("Solo observaciones", output.Observaciones);
         await _repository.Received(1).UpdateAsync(Arg.Any<Celo>(), Arg.Any<CancellationToken>());
@@ -82,7 +82,7 @@ public sealed class UpdateCeloInteractorTests
         _repository.UpdateAsync(Arg.Any<Celo>(), Arg.Any<CancellationToken>())
             .Returns(c => c.Arg<Celo>());
 
-        await _interactor.Handle(command, CancellationToken.None);
+        await _interactor.HandleAsync(command, CancellationToken.None);
 
         Assert.Empty(celo.CaracteristicaCodes);
         await _repository.Received(1).UpdateAsync(Arg.Any<Celo>(), Arg.Any<CancellationToken>());
@@ -101,7 +101,7 @@ public sealed class UpdateCeloInteractorTests
             .Returns((Celo?)null);
 
         var exception = await Assert.ThrowsAsync<NotFoundException>(
-            () => _interactor.Handle(command, CancellationToken.None));
+            () => _interactor.HandleAsync(command, CancellationToken.None));
 
         Assert.Equal(ScopeName.Application, exception.ScopeName);
         Assert.Equal(ModuleName.Celo, exception.ModuleName);
@@ -123,7 +123,7 @@ public sealed class UpdateCeloInteractorTests
             .Returns(celo);
 
         await Assert.ThrowsAsync<ArgumentException>(
-            () => _interactor.Handle(command, CancellationToken.None));
+            () => _interactor.HandleAsync(command, CancellationToken.None));
 
         await _repository.DidNotReceive().UpdateAsync(Arg.Any<Celo>(), Arg.Any<CancellationToken>());
     }
@@ -142,7 +142,7 @@ public sealed class UpdateCeloInteractorTests
             .Returns(celo);
 
         await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _interactor.Handle(command, CancellationToken.None));
+            () => _interactor.HandleAsync(command, CancellationToken.None));
 
         await _repository.DidNotReceive().UpdateAsync(Arg.Any<Celo>(), Arg.Any<CancellationToken>());
     }

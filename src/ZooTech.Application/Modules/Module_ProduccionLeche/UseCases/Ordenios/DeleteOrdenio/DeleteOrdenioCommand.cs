@@ -3,7 +3,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.DeleteOrdenio;
 
-public class DeleteOrdenioCommand : IAuditableRequest
+public class DeleteOrdenioCommand : IAuditableCommandQueryRequest
 {
     public AuditEventType EventType => AuditEventType.Delete;
     public string Action => "Delete a ordeño record";

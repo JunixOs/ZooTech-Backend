@@ -3,7 +3,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Tenancing
 {
-    public sealed record ListAdminUsersQuery() : IAuditableRequest
+    public sealed record ListAdminUsersQuery() : IAuditableCommandQueryRequest
     {
         public AuditEventType EventType => AuditEventType.Read;
 

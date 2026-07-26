@@ -3,7 +3,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Sanidad.UseCases.GetHistorialByVacunoId
 {
-    public class GetHistorialByVacunoIdCommand : IAuditableRequest
+    public class GetHistorialByVacunoIdCommand : IAuditableCommandQueryRequest
     {
         public AuditEventType EventType => AuditEventType.Read;
         public string Action => "Get historial by vacuno Id";

@@ -3,7 +3,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Celo.UseCases.UpdateCelo;
 
-public class UpdateCeloCommand : IAuditableRequest
+public class UpdateCeloCommand : IAuditableCommandQueryRequest
 {
     public AuditEventType EventType => AuditEventType.Update;
 

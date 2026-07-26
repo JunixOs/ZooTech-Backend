@@ -3,7 +3,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.GetArbolGenealogico;
 
-public record GetArbolGenealogicoCommand(long Id, int Niveles) : IAuditableRequest
+public record GetArbolGenealogicoCommand(long Id, int Niveles) : IAuditableCommandQueryRequest
 {
     public AuditEventType EventType => AuditEventType.Read;
 

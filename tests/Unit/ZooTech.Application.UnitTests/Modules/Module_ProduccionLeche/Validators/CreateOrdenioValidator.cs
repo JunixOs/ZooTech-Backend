@@ -90,13 +90,13 @@ public class CreateOrdenioValidatorTests
         Assert.Empty(errors);
     }
 
-    private static ICommandValidator<CreateOrdenioCommand> GetValidator()
+    private static ICommandQueryValidator<CreateOrdenioCommand> GetValidator()
     {
         var services = new ServiceCollection();
         services.AddApplication();
 
         var provider = services.BuildServiceProvider();
-        return provider.GetRequiredService<ICommandValidator<CreateOrdenioCommand>>();
+        return provider.GetRequiredService<ICommandQueryValidator<CreateOrdenioCommand>>();
     }
 
     private static CreateOrdenioCommand BuildValidCommand()

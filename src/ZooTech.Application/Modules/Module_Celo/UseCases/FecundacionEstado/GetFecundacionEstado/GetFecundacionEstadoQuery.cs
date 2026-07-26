@@ -3,7 +3,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.GetFecundacionEstado;
 
-public sealed record GetFecundacionEstadoCommand(long VacunoId) : IAuditableRequest
+public sealed record GetFecundacionEstadoQuery(long VacunoId) : IAuditableCommandQueryRequest
 {
     public AuditEventType EventType => AuditEventType.Read;
 

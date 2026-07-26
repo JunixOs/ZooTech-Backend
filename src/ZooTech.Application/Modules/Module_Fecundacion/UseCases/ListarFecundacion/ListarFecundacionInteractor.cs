@@ -23,16 +23,16 @@ public sealed class ListarFecundacionInteractor : IListarFecundacionInputPort
     }
 
     public async Task<ListarFecundacionOutput> HandleAsync(
-        ListarFecundacionCommand command, CancellationToken cancellationToken = default)
+        ListarFecundacionQuery query, CancellationToken cancellationToken = default)
     {
-        var page = command.Page <= 0 ? DefaultPage : command.Page;
-        var pageSize = command.Limit <= 0 ? DefaultPageSize : Math.Min(command.Limit, MaxPageSize);
+        var page = query.Page <= 0 ? DefaultPage : query.Page;
+        var pageSize = query.Limit <= 0 ? DefaultPageSize : Math.Min(query.Limit, MaxPageSize);
         
         var cacheKey = FecundacionCacheKeys.Listar(
-            command.Query,
-            command.FechaDesde,
-            command.FechaHasta,
-            command.Resultado,
+            query.Query,
+            query.FechaDesde,
+            query.FechaHasta,
+            query.Resultado,
             page,
             pageSize);
 
@@ -41,10 +41,10 @@ public sealed class ListarFecundacionInteractor : IListarFecundacionInputPort
             async () =>
             {
                 var (items, totalCount) = await _fecundacionRepository.GetPagedAsync(
-                    command.Query,
-                    command.FechaDesde,
-                    command.FechaHasta,
-                    command.Resultado,
+                    query.Query,
+                    query.FechaDesde,
+                    query.FechaHasta,
+                    query.Resultado,
                     page,
                     pageSize,
                     cancellationToken);

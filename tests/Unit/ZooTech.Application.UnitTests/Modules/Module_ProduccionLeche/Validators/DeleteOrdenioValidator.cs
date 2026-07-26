@@ -40,12 +40,12 @@ public class DeleteOrdenioValidatorTests
         Assert.Empty(errors);
     }
 
-    private static ICommandValidator<DeleteOrdenioCommand> GetValidator()
+    private static ICommandQueryValidator<DeleteOrdenioCommand> GetValidator()
     {
         var services = new ServiceCollection();
         services.AddApplication();
 
         var provider = services.BuildServiceProvider();
-        return provider.GetRequiredService<ICommandValidator<DeleteOrdenioCommand>>();
+        return provider.GetRequiredService<ICommandQueryValidator<DeleteOrdenioCommand>>();
     }
 }

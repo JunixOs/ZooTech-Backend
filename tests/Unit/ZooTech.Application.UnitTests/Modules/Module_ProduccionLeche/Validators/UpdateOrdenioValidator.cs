@@ -66,13 +66,13 @@ public class UpdateOrdenioValidatorTests
         Assert.Empty(errors);
     }
 
-    private static ICommandValidator<UpdateOrdenioCommand> GetValidator()
+    private static ICommandQueryValidator<UpdateOrdenioCommand> GetValidator()
     {
         var services = new ServiceCollection();
         services.AddApplication();
 
         var provider = services.BuildServiceProvider();
-        return provider.GetRequiredService<ICommandValidator<UpdateOrdenioCommand>>();
+        return provider.GetRequiredService<ICommandQueryValidator<UpdateOrdenioCommand>>();
     }
 
     private static UpdateOrdenioCommand BuildValidCommand()

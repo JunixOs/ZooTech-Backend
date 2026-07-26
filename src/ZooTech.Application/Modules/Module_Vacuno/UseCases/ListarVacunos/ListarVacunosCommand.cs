@@ -9,7 +9,7 @@ public record ListarVacunosCommand(
     DateTime? FechaHasta = null,
     string? Estado = null,
     int Page = 1,
-    int Limit = 20) : IAuditableRequest
+    int Limit = 20) : IAuditableCommandQueryRequest
 {
     public AuditEventType EventType => AuditEventType.Read;
 

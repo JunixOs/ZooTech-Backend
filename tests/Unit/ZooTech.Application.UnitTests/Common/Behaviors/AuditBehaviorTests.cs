@@ -89,7 +89,7 @@ public sealed class AuditBehaviorTests
             .NotContain(property => property.PropertyType == typeof(byte[]));
     }
 
-    private sealed record AuditableRequest : IAuditableRequest
+    private sealed record AuditableRequest : IAuditableCommandQueryRequest
     {
         public AuditEventType EventType => AuditEventType.DataExport;
         public string Action => "Exportar";

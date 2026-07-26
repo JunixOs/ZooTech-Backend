@@ -1,8 +1,8 @@
+using ZooTech.Application.Common.Behaviors;
+
 namespace ZooTech.Application.Modules.Module_Fecundacion.UseCases.CreateFecundacion;
 
 public interface ICreateFecundacionInputPort
+    : IRequestHandler<CreateFecundacionCommand , CreateFecundacionOutput>
 {
-    Task<CreateFecundacionOutput> HandleAsync(
-        CreateFecundacionCommand command,
-        CancellationToken cancellationToken = default);
 }

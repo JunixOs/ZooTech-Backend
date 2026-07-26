@@ -3,7 +3,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.DeleteAdminUser
 {
-    public class DeleteAdminUserValidator : ICommandValidator<DeleteAdminUserCommand>
+    public class DeleteAdminUserValidator : ICommandQueryValidator<DeleteAdminUserCommand>
     {
         public ModuleName ModuleName => ModuleName.Tenancing;
 

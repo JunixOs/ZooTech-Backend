@@ -3,7 +3,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.CreateOrdenio;
 
-public class CreateOrdenioCommand : IAuditableRequest
+public class CreateOrdenioCommand : IAuditableCommandQueryRequest
 {
     public AuditEventType EventType => AuditEventType.Create;
     public string Action => "Create a ordeño record";

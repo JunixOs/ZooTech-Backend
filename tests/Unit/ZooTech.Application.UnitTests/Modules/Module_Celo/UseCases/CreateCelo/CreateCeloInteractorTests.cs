@@ -37,7 +37,7 @@ public sealed class CreateCeloInteractorTests
         _repository.AddAsync(Arg.Any<Celo>(), Arg.Any<CancellationToken>())
             .Returns(c => BuildRehydratedCelo(c.Arg<Celo>(), id: 1));
 
-        var output = await _interactor.Handle(command, CancellationToken.None);
+        var output = await _interactor.HandleAsync(command, CancellationToken.None);
 
         Assert.Equal(1, output.Id);
         Assert.StartsWith("C", output.Codigo);
@@ -63,7 +63,7 @@ public sealed class CreateCeloInteractorTests
         _repository.AddAsync(Arg.Any<Celo>(), Arg.Any<CancellationToken>())
             .Returns(c => BuildRehydratedCelo(c.Arg<Celo>(), id: 1));
 
-        var output = await _interactor.Handle(command, CancellationToken.None);
+        var output = await _interactor.HandleAsync(command, CancellationToken.None);
 
         Assert.NotNull(output);
         await _repository.Received(1).AddAsync(Arg.Any<Celo>(), Arg.Any<CancellationToken>());
@@ -84,7 +84,7 @@ public sealed class CreateCeloInteractorTests
             .Returns(false);
 
         var exception = await Assert.ThrowsAsync<ConflictException>(
-            () => _interactor.Handle(command, CancellationToken.None));
+            () => _interactor.HandleAsync(command, CancellationToken.None));
 
         Assert.Equal(ScopeName.Application, exception.ScopeName);
         Assert.Equal(ModuleName.Celo, exception.ModuleName);
@@ -107,7 +107,7 @@ public sealed class CreateCeloInteractorTests
             .Returns(true);
 
         await Assert.ThrowsAsync<ArgumentException>(
-            () => _interactor.Handle(command, CancellationToken.None));
+            () => _interactor.HandleAsync(command, CancellationToken.None));
 
         await _repository.DidNotReceive().AddAsync(Arg.Any<Celo>(), Arg.Any<CancellationToken>());
     }
@@ -128,7 +128,7 @@ public sealed class CreateCeloInteractorTests
             .Returns(true);
 
         await Assert.ThrowsAsync<ArgumentException>(
-            () => _interactor.Handle(command, CancellationToken.None));
+            () => _interactor.HandleAsync(command, CancellationToken.None));
 
         await _repository.DidNotReceive().AddAsync(Arg.Any<Celo>(), Arg.Any<CancellationToken>());
     }

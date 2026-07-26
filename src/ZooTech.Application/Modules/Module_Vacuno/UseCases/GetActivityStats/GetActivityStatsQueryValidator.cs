@@ -4,7 +4,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.GetActivityStats;
 
-public sealed class GetActivityStatsQueryValidator : ICommandValidator<GetActivityStatsQuery>
+public sealed class GetActivityStatsQueryValidator : ICommandQueryValidator<GetActivityStatsQuery>
 {
     public ModuleName ModuleName => ModuleName.Vacuno;
 
