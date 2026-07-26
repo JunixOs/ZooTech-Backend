@@ -3,7 +3,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Sanidad.UseCases.GetHistorialGeneral
 {
-    public class GetHistorialGeneralCommand : IAuditableCommandQueryRequest
+    public class GetHistorialGeneralQuery : IAuditableCommandQueryRequest
     {
         public AuditEventType EventType => AuditEventType.Read;
         public string Action => "Get historial general";

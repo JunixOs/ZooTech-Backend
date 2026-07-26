@@ -11,12 +11,12 @@ public sealed class GetHistorialByVacunoIdInteractor : IGetHistorialByVacunoIdIn
         _repository = repository;
     }
 
-    public async Task<GetHistorialByVacunoIdOutput> Handle(GetHistorialByVacunoIdCommand cmd, CancellationToken cancellationToken = default)
+    public async Task<GetHistorialByVacunoIdOutput> HandleAsync(GetHistorialByVacunoIdQuery query, CancellationToken cancellationToken = default)
     {
         var items = await _repository.GetHistorialByVacunoIdAsync(
-            cmd.Vacunoid, 
-            cmd.FechaDesde, 
-            cmd.FechaHasta, 
+            query.Vacunoid, 
+            query.FechaDesde, 
+            query.FechaHasta, 
             cancellationToken
         );
         

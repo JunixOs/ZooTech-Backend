@@ -25,7 +25,7 @@ public class GetDetallesTriajeByVacunoIdInteractorTests
         repositoryMock.Setup(r => r.GetDetallesByVacunoIdAsync(15, It.IsAny<CancellationToken>())).ReturnsAsync(items);
         var interactor = new GetDetallesTriajeByVacunoIdInteractor(repositoryMock.Object);
 
-        var result = await interactor.HandleAsync(new GetDetallesTriajeByVacunoIdCommand { VacunoId = 15 });
+        var result = await interactor.HandleAsync(new GetDetallesTriajeByVacunoIdQuery { VacunoId = 15 });
 
         var item = Assert.Single(result.Items);
         Assert.Equal("TRI001", item.CodigoRegistro);

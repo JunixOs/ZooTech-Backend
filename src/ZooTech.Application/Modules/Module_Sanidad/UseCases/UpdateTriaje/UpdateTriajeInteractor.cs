@@ -31,7 +31,7 @@ public sealed class UpdateTriajeInteractor : IUpdateTriajeInputPort
         _dateTimeProvider = dateTimeProvider;
     }
 
-    public async Task<UpdateTriajeOutput> Handle(UpdateTriajeCommand command, CancellationToken cancellationToken = default)
+    public async Task<UpdateTriajeOutput> HandleAsync(UpdateTriajeCommand command, CancellationToken cancellationToken = default)
     {
         var repository = _unitOfWork.Triajes;
 

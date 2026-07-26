@@ -12,7 +12,7 @@ public sealed class GetAllVacunosSanidadInteractor : IGetAllVacunosSanidadInputP
         _vacunoRepository = vacunoRepository;
     }
 
-    public async Task<GetAllVacunosSanidadOutput> Handle(
+    public async Task<GetAllVacunosSanidadOutput> HandleAsync(
         EmptyCommandQuery emptyCommand,
         CancellationToken cancellationToken = default
     )

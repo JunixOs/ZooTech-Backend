@@ -1,6 +1,8 @@
+using ZooTech.Application.Common.Behaviors;
+
 namespace ZooTech.Application.Modules.Module_Sanidad.UseCases.GetHistorialGeneral;
 
 public interface IGetHistorialGeneralInputPort
+    : IRequestHandler<GetHistorialGeneralQuery , GetHistorialGeneralOutput>
 {
-    Task<GetHistorialGeneralOutput> HandleAsync(GetHistorialGeneralCommand cmd, CancellationToken cancellationToken = default);
 }

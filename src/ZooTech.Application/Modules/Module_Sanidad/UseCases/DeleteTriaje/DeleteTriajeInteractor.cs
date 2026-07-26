@@ -24,7 +24,7 @@ public sealed class DeleteTriajeInteractor : IDeleteTriajeInputPort
         _estadoRegistroRepository = estadoRegistroRepository;
     }
 
-    public async Task<EmptyOutput> Handle(DeleteTriajeCommand command, CancellationToken cancellationToken)
+    public async Task<EmptyOutput> HandleAsync(DeleteTriajeCommand command, CancellationToken cancellationToken)
     {
         var repository = _unitOfWork.Triajes;
 

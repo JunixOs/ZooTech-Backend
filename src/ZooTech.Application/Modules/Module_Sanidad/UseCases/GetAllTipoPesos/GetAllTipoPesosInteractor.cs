@@ -12,7 +12,7 @@ public sealed class GetAllTipoPesosInteractor : IGetAllTipoPesosInputPort
         _repository = repository;
     }
 
-    public async Task<GetAllTipoPesosOutput> Handle(
+    public async Task<GetAllTipoPesosOutput> HandleAsync(
         EmptyCommandQuery emptyCommand,
         CancellationToken cancellationToken = default
     )

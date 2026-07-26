@@ -3,7 +3,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Sanidad.UseCases.GetTriajeById
 {
-    public class GetTriajeByIdCommand : IAuditableCommandQueryRequest
+    public class GetTriajeByIdQuery : IAuditableCommandQueryRequest
     {
         public AuditEventType EventType => AuditEventType.Read;
         public string Action => "Get triaje by Id";
