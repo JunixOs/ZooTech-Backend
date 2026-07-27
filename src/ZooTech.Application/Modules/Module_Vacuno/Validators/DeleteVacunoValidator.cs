@@ -1,4 +1,3 @@
-using FluentValidation;
 using ZooTech.Application.Common.Validator;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
 using ZooTech.Domain.Shared.Enums;

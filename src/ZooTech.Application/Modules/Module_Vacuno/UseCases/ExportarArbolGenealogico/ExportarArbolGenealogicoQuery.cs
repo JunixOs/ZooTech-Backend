@@ -3,7 +3,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarArbolGenealogico;
 
-public sealed record ExportarArbolGenealogicoCommand(
+public sealed record ExportarArbolGenealogicoQuery(
     long VacunoId,
     int Niveles = 4,
     string Formato = "excel"

@@ -1,16 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using ZooTech.Application.Common.Behaviors;
-using ZooTech.Application.Common.Behaviors.Module_Sanidad.CreateTriaje;
-using ZooTech.Application.Common.Behaviors.Module_Sanidad.DeleteTriaje;
-using ZooTech.Application.Common.Behaviors.Module_Sanidad.GenerateTriajesExcel;
-using ZooTech.Application.Common.Behaviors.Module_Sanidad.GenerateTriajesPdf;
-using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetAllTipoPesos;
-using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetAllTriajes;
-using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetAllVacunosSanidad;
-using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetHistorialByVacunoId;
-using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetHistorialGeneral;
-using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetTriajeById;
-using ZooTech.Application.Common.Behaviors.Module_Sanidad.UpdateTriaje;
 using ZooTech.Application.Common.Models;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.Common;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.CreateTriaje;

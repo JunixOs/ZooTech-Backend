@@ -1,7 +1,3 @@
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Common.Gateway.Parametrization;
 using ZooTech.Domain.Configuration;
@@ -25,16 +21,16 @@ public sealed class GetArbolGenealogicoInteractor : IGetArbolGenealogicoInputPor
     }
 
     public async Task<GetArbolGenealogicoOutput> HandleAsync(
-        GetArbolGenealogicoCommand command, CancellationToken cancellationToken = default)
+        GetArbolGenealogicoQuery query, CancellationToken cancellationToken = default)
     {
         // 1. Validar que el vacuno raíz exista y no esté eliminado
-        var vacunoRaiz = await _vacunoRepository.GetByIdAsync(command.Id, cancellationToken);
+        var vacunoRaiz = await _vacunoRepository.GetByIdAsync(query.Id, cancellationToken);
         if (vacunoRaiz == null)
         {
             throw new NotFoundException(
                 ScopeName.Application,
                 ModuleName.Vacuno,
-                $"No se encontró el vacuno con ID {command.Id}."
+                $"No se encontró el vacuno con ID {query.Id}."
             );
         }
 
@@ -43,11 +39,11 @@ public sealed class GetArbolGenealogicoInteractor : IGetArbolGenealogicoInputPor
         var maxNiveles = await _tenantConfigurationProvider.GetSettingAsync(Settings.Vacunos.VacunosArbolMaxNiveles);
 
         // 3. Capping elástico de niveles según límites del Tenant
-        var nivelesAjustados = Math.Clamp(command.Niveles, minNiveles, maxNiveles);
+        var nivelesAjustados = Math.Clamp(query.Niveles, minNiveles, maxNiveles);
 
         // 4. Obtener árbol de genealogía
         var nodos = await _vacunoRepository.GetArbolGenealogicoAsync(
-            command.Id, nivelesAjustados, cancellationToken);
+            query.Id, nivelesAjustados, cancellationToken);
 
         var items = nodos.Select(n => new GetArbolGenealogicoItem(
             Id: n.Vacuno.Id,

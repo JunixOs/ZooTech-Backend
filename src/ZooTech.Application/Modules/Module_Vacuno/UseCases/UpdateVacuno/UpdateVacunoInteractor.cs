@@ -4,7 +4,6 @@ using ZooTech.Application.Modules.Module_Vacuno.Common;
 using ZooTech.Application.Modules.Module_Vacuno.Exceptions;
 using ZooTech.Application.Modules.Module_Vacuno.Services;
 using ZooTech.Application.Modules.Module_Vacuno.Validators;
-using ZooTech.Domain.Shared.Enums;
 using ZooTech.Domain.Shared.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.UpdateVacuno;

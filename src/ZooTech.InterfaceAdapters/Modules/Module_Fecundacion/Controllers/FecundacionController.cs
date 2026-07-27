@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ZooTech.Application.Common.Behaviors;
@@ -12,6 +13,7 @@ using ZooTech.Application.Modules.Module_Fecundacion.UseCases.SearchFecundacionV
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.UpdateFecundacion;
 using ZooTech.Domain.Shared.Enums;
 using ZooTech.InterfaceAdapters.DTOs;
+using ZooTech.InterfaceAdapters.Filters;
 using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.DTOs.Responses;
 using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.Mappers;
@@ -39,8 +41,10 @@ public sealed class FecundacionController : ControllerBase
         _behaviorDispatcher = behaviorDispatcher;
     }
 
-    // ===== TUYO — sin cambios =====
     [HttpGet]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(typeof(PagedResponse<List<FecundacionItemResponse>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ListarFecundacion(
         [FromQuery] string? search,
@@ -73,6 +77,9 @@ public sealed class FecundacionController : ControllerBase
 
     // ===== DE ÉL — Create =====
     [HttpPost]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(typeof(GeneralResponseDTO<CreateFecundacionResponse>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
@@ -88,6 +95,9 @@ public sealed class FecundacionController : ControllerBase
     }
 
     [HttpGet("{fecundacionId:long}")]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(typeof(GeneralResponseDTO<FecundacionEditResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(long fecundacionId, CancellationToken cancellationToken)
@@ -100,6 +110,9 @@ public sealed class FecundacionController : ControllerBase
     }
 
     [HttpGet("opciones")]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(typeof(GeneralResponseDTO<FecundacionOptionsResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetOptions(CancellationToken cancellationToken)
     {
@@ -114,6 +127,9 @@ public sealed class FecundacionController : ControllerBase
     }
 
     [HttpGet("vacunos")]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(typeof(GeneralResponseDTO<IReadOnlyList<FecundacionVacunoOptionResponse>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> SearchVacunos(
         [FromQuery] string? sexo,
@@ -131,6 +147,9 @@ public sealed class FecundacionController : ControllerBase
     }
 
     [HttpPatch("{fecundacionId:long}")]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(typeof(GeneralResponseDTO<FecundacionUpdateResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
@@ -152,6 +171,9 @@ public sealed class FecundacionController : ControllerBase
     }
 
     [HttpDelete("{id:long}")]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]

@@ -1,14 +1,13 @@
-using FluentValidation;
 using ZooTech.Application.Common.Validator;
 using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarArbolGenealogico;
 
-public sealed class ExportarArbolGenealogicoCommandValidator : ICommandQueryValidator<ExportarArbolGenealogicoCommand>
+public sealed class ExportarArbolGenealogicoQueryValidator : ICommandQueryValidator<ExportarArbolGenealogicoQuery>
 {
     public ModuleName ModuleName => ModuleName.Vacuno;
 
-    public List<string> Validate(ExportarArbolGenealogicoCommand request)
+    public List<string> Validate(ExportarArbolGenealogicoQuery request)
     {
         var errors = new List<string>();
 

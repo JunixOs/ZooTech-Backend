@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ZooTech.Application.Common.Behaviors;
@@ -15,6 +16,7 @@ using ZooTech.Application.Modules.Module_Sanidad.UseCases.GetTriajeById;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.UpdateTriaje;
 using ZooTech.Domain.Shared.Enums;
 using ZooTech.InterfaceAdapters.DTOs;
+using ZooTech.InterfaceAdapters.Filters;
 using ZooTech.InterfaceAdapters.Modules.Module_Sanidad.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_Sanidad.DTOs.Responses;
 using ZooTech.InterfaceAdapters.Modules.Module_Sanidad.Mappers;
@@ -36,6 +38,9 @@ public sealed class TriajeController : ControllerBase
     }
 
     [HttpGet]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(typeof(GeneralResponseDTO<PagedTriajeResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll(
         [FromQuery] int pagina = 1,
@@ -74,6 +79,9 @@ public sealed class TriajeController : ControllerBase
     }
 
     [HttpGet("{id:long}")]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(typeof(GeneralResponseDTO<TriajeResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(long id, CancellationToken cancellationToken = default)
@@ -90,6 +98,9 @@ public sealed class TriajeController : ControllerBase
     }
 
     [HttpPost]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(typeof(GeneralResponseDTO<TriajeResponse>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create([FromBody] TriajeRequest request, CancellationToken cancellationToken = default)
@@ -101,6 +112,9 @@ public sealed class TriajeController : ControllerBase
     }
 
     [HttpPatch("{id:long}")]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(typeof(GeneralResponseDTO<TriajeResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status404NotFound)]
@@ -115,6 +129,9 @@ public sealed class TriajeController : ControllerBase
     }
 
     [HttpDelete("{id:long}")]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status404NotFound)]
@@ -133,6 +150,9 @@ public sealed class TriajeController : ControllerBase
     }
 
     [HttpGet("reporte/pdf")]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GeneratePdf(
@@ -154,6 +174,9 @@ public sealed class TriajeController : ControllerBase
     }
 
     [HttpGet("reporte/excel")]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GenerateExcel(
@@ -175,6 +198,9 @@ public sealed class TriajeController : ControllerBase
     }
 
     [HttpGet("tipos-peso")]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetTiposPeso(CancellationToken cancellationToken = default)
     {
@@ -189,6 +215,9 @@ public sealed class TriajeController : ControllerBase
     }
 
     [HttpGet("vacunos")]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetVacunos(CancellationToken cancellationToken = default)
     {
@@ -204,6 +233,9 @@ public sealed class TriajeController : ControllerBase
     }
 
     [HttpGet("historial/{vacunoId:long}")]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetHistorial(
         long vacunoId,
@@ -224,6 +256,9 @@ public sealed class TriajeController : ControllerBase
     }
 
     [HttpGet("historial-general")]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetHistorialGeneral(
         [FromQuery] string? desde = null,

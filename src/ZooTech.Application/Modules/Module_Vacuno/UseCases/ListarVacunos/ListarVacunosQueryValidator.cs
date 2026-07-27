@@ -3,11 +3,11 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.ListarVacunos;
 
-public sealed class ListarVacunosCommandValidator : ICommandQueryValidator<ListarVacunosCommand>
+public sealed class ListarVacunosQueryValidator : ICommandQueryValidator<ListarVacunosQuery>
 {
     public ModuleName ModuleName => ModuleName.Vacuno;
 
-    public List<string> Validate(ListarVacunosCommand request)
+    public List<string> Validate(ListarVacunosQuery request)
     {
         var errors = new List<string>();
 

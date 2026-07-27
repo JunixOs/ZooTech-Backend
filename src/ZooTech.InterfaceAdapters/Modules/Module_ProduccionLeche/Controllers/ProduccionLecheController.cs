@@ -9,7 +9,6 @@ using ZooTech.InterfaceAdapters.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.DTOs.Responses;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Mappers;
-using ZooTech.Application.Common.Behaviors.Module_Vacuno.ListarVacunos;
 using ZooTech.Application.Common.Behaviors;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.CreateOrdenio;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.UpdateOrdenio;
@@ -23,18 +22,12 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
 [ApiExplorerSettings(GroupName = "produccion_leche")]
 public sealed class ProduccionLecheController : ControllerBase
 {
-    private readonly IListarVacunosBehaviorPipelineFactory _listarVacunosBehaviorPipelineFactory;
-
     private readonly IBehaviorDispatcher _behaviorDispatcher;
 
     public ProduccionLecheController(
-        IListarVacunosBehaviorPipelineFactory listarVacunosBehaviorPipelineFactory,
-
         IBehaviorDispatcher behaviorDispatcher
     )
     {
-        _listarVacunosBehaviorPipelineFactory = listarVacunosBehaviorPipelineFactory;
-        
         _behaviorDispatcher = behaviorDispatcher;
     }
 
@@ -50,10 +43,8 @@ public sealed class ProduccionLecheController : ControllerBase
     public async Task<IActionResult> GetVacunos(CancellationToken cancellationToken)
     {
         // TODO: este endpoint necesita su propio caso de uso sin paginar para el selector de Leche, en vez de forzar Limit al máximo de ListarVacunos
-        var behaviorPipeline = _listarVacunosBehaviorPipelineFactory.Create();
-
-        var output = await behaviorPipeline.Execute(
-            new ListarVacunosCommand(Limit: 100, FechaDesde: DateTime.MinValue, FechaHasta: DateTime.MaxValue), 
+        var output = await _behaviorDispatcher.Send<ListarVacunosQuery , ListarVacunosOutput>(
+            new ListarVacunosQuery(Limit: 100, FechaDesde: DateTime.MinValue, FechaHasta: DateTime.MaxValue), 
             cancellationToken);
         var data = output.Items.Select(x => new { id = x.Id, codigo = x.Codigo, nombre = x.Nombre, raza = x.RazaCode });
         return Ok(GeneralResponseDTO<object>.Ok(data));

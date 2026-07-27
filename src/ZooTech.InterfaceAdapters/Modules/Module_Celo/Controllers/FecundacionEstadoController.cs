@@ -1,9 +1,12 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ZooTech.Application.Common.Behaviors;
 using ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.GetFecundacionEstado;
 using ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.UpdateFecundacionEstado;
+using ZooTech.Domain.Shared.Enums;
 using ZooTech.InterfaceAdapters.DTOs;
+using ZooTech.InterfaceAdapters.Filters;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.DTOs.Responses;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.Mappers;
@@ -28,6 +31,9 @@ public sealed class FecundacionEstadoController : ControllerBase
     }
 
     [HttpGet("{vacunoId:long}")]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [Tags("Reproduccion")]
     [ProducesResponseType(typeof(GeneralResponseDTO<FecundacionEstadoResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
@@ -46,6 +52,9 @@ public sealed class FecundacionEstadoController : ControllerBase
     }
 
     [HttpPut("{fecundacionId:long}")]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [Tags("Reproduccion")]
     [ProducesResponseType(typeof(GeneralResponseDTO<FecundacionEstadoResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]

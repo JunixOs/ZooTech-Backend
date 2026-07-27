@@ -21,15 +21,23 @@ namespace ZooTech.Infrastructure.Auditing.MongoDb.Models
 
     public class AuditErrorBaseInformation
     {
-        [BsonElement("type")]
-        public string? Type { get; set; }
+        [BsonElement("exception_type")]
+        public string? ExceptionType { get; set; }
+
+        [BsonElement("root_exception_type")]
+        public string? RootExceptionType { get; set; }
         
         [BsonElement("message")]
         public string? Message { get; set; }
+
+        [BsonElement("root_message")]
+        public string? RootMessage { get; set; }
         
         [BsonElement("source")]
         public string? Source { get; set; }
-        
+
+        [BsonElement("declaring_type")]
+        public string? DeclaringType { get; set; }        
         [BsonElement("method")]
         public string? Method { get; set; }
         

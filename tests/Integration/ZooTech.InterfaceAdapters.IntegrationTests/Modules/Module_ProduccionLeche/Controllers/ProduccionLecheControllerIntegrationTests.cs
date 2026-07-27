@@ -211,9 +211,9 @@ public class ProduccionLecheControllerIntegrationTests
 
     private sealed class FakeListarVacunosBehaviorPipelineFactory : IListarVacunosBehaviorPipelineFactory
     {
-        public BehaviorPipeline<ListarVacunosCommand, ListarVacunosOutput> Create()
+        public BehaviorPipeline<ListarVacunosQuery, ListarVacunosOutput> Create()
             => new(
-                Array.Empty<IBehavior<ListarVacunosCommand, ListarVacunosOutput>>(),
+                Array.Empty<IBehavior<ListarVacunosQuery, ListarVacunosOutput>>(),
                 (_, _) => Task.FromResult(new ListarVacunosOutput(Array.Empty<VacunoListItem>(), 0)));
     }
 

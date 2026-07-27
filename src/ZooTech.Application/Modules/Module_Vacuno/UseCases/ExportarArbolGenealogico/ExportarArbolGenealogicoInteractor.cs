@@ -1,6 +1,3 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Common.Gateway.Parametrization;
 using ZooTech.Application.Common.Gateway.Reports;
@@ -31,30 +28,30 @@ public sealed class ExportarArbolGenealogicoInteractor : IExportarArbolGenealogi
     }
 
     public async Task<ExportarArbolGenealogicoOutput> HandleAsync(
-        ExportarArbolGenealogicoCommand command, CancellationToken cancellationToken = default)
+        ExportarArbolGenealogicoQuery query, CancellationToken cancellationToken = default)
     {
         // 1. Verificar existencia del vacuno raíz
-        var vacunoRaiz = await _vacunoRepository.GetByIdAsync(command.VacunoId, cancellationToken);
+        var vacunoRaiz = await _vacunoRepository.GetByIdAsync(query.VacunoId, cancellationToken);
         if (vacunoRaiz == null)
         {
             throw new NotFoundException(
                 ScopeName.Application,
                 ModuleName.Vacuno,
-                $"No se encontró el vacuno con ID {command.VacunoId}."
+                $"No se encontró el vacuno con ID {query.VacunoId}."
             );
         }
 
         // 2. Capping elástico de niveles
         var minNiveles = await _tenantConfigurationProvider.GetSettingAsync(Settings.Vacunos.VacunosArbolMinNiveles);
         var maxNiveles = await _tenantConfigurationProvider.GetSettingAsync(Settings.Vacunos.VacunosArbolMaxNiveles);
-        var nivelesAjustados = Math.Clamp(command.Niveles, minNiveles, maxNiveles);
+        var nivelesAjustados = Math.Clamp(query.Niveles, minNiveles, maxNiveles);
 
         // 3. Consultar árbol
         var nodosArbol = await _vacunoRepository.GetArbolGenealogicoAsync(
-            command.VacunoId, nivelesAjustados, cancellationToken);
+            query.VacunoId, nivelesAjustados, cancellationToken);
 
         // 4. Validar política del tenant y generar con la estrategia solicitada
-        var format = await _formatPolicy.EnsureAllowedAsync(command.Formato);
+        var format = await _formatPolicy.EnsureAllowedAsync(query.Formato);
         var document = await _strategyResolver
             .Resolve(format)
             .GenerateAsync(
