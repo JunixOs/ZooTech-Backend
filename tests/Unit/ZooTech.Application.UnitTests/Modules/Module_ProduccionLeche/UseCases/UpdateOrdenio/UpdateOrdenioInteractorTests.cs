@@ -134,6 +134,7 @@ public class UpdateOrdenioInteractorTests
         public ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces.IVacunoRepository Vacunos => throw new NotSupportedException();
         public ZooTech.Domain.Ganaderia.Module_Fecundacion.Interfaces.IFecundacionRepository Fecundaciones => throw new NotSupportedException();
         public ITriajeRepository Triajes => throw new NotSupportedException();
+        public ZooTech.Domain.Module_Celo.Interfaces.ICeloRepository Celos => throw new NotSupportedException();
 
         public Task<T> ExecuteInTransactionAsync<T>(
             Func<CancellationToken, Task<T>> operation,

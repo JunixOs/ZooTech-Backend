@@ -1,10 +1,12 @@
 using ZooTech.Application.Common.Gateway.Time;
 using ZooTech.Domain.Ganaderia.Module_Fecundacion.Interfaces;
 using ZooTech.Domain.Ganaderia.Module_Vacuno.Interfaces;
+using ZooTech.Domain.Module_Celo.Interfaces;
 using ZooTech.Domain.Module_ProduccionLeche.Interfaces;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
 using ZooTech.Domain.Shared.Interfaces;
 using ZooTech.Infrastructure.Persistence.Context;
+using ZooTech.Infrastructure.Persistence.Modules.Module_Celo.Repositories;
 using ZooTech.Infrastructure.Persistence.Modules.Module_Fecundacion.Repositories;
 using ZooTech.Infrastructure.Persistence.Modules.Module_ProduccionLeche.Repositories;
 using ZooTech.Infrastructure.Persistence.Modules.Module_Sanidad.Repositories;
@@ -25,12 +27,14 @@ public sealed class GanaderiaUnitOfWork : IGanaderiaUnitOfWork, IAsyncDisposable
         Fecundaciones = new FecundacionRepository(_context);
         Ordenios = new OrdenioRepository(_context);
         Triajes = new TriajeRepository(_context, dateTimeProvider);
+        Celos = new CeloRepository(_context);
     }
 
     public IVacunoRepository Vacunos { get; }
     public IFecundacionRepository Fecundaciones { get; }
     public IOrdenioRepository Ordenios { get; }
     public ITriajeRepository Triajes { get; }
+    public ICeloRepository Celos { get; }
 
     public async Task<T> ExecuteInTransactionAsync<T>(
         Func<CancellationToken, Task<T>> operation,

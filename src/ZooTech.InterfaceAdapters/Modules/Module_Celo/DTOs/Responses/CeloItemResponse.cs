@@ -13,4 +13,6 @@ public class CeloItemResponse
     public string NombreVacuno { get; set; } = null!;
 
     public int VecesEnCelo { get; set; }
+    public string? Observaciones { get; set; }
+    public IReadOnlyList<string> CaracteristicaCodes { get; set; } = [];
 }

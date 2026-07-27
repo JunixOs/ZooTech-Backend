@@ -77,6 +77,9 @@ public sealed class GetReporteCelosInteractorTests
         public Task<List<CeloReporteItem>> GetAllForReporteAsync(CancellationToken cancellationToken = default)
             => Task.FromResult(Celos);
 
+        public Task<IReadOnlyList<CeloHistorialItem>> GetHistorialPorVacunoAsync(string codigoVacuno, CancellationToken cancellationToken = default)
+            => Task.FromResult<IReadOnlyList<CeloHistorialItem>>([]);
+
         public Task<Dictionary<long, int>> GetVecesEnCeloCountsAsync(CancellationToken cancellationToken = default)
             => Task.FromResult(VecesEnCeloCounts);
 

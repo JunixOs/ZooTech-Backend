@@ -97,6 +97,8 @@ public static class DependencyInjection
         // Repositories
         // ============================================
         services.AddScoped<ICeloRepository, CeloRepository>();
+        services.AddScoped<ICeloDetalleRepository>(provider =>
+            (CeloRepository)provider.GetRequiredService<ICeloRepository>());
         services.AddScoped<IOrdenioRepository, OrdenioRepository>();
         services.AddScoped<IGanaderiaUnitOfWork, GanaderiaUnitOfWork>();
         services.AddScoped<IVacunoRepository, VacunoRepository>();

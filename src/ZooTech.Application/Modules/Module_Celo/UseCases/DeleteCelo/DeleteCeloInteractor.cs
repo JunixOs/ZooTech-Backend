@@ -1,24 +1,26 @@
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Common.Models;
-using ZooTech.Domain.Module_Celo.Interfaces;
 using ZooTech.Domain.Shared.Enums;
+using ZooTech.Domain.Shared.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_Celo.UseCases.DeleteCelo;
 
 public sealed class DeleteCeloInteractor : IDeleteCeloInputPort
 {
-    private readonly ICeloRepository _celoRepository;
+    private readonly IGanaderiaUnitOfWork _unitOfWork;
 
-    public DeleteCeloInteractor(ICeloRepository celoRepository)
+    public DeleteCeloInteractor(IGanaderiaUnitOfWork unitOfWork)
     {
-        _celoRepository = celoRepository;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<EmptyOutput> Handle(
         DeleteCeloCommand command,
         CancellationToken cancellationToken = default)
     {
-        var celo = await _celoRepository.GetByIdAsync(command.Id, cancellationToken);
+        var repository = _unitOfWork.Celos;
+
+        var celo = await repository.GetByIdAsync(command.Id, cancellationToken);
         if (celo is null)
             throw new NotFoundException(
                 ScopeName.Application,
@@ -31,8 +33,10 @@ public sealed class DeleteCeloInteractor : IDeleteCeloInputPort
             actorUsuarioId: null,
             utcNow: DateTime.UtcNow);
 
-        await _celoRepository.UpdateAsync(celo, cancellationToken);
-    
+        await _unitOfWork.ExecuteInTransactionAsync(
+            operation: ct => repository.UpdateAsync(celo, ct),
+            cancellationToken: cancellationToken);
+
         return EmptyOutput.Value;
     }
 }

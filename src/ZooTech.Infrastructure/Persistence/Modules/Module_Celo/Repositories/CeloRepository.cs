@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using ZooTech.Domain.Ganaderia.Module_Fecundacion.Rules;
 using ZooTech.Domain.Module_Celo.Entities;
 using ZooTech.Domain.Module_Celo.Interfaces;
 using ZooTech.Infrastructure.Persistence.Context;
@@ -6,15 +7,18 @@ using ZooTech.Infrastructure.Persistence.Entities;
 
 namespace ZooTech.Infrastructure.Persistence.Modules.Module_Celo.Repositories;
 
-public sealed class CeloRepository : ICeloRepository
+public sealed class CeloRepository : ICeloRepository, ICeloDetalleRepository
 {
     private readonly GanaderiaDbContext _ganaderiaDbContext;
 
-    public CeloRepository(
-        IGanaderiaDbContextFactory ganaderiaDbContextFactory
-    )
+    public CeloRepository(IGanaderiaDbContextFactory ganaderiaDbContextFactory)
+        : this(ganaderiaDbContextFactory.CreateDbContextByTenantContext())
     {
-        _ganaderiaDbContext  = ganaderiaDbContextFactory.CreateDbContextByTenantContext();
+    }
+
+    public CeloRepository(GanaderiaDbContext ganaderiaDbContext)
+    {
+        _ganaderiaDbContext = ganaderiaDbContext;
     }
 
     public async Task<List<CeloListItem>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -28,6 +32,8 @@ public sealed class CeloRepository : ICeloRepository
                 codigo = c.codigo,
                 fecha_hora = c.fecha_hora,
                 vacuno_id = c.vacuno_id,
+                observaciones = c.observaciones,
+                caracteristica_codes = c.caracteristica_codes,
 
                 vacuno = new vacuno
                 {
@@ -72,6 +78,96 @@ public sealed class CeloRepository : ICeloRepository
             .ToListAsync(cancellationToken);
 
         return entities.Select(ReporteCeloToDomain).ToList();
+    }
+
+    public async Task<IReadOnlyList<CeloHistorialItem>> GetHistorialPorVacunoAsync(
+        string codigoVacuno,
+        CancellationToken cancellationToken = default)
+    {
+        return await _ganaderiaDbContext.celo_registros
+            .AsNoTracking()
+            .Where(c => c.deleted_at == null && c.vacuno.codigo == codigoVacuno)
+            .OrderByDescending(c => c.fecha_hora)
+            .Select(c => new CeloHistorialItem(
+                c.id,
+                c.fecha_hora,
+                c.caracteristica_codes.Select(item => item.code).ToList(),
+                c.observaciones,
+                c.created_byNavigation == null ? null : c.created_byNavigation.nombre_completo,
+                c.created_at,
+                c.updated_byNavigation == null ? null : c.updated_byNavigation.nombre_completo,
+                c.updated_at))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<CeloDetallePorVacuno> GetDetallePorVacunoAsync(
+        string codigoVacuno,
+        long registroId,
+        CancellationToken cancellationToken = default)
+    {
+        var historial = await _ganaderiaDbContext.celo_registros
+            .AsNoTracking()
+            .Where(c => c.deleted_at == null && c.vacuno.codigo == codigoVacuno)
+            .OrderByDescending(c => c.fecha_hora)
+            .Select(c => new
+            {
+                c.fecha_hora,
+                ResultadoCode = c.fecundacions
+                    .OrderByDescending(f => f.fecha_procedimiento)
+                    .ThenByDescending(f => f.id)
+                    .Select(f => f.resultado_code)
+                    .FirstOrDefault(),
+            })
+            .ToListAsync(cancellationToken);
+
+        var fecundaciones = await _ganaderiaDbContext.fecundacions
+            .AsNoTracking()
+            .Where(f => f.vacuno_receptor.codigo == codigoVacuno)
+            .Select(f => new { f.id, f.tipo_fecundacion_code })
+            .ToListAsync(cancellationToken);
+
+        var estadosFecundacion = await _ganaderiaDbContext.vacuno_estado_fecundacion_historials
+            .AsNoTracking()
+            .Where(h => h.deleted_at == null && h.vacuno.codigo == codigoVacuno && h.fecundacion_id != null)
+            .Select(h => new { FecundacionId = h.fecundacion_id!.Value, h.estado_fecundacion_code, h.fecha_actualizacion, h.created_at })
+            .ToListAsync(cancellationToken);
+
+        var crias = await _ganaderiaDbContext.vacunos
+            .AsNoTracking()
+            .Where(v => v.deleted_at == null && v.madre != null && v.madre.codigo == codigoVacuno)
+            .Select(v => v.fecha_nacimiento)
+            .ToListAsync(cancellationToken);
+
+        var registroSeleccionado = await _ganaderiaDbContext.celo_registros
+            .AsNoTracking()
+            .Where(c => c.id == registroId && c.vacuno.codigo == codigoVacuno && c.deleted_at == null)
+            .Select(c => new
+            {
+                Encargado = c.encargado_usuario.nombre_completo,
+                CaracteristicaCodes = c.caracteristica_codes.Select(item => item.code).ToList(),
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var resumen = new CeloResumenReproductivo(
+            historial.Count,
+            estadosFecundacion
+                .GroupBy(item => item.FecundacionId)
+                .Select(group => group.OrderByDescending(item => item.fecha_actualizacion).ThenByDescending(item => item.created_at).First())
+                .Count(item => EsEstadoEmbarazo(item.estado_fecundacion_code)),
+            fecundaciones.Count,
+            crias.Count,
+            fecundaciones.Count(item => FecundacionRules.EsMontaNatural(item.tipo_fecundacion_code)),
+            fecundaciones.Count(item => FecundacionRules.EsInseminacionArtificial(item.tipo_fecundacion_code)),
+            crias.Count == 0 ? null : crias.Max());
+
+        return new CeloDetallePorVacuno(
+            registroSeleccionado?.Encargado,
+            registroSeleccionado?.CaracteristicaCodes ?? [],
+            historial.Select((item, index) => new CeloHistorialResumenItem(
+                historial.Count - index,
+                item.fecha_hora,
+                ResolverResultado(item.ResultadoCode))).ToList(),
+            resumen);
     }
 
     public async Task<(IReadOnlyList<CeloListItem> Items, int TotalCount)> GetPagedAsync(
@@ -177,6 +273,8 @@ public sealed class CeloRepository : ICeloRepository
                 codigo = c.codigo,
                 fecha_hora = c.fecha_hora,
                 vacuno_id = c.vacuno_id,
+                observaciones = c.observaciones,
+                caracteristica_codes = c.caracteristica_codes,
 
                 vacuno = new vacuno
                 {
@@ -493,6 +591,19 @@ public sealed class CeloRepository : ICeloRepository
         return queryable;
     }
 
+    private static bool? ResolverResultado(string? resultadoCode)
+    {
+        if (string.IsNullOrWhiteSpace(resultadoCode)) return null;
+        if (FecundacionRules.EsResultadoExitoso(resultadoCode)) return true;
+        return FecundacionRules.EsResultadoFallido(resultadoCode) ? false : null;
+    }
+
+    private static bool EsEstadoEmbarazo(string estadoCode)
+    {
+        var normalized = estadoCode.Trim().Replace(" ", "_").Replace("-", "_").ToUpperInvariant();
+        return normalized is "CONFIRMADA" or "GESTACION" or "EN_GESTACION" or "GESTANTE";
+    }
+
     private static IQueryable<Entities.celo_registro> ApplyCommonColumnFilters(
         IQueryable<Entities.celo_registro> queryable,
         IReadOnlyDictionary<string, string> columnFilters)
@@ -566,7 +677,9 @@ public sealed class CeloRepository : ICeloRepository
             fechaHora: entity.fecha_hora,
             vacunoId: entity.vacuno_id,
             vacunoCodigo: entity.vacuno?.codigo ?? string.Empty,
-            nombreVacuno: entity.vacuno?.nombre ?? string.Empty);
+            nombreVacuno: entity.vacuno?.nombre ?? string.Empty,
+            observaciones: entity.observaciones,
+            caracteristicaCodes: entity.caracteristica_codes.Select(c => c.code).ToList());
 
 
     } 
