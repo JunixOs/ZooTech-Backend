@@ -14,7 +14,7 @@ public sealed class DeleteCeloInteractor : IDeleteCeloInputPort
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<EmptyOutput> Handle(
+    public async Task<EmptyOutput> HandleAsync(
         DeleteCeloCommand command,
         CancellationToken cancellationToken = default)
     {

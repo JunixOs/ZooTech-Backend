@@ -25,7 +25,7 @@ public class DeleteTriajeInteractorTests
         _repositoryMock.Setup(r => r.GetByIdAsync(7, It.IsAny<CancellationToken>())).ReturnsAsync(triaje);
         var interactor = new DeleteTriajeInteractor(new FakeGanaderiaUnitOfWork(_repositoryMock.Object), _dateTimeProviderMock.Object, _estadoRegistroRepositoryMock.Object);
 
-        await interactor.Handle(new DeleteTriajeCommand { Id = 7, MotivoEliminacion = "Duplicado" }, CancellationToken.None);
+        await interactor.HandleAsync(new DeleteTriajeCommand { Id = 7, MotivoEliminacion = "Duplicado" }, CancellationToken.None);
 
         _repositoryMock.Verify(r => r.UpdateAsync(
             It.Is<Triaje>(t => t.IsDeleted && t.MotivoEliminacion == "Duplicado" && t.DeletedAt == now && t.EstadoRegistroCode == "ELIMINADO"),
@@ -38,6 +38,6 @@ public class DeleteTriajeInteractorTests
         _repositoryMock.Setup(r => r.GetByIdAsync(7, It.IsAny<CancellationToken>())).ReturnsAsync((Triaje?)null);
         var interactor = new DeleteTriajeInteractor(new FakeGanaderiaUnitOfWork(_repositoryMock.Object), _dateTimeProviderMock.Object, _estadoRegistroRepositoryMock.Object);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => interactor.Handle(new DeleteTriajeCommand { Id = 7, MotivoEliminacion = "Duplicado" }, CancellationToken.None));
+        await Assert.ThrowsAsync<NotFoundException>(() => interactor.HandleAsync(new DeleteTriajeCommand { Id = 7, MotivoEliminacion = "Duplicado" }, CancellationToken.None));
     }
 }

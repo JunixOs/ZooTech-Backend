@@ -6,7 +6,7 @@ using ZooTech.Domain.Shared.Enums;
 namespace ZooTech.Application.Modules.Module_Fecundacion.Validators;
 
 public sealed class DeleteFecundacionValidator :
-    ICommandValidator<DeleteFecundacionCommand>,
+    ICommandQueryValidator<DeleteFecundacionCommand>,
     IValidationErrorDetailsProvider
 {
     private const string InvalidIdCode = "FECUNDACION-DELETE-ID-INVALID";

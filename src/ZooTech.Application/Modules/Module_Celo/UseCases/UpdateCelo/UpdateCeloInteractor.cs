@@ -13,7 +13,7 @@ public sealed class UpdateCeloInteractor : IUpdateCeloInputPort
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<UpdateCeloOutput> Handle(
+    public async Task<UpdateCeloOutput> HandleAsync(
         UpdateCeloCommand command,
         CancellationToken cancellationToken = default)
     {

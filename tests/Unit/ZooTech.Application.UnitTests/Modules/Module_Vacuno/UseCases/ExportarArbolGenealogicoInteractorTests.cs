@@ -1,10 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using FluentAssertions;
 using NSubstitute;
-using Xunit;
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Common.Gateway.Parametrization;
 using ZooTech.Application.Common.Gateway.Reports;
@@ -45,7 +40,7 @@ public class ExportarArbolGenealogicoInteractorTests
     {
         // Arrange
         var vacunoId = 1L;
-        var command = new ExportarArbolGenealogicoCommand(vacunoId, 5, "excel"); // 5 > 4 (max)
+        var command = new ExportarArbolGenealogicoQuery(vacunoId, 5, "excel"); // 5 > 4 (max)
         var raiz = Vacuno.Rehydrate(vacunoId, "V1", "Estrella", new DateOnly(2020, 1, 1), "COMPRA", "HOLSTEIN", "BLANCO_NEGRO", "HEMBRA", null, null, 1, null, new DateOnly(2020, 1, 1), DateTime.UtcNow, DateTime.UtcNow, null, null, null, null, null);
         var arbol = new List<VacunoGenealogiaNode> { new VacunoGenealogiaNode(raiz, 1, null) };
         var expectedBytes = new byte[] { 0x01, 0x02 };
@@ -86,7 +81,7 @@ public class ExportarArbolGenealogicoInteractorTests
     {
         // Arrange
         var vacunoId = 2L;
-        var command = new ExportarArbolGenealogicoCommand(vacunoId, 4, "pdf");
+        var command = new ExportarArbolGenealogicoQuery(vacunoId, 4, "pdf");
         var raiz = Vacuno.Rehydrate(vacunoId, "V2", "Luna", new DateOnly(2021, 1, 1), "COMPRA", "HOLSTEIN", "BLANCO_NEGRO", "HEMBRA", null, null, 1, null, new DateOnly(2021, 1, 1), DateTime.UtcNow, DateTime.UtcNow, null, null, null, null, null);
         var arbol = new List<VacunoGenealogiaNode> { new VacunoGenealogiaNode(raiz, 1, null) };
         var expectedBytes = new byte[] { 0x03, 0x04 };
@@ -122,7 +117,7 @@ public class ExportarArbolGenealogicoInteractorTests
     public async Task HandleAsync_WhenNivelesAreBelowTenantMinimum_ShouldUseMinimum()
     {
         var vacunoId = 3L;
-        var command = new ExportarArbolGenealogicoCommand(vacunoId, 1, "excel");
+        var command = new ExportarArbolGenealogicoQuery(vacunoId, 1, "excel");
         var raiz = Vacuno.Rehydrate(
             vacunoId,
             "V3",
@@ -182,7 +177,7 @@ public class ExportarArbolGenealogicoInteractorTests
     {
         // Arrange
         var vacunoId = 99L;
-        var command = new ExportarArbolGenealogicoCommand(vacunoId, 4);
+        var command = new ExportarArbolGenealogicoQuery(vacunoId, 4);
 
         _vacunoRepositoryMock.GetByIdAsync(vacunoId, Arg.Any<CancellationToken>()).Returns((Vacuno?)null);
 

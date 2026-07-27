@@ -14,7 +14,7 @@ public class GetOrdenioByIdInteractorTests
         var repository = new FakeOrdenioRepository(CreateOrdenio(fecha));
         var interactor = new GetOrdenioByIdInteractor(repository);
 
-        var result = await interactor.Handle(new GetOrdenioByIdCommand { Id = 10 }, CancellationToken.None);
+        var result = await interactor.HandleAsync(new GetOrdenioByIdQuery { Id = 10 }, CancellationToken.None);
 
         Assert.Equal(10, result.Data.Id);
         Assert.Equal("ORD-010", result.Data.Codigo);
@@ -28,7 +28,7 @@ public class GetOrdenioByIdInteractorTests
         var repository = new FakeOrdenioRepository(null);
         var interactor = new GetOrdenioByIdInteractor(repository);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => interactor.Handle(new GetOrdenioByIdCommand { Id = 99 }, CancellationToken.None));
+        await Assert.ThrowsAsync<NotFoundException>(() => interactor.HandleAsync(new GetOrdenioByIdQuery { Id = 99 }, CancellationToken.None));
     }
 
     private static Ordenio CreateOrdenio(DateTime fecha)

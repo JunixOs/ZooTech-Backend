@@ -1,6 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
-using ZooTech.Application;
 using ZooTech.Application.Common.Validator;
+using ZooTech.Application.DependencyInjection;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.UpdateOrdenio;
 
 namespace ZooTech.Application.UnitTests.Modules.Module_ProduccionLeche.Validators;
@@ -66,13 +66,13 @@ public class UpdateOrdenioValidatorTests
         Assert.Empty(errors);
     }
 
-    private static ICommandValidator<UpdateOrdenioCommand> GetValidator()
+    private static ICommandQueryValidator<UpdateOrdenioCommand> GetValidator()
     {
         var services = new ServiceCollection();
         services.AddApplication();
 
         var provider = services.BuildServiceProvider();
-        return provider.GetRequiredService<ICommandValidator<UpdateOrdenioCommand>>();
+        return provider.GetRequiredService<ICommandQueryValidator<UpdateOrdenioCommand>>();
     }
 
     private static UpdateOrdenioCommand BuildValidCommand()

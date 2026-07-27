@@ -51,9 +51,15 @@ namespace ZooTech.InterfaceAdapters.Middleware
                         EventType = AuditEventType.ZooTechException,
                         CustomMessage =  $"ZooTechException: {ex.ErrorCode} - {ex.ScopeName} - {ex.ErrorType} - {ex.Message}",
 
-                        Type = rootException.GetType().Name,
-                        Message = ExceptionExtensions.ToAuditMessage(rootException),
+                        ExceptionType = ex.GetType().FullName,
+                        RootExceptionType = rootException.GetType().Name,
+                        
+                        Message = ex.Message,
+                        RootMessage = ExceptionExtensions.ToAuditMessage(rootException),
+                        
                         Source = rootException.Source,
+
+                        DeclaringType = rootException.TargetSite?.DeclaringType?.FullName,
                         Method = rootException.TargetSite?.Name,
 
                         AppInformation = new ErrorAppInformation
@@ -102,9 +108,15 @@ namespace ZooTech.InterfaceAdapters.Middleware
                         EventType = AuditEventType.UnhandledException,
                         CustomMessage =  "Unhandled exception",
 
-                        Type = rootException.GetType().Name,
+                        ExceptionType = ex.GetType().FullName,
+                        RootExceptionType = rootException.GetType().Name,
+                        
                         Message = ExceptionExtensions.ToAuditMessage(rootException),
+                        RootMessage = ExceptionExtensions.ToAuditMessage(rootException),
+
                         Source = rootException.Source,
+                        
+                        DeclaringType = rootException.TargetSite?.DeclaringType?.FullName,
                         Method = rootException.TargetSite?.Name,
 
                         StackTrace = rootException.StackTrace

@@ -2,8 +2,6 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using ZooTech.Application.Common.Behaviors;
-using ZooTech.Application.Common.Behaviors.Module_Tenancing.CreateTenant;
-using ZooTech.Application.Common.Behaviors.Module_Tenancing.CreateUserInTenant;
 using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant;
 using ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers;
 using ZooTech.InterfaceAdapters.Modules.Module_Tenancing.DTOs.Requests;

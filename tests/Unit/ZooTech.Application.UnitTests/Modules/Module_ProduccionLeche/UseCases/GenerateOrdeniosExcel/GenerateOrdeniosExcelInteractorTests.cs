@@ -22,7 +22,7 @@ public class GenerateOrdeniosExcelInteractorTests
             comparativeGenerator,
             new FakeDateTimeProvider(now));
 
-        var result = await interactor.Handle(
+        var result = await interactor.HandleAsync(
             new GenerateOrdeniosComparationExcelQuery
             {
                 VacunoId = 1,
@@ -55,7 +55,7 @@ public class GenerateOrdeniosExcelInteractorTests
             comparativeGenerator,
             new FakeDateTimeProvider(now));
 
-        var result = await interactor.Handle(
+        var result = await interactor.HandleAsync(
             new GenerateOrdeniosComparationExcelQuery
             {
                 VacunoId = null,

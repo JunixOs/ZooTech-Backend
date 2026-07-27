@@ -1,10 +1,12 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using ZooTech.Application.Common.Behaviors.Module_Celo.FecundacionEstado.GetFecundacionEstado;
-using ZooTech.Application.Common.Behaviors.Module_Celo.FecundacionEstado.UpdateFecundacionEstado;
+using ZooTech.Application.Common.Behaviors;
 using ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.GetFecundacionEstado;
 using ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.UpdateFecundacionEstado;
+using ZooTech.Domain.Shared.Enums;
 using ZooTech.InterfaceAdapters.DTOs;
+using ZooTech.InterfaceAdapters.Filters;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.DTOs.Responses;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.Mappers;
@@ -18,19 +20,20 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Celo.Controllers;
 public sealed class FecundacionEstadoController : ControllerBase
 {
     private const string UpdatedByHeaderName = "X-User-Id";
-    private readonly IGetFecundacionEstadoBehaviorPipelineFactory _getFecundacionEstadoBehaviorPipelineFactory;
-    private readonly IUpdateFecundacionEstadoBehaviorPipelineFactory _updateFecundacionEstadoBehaviorPipelineFactory;
+
+    private readonly IBehaviorDispatcher _behaviorDispatcher;
 
     public FecundacionEstadoController(
-        IGetFecundacionEstadoBehaviorPipelineFactory getFecundacionEstadoBehaviorPipelineFactory,
-        IUpdateFecundacionEstadoBehaviorPipelineFactory updateFecundacionEstadoBehaviorPipelineFactory
+        IBehaviorDispatcher behaviorDispatcher
     )
     {
-        _getFecundacionEstadoBehaviorPipelineFactory = getFecundacionEstadoBehaviorPipelineFactory;
-        _updateFecundacionEstadoBehaviorPipelineFactory = updateFecundacionEstadoBehaviorPipelineFactory;
+        _behaviorDispatcher = behaviorDispatcher;
     }
 
     [HttpGet("{vacunoId:long}")]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [Tags("Reproduccion")]
     [ProducesResponseType(typeof(GeneralResponseDTO<FecundacionEstadoResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
@@ -40,10 +43,8 @@ public sealed class FecundacionEstadoController : ControllerBase
         [FromRoute] long vacunoId,
         CancellationToken cancellationToken)
     {
-        var behaviorPipeline = _getFecundacionEstadoBehaviorPipelineFactory.Create();
-
-        var output = await behaviorPipeline.Execute(
-            new GetFecundacionEstadoCommand(vacunoId),
+        var output = await _behaviorDispatcher.Send<GetFecundacionEstadoQuery , GetFecundacionEstadoOutput>(
+            new GetFecundacionEstadoQuery(vacunoId),
             cancellationToken);
 
         return Ok(GeneralResponseDTO<FecundacionEstadoResponse>.Ok(
@@ -51,6 +52,9 @@ public sealed class FecundacionEstadoController : ControllerBase
     }
 
     [HttpPut("{fecundacionId:long}")]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [Tags("Reproduccion")]
     [ProducesResponseType(typeof(GeneralResponseDTO<FecundacionEstadoResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
@@ -61,9 +65,7 @@ public sealed class FecundacionEstadoController : ControllerBase
         [FromBody] UpdateFecundacionEstadoRequest? request,
         CancellationToken cancellationToken)
     {
-        var behaviorPipeline = _updateFecundacionEstadoBehaviorPipelineFactory.Create();
-
-        var output = await behaviorPipeline.Execute(
+        var output = await _behaviorDispatcher.Send<UpdateFecundacionEstadoCommand , UpdateFecundacionEstadoOutput>(
             new UpdateFecundacionEstadoCommand(
                 fecundacionId,
                 request?.EstadoFecundacion,

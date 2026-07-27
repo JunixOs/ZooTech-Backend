@@ -4,7 +4,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ListarVacunosReporte;
 
-public sealed class ListarVacunosReporteQueryValidator : ICommandValidator<ListarVacunosReporteQuery>
+public sealed class ListarVacunosReporteQueryValidator : ICommandQueryValidator<ListarVacunosReporteQuery>
 {
     public ModuleName ModuleName => ModuleName.Vacuno;
 

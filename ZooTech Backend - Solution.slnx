@@ -23,4 +23,7 @@
     <Project Path="tests/Unit/ZooTech.Infrastructure.UnitTests/ZooTech.Infrastructure.UnitTests.csproj" />
     <Project Path="tests/Unit/ZooTech.InterfaceAdapters.UnitTests/ZooTech.InterfaceAdapters.UnitTests.csproj" />
   </Folder>
+  <Folder Name="/tests/ZooTech.Tests.Shared/">
+    <Project Path="tests/ZooTech.Tests.Shared/ZooTech.Tests.Shared.csproj" />
+  </Folder>
 </Solution>

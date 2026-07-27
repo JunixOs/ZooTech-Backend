@@ -3,7 +3,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.ListOrdenios;
 
-public class ListOrdeniosQuery : IAuditableRequest
+public class ListOrdeniosQuery : IAuditableCommandQueryRequest
 {
     public AuditEventType EventType => AuditEventType.Read;
     public string Action => "List ordeños";

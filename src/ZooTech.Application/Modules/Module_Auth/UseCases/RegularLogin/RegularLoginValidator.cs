@@ -4,7 +4,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Auth.UseCases.RegularLogin
 {
-    public class RegularLoginValidator : ICommandValidator<RegularLoginCommand>
+    public class RegularLoginValidator : ICommandQueryValidator<RegularLoginCommand>
     {
         public ModuleName ModuleName => ModuleName.Auth;
 

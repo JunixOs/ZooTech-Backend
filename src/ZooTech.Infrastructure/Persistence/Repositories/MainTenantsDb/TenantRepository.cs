@@ -31,11 +31,12 @@ namespace ZooTech.Infrastructure.Persistence.Repositories.MainTenantsDb
             return entities.Select(TenantMapper.ToDomain).ToList();
         }
 
-        public async Task<List<ListTenantsOutput>> ListAllTenants()
+        public async Task<List<ListTenantsOutput>> ListAllTenants(CancellationToken cancellationToken = default)
         {
             return await _tenantDbContext.tenants
                 .Select(t => new ListTenantsOutput
                 {
+                    Id = t.id,
                     Code = t.code,
                     SubDomain = t.subdomain,
                     LegalName = t.legal_name,
@@ -44,8 +45,15 @@ namespace ZooTech.Infrastructure.Persistence.Repositories.MainTenantsDb
                     Status = t.status,
                     CreatedAt = t.created_at
                 })
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
+        public async Task<string?> GetTenantDatabaseNameByTenantId(int tenantId)
+        {
+            return await _tenantDbContext.tenants
+                .Where(t => t.id == tenantId)
+                .Select(t => t.tenant_database_connection.database_name)
+                .FirstOrDefaultAsync();
+        }
     }
 }

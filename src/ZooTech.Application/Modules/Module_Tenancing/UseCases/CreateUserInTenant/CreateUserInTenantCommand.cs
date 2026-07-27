@@ -3,7 +3,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateUserInTenant
 {
-    public class CreateUserInTenantCommand : IAuditableRequest
+    public class CreateUserInTenantCommand : IAuditableCommandQueryRequest
     {
         public AuditEventType EventType => AuditEventType.Create;
         public string Action => "Creating a tenant user";
@@ -14,6 +14,6 @@ namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateUserInTena
         public string? Email { get; set; }
         public bool IsActive { get; set; }
 
-        public string? TenantDatabaseName { get; set; }
+        public int? TenantId { get; set; }
     }
 }

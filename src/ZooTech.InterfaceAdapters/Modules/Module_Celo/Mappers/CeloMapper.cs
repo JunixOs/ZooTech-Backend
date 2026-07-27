@@ -134,7 +134,7 @@ internal static class CeloMapper
         };
     }
 
-    public static ListCelosCommand ToCommand(
+    public static ListCelosQuery ToQuery(
         string? search,
         int page,
         int pageSize,
@@ -143,7 +143,7 @@ internal static class CeloMapper
         Dictionary<string, string>? columnFilters
     )
     {
-        return new ListCelosCommand
+        return new ListCelosQuery
         {
             Search = search, 
             Page = page, 

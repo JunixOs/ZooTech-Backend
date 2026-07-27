@@ -13,9 +13,9 @@ public sealed class GetTriajeByIdInteractor : IGetTriajeByIdInputPort
         _repository = repository;
     }
 
-    public async Task<GetTriajeByIdOutput> Handle(GetTriajeByIdCommand cmd, CancellationToken cancellationToken = default)
+    public async Task<GetTriajeByIdOutput> HandleAsync(GetTriajeByIdQuery query, CancellationToken cancellationToken = default)
     {
-        var triaje = await _repository.GetByIdAsync(cmd.Id, cancellationToken)
+        var triaje = await _repository.GetByIdAsync(query.Id, cancellationToken)
             ?? throw new NotFoundException(
                 ScopeName.Application,
                 ModuleName.Triaje,

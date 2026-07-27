@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using ZooTech.Application;
 using ZooTech.Infrastructure;
 using ZooTech.InterfaceAdapters;
 using ZooTech.InterfaceAdapters.Controllers;
@@ -10,6 +9,7 @@ using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Controllers;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers;
 using QuestPDF.Infrastructure;
+using ZooTech.Application.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 

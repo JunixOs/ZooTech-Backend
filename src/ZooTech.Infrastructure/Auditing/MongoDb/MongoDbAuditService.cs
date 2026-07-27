@@ -101,9 +101,15 @@ namespace ZooTech.Infrastructure.Auditing.MongoDb
 
                     AuditErrorBaseInformation = new AuditErrorBaseInformation
                     {
-                        Type = auditErrorInfo.Type,
+                        ExceptionType = auditErrorInfo.ExceptionType,
+                        RootExceptionType = auditErrorInfo.RootExceptionType,
+
                         Message = auditErrorInfo.Message,
+                        RootMessage = auditErrorInfo.RootMessage,
+
                         Source = auditErrorInfo.Source,
+                        DeclaringType = auditErrorInfo.DeclaringType,
+                        
                         Method = auditErrorInfo.Method,
                         Inner = auditErrorInfo.Inner
                     },

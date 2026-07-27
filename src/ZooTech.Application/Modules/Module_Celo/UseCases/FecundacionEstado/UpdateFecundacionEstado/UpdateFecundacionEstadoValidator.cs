@@ -4,7 +4,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.UpdateFecundacionEstado;
 
-public sealed class UpdateFecundacionEstadoValidator : ICommandValidator<UpdateFecundacionEstadoCommand>
+public sealed class UpdateFecundacionEstadoValidator : ICommandQueryValidator<UpdateFecundacionEstadoCommand>
 {
     public ModuleName ModuleName => ModuleName.Celo;
 

@@ -51,7 +51,7 @@ public class UpdateOrdenioInteractorTests
             Observaciones = "Actualizado"
         };
 
-        var result = await interactor.Handle(command, CancellationToken.None);
+        var result = await interactor.HandleAsync(command, CancellationToken.None);
 
         Assert.Equal(18, result.Data.Litros);
         Assert.Equal(nuevaFecha, result.Data.FechaHora);

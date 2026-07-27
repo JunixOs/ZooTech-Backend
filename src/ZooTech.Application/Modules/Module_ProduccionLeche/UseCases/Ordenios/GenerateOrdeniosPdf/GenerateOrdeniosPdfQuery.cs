@@ -3,7 +3,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GenerateOrdeniosPdf;
 
-public class GenerateOrdeniosComparationPdfQuery : IAuditableRequest
+public class GenerateOrdeniosComparationPdfQuery : IAuditableCommandQueryRequest
 {
     public AuditEventType EventType => AuditEventType.DataExport;
     public string Action => "Generate ordeño pdf";

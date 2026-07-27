@@ -23,16 +23,16 @@ public sealed class ListarVacunosInteractor : IListarVacunosInputPort
         _cache = cache;
     }
 
-    public async Task<ListarVacunosOutput> HandleAsync(ListarVacunosCommand command, CancellationToken cancellationToken = default)
+    public async Task<ListarVacunosOutput> HandleAsync(ListarVacunosQuery query, CancellationToken cancellationToken = default)
     {
-        var page = command.Page <= 0 ? DefaultPage : command.Page;
-        var pageSize = command.Limit <= 0 ? DefaultPageSize : Math.Min(command.Limit, MaxPageSize);
+        var page = query.Page <= 0 ? DefaultPage : query.Page;
+        var pageSize = query.Limit <= 0 ? DefaultPageSize : Math.Min(query.Limit, MaxPageSize);
 
         var cacheKey = VacunoCacheKeys.Listar(
-            command.Query,
-            command.FechaDesde,
-            command.FechaHasta,
-            command.Estado,
+            query.Query,
+            query.FechaDesde,
+            query.FechaHasta,
+            query.Estado,
             page,
             pageSize);
 
@@ -41,10 +41,10 @@ public sealed class ListarVacunosInteractor : IListarVacunosInputPort
             async () =>
             {
                 var (items, totalCount) = await _vacunoRepository.GetPagedAsync(
-                    command.Query,
-                    command.FechaDesde,
-                    command.FechaHasta,
-                    command.Estado,
+                    query.Query,
+                    query.FechaDesde,
+                    query.FechaHasta,
+                    query.Estado,
                     page,
                     pageSize,
                     cancellationToken);

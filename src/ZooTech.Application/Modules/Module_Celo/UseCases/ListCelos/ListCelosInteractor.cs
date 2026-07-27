@@ -15,21 +15,21 @@ public sealed class ListCelosInteractor : IListCelosInputPort
     }
 
     public async Task<ListCelosOutput> HandleAsync(
-        ListCelosCommand cmd,
+        ListCelosQuery query,
         CancellationToken cancellationToken = default)
     {
-        var currentPage = cmd.Page <= 0 ? 1 : cmd.Page;
-        var currentPageSize = cmd.PageSize <= 0
+        var currentPage = query.Page <= 0 ? 1 : query.Page;
+        var currentPageSize = query.PageSize <= 0
             ? CeloPaginationDefaults.DefaultPageSize
-            : Math.Min(cmd.PageSize, CeloPaginationDefaults.MaxPageSize);
+            : Math.Min(query.PageSize, CeloPaginationDefaults.MaxPageSize);
 
         var (celos, totalCount) = await _celoRepository.GetPagedAsync(
-            cmd.Search,
+            query.Search,
             currentPage,
             currentPageSize,
-            cmd.FechaInicio,
-            cmd.FechaFin,
-            cmd.ColumnFilters,
+            query.FechaInicio,
+            query.FechaFin,
+            query.ColumnFilters,
             cancellationToken);
 
         var counts = await _celoRepository.GetVecesEnCeloCountsAsync(cancellationToken);

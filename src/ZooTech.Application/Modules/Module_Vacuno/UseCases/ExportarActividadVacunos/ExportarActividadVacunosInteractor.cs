@@ -4,13 +4,6 @@ using ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.Common;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarActividadVacunos;
 
-public interface IExportarActividadVacunosInputPort
-{
-    Task<GeneratedReportDocument> HandleAsync(
-        ExportarActividadVacunosQuery query,
-        CancellationToken cancellationToken = default);
-}
-
 public sealed record ActividadVacunosReportModel(GetActivityStatsOutput Stats);
 
 public sealed class ExportarActividadVacunosInteractor : IExportarActividadVacunosInputPort

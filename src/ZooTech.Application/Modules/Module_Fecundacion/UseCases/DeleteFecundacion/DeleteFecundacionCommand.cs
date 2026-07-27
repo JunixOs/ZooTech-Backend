@@ -3,7 +3,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Fecundacion.UseCases.DeleteFecundacion;
 
-public sealed record DeleteFecundacionCommand(long Id, string Razon) : IAuditableRequest
+public sealed record DeleteFecundacionCommand(long Id, string Razon) : IAuditableCommandQueryRequest
 {
     public AuditEventType EventType => AuditEventType.Delete;
 

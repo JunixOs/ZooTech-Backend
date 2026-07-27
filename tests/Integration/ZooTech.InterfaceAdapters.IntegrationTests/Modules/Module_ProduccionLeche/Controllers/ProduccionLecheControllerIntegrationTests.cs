@@ -5,13 +5,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using ZooTech.Application.Common.Behaviors;
-using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.CreateOrdenio;
-using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.DeleteOrdenio;
-using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.GenerateOrdeniosExcel;
-using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.GenerateOrdeniosPdf;
-using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.GetOrdenioById;
-using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.ListOrdenios;
-using ZooTech.Application.Common.Behaviors.Module_ProduccionLeche.Ordenios.UpdateOrdenio;
 using ZooTech.Application.Common.Behaviors.Module_Vacuno.ListarVacunos;
 using ZooTech.Application.Common.Models;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.Common;
@@ -209,7 +202,7 @@ public class ProduccionLecheControllerIntegrationTests
     private sealed class OrdenioPipelineSpy
     {
         public CreateOrdenioCommand? CreateCommand { get; set; }
-        public GetOrdenioByIdCommand? GetByIdCommand { get; set; }
+        public GetOrdenioByIdQuery? GetByIdCommand { get; set; }
         public ListOrdeniosQuery? ListQuery { get; set; }
         public UpdateOrdenioCommand? UpdateCommand { get; set; }
         public DeleteOrdenioCommand? DeleteCommand { get; set; }
@@ -218,9 +211,9 @@ public class ProduccionLecheControllerIntegrationTests
 
     private sealed class FakeListarVacunosBehaviorPipelineFactory : IListarVacunosBehaviorPipelineFactory
     {
-        public BehaviorPipeline<ListarVacunosCommand, ListarVacunosOutput> Create()
+        public BehaviorPipeline<ListarVacunosQuery, ListarVacunosOutput> Create()
             => new(
-                Array.Empty<IBehavior<ListarVacunosCommand, ListarVacunosOutput>>(),
+                Array.Empty<IBehavior<ListarVacunosQuery, ListarVacunosOutput>>(),
                 (_, _) => Task.FromResult(new ListarVacunosOutput(Array.Empty<VacunoListItem>(), 0)));
     }
 
@@ -238,9 +231,9 @@ public class ProduccionLecheControllerIntegrationTests
 
     private sealed class FakeGetOrdenioByIdBehaviorPipelineFactory(OrdenioPipelineSpy spy) : IGetOrdenioByIdBehaviorPipelineFactory
     {
-        public BehaviorPipeline<GetOrdenioByIdCommand, GetOrdenioByIdOutput> Create()
+        public BehaviorPipeline<GetOrdenioByIdQuery, GetOrdenioByIdOutput> Create()
             => new(
-                Array.Empty<IBehavior<GetOrdenioByIdCommand, GetOrdenioByIdOutput>>(),
+                Array.Empty<IBehavior<GetOrdenioByIdQuery, GetOrdenioByIdOutput>>(),
                 (command, _) =>
                 {
                     spy.GetByIdCommand = command;

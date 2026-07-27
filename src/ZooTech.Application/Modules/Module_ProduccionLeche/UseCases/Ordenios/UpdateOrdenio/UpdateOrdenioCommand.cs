@@ -3,7 +3,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.UpdateOrdenio;
 
-public class UpdateOrdenioCommand : IAuditableRequest
+public class UpdateOrdenioCommand : IAuditableCommandQueryRequest
 {
     public AuditEventType EventType => AuditEventType.Update;
     public string Action => "Update a ordeño record";

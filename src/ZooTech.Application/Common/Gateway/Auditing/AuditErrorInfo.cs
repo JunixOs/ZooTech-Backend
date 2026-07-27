@@ -7,9 +7,16 @@ namespace ZooTech.Application.Common.Gateway.Auditing
         public AuditEventType EventType { get; set; }
         public string? CustomMessage { get; set; }
         
-        public string? Type { get; set; }
+        public string? ExceptionType { get; set; }
+        public string? RootExceptionType { get; set; }
+        
         public string? Message { get; set; }
+        public string? RootMessage { get; set; }
+        
         public string? Source { get; set; }
+
+        
+        public string? DeclaringType { get; set; }
         public string? Method { get; set; }
         public string? Inner { get; set; }
 

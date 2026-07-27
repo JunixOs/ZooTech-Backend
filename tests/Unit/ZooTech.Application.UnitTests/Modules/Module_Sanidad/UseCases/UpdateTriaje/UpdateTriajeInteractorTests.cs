@@ -2,7 +2,6 @@ using Moq;
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Common.Gateway.Time;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.UpdateTriaje;
-using ZooTech.Application.UnitTests.Modules.Module_Sanidad;
 using ZooTech.Domain.Module_Sanidad.Entities;
 using ZooTech.Domain.Module_Sanidad.Interfaces;
 
@@ -24,7 +23,7 @@ public class UpdateTriajeInteractorTests
             .ReturnsAsync((Triaje t, CancellationToken _) => t);
         var interactor = new UpdateTriajeInteractor(new FakeGanaderiaUnitOfWork(_repositoryMock.Object), _dateTimeProviderMock.Object);
 
-        var result = await interactor.Handle(new UpdateTriajeCommand
+        var result = await interactor.HandleAsync(new UpdateTriajeCommand
         {
             Id = 3,
             TipoPesoCode = "FINAL",
@@ -47,6 +46,6 @@ public class UpdateTriajeInteractorTests
         _repositoryMock.Setup(r => r.GetByIdAsync(3, It.IsAny<CancellationToken>())).ReturnsAsync((Triaje?)null);
         var interactor = new UpdateTriajeInteractor(new FakeGanaderiaUnitOfWork(_repositoryMock.Object), _dateTimeProviderMock.Object);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => interactor.Handle(new UpdateTriajeCommand { Id = 3, TipoPesoCode = "FINAL", PesoKg = 150 }));
+        await Assert.ThrowsAsync<NotFoundException>(() => interactor.HandleAsync(new UpdateTriajeCommand { Id = 3, TipoPesoCode = "FINAL", PesoKg = 150 }));
     }
 }

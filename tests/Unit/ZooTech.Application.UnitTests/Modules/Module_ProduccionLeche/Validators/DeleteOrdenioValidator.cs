@@ -1,6 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
-using ZooTech.Application;
 using ZooTech.Application.Common.Validator;
+using ZooTech.Application.DependencyInjection;
 using ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.DeleteOrdenio;
 
 namespace ZooTech.Application.UnitTests.Modules.Module_ProduccionLeche.Validators;
@@ -40,12 +40,12 @@ public class DeleteOrdenioValidatorTests
         Assert.Empty(errors);
     }
 
-    private static ICommandValidator<DeleteOrdenioCommand> GetValidator()
+    private static ICommandQueryValidator<DeleteOrdenioCommand> GetValidator()
     {
         var services = new ServiceCollection();
         services.AddApplication();
 
         var provider = services.BuildServiceProvider();
-        return provider.GetRequiredService<ICommandValidator<DeleteOrdenioCommand>>();
+        return provider.GetRequiredService<ICommandQueryValidator<DeleteOrdenioCommand>>();
     }
 }

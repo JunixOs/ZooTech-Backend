@@ -14,10 +14,10 @@ public sealed class GetFecundacionEstadoInteractor : IGetFecundacionEstadoInputP
     }
 
     public async Task<GetFecundacionEstadoOutput> HandleAsync(
-        GetFecundacionEstadoCommand command,
+        GetFecundacionEstadoQuery query,
         CancellationToken cancellationToken = default)
     {
-        if (command.VacunoId <= 0)
+        if (query.VacunoId <= 0)
         {
             throw new FecundacionEstadoValidationException(
                 new List<string>
@@ -28,7 +28,7 @@ public sealed class GetFecundacionEstadoInteractor : IGetFecundacionEstadoInputP
                 );
         }
 
-        var snapshot = await repository.GetByVacunoIdAsync(command.VacunoId, cancellationToken)
+        var snapshot = await repository.GetByVacunoIdAsync(query.VacunoId, cancellationToken)
             ?? throw new NotFoundException(
                 ScopeName.Application,
                 ModuleName.Fecundacion,

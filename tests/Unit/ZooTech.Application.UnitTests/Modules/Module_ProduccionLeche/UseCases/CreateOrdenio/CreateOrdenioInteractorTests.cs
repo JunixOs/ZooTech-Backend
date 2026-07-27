@@ -33,7 +33,7 @@ public class CreateOrdenioInteractorTests
             Observaciones = null
         };
 
-        var action = () => interactor.Handle(command, CancellationToken.None);
+        var action = () => interactor.HandleAsync(command, CancellationToken.None);
 
         await Assert.ThrowsAsync<ConflictException>(action);
     }

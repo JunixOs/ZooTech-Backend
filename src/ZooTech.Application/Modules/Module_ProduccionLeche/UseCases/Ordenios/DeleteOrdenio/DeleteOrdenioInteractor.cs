@@ -14,7 +14,7 @@ public sealed class DeleteOrdenioInteractor : IDeleteOrdenioInputPort
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<EmptyOutput> Handle(DeleteOrdenioCommand command, CancellationToken cancellationToken)
+    public async Task<EmptyOutput> HandleAsync(DeleteOrdenioCommand command, CancellationToken cancellationToken)
     {
         var repository = _unitOfWork.Ordenios;
 

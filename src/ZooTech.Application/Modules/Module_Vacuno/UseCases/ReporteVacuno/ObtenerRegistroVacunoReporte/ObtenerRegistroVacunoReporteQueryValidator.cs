@@ -3,7 +3,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte;
 
-public sealed class ObtenerRegistroVacunoReporteQueryValidator : ICommandValidator<ObtenerRegistroVacunoReporteQuery>
+public sealed class ObtenerRegistroVacunoReporteQueryValidator : ICommandQueryValidator<ObtenerRegistroVacunoReporteQuery>
 {
     public ModuleName ModuleName => ModuleName.Vacuno;
 

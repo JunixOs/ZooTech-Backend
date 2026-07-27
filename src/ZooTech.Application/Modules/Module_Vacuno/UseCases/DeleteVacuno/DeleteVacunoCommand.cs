@@ -6,7 +6,7 @@ namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
 public sealed record DeleteVacunoCommand(
     long Id,
     string MotivoEliminacion
-) : IAuditableRequest
+) : IAuditableCommandQueryRequest
 {
     public AuditEventType EventType => AuditEventType.Delete;
 

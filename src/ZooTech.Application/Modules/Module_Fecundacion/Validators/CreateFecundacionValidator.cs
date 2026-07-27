@@ -4,7 +4,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Fecundacion.Validators;
 
-public sealed class CreateFecundacionValidator : ICommandValidator<CreateFecundacionCommand>
+public sealed class CreateFecundacionValidator : ICommandQueryValidator<CreateFecundacionCommand>
 {
     public ModuleName ModuleName => ModuleName.Fecundacion;
 

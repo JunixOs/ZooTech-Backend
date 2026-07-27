@@ -18,7 +18,7 @@ public sealed record CreateVacunoCommand(
     string? CodigoDistrito,
     string? Observaciones,
     decimal? PrecioCompra,
-    string? AptoPara) : IAuditableRequest
+    string? AptoPara) : IAuditableCommandQueryRequest
 {
     public AuditEventType EventType => AuditEventType.Create;
 

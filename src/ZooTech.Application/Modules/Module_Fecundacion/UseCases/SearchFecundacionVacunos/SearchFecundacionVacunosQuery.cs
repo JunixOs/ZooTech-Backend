@@ -7,7 +7,7 @@ public sealed record SearchFecundacionVacunosQuery(
     string? Sexo,
     string? Query,
     bool SoloDisponibles = false,
-    long? ExcluirFecundacionId = null) : IAuditableRequest
+    long? ExcluirFecundacionId = null) : IAuditableCommandQueryRequest
 {
     public AuditEventType EventType => AuditEventType.Search;
 

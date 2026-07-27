@@ -4,34 +4,34 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Common.Behaviors
 {
-    public class ValidationBehavior<TRequest, TResponse> : IBehavior<TRequest , TResponse>
+    public class ValidationBehavior<TRequest, TResponse>
+        : IBehavior<TRequest, TResponse>
     {
-        private readonly ICommandValidator<TRequest> _validator;
+        private readonly IEnumerable<ICommandQueryValidator<TRequest>> _validators;
+
         public ValidationBehavior(
-            ICommandValidator<TRequest> validator
-        )
+            IEnumerable<ICommandQueryValidator<TRequest>> validators)
         {
-            _validator = validator;
+            _validators = validators;
         }
 
         public async Task<TResponse> Handle(
             TRequest request,
-            Func<Task<TResponse>> next
-        )
+            Func<Task<TResponse>> next)
         {
-            List<string> errors = _validator.Validate(request);
+            List<string> errors = new();
 
-            if(errors.Count != 0)
+            foreach (var validator in _validators)
             {
-                var fieldErrors = _validator is IValidationErrorDetailsProvider detailsProvider
-                    ? detailsProvider.GetFieldErrors(errors)
-                    : [];
+                errors.AddRange(validator.Validate(request));
 
-                throw new ValidationException(
-                    errors,
-                    ScopeName.Application,
-                    _validator.ModuleName,
-                    fieldErrors);
+                if (errors.Count != 0)
+                {
+                    throw new ValidationException(
+                        errors,
+                        ScopeName.Application,
+                        validator.ModuleName);
+                }
             }
 
             return await next();

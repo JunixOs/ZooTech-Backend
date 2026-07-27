@@ -16,7 +16,7 @@ public sealed record UpdateFecundacionCommand(
     string EstadoFecundacionCode,
     string? ObservacionesVeterinarias,
     string? CodigoSemen,
-    string? CodigoEmbrion) : IAuditableRequest
+    string? CodigoEmbrion) : IAuditableCommandQueryRequest
 {
     public AuditEventType EventType => AuditEventType.Update;
 

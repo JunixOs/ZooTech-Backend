@@ -1,4 +1,6 @@
+using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Common.Gateway.Repositories.GanaderiaDb;
+using ZooTech.Application.Common.Gateway.Repositories.MainTenantsDb;
 using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateUserInTenant.Ports;
 using ZooTech.Domain.Ganaderia.Entities;
 using ZooTech.Domain.Shared.ValueObjects;
@@ -7,17 +9,31 @@ namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateUserInTena
 {
     public class CreateUserInTenantInteractor : ICreateUserInTenantInputPort
     {
-        private readonly IUsuarioRepository _usuarioRepository;        
+        private readonly IUsuarioRepository _usuarioRepository;
+        private readonly ITenantRepository _tenantRepository;    
 
         public CreateUserInTenantInteractor(
+            ITenantRepository tenantRepository,
             IUsuarioRepository usuarioRepository
         )
         {
             _usuarioRepository = usuarioRepository;
+            _tenantRepository = tenantRepository;
         }
 
-        public async Task<CreateUserInTenantOutput> Handle(CreateUserInTenantCommand cmd, CancellationToken cancellationToken = default)
+        public async Task<CreateUserInTenantOutput> HandleAsync(CreateUserInTenantCommand cmd, CancellationToken cancellationToken = default)
         {
+            var tenantDatabaseName = await _tenantRepository.GetTenantDatabaseNameByTenantId(cmd.TenantId.GetValueOrDefault());
+
+            if(tenantDatabaseName is null)
+            {
+                throw new NotFoundException(
+                    Domain.Shared.Enums.ScopeName.Application , 
+                    Domain.Shared.Enums.ModuleName.Tenancing , 
+                    $"Tenant With ID [{cmd.TenantId}] Not Found"
+                );
+            }
+
             await _usuarioRepository.CreateInTenant(
                 UsuarioDomainEntity.CreateFromRequest(
                     code: cmd.Code,
@@ -26,7 +42,7 @@ namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateUserInTena
                     email: new Email(cmd.Email),
                     isActive: cmd.IsActive
                 ),
-                cmd.TenantDatabaseName
+                tenantDatabaseName
             );
 
             return new CreateUserInTenantOutput

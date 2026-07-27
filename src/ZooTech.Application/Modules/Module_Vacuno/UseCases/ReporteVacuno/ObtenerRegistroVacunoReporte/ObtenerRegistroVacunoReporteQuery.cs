@@ -5,7 +5,7 @@ namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.Obten
 
 public sealed record ObtenerRegistroVacunoReporteQuery(
     long VacunoId,
-    string? Formato) : IAuditableRequest
+    string? Formato) : IAuditableCommandQueryRequest
 {
     public AuditEventType EventType => AuditEventType.DataExport;
 

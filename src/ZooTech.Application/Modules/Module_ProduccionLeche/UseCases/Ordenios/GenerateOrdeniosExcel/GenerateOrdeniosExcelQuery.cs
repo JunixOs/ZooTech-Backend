@@ -3,7 +3,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_ProduccionLeche.UseCases.Ordenios.GenerateOrdeniosExcel;
 
-public class GenerateOrdeniosComparationExcelQuery : IAuditableRequest
+public class GenerateOrdeniosComparationExcelQuery : IAuditableCommandQueryRequest
 {
     public AuditEventType EventType => AuditEventType.DataExport;
     public string Action => "Generate a ordeño excel";

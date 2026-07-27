@@ -10,10 +10,10 @@ public sealed class GetActivityStatsInteractor : IGetActivityStatsInputPort
     }
 
     public Task<GetActivityStatsOutput> HandleAsync(
-        GetActivityStatsQuery command,
+        GetActivityStatsQuery query,
         CancellationToken cancellationToken = default)
         => _statsService.GetAsync(
-            command.FechaInicio,
-            command.FechaFin,
+            query.FechaInicio,
+            query.FechaFin,
             cancellationToken);
 }

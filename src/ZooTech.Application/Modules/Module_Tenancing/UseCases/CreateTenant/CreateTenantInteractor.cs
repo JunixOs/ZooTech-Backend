@@ -1,4 +1,3 @@
-
 using ZooTech.Application.Common.Gateway.Tenant;
 
 namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant
@@ -14,7 +13,7 @@ namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant
             _provisioningService = provisioningService;
         }
 
-        public async Task<CreateTenantOutput> Handle(CreateTenantCommand request, CancellationToken cancellationToken = default)
+        public async Task<CreateTenantOutput> HandleAsync(CreateTenantCommand request, CancellationToken cancellationToken = default)
         {
             await _provisioningService.ProvisionAsync(request);
 

@@ -14,7 +14,7 @@ public sealed class UpdateOrdenioInteractor : IUpdateOrdenioInputPort
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<UpdateOrdenioOutput> Handle(UpdateOrdenioCommand command, CancellationToken cancellationToken)
+    public async Task<UpdateOrdenioOutput> HandleAsync(UpdateOrdenioCommand command, CancellationToken cancellationToken)
     {
         var repository = _unitOfWork.Ordenios;
 

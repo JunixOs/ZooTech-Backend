@@ -19,7 +19,7 @@ public sealed record ListarVacunosReporteQuery(
     string? Formato,
     string? Page,
     string? PageSize,
-    string? Limit) : IAuditableRequest
+    string? Limit) : IAuditableCommandQueryRequest
 {
     public AuditEventType EventType => AuditEventType.Read;
 

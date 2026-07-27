@@ -18,20 +18,15 @@ using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Requests;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.DTOs.Responses;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Mappers;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Mappers.ReporteVacuno;
-using ZooTech.Application.Common.Behaviors.Module_Vacuno.ListarVacunos;
-using ZooTech.Application.Common.Behaviors.Module_Vacuno.CreateVacuno;
-using ZooTech.Application.Common.Behaviors.Module_Vacuno.GetVacunoById;
-using ZooTech.Application.Common.Behaviors.Module_Vacuno.UpdateVacuno;
-using ZooTech.Application.Common.Behaviors.Module_Vacuno.DeleteVacuno;
-using ZooTech.Application.Common.Behaviors.Module_Vacuno.ExportarArbolGenealogico;
-using ZooTech.Application.Common.Behaviors.Module_Vacuno.ExportarActividadVacunos;
-using ZooTech.Application.Common.Behaviors.Module_Vacuno.ReporteVacuno.ListarVacunosReporte;
-using ZooTech.Application.Common.Behaviors.Module_Vacuno.ReporteVacuno.ObtenerRegistroVacunoReporte;
-using ZooTech.Application.Common.Behaviors.Module_Vacuno.GetArbolGenealogico;
-using ZooTech.Application.Common.Behaviors.Module_Vacuno.GetActivityStats;
 using ZooTech.Application.Common.Gateway.Reports;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetActivityStats;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte;
+using ZooTech.Application.Common.Behaviors;
+using ZooTech.Application.Common.Models;
+using ZooTech.Domain.Ganaderia.Module_Vacuno.Models;
+using ZooTech.InterfaceAdapters.Filters;
+using ZooTech.Domain.Shared.Enums;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Controllers;
 
@@ -40,51 +35,28 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Controllers;
 [ApiExplorerSettings(GroupName = "public")]
 public sealed class VacunoController : ControllerBase
 {
-    private readonly IListarVacunosBehaviorPipelineFactory _listarVacunosBehaviorPipelineFactory;
-    private readonly ICreateVacunoBehaviorPipelineFactory _createVacunoBehaviorPipelineFactory;
-    private readonly IGetVacunoByIdBehaviorPipelineFactory _getVacunoByIdBehaviorPipelineFactory;
-    private readonly IUpdateVacunoBehaviorPipelineFactory _updateVacunoBehaviorPipelineFactory;
-    private readonly IDeleteVacunoBehaviorPipelineFactory _deleteVacunoBehaviorPipelineFactory;
-    private readonly IExportarArbolGenealogicoBehaviorPipelineFactory _exportarArbolGenealogicoBehaviorPipelineFactory;
-    private readonly IListarVacunosReporteBehaviorPipelineFactory _listarVacunosReporteBehaviorPipelineFactory;
-    private readonly IObtenerRegistroVacunoReporteBehaviorPipelineFactory _obtenerRegistroVacunoReporteBehaviorPipelineFactory;
-    private readonly IGetArbolGenealogicoBehaviorPipelineFactory _getArbolGenealogicoBehaviorPipelineFactory;
-    private readonly IGetActivityStatsBehaviorPipelineFactory _getActivityStatsBehaviorPipelineFactory;
-    private readonly IExportarActividadVacunosBehaviorPipelineFactory _exportarActividadVacunosBehaviorPipelineFactory;
     private readonly IReportFileStorage _reportFileStorage;
     private readonly IVacunoRepository _vacunoRepository;
 
+    private readonly IBehaviorDispatcher _behaviorDispatcher;
+
     public VacunoController(
-        IListarVacunosBehaviorPipelineFactory listarVacunosBehaviorPipelineFactory,
-        ICreateVacunoBehaviorPipelineFactory createVacunoBehaviorPipelineFactory,
-        IGetVacunoByIdBehaviorPipelineFactory getVacunoByIdBehaviorPipelineFactory,
-        IUpdateVacunoBehaviorPipelineFactory updateVacunoBehaviorPipelineFactory,
-        IDeleteVacunoBehaviorPipelineFactory deleteVacunoBehaviorPipelineFactory,
-        IExportarArbolGenealogicoBehaviorPipelineFactory exportarArbolGenealogicoBehaviorPipelineFactory,
-        IListarVacunosReporteBehaviorPipelineFactory listarVacunosReporteBehaviorPipelineFactory,
-        IObtenerRegistroVacunoReporteBehaviorPipelineFactory obtenerRegistroVacunoReporteBehaviorPipelineFactory,
-        IGetArbolGenealogicoBehaviorPipelineFactory getArbolGenealogicoBehaviorPipelineFactory,
-        IGetActivityStatsBehaviorPipelineFactory getActivityStatsBehaviorPipelineFactory,
-        IExportarActividadVacunosBehaviorPipelineFactory exportarActividadVacunosBehaviorPipelineFactory,
         IReportFileStorage reportFileStorage,
-        IVacunoRepository vacunoRepository)
+        IVacunoRepository vacunoRepository,
+
+        IBehaviorDispatcher behaviorDispatcher
+    )
     {
-        _listarVacunosBehaviorPipelineFactory = listarVacunosBehaviorPipelineFactory;
-        _createVacunoBehaviorPipelineFactory = createVacunoBehaviorPipelineFactory;
-        _getVacunoByIdBehaviorPipelineFactory = getVacunoByIdBehaviorPipelineFactory;
-        _updateVacunoBehaviorPipelineFactory = updateVacunoBehaviorPipelineFactory;
-        _deleteVacunoBehaviorPipelineFactory = deleteVacunoBehaviorPipelineFactory;
-        _exportarArbolGenealogicoBehaviorPipelineFactory = exportarArbolGenealogicoBehaviorPipelineFactory;
-        _listarVacunosReporteBehaviorPipelineFactory = listarVacunosReporteBehaviorPipelineFactory;
-        _obtenerRegistroVacunoReporteBehaviorPipelineFactory = obtenerRegistroVacunoReporteBehaviorPipelineFactory;
-        _getArbolGenealogicoBehaviorPipelineFactory = getArbolGenealogicoBehaviorPipelineFactory;
-        _getActivityStatsBehaviorPipelineFactory = getActivityStatsBehaviorPipelineFactory;
-        _exportarActividadVacunosBehaviorPipelineFactory = exportarActividadVacunosBehaviorPipelineFactory;
         _reportFileStorage = reportFileStorage;
         _vacunoRepository = vacunoRepository;
+
+        _behaviorDispatcher = behaviorDispatcher;
     }
 
     [HttpGet]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(typeof(PagedResponse<List<VacunoItemResponse>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ListarVacunos(
     [FromQuery] string? search,
@@ -102,7 +74,7 @@ public sealed class VacunoController : ControllerBase
         var currentPageSize = NormalizePageSize(pageSize ?? limit);
         var searchTerm = FirstNonBlank(search, query, q);
 
-        var command = new ListarVacunosCommand(
+        var command = new ListarVacunosQuery(
             Query: searchTerm,
             FechaDesde: fechaDesde,
             FechaHasta: fechaHasta,
@@ -110,42 +82,45 @@ public sealed class VacunoController : ControllerBase
             Page: currentPage,
             Limit: currentPageSize);
 
-        var behaviorPipeline = _listarVacunosBehaviorPipelineFactory.Create();
-
-        var output = await behaviorPipeline.Execute(command, cancellationToken);
+        var output = await _behaviorDispatcher.Send<ListarVacunosQuery , ListarVacunosOutput>(command, cancellationToken);
         var response = output.Items.Select(VacunoMapper.ToResponse).ToList();
         return Ok(PagedResponse<List<VacunoItemResponse>>.OkPaged(response, currentPage, currentPageSize, output.TotalCount));
     }
 
     [HttpGet("{id:long}/genealogia")]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetArbolGenealogico(
     [FromRoute] long id, [FromQuery] int niveles = 4, CancellationToken cancellationToken = default)
     {
-        var behaviorPipeline = _getArbolGenealogicoBehaviorPipelineFactory.Create();
-
-        var command = new GetArbolGenealogicoCommand(id, niveles);
-        var output = await behaviorPipeline.Execute(command, cancellationToken);
+        var command = new GetArbolGenealogicoQuery(id, niveles);
+        var output = await _behaviorDispatcher.Send<GetArbolGenealogicoQuery , GetArbolGenealogicoOutput>(command, cancellationToken);
         return Ok(GeneralResponseDTO<object>.Ok(output.Arbol));
     }
 
     [HttpGet("{id:long}/genealogia/exportar")]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ExportarArbolGenealogico([FromRoute] long id, [FromQuery] int niveles = 4, [FromQuery] string formato = "excel", CancellationToken cancellationToken = default)
     {
-        var behaviorPipeline = _exportarArbolGenealogicoBehaviorPipelineFactory.Create();
+        var command = new ExportarArbolGenealogicoQuery(id, niveles, formato);
 
-        var command = new ExportarArbolGenealogicoCommand(id, niveles, formato);
-
-        var result = await behaviorPipeline.Execute(command, cancellationToken);
+        var result = await _behaviorDispatcher.Send<ExportarArbolGenealogicoQuery , ExportarArbolGenealogicoOutput>(command, cancellationToken);
         return File(result.Bytes, result.ContentType, result.FileName);
     }
 
     [HttpPost]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(typeof(GeneralResponseDTO<VacunoResponse>), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -154,15 +129,16 @@ public sealed class VacunoController : ControllerBase
         [FromServices] IVacunoResponseReadRepository responseReadRepository,
         CancellationToken cancellationToken)
     {
-        var behaviorPipeline = _createVacunoBehaviorPipelineFactory.Create();
-
         var command = VacunoMapper.ToCommand(request);
-        var output = await behaviorPipeline.Execute(command, cancellationToken);
+        var output = await _behaviorDispatcher.Send<CreateVacunoCommand , CreateVacunoOutput>(command, cancellationToken);
         var response = await EnrichResponseAsync(output.Data, responseReadRepository, cancellationToken);
         return Created($"/api/v1/vacuno/{response.Id}", GeneralResponseDTO<VacunoResponse>.Ok(response));
     }
 
     [HttpGet("{identifier}")]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(typeof(GeneralResponseDTO<VacunoResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(
@@ -170,11 +146,9 @@ public sealed class VacunoController : ControllerBase
         [FromServices] IVacunoResponseReadRepository responseReadRepository,
         CancellationToken cancellationToken)
     {
-        var behaviorPipeline = _getVacunoByIdBehaviorPipelineFactory.Create();
-
         long id = await ResolveIdAsync(identifier, cancellationToken);
-        var output = await behaviorPipeline.Execute(
-            new GetVacunoByIdCommand(id),
+        var output = await _behaviorDispatcher.Send<GetVacunoByIdQuery , GetVacunoByIdOutput>(
+            new GetVacunoByIdQuery(id),
             cancellationToken
         );
         var response = await EnrichResponseAsync(output.Data, responseReadRepository, cancellationToken);
@@ -182,6 +156,9 @@ public sealed class VacunoController : ControllerBase
     }
 
     [HttpPatch("{identifier}")]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(typeof(GeneralResponseDTO<VacunoResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -197,29 +174,31 @@ public sealed class VacunoController : ControllerBase
             return NotFound(GeneralResponseDTO<object>.Fail("El vacuno no existe."));
         }
 
-        var behaviorPipeline = _updateVacunoBehaviorPipelineFactory.Create();
-
         var command = VacunoMapper.ToCommand(id, request);
-        var output = await behaviorPipeline.Execute(command, cancellationToken);
+        var output = await _behaviorDispatcher.Send<UpdateVacunoCommand , UpdateVacunoOutput>(command, cancellationToken);
         var response = await EnrichResponseAsync(output.Data, responseReadRepository, cancellationToken);
         return Ok(GeneralResponseDTO<VacunoResponse>.Ok(response));
     }
 
     [HttpDelete("{identifier}")]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete([FromRoute] string identifier, [FromBody] DeleteVacunoRequest request, CancellationToken cancellationToken)
     {
-        var behaviorPipeline = _deleteVacunoBehaviorPipelineFactory.Create();
-
         long id = await ResolveIdAsync(identifier, cancellationToken);
-        await behaviorPipeline.Execute(VacunoMapper.ToCommand(id, request), cancellationToken);
+        await _behaviorDispatcher.Send<DeleteVacunoCommand , EmptyOutput>(VacunoMapper.ToCommand(id, request), cancellationToken);
         return NoContent();
     }
 
 
     [HttpGet("reportes")]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public IActionResult ReportesDisponibles(
         [FromQuery] string? fechaDesde,
@@ -253,14 +232,15 @@ public sealed class VacunoController : ControllerBase
     }
 
     [HttpGet("reportes/listado")]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> ReportesListado(
         [FromQuery] ListadoVacunosRequest request,
         CancellationToken cancellationToken)
     {
-        var behaviorPipeline = _listarVacunosReporteBehaviorPipelineFactory.Create();
-
-        var response = await behaviorPipeline.Execute(
+        var response = await _behaviorDispatcher.Send<ListarVacunosReporteQuery , ListarVacunosReporteResponse>(
             RegistroVacunoReporteMapper.ToApplicationQuery(request),
             cancellationToken);
 
@@ -268,6 +248,9 @@ public sealed class VacunoController : ControllerBase
     }
 
     [HttpGet("{vacunoId:long}/reporte")]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ReporteIndividual(
@@ -275,8 +258,7 @@ public sealed class VacunoController : ControllerBase
         [FromQuery] string? formato,
         CancellationToken cancellationToken)
     {
-        var behaviorPipeline = _obtenerRegistroVacunoReporteBehaviorPipelineFactory.Create();
-        var response = await behaviorPipeline.Execute(
+        var response = await _behaviorDispatcher.Send<ObtenerRegistroVacunoReporteQuery , Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte.RegistroVacunoReporteResponse>(
             new ObtenerRegistroVacunoReporteQuery(vacunoId, formato),
             cancellationToken);
 
@@ -284,6 +266,9 @@ public sealed class VacunoController : ControllerBase
     }
 
     [HttpGet("reportes/descargas/{fileName}")]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DescargarReporte(
@@ -300,6 +285,9 @@ public sealed class VacunoController : ControllerBase
     }
 
     [HttpGet("granjas")]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> ListarGranjas(
         [FromServices] IVacunoGranjaReadRepository granjaReadRepository,
@@ -320,6 +308,9 @@ public sealed class VacunoController : ControllerBase
     }
 
     [HttpGet("estadisticas/actividad")]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(typeof(VacunoActivityStatsResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetActivityStats(
         [FromQuery] System.DateOnly? fechaInicio,
@@ -327,8 +318,7 @@ public sealed class VacunoController : ControllerBase
         CancellationToken cancellationToken)
     {
         var query = new GetActivityStatsQuery(fechaInicio, fechaFin);
-        var pipeline = _getActivityStatsBehaviorPipelineFactory.Create();
-        var output = await pipeline.Execute(query, cancellationToken);
+        var output = await _behaviorDispatcher.Send<GetActivityStatsQuery , GetActivityStatsOutput>(query, cancellationToken);
 
         return Ok(new VacunoActivityStatsResponse(
             output.FechaInicio,
@@ -340,6 +330,9 @@ public sealed class VacunoController : ControllerBase
     }
 
     [HttpGet("estadisticas/actividad/exportar")]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ExportActivityStats(
@@ -349,8 +342,7 @@ public sealed class VacunoController : ControllerBase
         CancellationToken cancellationToken)
     {
         var query = new ExportarActividadVacunosQuery(fechaInicio, fechaFin, formato);
-        var pipeline = _exportarActividadVacunosBehaviorPipelineFactory.Create();
-        var document = await pipeline.Execute(query, cancellationToken);
+        var document = await _behaviorDispatcher.Send<ExportarActividadVacunosQuery , GeneratedReportDocument>(query, cancellationToken);
 
         return File(document.Content, document.ContentType, document.FileName);
     }
@@ -452,7 +444,13 @@ public sealed class VacunoController : ControllerBase
     [ProducesResponseType(typeof(GeneralResponseDTO<VacunoCatalogsResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCatalogos(CancellationToken cancellationToken)
     {
-        var catalogs = await _vacunoRepository.GetCatalogsAsync(cancellationToken);
+        var catalogs = await _behaviorDispatcher.Send<EmptyCommandQuery , VacunoCatalogs>(
+            EmptyCommandQuery.Value(
+                Domain.Shared.Enums.AuditEventType.Read,
+                "Get vacuno catalogs"
+            ), 
+            cancellationToken
+        );
         return Ok(GeneralResponseDTO<VacunoCatalogsResponse>.Ok(VacunoMapper.ToResponse(catalogs)));
     }
 

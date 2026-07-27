@@ -1,16 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using ZooTech.Application.Common.Behaviors;
-using ZooTech.Application.Common.Behaviors.Module_Sanidad.CreateTriaje;
-using ZooTech.Application.Common.Behaviors.Module_Sanidad.DeleteTriaje;
-using ZooTech.Application.Common.Behaviors.Module_Sanidad.GenerateTriajesExcel;
-using ZooTech.Application.Common.Behaviors.Module_Sanidad.GenerateTriajesPdf;
-using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetAllTipoPesos;
-using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetAllTriajes;
-using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetAllVacunosSanidad;
-using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetHistorialByVacunoId;
-using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetHistorialGeneral;
-using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetTriajeById;
-using ZooTech.Application.Common.Behaviors.Module_Sanidad.UpdateTriaje;
 using ZooTech.Application.Common.Models;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.Common;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.CreateTriaje;
@@ -150,7 +139,7 @@ public class TriajeControllerTests
     [Fact]
     public async Task GetHistorial_MapsVacunoIdDatesAndReturnsOk()
     {
-        GetHistorialByVacunoIdCommand? captured = null;
+        GetHistorialByVacunoIdQuery? captured = null;
         var controller = CreateController(historialFactory: new HistorialFactory(command =>
         {
             captured = command;
@@ -168,7 +157,7 @@ public class TriajeControllerTests
     [Fact]
     public async Task GetHistorialGeneral_MapsDatesAndReturnsOk()
     {
-        GetHistorialGeneralCommand? captured = null;
+        GetHistorialGeneralQuery? captured = null;
         var controller = CreateController(historialGeneralFactory: new HistorialGeneralFactory(command =>
         {
             captured = command;
@@ -247,9 +236,9 @@ public class TriajeControllerTests
         public BehaviorPipeline<GetAllTriajesQuery, GetAllTriajesOutput> Create() => Pipeline(handler);
     }
 
-    private sealed class GetByIdFactory(Func<GetTriajeByIdCommand, Task<GetTriajeByIdOutput>> handler) : IGetTriajeByIdBehaviorPipelineFactory
+    private sealed class GetByIdFactory(Func<GetTriajeByIdQuery, Task<GetTriajeByIdOutput>> handler) : IGetTriajeByIdBehaviorPipelineFactory
     {
-        public BehaviorPipeline<GetTriajeByIdCommand, GetTriajeByIdOutput> Create() => Pipeline(handler);
+        public BehaviorPipeline<GetTriajeByIdQuery, GetTriajeByIdOutput> Create() => Pipeline(handler);
     }
 
     private sealed class CreateFactory(Func<CreateTriajeCommand, Task<CreateTriajeOutput>> handler) : ICreateTriajeBehaviorPipelineFactory
@@ -267,24 +256,24 @@ public class TriajeControllerTests
         public BehaviorPipeline<DeleteTriajeCommand, EmptyOutput> Create() => Pipeline(handler);
     }
 
-    private sealed class TipoPesoFactory(Func<EmptyCommand, Task<GetAllTipoPesosOutput>> handler) : IGetAllTipoPesosBehaviorPipelineFactory
+    private sealed class TipoPesoFactory(Func<EmptyCommandQuery, Task<GetAllTipoPesosOutput>> handler) : IGetAllTipoPesosBehaviorPipelineFactory
     {
-        public BehaviorPipeline<EmptyCommand, GetAllTipoPesosOutput> Create() => Pipeline(handler);
+        public BehaviorPipeline<EmptyCommandQuery, GetAllTipoPesosOutput> Create() => Pipeline(handler);
     }
 
-    private sealed class VacunosFactory(Func<EmptyCommand, Task<GetAllVacunosSanidadOutput>> handler) : IGetAllVacunosSanidadBehaviorPipelineFactory
+    private sealed class VacunosFactory(Func<EmptyCommandQuery, Task<GetAllVacunosSanidadOutput>> handler) : IGetAllVacunosSanidadBehaviorPipelineFactory
     {
-        public BehaviorPipeline<EmptyCommand, GetAllVacunosSanidadOutput> Create() => Pipeline(handler);
+        public BehaviorPipeline<EmptyCommandQuery, GetAllVacunosSanidadOutput> Create() => Pipeline(handler);
     }
 
-    private sealed class HistorialFactory(Func<GetHistorialByVacunoIdCommand, Task<GetHistorialByVacunoIdOutput>> handler) : IGetHistorialByVacunoIdBehaviorPipelineFactory
+    private sealed class HistorialFactory(Func<GetHistorialByVacunoIdQuery, Task<GetHistorialByVacunoIdOutput>> handler) : IGetHistorialByVacunoIdBehaviorPipelineFactory
     {
-        public BehaviorPipeline<GetHistorialByVacunoIdCommand, GetHistorialByVacunoIdOutput> Create() => Pipeline(handler);
+        public BehaviorPipeline<GetHistorialByVacunoIdQuery, GetHistorialByVacunoIdOutput> Create() => Pipeline(handler);
     }
 
-    private sealed class HistorialGeneralFactory(Func<GetHistorialGeneralCommand, Task<GetHistorialGeneralOutput>> handler) : IGetHistorialGeneralBehaviorPipelineFactory
+    private sealed class HistorialGeneralFactory(Func<GetHistorialGeneralQuery, Task<GetHistorialGeneralOutput>> handler) : IGetHistorialGeneralBehaviorPipelineFactory
     {
-        public BehaviorPipeline<GetHistorialGeneralCommand, GetHistorialGeneralOutput> Create() => Pipeline(handler);
+        public BehaviorPipeline<GetHistorialGeneralQuery, GetHistorialGeneralOutput> Create() => Pipeline(handler);
     }
 
     private sealed class PdfFactory(Func<GenerateTriajesPdfQuery, Task<GenerateTriajesPdfOutput>> handler) : IGenerateTriajesPdfBehaviorPipelineFactory

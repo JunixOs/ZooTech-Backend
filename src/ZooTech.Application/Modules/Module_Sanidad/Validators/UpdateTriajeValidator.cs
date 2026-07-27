@@ -5,7 +5,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Sanidad.Validators;
 
-internal sealed class UpdateTriajeValidator : ICommandValidator<UpdateTriajeCommand>
+internal sealed class UpdateTriajeValidator : ICommandQueryValidator<UpdateTriajeCommand>
 {
     public ModuleName ModuleName => ModuleName.Triaje;
 

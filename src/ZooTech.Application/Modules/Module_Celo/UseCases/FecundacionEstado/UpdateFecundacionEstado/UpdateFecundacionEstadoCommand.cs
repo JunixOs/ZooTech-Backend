@@ -6,7 +6,7 @@ namespace ZooTech.Application.Modules.Module_Celo.UseCases.FecundacionEstado.Upd
 public sealed record UpdateFecundacionEstadoCommand(
     long FecundacionId,
     string? EstadoFecundacion,
-    long? UpdatedBy) : IAuditableRequest
+    long? UpdatedBy) : IAuditableCommandQueryRequest
 {
     public AuditEventType EventType => AuditEventType.Update;
 

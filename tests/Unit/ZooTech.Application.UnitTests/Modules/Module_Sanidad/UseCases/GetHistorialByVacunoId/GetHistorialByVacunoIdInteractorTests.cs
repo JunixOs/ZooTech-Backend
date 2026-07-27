@@ -15,7 +15,7 @@ public class GetHistorialByVacunoIdInteractorTests
             .ReturnsAsync(new[] { SanidadTestData.CreateHistorialItem(id: 1, tipoPesoCode: "CONTROL", pesoKg: 123m) });
         var interactor = new GetHistorialByVacunoIdInteractor(repositoryMock.Object);
 
-        var result = await interactor.Handle(new GetHistorialByVacunoIdCommand { Vacunoid = 10, FechaDesde = "2026-07-01", FechaHasta = "2026-07-31" });
+        var result = await interactor.HandleAsync(new GetHistorialByVacunoIdQuery { Vacunoid = 10, FechaDesde = "2026-07-01", FechaHasta = "2026-07-31" });
 
         var item = Assert.Single(result.Items);
         Assert.Equal(1, item.Id);
