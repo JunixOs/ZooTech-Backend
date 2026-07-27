@@ -4,7 +4,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Celo.Validators
 {
-    public class CreateCeloValidator : ICommandValidator<CreateCeloCommand>
+    public class CreateCeloValidator : ICommandQueryValidator<CreateCeloCommand>
     {
         public ModuleName ModuleName => ModuleName.Celo;
 

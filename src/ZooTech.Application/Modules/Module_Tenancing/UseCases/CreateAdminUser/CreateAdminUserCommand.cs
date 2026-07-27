@@ -3,7 +3,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateAdminUser
 {
-    public class CreateAdminUserCommand : IAuditableRequest
+    public class CreateAdminUserCommand : IAuditableCommandQueryRequest
     {
         public AuditEventType EventType => AuditEventType.Create;
         public string Action => "Create admin user";

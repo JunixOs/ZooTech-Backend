@@ -16,7 +16,7 @@ public sealed record CreateFecundacionCommand(
     long? VacunoDonanteId,
     long? CreatedById,
     string? CodigoSemen = null,
-    string? CodigoEmbrion = null) : IAuditableRequest
+    string? CodigoEmbrion = null) : IAuditableCommandQueryRequest
 {
     public AuditEventType EventType => AuditEventType.Create;
 

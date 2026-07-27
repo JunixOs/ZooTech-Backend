@@ -7,17 +7,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using ZooTech.Application.Common.Behaviors;
-using ZooTech.Application.Common.Behaviors.Module_Sanidad.CreateTriaje;
-using ZooTech.Application.Common.Behaviors.Module_Sanidad.DeleteTriaje;
-using ZooTech.Application.Common.Behaviors.Module_Sanidad.GenerateTriajesExcel;
-using ZooTech.Application.Common.Behaviors.Module_Sanidad.GenerateTriajesPdf;
-using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetAllTipoPesos;
-using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetAllTriajes;
-using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetAllVacunosSanidad;
-using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetHistorialByVacunoId;
-using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetHistorialGeneral;
-using ZooTech.Application.Common.Behaviors.Module_Sanidad.GetTriajeById;
-using ZooTech.Application.Common.Behaviors.Module_Sanidad.UpdateTriaje;
 using ZooTech.Application.Common.Gateway.Auditing;
 using ZooTech.Application.Common.Gateway.Context;
 using ZooTech.Application.Common.Gateway.Tenant;
@@ -225,14 +214,14 @@ public class TriajeApiIntegrationTests
     private sealed class SanidadApiTestState
     {
         public GetAllTriajesQuery? GetAllQuery { get; set; }
-        public GetTriajeByIdCommand? GetByIdCommand { get; set; }
+        public GetTriajeByIdQuery? GetByIdCommand { get; set; }
         public CreateTriajeCommand? CreateCommand { get; set; }
         public UpdateTriajeCommand? UpdateCommand { get; set; }
         public DeleteTriajeCommand? DeleteCommand { get; set; }
         public GenerateTriajesPdfQuery? PdfQuery { get; set; }
         public GenerateTriajesExcelQuery? ExcelQuery { get; set; }
-        public GetHistorialByVacunoIdCommand? HistorialCommand { get; set; }
-        public GetHistorialGeneralCommand? HistorialGeneralCommand { get; set; }
+        public GetHistorialByVacunoIdQuery? HistorialCommand { get; set; }
+        public GetHistorialGeneralQuery? HistorialGeneralCommand { get; set; }
     }
 
     private sealed class FakeTenantStore : ITenantStore
@@ -271,8 +260,8 @@ public class TriajeApiIntegrationTests
 
     private sealed class GetByIdFactory(SanidadApiTestState state) : IGetTriajeByIdBehaviorPipelineFactory
     {
-        public BehaviorPipeline<GetTriajeByIdCommand, GetTriajeByIdOutput> Create()
-            => Pipeline<GetTriajeByIdCommand, GetTriajeByIdOutput>(command =>
+        public BehaviorPipeline<GetTriajeByIdQuery, GetTriajeByIdOutput> Create()
+            => Pipeline<GetTriajeByIdQuery, GetTriajeByIdOutput>(command =>
             {
                 state.GetByIdCommand = command;
                 return Task.FromResult(new GetTriajeByIdOutput(command.Id, $"TRI{command.Id:000}", Now, 5, "Luna", "CONTROL", 120m, "Obs", "ACTIVO", 10, Now));
@@ -311,20 +300,20 @@ public class TriajeApiIntegrationTests
 
     private sealed class TipoPesoFactory : IGetAllTipoPesosBehaviorPipelineFactory
     {
-        public BehaviorPipeline<EmptyCommand, GetAllTipoPesosOutput> Create()
-            => Pipeline<EmptyCommand, GetAllTipoPesosOutput>(_ => Task.FromResult(new GetAllTipoPesosOutput(new[] { new TipoPesoItemOutput("CONTROL", "Peso Control") })));
+        public BehaviorPipeline<EmptyCommandQuery, GetAllTipoPesosOutput> Create()
+            => Pipeline<EmptyCommandQuery, GetAllTipoPesosOutput>(_ => Task.FromResult(new GetAllTipoPesosOutput(new[] { new TipoPesoItemOutput("CONTROL", "Peso Control") })));
     }
 
     private sealed class VacunosFactory : IGetAllVacunosSanidadBehaviorPipelineFactory
     {
-        public BehaviorPipeline<EmptyCommand, GetAllVacunosSanidadOutput> Create()
-            => Pipeline<EmptyCommand, GetAllVacunosSanidadOutput>(_ => Task.FromResult(new GetAllVacunosSanidadOutput(new[] { new VacunoSanidadItemOutput(5, "VAC005", "Luna") })));
+        public BehaviorPipeline<EmptyCommandQuery, GetAllVacunosSanidadOutput> Create()
+            => Pipeline<EmptyCommandQuery, GetAllVacunosSanidadOutput>(_ => Task.FromResult(new GetAllVacunosSanidadOutput(new[] { new VacunoSanidadItemOutput(5, "VAC005", "Luna") })));
     }
 
     private sealed class HistorialFactory(SanidadApiTestState state) : IGetHistorialByVacunoIdBehaviorPipelineFactory
     {
-        public BehaviorPipeline<GetHistorialByVacunoIdCommand, GetHistorialByVacunoIdOutput> Create()
-            => Pipeline<GetHistorialByVacunoIdCommand, GetHistorialByVacunoIdOutput>(command =>
+        public BehaviorPipeline<GetHistorialByVacunoIdQuery, GetHistorialByVacunoIdOutput> Create()
+            => Pipeline<GetHistorialByVacunoIdQuery, GetHistorialByVacunoIdOutput>(command =>
             {
                 state.HistorialCommand = command;
                 return Task.FromResult(new GetHistorialByVacunoIdOutput(new[] { new HistorialTriajeItemOutput(1, Now, "CONTROL", 120m) }));
@@ -333,8 +322,8 @@ public class TriajeApiIntegrationTests
 
     private sealed class HistorialGeneralFactory(SanidadApiTestState state) : IGetHistorialGeneralBehaviorPipelineFactory
     {
-        public BehaviorPipeline<GetHistorialGeneralCommand, GetHistorialGeneralOutput> Create()
-            => Pipeline<GetHistorialGeneralCommand, GetHistorialGeneralOutput>(command =>
+        public BehaviorPipeline<GetHistorialGeneralQuery, GetHistorialGeneralOutput> Create()
+            => Pipeline<GetHistorialGeneralQuery, GetHistorialGeneralOutput>(command =>
             {
                 state.HistorialGeneralCommand = command;
                 return Task.FromResult(new GetHistorialGeneralOutput(new[] { new HistorialTriajeItemOutput(1, Now, "CONTROL", 120m) }));

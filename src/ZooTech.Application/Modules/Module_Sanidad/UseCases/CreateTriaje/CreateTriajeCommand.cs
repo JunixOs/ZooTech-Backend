@@ -3,7 +3,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Sanidad.UseCases.CreateTriaje;
 
-public class CreateTriajeCommand : IAuditableRequest
+public class CreateTriajeCommand : IAuditableCommandQueryRequest
 {
     public AuditEventType EventType => AuditEventType.Create;
     public string Action => "Create a triaje";

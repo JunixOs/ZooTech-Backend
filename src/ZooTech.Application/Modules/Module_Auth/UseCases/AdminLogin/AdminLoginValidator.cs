@@ -4,7 +4,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Auth.UseCases.AdminLogin
 {
-    public class AdminLoginValidator : ICommandValidator<AdminLoginCommand>
+    public class AdminLoginValidator : ICommandQueryValidator<AdminLoginCommand>
     {
         public ModuleName ModuleName => ModuleName.Auth;
 

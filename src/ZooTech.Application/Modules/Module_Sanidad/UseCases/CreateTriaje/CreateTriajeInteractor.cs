@@ -69,7 +69,7 @@ public sealed class CreateTriajeInteractor : ICreateTriajeInputPort
         _estadoRegistroRepository = estadoRegistroRepository;
     }
 
-    public async Task<CreateTriajeOutput> Handle(CreateTriajeCommand command, CancellationToken cancellationToken = default)
+    public async Task<CreateTriajeOutput> HandleAsync(CreateTriajeCommand command, CancellationToken cancellationToken = default)
     {
         var repository = _unitOfWork.Triajes;
 

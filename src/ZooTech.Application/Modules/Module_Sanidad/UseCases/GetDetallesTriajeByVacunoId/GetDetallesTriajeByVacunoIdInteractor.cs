@@ -11,9 +11,9 @@ namespace ZooTech.Application.Modules.Module_Sanidad.UseCases.GetDetalleTriajeBy
             _repository = repository;
         }
 
-        public async Task<GetDetallesTriajeByVacunoIdOutput> HandleAsync(GetDetallesTriajeByVacunoIdCommand cmd, CancellationToken cancellationToken = default)
+        public async Task<GetDetallesTriajeByVacunoIdOutput> HandleAsync(GetDetallesTriajeByVacunoIdQuery query, CancellationToken cancellationToken = default)
         {
-            var items = await _repository.GetDetallesByVacunoIdAsync(cmd.VacunoId, cancellationToken);
+            var items = await _repository.GetDetallesByVacunoIdAsync(query.VacunoId, cancellationToken);
             return new GetDetallesTriajeByVacunoIdOutput(items.ToList());
         }
     }

@@ -22,7 +22,7 @@ public class GenerateOrdeniosPdfInteractorTests
             comparativeGenerator,
             new FakeDateTimeProvider(now));
 
-        var result = await interactor.Handle(
+        var result = await interactor.HandleAsync(
             new GenerateOrdeniosComparationPdfQuery
             {
                 VacunoId = 1,
@@ -55,7 +55,7 @@ public class GenerateOrdeniosPdfInteractorTests
             comparativeGenerator,
             new FakeDateTimeProvider(now));
 
-        var result = await interactor.Handle(
+        var result = await interactor.HandleAsync(
             new GenerateOrdeniosComparationPdfQuery
             {
                 VacunoId = null,

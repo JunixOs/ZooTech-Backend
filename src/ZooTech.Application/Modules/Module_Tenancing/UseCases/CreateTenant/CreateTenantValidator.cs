@@ -3,7 +3,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant
 {
-    public class CreateTenantValidation : ICommandValidator<CreateTenantCommand>
+    public class CreateTenantValidation : ICommandQueryValidator<CreateTenantCommand>
     {
         public ModuleName ModuleName => ModuleName.Tenancing;
 

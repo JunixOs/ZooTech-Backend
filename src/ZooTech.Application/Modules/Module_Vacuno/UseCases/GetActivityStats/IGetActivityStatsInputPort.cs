@@ -1,9 +1,8 @@
-using System.Threading;
-using System.Threading.Tasks;
+using ZooTech.Application.Common.Behaviors;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.GetActivityStats;
 
 public interface IGetActivityStatsInputPort
+    : IRequestHandler<GetActivityStatsQuery , GetActivityStatsOutput>
 {
-    Task<GetActivityStatsOutput> HandleAsync(GetActivityStatsQuery command, CancellationToken cancellationToken = default);
 }

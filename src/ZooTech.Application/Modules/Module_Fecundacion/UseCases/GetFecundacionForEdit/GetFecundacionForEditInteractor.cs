@@ -14,14 +14,14 @@ public sealed class GetFecundacionForEditInteractor : IGetFecundacionForEditInpu
     }
 
     public async Task<GetFecundacionForEditOutput> HandleAsync(
-        GetFecundacionForEditCommand cmd,
+        GetFecundacionForEditQuery query,
         CancellationToken cancellationToken = default)
     {
-        var data = await _repository.GetForEditAsync(cmd.Id, cancellationToken)
+        var data = await _repository.GetForEditAsync(query.Id, cancellationToken)
             ?? throw new NotFoundException(
                 ScopeName.Application,
                 ModuleName.Fecundacion,
-                $"No se encontró la fecundación con ID {cmd.Id}."
+                $"No se encontró la fecundación con ID {query.Id}."
             );
 
         return new GetFecundacionForEditOutput(

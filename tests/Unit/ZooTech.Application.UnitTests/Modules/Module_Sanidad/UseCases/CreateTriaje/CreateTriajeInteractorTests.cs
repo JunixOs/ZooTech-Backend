@@ -42,7 +42,7 @@ public class CreateTriajeInteractorTests
                 createdAt: now));
         var interactor = CreateInteractor();
 
-        var result = await interactor.Handle(new CreateTriajeCommand
+        var result = await interactor.HandleAsync(new CreateTriajeCommand
         {
             VacunoId = 1,
             TipoPesoCode = "CONTROL",
@@ -71,7 +71,7 @@ public class CreateTriajeInteractorTests
         _repositoryMock.Setup(r => r.ExistsVacunoAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(false);
         var interactor = CreateInteractor();
 
-        await Assert.ThrowsAsync<ConflictException>(() => interactor.Handle(ValidCommand()));
+        await Assert.ThrowsAsync<ConflictException>(() => interactor.HandleAsync(ValidCommand()));
     }
 
     [Fact]
@@ -81,7 +81,7 @@ public class CreateTriajeInteractorTests
         _repositoryMock.Setup(r => r.ExistsUsuarioAsync(10, It.IsAny<CancellationToken>())).ReturnsAsync(false);
         var interactor = CreateInteractor();
 
-        await Assert.ThrowsAsync<ConflictException>(() => interactor.Handle(ValidCommand()));
+        await Assert.ThrowsAsync<ConflictException>(() => interactor.HandleAsync(ValidCommand()));
     }
 
     [Fact]
@@ -92,7 +92,7 @@ public class CreateTriajeInteractorTests
         _repositoryMock.Setup(r => r.ExistsTipoPesoAsync("CONTROL", It.IsAny<CancellationToken>())).ReturnsAsync(false);
         var interactor = CreateInteractor();
 
-        await Assert.ThrowsAsync<ConflictException>(() => interactor.Handle(ValidCommand()));
+        await Assert.ThrowsAsync<ConflictException>(() => interactor.HandleAsync(ValidCommand()));
     }
 
     private CreateTriajeInteractor CreateInteractor()

@@ -4,7 +4,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_Sanidad.Validators;
 
-public class DeleteTriajeValidator : ICommandValidator<DeleteTriajeCommand>
+public class DeleteTriajeValidator : ICommandQueryValidator<DeleteTriajeCommand>
 {
     public ModuleName ModuleName => ModuleName.Triaje;
 

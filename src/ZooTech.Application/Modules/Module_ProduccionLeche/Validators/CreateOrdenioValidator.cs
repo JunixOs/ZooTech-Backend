@@ -4,7 +4,7 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Modules.Module_ProduccionLeche.Validators
 {
-    public class CreateOrdenioValidator : ICommandValidator<CreateOrdenioCommand>
+    public class CreateOrdenioValidator : ICommandQueryValidator<CreateOrdenioCommand>
     {
         public ModuleName ModuleName => ModuleName.Produccion_Leche;
 

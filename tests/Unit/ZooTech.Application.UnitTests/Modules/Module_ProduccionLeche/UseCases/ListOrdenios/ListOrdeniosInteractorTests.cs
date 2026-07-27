@@ -15,7 +15,7 @@ public class ListOrdeniosInteractorTests
         var repository = new FakeOrdenioRepository();
         var interactor = new ListOrdeniosInteractor(repository);
 
-        await interactor.Handle(
+        await interactor.HandleAsync(
             new ListOrdeniosQuery
             {
                 VacunoId = null,

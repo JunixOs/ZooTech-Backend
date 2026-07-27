@@ -13,7 +13,7 @@ public sealed class GetFecundacionOptionsInteractor : IGetFecundacionOptionsInpu
     }
 
     public async Task<GetFecundacionOptionsOutput> HandleAsync(
-        EmptyCommand emptyCommand,
+        EmptyCommandQuery emptyCommand,
         CancellationToken cancellationToken = default
     )
     {

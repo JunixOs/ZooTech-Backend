@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using ZooTech.Application.Common.Behaviors;
 
 namespace ZooTech.Application.Modules.Module_Vacuno.UseCases.GetArbolGenealogico;
 public interface IGetArbolGenealogicoInputPort
+    : IRequestHandler<GetArbolGenealogicoQuery , GetArbolGenealogicoOutput>
 {
-    Task<GetArbolGenealogicoOutput> HandleAsync(
-        GetArbolGenealogicoCommand command, CancellationToken cancellationToken = default);
 }

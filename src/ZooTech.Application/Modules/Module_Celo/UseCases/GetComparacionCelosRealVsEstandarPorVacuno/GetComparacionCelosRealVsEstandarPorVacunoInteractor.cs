@@ -16,17 +16,17 @@ public sealed class GetComparacionCelosRealVsEstandarPorVacunoInteractor
     }
 
     public async Task<GetComparacionCelosRealVsEstandarPorVacunoOutput> HandleAsync(
-        GetComparacionCelosRealVsEstandarPorVacunoCommand cmd,
+        GetComparacionCelosRealVsEstandarPorVacunoQuery query,
         CancellationToken cancellationToken = default)
     {
         var celos = await _repository.GetAllAsync(cancellationToken);
 
-        var fechaFinInclusive = cmd.FechaFin?.Date.AddDays(1).AddTicks(-1);
+        var fechaFinInclusive = query.FechaFin?.Date.AddDays(1).AddTicks(-1);
 
         var registrosVacuno = celos
-            .Where(c => c.VacunoCodigo == cmd.CodigoVacuno)
+            .Where(c => c.VacunoCodigo == query.CodigoVacuno)
             .Where(c =>
-                (!cmd.FechaInicio.HasValue || c.FechaHora >= cmd.FechaInicio.Value) &&
+                (!query.FechaInicio.HasValue || c.FechaHora >= query.FechaInicio.Value) &&
                 (!fechaFinInclusive.HasValue || c.FechaHora <= fechaFinInclusive.Value))
             .Select(c => c.FechaHora)
             .ToList();
@@ -38,9 +38,9 @@ public sealed class GetComparacionCelosRealVsEstandarPorVacunoInteractor
         }
 
         var inicioRango = DateOnly.FromDateTime(
-            cmd.FechaInicio ?? registrosVacuno.Min());
+            query.FechaInicio ?? registrosVacuno.Min());
         var finRango = DateOnly.FromDateTime(
-            cmd.FechaFin ?? registrosVacuno.Max());
+            query.FechaFin ?? registrosVacuno.Max());
 
         var registrosPorMes = registrosVacuno
             .GroupBy(f => new DateOnly(f.Year, f.Month, 1))

@@ -15,7 +15,7 @@ public class GetHistorialGeneralInteractorTests
             .ReturnsAsync(new[] { SanidadTestData.CreateHistorialItem(id: 2, tipoPesoCode: "FINAL", pesoKg: 140m) });
         var interactor = new GetHistorialGeneralInteractor(repositoryMock.Object);
 
-        var result = await interactor.HandleAsync(new GetHistorialGeneralCommand { FechaDesde = "2026-07-01", FechaHasta = "2026-07-31" });
+        var result = await interactor.HandleAsync(new GetHistorialGeneralQuery { FechaDesde = "2026-07-01", FechaHasta = "2026-07-31" });
 
         var item = Assert.Single(result.Items);
         Assert.Equal(2, item.Id);

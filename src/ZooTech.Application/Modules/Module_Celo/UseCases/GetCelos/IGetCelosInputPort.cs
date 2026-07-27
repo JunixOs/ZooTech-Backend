@@ -1,9 +1,10 @@
+using ZooTech.Application.Common.Behaviors;
 using ZooTech.Application.Common.Models;
 
 namespace ZooTech.Application.Modules.Module_Celo.UseCases.GetCelos;
 
 public interface IGetCelosInputPort
+    : IRequestHandler<EmptyCommandQuery , GetCelosOutput>
 {
-    Task<GetCelosOutput> Handle(EmptyCommand emptyCommand, CancellationToken cancellationToken = default);
 }
     

@@ -30,7 +30,7 @@ public class GetAllVacunosSanidadUseCaseTests
         var useCase = new GetAllVacunosSanidadInteractor(_repositoryMock.Object);
 
         // Act
-        var result = await useCase.Handle(EmptyCommand.Value(AuditEventType.Read, "Get all vacunos sanidad"));
+        var result = await useCase.HandleAsync(EmptyCommandQuery.Value(AuditEventType.Read, "Get all vacunos sanidad"));
 
         // Assert
         Assert.NotNull(result);
@@ -47,7 +47,7 @@ public class GetAllVacunosSanidadUseCaseTests
         var useCase = new GetAllVacunosSanidadInteractor(_repositoryMock.Object);
 
         // Act
-        var result = await useCase.Handle(EmptyCommand.Value(AuditEventType.Read, "Get all vacunos sanidad"));
+        var result = await useCase.HandleAsync(EmptyCommandQuery.Value(AuditEventType.Read, "Get all vacunos sanidad"));
 
         // Assert
         Assert.NotNull(result);

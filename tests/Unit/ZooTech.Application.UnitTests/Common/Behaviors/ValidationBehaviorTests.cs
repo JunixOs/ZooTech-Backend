@@ -11,7 +11,7 @@ public class ValidationBehaviorTests
 {
     public record TestRequest;
 
-    private class TestValidator : ICommandValidator<TestRequest>, IValidationErrorDetailsProvider
+    private class TestValidator : ICommandQueryValidator<TestRequest>, IValidationErrorDetailsProvider
     {
         private readonly List<string> _errors;
         public ModuleName ModuleName => ModuleName.Tenancing;
@@ -34,7 +34,10 @@ public class ValidationBehaviorTests
     {
         // Arrange
         var validator = new TestValidator();
-        var behavior = new ValidationBehavior<TestRequest, string>(validator);
+        var validators = new List<TestValidator> { validator };
+
+
+        var behavior = new ValidationBehavior<TestRequest, string>(validators);
 
         // Act
         var result = await behavior.Handle(new TestRequest(), () => Task.FromResult("ok"));
@@ -49,7 +52,9 @@ public class ValidationBehaviorTests
         // Arrange
         var errors = new List<string> { "TENANCING_CREATE-TENANT-CODE-NULL" };
         var validator = new TestValidator(errors);
-        var behavior = new ValidationBehavior<TestRequest, string>(validator);
+        var validators = new List<TestValidator> { validator };
+
+        var behavior = new ValidationBehavior<TestRequest, string>(validators);
 
         // Act
         var act = async () => await behavior.Handle(new TestRequest(), () => Task.FromResult("ok"));

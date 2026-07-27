@@ -40,7 +40,7 @@ public class GetAllTriajesUseCaseTests
         var useCase = new GetAllTriajesInteractor(_repositoryMock.Object);
 
         // Act
-        var result = await useCase.Handle(new GetAllTriajesQuery { Pagina = 1, Tamano = 10 });
+        var result = await useCase.HandleAsync(new GetAllTriajesQuery { Pagina = 1, Tamano = 10 });
 
         // Assert
         Assert.NotNull(result);
@@ -70,7 +70,7 @@ public class GetAllTriajesUseCaseTests
         var useCase = new GetAllTriajesInteractor(_repositoryMock.Object);
 
         // Act
-        var result = await useCase.Handle(new GetAllTriajesQuery { Pagina = 1, Tamano = 10 });
+        var result = await useCase.HandleAsync(new GetAllTriajesQuery { Pagina = 1, Tamano = 10 });
 
         // Assert
         Assert.NotNull(result);

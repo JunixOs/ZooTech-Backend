@@ -189,9 +189,9 @@ public class ProduccionLecheControllerTests
 
     private sealed class FakeListarVacunosBehaviorPipelineFactory : IListarVacunosBehaviorPipelineFactory
     {
-        public BehaviorPipeline<ListarVacunosCommand, ListarVacunosOutput> Create()
+        public BehaviorPipeline<ListarVacunosQuery, ListarVacunosOutput> Create()
             => new(
-                Array.Empty<IBehavior<ListarVacunosCommand, ListarVacunosOutput>>(),
+                Array.Empty<IBehavior<ListarVacunosQuery, ListarVacunosOutput>>(),
                 (_, _) => Task.FromResult(new ListarVacunosOutput(Array.Empty<VacunoListItem>(), TotalCount: 0)));
     }
 
@@ -211,9 +211,9 @@ public class ProduccionLecheControllerTests
 
     private sealed class FakeGetOrdenioByIdBehaviorPipelineFactory : IGetOrdenioByIdBehaviorPipelineFactory
     {
-        public BehaviorPipeline<GetOrdenioByIdCommand, GetOrdenioByIdOutput> Create()
+        public BehaviorPipeline<GetOrdenioByIdQuery, GetOrdenioByIdOutput> Create()
             => new(
-                Array.Empty<IBehavior<GetOrdenioByIdCommand, GetOrdenioByIdOutput>>(),
+                Array.Empty<IBehavior<GetOrdenioByIdQuery, GetOrdenioByIdOutput>>(),
                 (_, _) => Task.FromResult(new GetOrdenioByIdOutput(CreateOrdenioOutput())));
     }
 

@@ -13,7 +13,7 @@ public sealed class GetReporteCelosInteractor : IGetReporteCelosInputPort
     }
 
     public async Task<GetReporteCelosOutput> HandleAsync(
-        EmptyCommand emptyCommand,
+        EmptyCommandQuery emptyCommand,
         CancellationToken cancellationToken = default
     )
     {

@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using ZooTech.Application.Common.Behaviors;
 
 namespace ZooTech.Application.Modules.Module_Fecundacion.UseCases.ListarFecundacion;
 
 public interface IListarFecundacionInputPort
+    : IRequestHandler<ListarFecundacionQuery , ListarFecundacionOutput>
 {
-    Task<ListarFecundacionOutput> HandleAsync(
-        ListarFecundacionCommand command, CancellationToken cancellationToken = default);
 }

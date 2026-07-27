@@ -1,11 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using FluentAssertions;
 using NSubstitute;
-using Xunit;
 using ZooTech.Application.Common.Exceptions;
 using ZooTech.Application.Common.Gateway.Parametrization;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.GetArbolGenealogico;
@@ -34,7 +28,7 @@ public class GetArbolGenealogicoInteractorTests
     {
         // Arrange
         var vacunoId = 1L;
-        var command = new GetArbolGenealogicoCommand(vacunoId, 5); // 5 exceeds max allowed (4)
+        var command = new GetArbolGenealogicoQuery(vacunoId, 5); // 5 exceeds max allowed (4)
         var raiz = Vacuno.Rehydrate(vacunoId, "V1", "Estrella", new DateOnly(2020, 1, 1), "COMPRA", "HOLSTEIN", "BLANCO_NEGRO", "HEMBRA", null, null, 1, null, new DateOnly(2020, 1, 1), DateTime.UtcNow, DateTime.UtcNow, null, null, null, null, null);
         var arbol = new List<VacunoGenealogiaNode> { new VacunoGenealogiaNode(raiz, 1, null) };
 
@@ -65,7 +59,7 @@ public class GetArbolGenealogicoInteractorTests
     {
         // Arrange
         var vacunoId = 99L;
-        var command = new GetArbolGenealogicoCommand(vacunoId, 4);
+        var command = new GetArbolGenealogicoQuery(vacunoId, 4);
 
         _vacunoRepositoryMock.GetByIdAsync(vacunoId, Arg.Any<CancellationToken>()).Returns((Vacuno?)null);
 

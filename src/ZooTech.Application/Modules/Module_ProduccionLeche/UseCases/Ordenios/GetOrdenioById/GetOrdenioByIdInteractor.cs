@@ -14,9 +14,9 @@ public sealed class GetOrdenioByIdInteractor : IGetOrdenioByIdInputPort
         _repository = repository;
     }
 
-    public async Task<GetOrdenioByIdOutput> Handle(GetOrdenioByIdCommand cmd, CancellationToken cancellationToken)
+    public async Task<GetOrdenioByIdOutput> HandleAsync(GetOrdenioByIdQuery query, CancellationToken cancellationToken)
     {
-        var ordenio = await _repository.GetByIdAsync(cmd.Id, cancellationToken)
+        var ordenio = await _repository.GetByIdAsync(query.Id, cancellationToken)
             ?? throw new NotFoundException(
                 ScopeName.Application,
                 ModuleName.Produccion_Leche,

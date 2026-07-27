@@ -3,21 +3,21 @@ using ZooTech.Domain.Shared.Enums;
 
 namespace ZooTech.Application.Common.Models
 {
-    public sealed class EmptyCommand : IAuditableRequest
+    public sealed class EmptyCommandQuery : IAuditableCommandQueryRequest
     {
         public AuditEventType EventType { get; init; }
         public string Action { get; init; }
 
-        public static EmptyCommand Value(AuditEventType auditEventType , string action)
+        public static EmptyCommandQuery Value(AuditEventType auditEventType , string action)
         {
-            return new EmptyCommand
+            return new EmptyCommandQuery
             {
                 EventType = auditEventType,
                 Action = action,            
             };
         }
 
-        private EmptyCommand()
+        private EmptyCommandQuery()
         {
         }
     }

@@ -23,7 +23,7 @@ public class GetVacunoByIdInteractorTests
     public async Task HandleAsync_WhenVacunoExists_ReturnsVacunoOutput()
     {
         // Arrange
-        var command = new GetVacunoByIdCommand(1);
+        var command = new GetVacunoByIdQuery(1);
         var expectedVacuno = Vacuno.Rehydrate(
             id: 1,
             codigo: "VAC001",
@@ -64,7 +64,7 @@ public class GetVacunoByIdInteractorTests
     public async Task HandleAsync_WhenVacunoDoesNotExist_ThrowsVacunoNotFoundException()
     {
         // Arrange
-        var command = new GetVacunoByIdCommand(999);
+        var command = new GetVacunoByIdQuery(999);
         _vacunoRepository.GetByIdAsync(999, Arg.Any<CancellationToken>()).Returns((Vacuno?)null);
 
         // Act

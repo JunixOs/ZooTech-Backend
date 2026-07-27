@@ -24,7 +24,7 @@ public sealed class GenerateOrdeniosPdfInteractor : IGetOrdeniosPdfInputPort
         _dateTimeProvider = dateTimeProvider;
     }
 
-    public async Task<GenerateOrdeniosPdfOutput> Handle(
+    public async Task<GenerateOrdeniosPdfOutput> HandleAsync(
         GenerateOrdeniosComparationPdfQuery query,
         CancellationToken cancellationToken)
     {

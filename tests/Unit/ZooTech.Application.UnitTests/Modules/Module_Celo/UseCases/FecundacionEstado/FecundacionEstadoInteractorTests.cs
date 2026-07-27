@@ -19,7 +19,7 @@ public class FecundacionEstadoInteractorTests
         };
         var interactor = new GetFecundacionEstadoInteractor(repository);
 
-        var output = await interactor.HandleAsync(new GetFecundacionEstadoCommand(1));
+        var output = await interactor.HandleAsync(new GetFecundacionEstadoQuery(1));
 
         Assert.Equal(FecundacionEstadoConstants.SinEstado, output.EstadoActual);
         Assert.True(output.DisponibleNuevaFecundacion);
@@ -32,7 +32,7 @@ public class FecundacionEstadoInteractorTests
         var interactor = new GetFecundacionEstadoInteractor(new FakeFecundacionEstadoRepository());
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
-            interactor.HandleAsync(new GetFecundacionEstadoCommand(99)));
+            interactor.HandleAsync(new GetFecundacionEstadoQuery(99)));
     }
 
     [Fact]
@@ -45,7 +45,7 @@ public class FecundacionEstadoInteractorTests
         var interactor = new GetFecundacionEstadoInteractor(repository);
 
         await Assert.ThrowsAsync<ConflictException>(() =>
-            interactor.HandleAsync(new GetFecundacionEstadoCommand(1)));
+            interactor.HandleAsync(new GetFecundacionEstadoQuery(1)));
     }
 
     [Fact]

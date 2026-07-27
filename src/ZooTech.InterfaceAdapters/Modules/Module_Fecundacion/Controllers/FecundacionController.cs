@@ -1,12 +1,7 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using ZooTech.Application.Common.Behaviors.Module_Fecundacion.CreateFecundacion;
-using ZooTech.Application.Common.Behaviors.Module_Fecundacion.DeleteFecundacion;
-using ZooTech.Application.Common.Behaviors.Module_Fecundacion.GetFecundacionForEdit;
-using ZooTech.Application.Common.Behaviors.Module_Fecundacion.GetFecundacionOptions;
-using ZooTech.Application.Common.Behaviors.Module_Fecundacion.ListarFecundacion;
-using ZooTech.Application.Common.Behaviors.Module_Fecundacion.SearchFecundacionVacunos;
-using ZooTech.Application.Common.Behaviors.Module_Fecundacion.UpdateFecundacion;
+using ZooTech.Application.Common.Behaviors;
 using ZooTech.Application.Common.Gateway.Identity;
 using ZooTech.Application.Common.Models;
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.CreateFecundacion;
@@ -18,6 +13,7 @@ using ZooTech.Application.Modules.Module_Fecundacion.UseCases.SearchFecundacionV
 using ZooTech.Application.Modules.Module_Fecundacion.UseCases.UpdateFecundacion;
 using ZooTech.Domain.Shared.Enums;
 using ZooTech.InterfaceAdapters.DTOs;
+using ZooTech.InterfaceAdapters.Filters;
 using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.DTOs;
 using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.DTOs.Responses;
 using ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.Mappers;
@@ -30,38 +26,25 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.Controllers;
 [ApiExplorerSettings(GroupName = "public")]
 public sealed class FecundacionController : ControllerBase
 {
-    private readonly ICreateFecundacionBehaviorPipelineFactory _createFecundacionBehaviorPipelineFactory;
-    private readonly IListarFecundacionBehaviorPipelineFactory _listarFecundacionBehaviorPipelineFactory;
-    private readonly IGetFecundacionForEditBehaviorPipelineFactory _getFecundacionForEditBehaviorPipelineFactory;
-    private readonly IGetFecundacionOptionsBehaviorPipelineFactory _getFecundacionOptionsBehaviorPipelineFactory;
-    private readonly ISearchFecundacionVacunosBehaviorPipelineFactory _searchFecundacionVacunosBehaviorPipelineFactory;
-    private readonly IUpdateFecundacionBehaviorPipelineFactory _updateFecundacionBehaviorPipelineFactory;
-    private readonly IDeleteFecundacionBehaviorPipelineFactory _deleteFecundacionBehaviorPipelineFactory;
     private readonly ICurrentUserService _currentUserService;
 
+    private readonly IBehaviorDispatcher _behaviorDispatcher;
+
     public FecundacionController(
-        ICreateFecundacionBehaviorPipelineFactory createFecundacionBehaviorPipelineFactory,
-        IListarFecundacionBehaviorPipelineFactory listarFecundacionBehaviorPipelineFactory,
-        IGetFecundacionForEditBehaviorPipelineFactory getFecundacionForEditBehaviorPipelineFactory,
-        IGetFecundacionOptionsBehaviorPipelineFactory getFecundacionOptionsBehaviorPipelineFactory,
-        ISearchFecundacionVacunosBehaviorPipelineFactory searchFecundacionVacunosBehaviorPipelineFactory,
-        IUpdateFecundacionBehaviorPipelineFactory updateFecundacionBehaviorPipelineFactory,
-        IDeleteFecundacionBehaviorPipelineFactory deleteFecundacionBehaviorPipelineFactory,
-        ICurrentUserService currentUserService
+        ICurrentUserService currentUserService,
+
+        IBehaviorDispatcher behaviorDispatcher
     )
     {
-        _createFecundacionBehaviorPipelineFactory = createFecundacionBehaviorPipelineFactory;
-        _listarFecundacionBehaviorPipelineFactory = listarFecundacionBehaviorPipelineFactory;
-        _getFecundacionForEditBehaviorPipelineFactory = getFecundacionForEditBehaviorPipelineFactory;
-        _getFecundacionOptionsBehaviorPipelineFactory = getFecundacionOptionsBehaviorPipelineFactory;
-        _searchFecundacionVacunosBehaviorPipelineFactory = searchFecundacionVacunosBehaviorPipelineFactory;
-        _updateFecundacionBehaviorPipelineFactory = updateFecundacionBehaviorPipelineFactory;
-        _deleteFecundacionBehaviorPipelineFactory = deleteFecundacionBehaviorPipelineFactory;
         _currentUserService = currentUserService;
+
+        _behaviorDispatcher = behaviorDispatcher;
     }
 
-    // ===== TUYO — sin cambios =====
     [HttpGet]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(typeof(PagedResponse<List<FecundacionItemResponse>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ListarFecundacion(
         [FromQuery] string? search,
@@ -79,7 +62,7 @@ public sealed class FecundacionController : ControllerBase
         var currentPageSize = NormalizePageSize(pageSize ?? limit);
         var searchTerm = FirstNonBlank(search, query, q);
 
-        var command = new ListarFecundacionCommand(
+        var command = new ListarFecundacionQuery(
             Query: searchTerm,
             FechaDesde: fechaDesde,
             FechaHasta: fechaHasta,
@@ -87,15 +70,16 @@ public sealed class FecundacionController : ControllerBase
             Page: currentPage,
             Limit: currentPageSize);
 
-        var behaviorPipeline = _listarFecundacionBehaviorPipelineFactory.Create();
-
-        var output = await behaviorPipeline.Execute(command, cancellationToken);
+        var output = await _behaviorDispatcher.Send<ListarFecundacionQuery , ListarFecundacionOutput>(command, cancellationToken);
         var response = output.Items.Select(FecundacionMapper.ToListItemResponse).ToList();
         return Ok(PagedResponse<List<FecundacionItemResponse>>.OkPaged(response, currentPage, currentPageSize, output.TotalCount));
     }
 
     // ===== DE ÉL — Create =====
     [HttpPost]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(typeof(GeneralResponseDTO<CreateFecundacionResponse>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
@@ -103,37 +87,37 @@ public sealed class FecundacionController : ControllerBase
         [FromBody] CreateFecundacionRequest request,
         CancellationToken cancellationToken)
     {
-        var behaviorPipeline = _createFecundacionBehaviorPipelineFactory.Create();
-
         var command = FecundacionMapper.ToCommand(request, _currentUserService.UserId);
-        var output = await behaviorPipeline.Execute(command, cancellationToken);
+        var output = await _behaviorDispatcher.Send<CreateFecundacionCommand , CreateFecundacionOutput>(command, cancellationToken);
         var response = FecundacionMapper.ToResponse(output);
 
         return StatusCode(StatusCodes.Status201Created, GeneralResponseDTO<CreateFecundacionResponse>.Ok(response));
     }
 
     [HttpGet("{fecundacionId:long}")]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(typeof(GeneralResponseDTO<FecundacionEditResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(long fecundacionId, CancellationToken cancellationToken)
     {
-        var behaviorPipeline = _getFecundacionForEditBehaviorPipelineFactory.Create();
-
-        var output = await behaviorPipeline.Execute(
-            new GetFecundacionForEditCommand(fecundacionId), 
+        var output = await _behaviorDispatcher.Send<GetFecundacionForEditQuery , GetFecundacionForEditOutput>(
+            new GetFecundacionForEditQuery(fecundacionId), 
             cancellationToken
         );
         return Ok(GeneralResponseDTO<FecundacionEditResponse>.Ok(FecundacionMapper.ToResponse(output)));
     }
 
     [HttpGet("opciones")]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(typeof(GeneralResponseDTO<FecundacionOptionsResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetOptions(CancellationToken cancellationToken)
     {
-        var behaviorPipeline = _getFecundacionOptionsBehaviorPipelineFactory.Create();
-
-        var output = await behaviorPipeline.Execute(
-            EmptyCommand.Value(
+        var output = await _behaviorDispatcher.Send<EmptyCommandQuery , GetFecundacionOptionsOutput>(
+            EmptyCommandQuery.Value(
                 AuditEventType.Read,
                 "Get fecundacion options"
             ),
@@ -143,6 +127,9 @@ public sealed class FecundacionController : ControllerBase
     }
 
     [HttpGet("vacunos")]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(typeof(GeneralResponseDTO<IReadOnlyList<FecundacionVacunoOptionResponse>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> SearchVacunos(
         [FromQuery] string? sexo,
@@ -151,9 +138,7 @@ public sealed class FecundacionController : ControllerBase
         [FromQuery] long? excluirFecundacionId = null,
         CancellationToken cancellationToken = default)
     {
-        var behaviorPipeline = _searchFecundacionVacunosBehaviorPipelineFactory.Create();
-
-        var output = await behaviorPipeline.Execute(
+        var output = await _behaviorDispatcher.Send<SearchFecundacionVacunosQuery , IReadOnlyList<SearchFecundacionVacunoOutput>>(
             new SearchFecundacionVacunosQuery(sexo, query, soloDisponibles, excluirFecundacionId),
             cancellationToken);
 
@@ -162,6 +147,9 @@ public sealed class FecundacionController : ControllerBase
     }
 
     [HttpPatch("{fecundacionId:long}")]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(typeof(GeneralResponseDTO<FecundacionUpdateResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
@@ -171,15 +159,11 @@ public sealed class FecundacionController : ControllerBase
         [FromBody] UpdateFecundacionRequest request,
         CancellationToken cancellationToken)
     {
-        var behaviorPipelineGetForEdit = _getFecundacionForEditBehaviorPipelineFactory.Create();
-        var behaviorPipelineUpdate = _updateFecundacionBehaviorPipelineFactory.Create();
-
-
-        var current = await behaviorPipelineGetForEdit.Execute(
-            new GetFecundacionForEditCommand(fecundacionId), 
+        var current = await _behaviorDispatcher.Send<GetFecundacionForEditQuery , GetFecundacionForEditOutput>(
+            new GetFecundacionForEditQuery(fecundacionId), 
             cancellationToken
         );
-        var output = await behaviorPipelineUpdate.Execute(
+        var output = await _behaviorDispatcher.Send<UpdateFecundacionCommand , UpdateFecundacionOutput>(
             FecundacionMapper.ToCommand(request, current, fecundacionId),
             cancellationToken);
 
@@ -187,6 +171,9 @@ public sealed class FecundacionController : ControllerBase
     }
 
     [HttpDelete("{id:long}")]
+    [ServiceFilter(typeof(TenantHeaderFilter))]
+    [RestrictTenantType(TenantType.Tenant)]
+    [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
@@ -196,10 +183,8 @@ public sealed class FecundacionController : ControllerBase
         [FromBody] DeleteFecundacionRequest request,
         CancellationToken cancellationToken)
     {
-        var behaviorPipeline = _deleteFecundacionBehaviorPipelineFactory.Create();
-
         var command = new DeleteFecundacionCommand(id, request.Razon);
-        await behaviorPipeline.Execute(command, cancellationToken);
+        await _behaviorDispatcher.Send<DeleteFecundacionCommand , EmptyOutput>(command, cancellationToken);
         return NoContent();
     }
 
