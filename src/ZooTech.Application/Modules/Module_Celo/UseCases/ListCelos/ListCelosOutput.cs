@@ -1,5 +1,5 @@
 using ZooTech.Application.Common.Pagination;
-using ZooTech.Application.Modules.Module_Celo.UseCases.GetCelos;
+using ZooTech.Application.Modules.Module_Celo.Models;
 
 namespace ZooTech.Application.Modules.Module_Celo.UseCases.ListCelos;
 

@@ -16,6 +16,7 @@ using ZooTech.Application.Common.Models;
 using ZooTech.Application.Modules.Module_Celo.UseCases.CreateCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.DeleteCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetCelos;
+using ZooTech.Application.Modules.Module_Celo.Models;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetComparacionCelosRealVsEstandar;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetComparacionCelosRealVsEstandarPorVacuno;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetHistorialCeloPorVacuno;

@@ -1,4 +1,4 @@
-using ZooTech.Application.Modules.Module_Celo.UseCases.GetCelos;
+using ZooTech.Application.Modules.Module_Celo.Mappers;
 using ZooTech.Domain.Module_Celo.Entities;
 
 namespace ZooTech.Application.UnitTests.Modules.Module_Celo.UseCases.GetCelos;

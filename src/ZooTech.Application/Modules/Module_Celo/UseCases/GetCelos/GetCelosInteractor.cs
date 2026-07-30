@@ -1,5 +1,6 @@
 using ZooTech.Application.Common.Models;
 using ZooTech.Domain.Module_Celo.Interfaces;
+using ZooTech.Application.Modules.Module_Celo.Mappers;
 
 namespace ZooTech.Application.Modules.Module_Celo.UseCases.GetCelos;
 
