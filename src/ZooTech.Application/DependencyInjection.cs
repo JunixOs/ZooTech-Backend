@@ -260,8 +260,6 @@ public static class DependencyInjection
         services.AddScoped<UpdateFecundacionEstadoValidator>();
         services.AddScoped<FecundacionEstadoTransitionValidator>();
 
-        // Removed Animals Use Cases
-
         // ============================================
         // Use Cases - Module_Fecundacion
         // ============================================

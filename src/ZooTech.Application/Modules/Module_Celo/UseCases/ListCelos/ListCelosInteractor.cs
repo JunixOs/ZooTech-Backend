@@ -1,6 +1,6 @@
 using ZooTech.Application.Common.Pagination;
 using ZooTech.Application.Modules.Module_Celo.Models;
-using ZooTech.Application.Modules.Module_Celo.UseCases.GetCelos;
+using ZooTech.Application.Modules.Module_Celo.Mappers;
 using ZooTech.Domain.Module_Celo.Interfaces;
 
 namespace ZooTech.Application.Modules.Module_Celo.UseCases.ListCelos;

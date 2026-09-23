@@ -1,4 +1,4 @@
-namespace ZooTech.Application.Modules.Module_Celo.UseCases.GetCelos;
+namespace ZooTech.Application.Modules.Module_Celo.Models;
 
 public sealed class CeloItemDto
 {

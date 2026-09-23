@@ -1,6 +1,7 @@
 using ZooTech.Domain.Module_Celo.Entities;
 
-namespace ZooTech.Application.Modules.Module_Celo.UseCases.GetCelos;
+namespace ZooTech.Application.Modules.Module_Celo.Mappers;
+using ZooTech.Application.Modules.Module_Celo.Models;
 
 internal static class CeloItemDtoMapper
 {
