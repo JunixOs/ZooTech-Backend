@@ -159,7 +159,8 @@ if (app.Environment.IsDevelopment())
 }
 if (app.Environment.IsProduction())
 {
-    app.UseCors("ProductionCorsPolicy");
+    app.UseCors("DevelopmentCorsPolicy");
+    // app.UseCors("ProductionCorsPolicy");
 }
 
 // ======= Tenant Middleware =======

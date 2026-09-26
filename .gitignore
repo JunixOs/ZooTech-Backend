@@ -200,7 +200,6 @@ BenchmarkDotNet.Artifacts/
 
 *.mongo
 *.redis
-*.sql
 
 # =========================
 # GitHub Copilot / AI
