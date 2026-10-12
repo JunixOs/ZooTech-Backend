@@ -28,13 +28,17 @@ internal static class CeloMapper
         };
     }
 
-    public static UpdateCeloCommand ToCommand(UpdateCeloRequest request , long id)
+    public static UpdateCeloCommand ToCommand(
+        UpdateCeloRequest request,
+        long id,
+        long? actorUsuarioId)
     {
         return new UpdateCeloCommand
         {
             Id = id,
             Observaciones = request.Observaciones,
-            CaracteristicaCodes = request.CaracteristicaCodes
+            CaracteristicaCodes = request.CaracteristicaCodes,
+            ActorUsuarioId = actorUsuarioId
         };
     }
 
