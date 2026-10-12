@@ -19,6 +19,7 @@ using ZooTech.Application.Modules.Module_Celo.UseCases.UpdateCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.DeleteCelo;
 using ZooTech.InterfaceAdapters.Filters;
 using Microsoft.AspNetCore.Authorization;
+using ZooTech.Application.Common.Gateway.Identity;
 using ZooTech.Application.Modules.Module_Celo.UseCases.GetHistorialCeloPorVacuno;
 
 namespace ZooTech.InterfaceAdapters.Modules.Module_Celo.Controllers;
@@ -28,11 +29,14 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Celo.Controllers;
 [ApiExplorerSettings(GroupName = "celo")]
 public sealed class CeloController : ControllerBase
 {
+    private readonly ICurrentUserService _currentUserService;
     private readonly IBehaviorDispatcher _behaviorDispatcher;
     public CeloController(
+        ICurrentUserService currentUserService,
         IBehaviorDispatcher behaviorDispatcher
     )
     {
+        _currentUserService = currentUserService;
         _behaviorDispatcher = behaviorDispatcher;
     }
 
@@ -288,7 +292,10 @@ public sealed class CeloController : ControllerBase
         [FromBody] UpdateCeloRequest request,
         CancellationToken cancellationToken)
     {
-        var command = CeloMapper.ToCommand(request , id);
+        var command = CeloMapper.ToCommand(
+            request,
+            id,
+            _currentUserService.UserId);
         var output = await _behaviorDispatcher.Send<UpdateCeloCommand , UpdateCeloOutput>(command, cancellationToken);
         var response = CeloMapper.ToResponse(output);
 

@@ -32,13 +32,14 @@ public class CeloControllerTests
     {
         var dispatcher = new TestBehaviorDispatcher();
 
-        dispatcher.Setup<EmptyCommandQuery, GetCelosOutput>((_, _) =>
+        dispatcher.Setup<ListCelosQuery, ListCelosOutput>((_, _) =>
             Task.FromResult(
-                new GetCelosOutput(
-                    new List<CeloItemDto>
-                    {
-                        CreateCeloItemDto()
-                    })));
+                new ListCelosOutput(
+                    new ZooTech.Application.Common.Pagination.PagedResult<CeloItemDto>(
+                        new[] { CreateCeloItemDto() },
+                        TotalCount: 1,
+                        Page: 1,
+                        PageSize: 20))));
 
         var controller = CreateController(dispatcher);
 
@@ -48,7 +49,7 @@ public class CeloControllerTests
 
         var okResult = Assert.IsType<OkObjectResult>(result);
 
-        AssertGeneralResponseData<List<CeloItemDto>>(okResult.Value);
+        AssertGeneralResponseData<ListCelosResponse>(okResult.Value);
     }
 
     [Fact]
@@ -56,7 +57,7 @@ public class CeloControllerTests
     {
         var dispatcher = new TestBehaviorDispatcher();
 
-        dispatcher.Setup<EmptyCommandQuery, ListReporteCeloGeneralOutput>((_, _) =>
+        dispatcher.Setup<ListReporteCeloGeneralQuery, ListReporteCeloGeneralOutput>((_, _) =>
             Task.FromResult(
                 new ListReporteCeloGeneralOutput(
                     new ZooTech.Application.Common.Pagination.PagedResult<CeloReporteItemDto>(
@@ -440,7 +441,18 @@ public class CeloControllerTests
 
     private static CeloController CreateController(
         IBehaviorDispatcher dispatcher)
-        => new(dispatcher);
+        => new(
+            new TestCurrentUserService(),
+            dispatcher);
+
+    private sealed class TestCurrentUserService : ICurrentUserService
+    {
+        public int? UserId => 42;
+        public string? UserName => "test-user";
+        public string? Email => "test@example.com";
+        public string? Role => "REGULAR";
+        public bool IsAuthenticated => true;
+    }
 
     private sealed class TestBehaviorDispatcher : IBehaviorDispatcher
     {
