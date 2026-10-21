@@ -26,7 +26,7 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Celo.Controllers;
 
 [ApiController]
 [Route("api/v1/celo")]
-[ApiExplorerSettings(GroupName = "celo")]
+[ApiExplorerSettings(GroupName = "reproduccion-celo")]
 public sealed class CeloController : ControllerBase
 {
     private readonly IBehaviorDispatcher _behaviorDispatcher;
@@ -44,6 +44,7 @@ public sealed class CeloController : ControllerBase
     [ServiceFilter(typeof(TenantHeaderFilter))]
     [RestrictTenantType(TenantType.Tenant)]
     [Authorize(Roles = AuthorizationRoles.Regular)]
+    [Tags("Read")]
     [ProducesResponseType(typeof(GeneralResponseDTO<ListCelosResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCelos(
         [FromQuery] string? search,
@@ -74,6 +75,7 @@ public sealed class CeloController : ControllerBase
     [ServiceFilter(typeof(TenantHeaderFilter))]
     [RestrictTenantType(TenantType.Tenant)]
     [Authorize(Roles = AuthorizationRoles.Regular)]
+    [Tags("Reportes")]
     [ProducesResponseType(typeof(GeneralResponseDTO<ListReporteCeloGeneralResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetReporteCeloGeneral(
         [FromQuery] string? search,
@@ -105,6 +107,7 @@ public sealed class CeloController : ControllerBase
     [ServiceFilter(typeof(TenantHeaderFilter))]
     [RestrictTenantType(TenantType.Tenant)]
     [Authorize(Roles = AuthorizationRoles.Regular)]
+    [Tags("Reportes")]
     [ProducesResponseType(typeof(GeneralResponseDTO<List<ReporteCeloPorVacunoResponse>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetReporteCeloPorVacuno(
         [FromQuery] DateTime? fechaInicio,
@@ -146,6 +149,7 @@ public sealed class CeloController : ControllerBase
     [ServiceFilter(typeof(TenantHeaderFilter))]
     [RestrictTenantType(TenantType.Tenant)]
     [Authorize(Roles = AuthorizationRoles.Regular)]
+    [Tags("Reportes")]
     [ProducesResponseType(typeof(GeneralResponseDTO<List<CeloReporteItemResponse>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetDetalleCeloPorVacuno(
     string codigoVacuno,
@@ -170,6 +174,7 @@ public sealed class CeloController : ControllerBase
     }
 
     [HttpGet("vacunos/{codigoVacuno}/historial")]
+    [Tags("Historial")]
     [ProducesResponseType(typeof(GeneralResponseDTO<CeloHistorialPorVacunoResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetHistorialPorVacuno(string codigoVacuno, [FromQuery] long registroId, CancellationToken cancellationToken)
     {
@@ -184,6 +189,7 @@ public sealed class CeloController : ControllerBase
     [ServiceFilter(typeof(TenantHeaderFilter))]
     [RestrictTenantType(TenantType.Tenant)]
     [Authorize(Roles = AuthorizationRoles.Regular)]
+    [Tags("Read")]
     [ProducesResponseType(typeof(GeneralResponseDTO<List<VacaEnCeloResponse>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetVacasEnCelo(
         [FromQuery] DateTime? fechaInicio,
@@ -208,6 +214,7 @@ public sealed class CeloController : ControllerBase
     [ServiceFilter(typeof(TenantHeaderFilter))]
     [RestrictTenantType(TenantType.Tenant)]
     [Authorize(Roles = AuthorizationRoles.Regular)]
+    [Tags("Reportes")]
     [ProducesResponseType(typeof(GeneralResponseDTO<List<ComparacionCelosResponse>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetComparacionRealVsEstandar(
         [FromQuery] DateTime? fechaInicio,
@@ -235,6 +242,7 @@ public sealed class CeloController : ControllerBase
     [ServiceFilter(typeof(TenantHeaderFilter))]
     [RestrictTenantType(TenantType.Tenant)]
     [Authorize(Roles = AuthorizationRoles.Regular)]
+    [Tags("Reportes")]
     [ProducesResponseType(typeof(GeneralResponseDTO<List<ComparacionCelosPorVacunoResponse>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetComparacionPorVacuno(
         string codigoVacuno,
@@ -263,6 +271,7 @@ public sealed class CeloController : ControllerBase
     [ServiceFilter(typeof(TenantHeaderFilter))]
     [RestrictTenantType(TenantType.Tenant)]
     [Authorize(Roles = AuthorizationRoles.Regular)]
+    [Tags("Create")]
     [ProducesResponseType(typeof(GeneralResponseDTO<CreateCeloResponse>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status409Conflict)]
@@ -284,6 +293,7 @@ public sealed class CeloController : ControllerBase
     [ServiceFilter(typeof(TenantHeaderFilter))]
     [RestrictTenantType(TenantType.Tenant)]
     [Authorize(Roles = AuthorizationRoles.Regular)]
+    [Tags("Update")]
     [ProducesResponseType(typeof(GeneralResponseDTO<UpdateCeloResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status404NotFound)]
@@ -304,6 +314,7 @@ public sealed class CeloController : ControllerBase
     [ServiceFilter(typeof(TenantHeaderFilter))]
     [RestrictTenantType(TenantType.Tenant)]
     [Authorize(Roles = AuthorizationRoles.Regular)]
+    [Tags("Delete")]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status404NotFound)]

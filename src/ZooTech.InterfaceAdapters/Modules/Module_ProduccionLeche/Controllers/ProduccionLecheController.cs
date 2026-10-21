@@ -19,7 +19,7 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
 
 [ApiController]
 [Route("api/v1/produccion-leche")]
-[ApiExplorerSettings(GroupName = "produccion_leche")]
+[ApiExplorerSettings(GroupName = "produccionleche")]
 public sealed class ProduccionLecheController : ControllerBase
 {
     private readonly IBehaviorDispatcher _behaviorDispatcher;
@@ -33,6 +33,7 @@ public sealed class ProduccionLecheController : ControllerBase
 
     [HttpGet("health")]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status200OK)]
+    [Tags("Public")]
     public IActionResult Health()
     {
         return Ok(new { status = "Api funcionando de manera correcta", model = "modulo produccion leche" });
@@ -40,6 +41,7 @@ public sealed class ProduccionLecheController : ControllerBase
 
     [HttpGet("vacunos")]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status200OK)]
+    [Tags("Read")]
     public async Task<IActionResult> GetVacunos(CancellationToken cancellationToken)
     {
         // TODO: este endpoint necesita su propio caso de uso sin paginar para el selector de Leche, en vez de forzar Limit al máximo de ListarVacunos
@@ -51,6 +53,7 @@ public sealed class ProduccionLecheController : ControllerBase
     }
 
     [HttpPost]
+    [Tags("Create")]
     [ProducesResponseType(typeof(GeneralResponseDTO<OrdenioResponse>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status409Conflict)]
@@ -64,6 +67,7 @@ public sealed class ProduccionLecheController : ControllerBase
     }
 
     [HttpGet("{id:long}")]
+    [Tags("Read")]
     [ProducesResponseType(typeof(GeneralResponseDTO<OrdenioResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById([FromRoute] long id, CancellationToken cancellationToken)
@@ -79,6 +83,7 @@ public sealed class ProduccionLecheController : ControllerBase
     }
 
     [HttpGet]
+    [Tags("Read")]
     [ProducesResponseType(typeof(GeneralResponseDTO<ListOrdeniosResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> List(
@@ -110,6 +115,7 @@ public sealed class ProduccionLecheController : ControllerBase
     }
 
     [HttpGet("reporte/pdf")]
+    [Tags("Reportes")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GeneratePdf(
@@ -136,6 +142,7 @@ public sealed class ProduccionLecheController : ControllerBase
     }
 
     [HttpGet("reporte/excel")]
+    [Tags("Reportes")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GenerateExcel(
         [FromQuery] long? vacunoId,
@@ -161,6 +168,7 @@ public sealed class ProduccionLecheController : ControllerBase
     }
 
     [HttpPatch("{id:long}")]
+    [Tags("Update")]
     [ProducesResponseType(typeof(GeneralResponseDTO<OrdenioResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status404NotFound)]
@@ -178,6 +186,7 @@ public sealed class ProduccionLecheController : ControllerBase
     }
 
     [HttpDelete("{id:long}")]
+    [Tags("Delete")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status404NotFound)]

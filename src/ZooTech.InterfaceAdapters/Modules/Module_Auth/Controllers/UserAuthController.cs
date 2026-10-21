@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ZooTech.Application.Common.Behaviors;
 using ZooTech.Application.Modules.Module_Auth.UseCases.RegularLogin;
@@ -28,6 +29,7 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Auth
         [ServiceFilter(typeof(TenantHeaderFilter))]
         [RestrictTenantType(TenantType.Tenant)]
         [HttpPost("login")]
+        [Tags("Regular User")]
         public async Task<IActionResult> LoginRegularUsers(
             [FromBody] RegularLoginRequestDTO request,
             CancellationToken cancellationToken = default

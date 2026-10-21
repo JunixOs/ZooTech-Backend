@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ZooTech.InterfaceAdapters.Filters;
 
@@ -10,6 +11,7 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Auth
     {
         [ServiceFilter(typeof(TenantHeaderFilter))]
         [HttpPost("logout")]
+        [Tags("Logout")]
         public async Task<IActionResult> Logout(CancellationToken cancellationToken = default)
         {
             return Ok();

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ZooTech.Application.Common.Behaviors;
 using ZooTech.Application.Modules.Module_Auth.UseCases.AdminLogin;
@@ -11,6 +12,7 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Auth
 {
     [ApiController]
     [Route("api/v1/auth/admin")]
+    // El nombre GroupName debe coincidir con el definido en options.SwaggerDoc() y options.Endpoint() en ZooTech.Api/Program.cs
     [ApiExplorerSettings(GroupName = "auth")]
     public class AdminAuthController : ControllerBase
     {
@@ -28,6 +30,7 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Auth
         [ServiceFilter(typeof(TenantHeaderFilter))]
         [RestrictTenantType(TenantType.Admin)]
         [HttpPost("login")]
+        [Tags("Administrator User")]
         public async Task<IActionResult> LoginAdminUsers(
             [FromBody] AdminLoginRequestDTO requestDto,
             CancellationToken cancellationToken = default

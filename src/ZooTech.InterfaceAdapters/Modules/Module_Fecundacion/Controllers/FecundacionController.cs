@@ -23,7 +23,7 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Fecundacion.Controllers;
 
 [ApiController]
 [Route("api/v1/fecundaciones")]
-[ApiExplorerSettings(GroupName = "public")]
+[ApiExplorerSettings(GroupName = "reproduccion-fecundacion")]
 public sealed class FecundacionController : ControllerBase
 {
     private readonly ICurrentUserService _currentUserService;
@@ -45,6 +45,7 @@ public sealed class FecundacionController : ControllerBase
     [ServiceFilter(typeof(TenantHeaderFilter))]
     [RestrictTenantType(TenantType.Tenant)]
     [Authorize(Roles = AuthorizationRoles.Regular)]
+    [Tags("Read")]
     [ProducesResponseType(typeof(PagedResponse<List<FecundacionItemResponse>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ListarFecundacion(
         [FromQuery] string? search,
@@ -80,6 +81,7 @@ public sealed class FecundacionController : ControllerBase
     [ServiceFilter(typeof(TenantHeaderFilter))]
     [RestrictTenantType(TenantType.Tenant)]
     [Authorize(Roles = AuthorizationRoles.Regular)]
+    [Tags("Create")]
     [ProducesResponseType(typeof(GeneralResponseDTO<CreateFecundacionResponse>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
@@ -98,6 +100,7 @@ public sealed class FecundacionController : ControllerBase
     [ServiceFilter(typeof(TenantHeaderFilter))]
     [RestrictTenantType(TenantType.Tenant)]
     [Authorize(Roles = AuthorizationRoles.Regular)]
+    [Tags("Read")]
     [ProducesResponseType(typeof(GeneralResponseDTO<FecundacionEditResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(long fecundacionId, CancellationToken cancellationToken)
@@ -113,6 +116,7 @@ public sealed class FecundacionController : ControllerBase
     [ServiceFilter(typeof(TenantHeaderFilter))]
     [RestrictTenantType(TenantType.Tenant)]
     [Authorize(Roles = AuthorizationRoles.Regular)]
+    [Tags("Read")]
     [ProducesResponseType(typeof(GeneralResponseDTO<FecundacionOptionsResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetOptions(CancellationToken cancellationToken)
     {
@@ -130,6 +134,7 @@ public sealed class FecundacionController : ControllerBase
     [ServiceFilter(typeof(TenantHeaderFilter))]
     [RestrictTenantType(TenantType.Tenant)]
     [Authorize(Roles = AuthorizationRoles.Regular)]
+    [Tags("Read")]
     [ProducesResponseType(typeof(GeneralResponseDTO<IReadOnlyList<FecundacionVacunoOptionResponse>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> SearchVacunos(
         [FromQuery] string? sexo,
@@ -150,6 +155,7 @@ public sealed class FecundacionController : ControllerBase
     [ServiceFilter(typeof(TenantHeaderFilter))]
     [RestrictTenantType(TenantType.Tenant)]
     [Authorize(Roles = AuthorizationRoles.Regular)]
+    [Tags("Update")]
     [ProducesResponseType(typeof(GeneralResponseDTO<FecundacionUpdateResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
@@ -175,6 +181,7 @@ public sealed class FecundacionController : ControllerBase
     [RestrictTenantType(TenantType.Tenant)]
     [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [Tags("Delete")]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]

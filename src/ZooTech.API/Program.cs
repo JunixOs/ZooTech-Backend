@@ -26,21 +26,42 @@ builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("auth", new()
+    options.SwaggerDoc("administracion", new()
     {
-        Title = "Authentication API",
+        // El nombre de aqui define el titulo para la página o doc Swagger
+        Title = "Administración Endpoints",
+        Version = "v1"
+    });
+    options.SwaggerDoc("gestionusuarios", new()
+    {
+        Title = "Gestión de Usuarios Endpoints",
         Version = "v1"
     });
 
-    options.SwaggerDoc("users", new()
+    // Los nombres aqui deben coincidir con los de options.SwaggerEndpoint()
+    options.SwaggerDoc("reproduccion-celo", new()
     {
-        Title = "Users API",
+        Title = "Reproducción - Celo Endpoints",
         Version = "v1"
     });
-
-    options.SwaggerDoc("public", new()
+    options.SwaggerDoc("reproduccion-fecundacion", new()
     {
-        Title = "Public API",
+        Title = "Reproducción - Fecundación Endpoints",
+        Version = "v1"
+    });
+    options.SwaggerDoc("sanidad-triaje", new()
+    {
+        Title = "Sanidad - Triaje Endpoints",
+        Version = "v1"
+    });
+    options.SwaggerDoc("vacuno", new()
+    {
+        Title = "Vacuno Endpoints",
+        Version = "v1"
+    });
+    options.SwaggerDoc("produccionleche", new()
+    {
+        Title = "Producción de Leche Endpoints",
         Version = "v1"
     });
 });
@@ -119,16 +140,29 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(options =>
     {
         options.SwaggerEndpoint(
-            "/swagger/public/swagger.json",
-            "Public API");
-
+            "/swagger/administracion/swagger.json",
+            // El nombre de aqui define lo que se mostrará en el selector de Swagger
+            "Administración");
         options.SwaggerEndpoint(
-            "/swagger/auth/swagger.json",
-            "Authentication API");
+            "/swagger/gestionusuarios/swagger.json",
+            "Gestión de Usuarios");
 
+        // El nombre entre /swagger/**/swagger.json debe ser igual al definido en options.SwaggerDoc()
         options.SwaggerEndpoint(
-            "/swagger/users/swagger.json",
-            "Users API");
+            "/swagger/reproduccion-celo/swagger.json",
+            "Reproducción - Celo");
+        options.SwaggerEndpoint(
+            "/swagger/reproduccion-fecundacion/swagger.json",
+            "Reproducción - Fecundación");
+        options.SwaggerEndpoint(
+            "/swagger/sanidad-triaje/swagger.json",
+            "Sanidad - Triaje");
+        options.SwaggerEndpoint(
+            "/swagger/vacuno/swagger.json",
+            "Vacuno");
+        options.SwaggerEndpoint(
+            "/swagger/produccionleche/swagger.json",
+            "Producción de Leche");
     });
 
 }

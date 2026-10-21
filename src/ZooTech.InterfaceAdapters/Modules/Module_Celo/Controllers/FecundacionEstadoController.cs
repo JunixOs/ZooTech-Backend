@@ -16,7 +16,7 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Celo.Controllers;
 
 [ApiController]
 [Route("api/v1/reproduccion/fecundacion/estado")]
-[ApiExplorerSettings(GroupName = "celo - fecundacion_estado")]
+[ApiExplorerSettings(GroupName = "reproduccion-fecundacion")]
 public sealed class FecundacionEstadoController : ControllerBase
 {
     private const string UpdatedByHeaderName = "X-User-Id";
@@ -34,7 +34,7 @@ public sealed class FecundacionEstadoController : ControllerBase
     [ServiceFilter(typeof(TenantHeaderFilter))]
     [RestrictTenantType(TenantType.Tenant)]
     [Authorize(Roles = AuthorizationRoles.Regular)]
-    [Tags("Reproduccion")]
+    [Tags("Read")]
     [ProducesResponseType(typeof(GeneralResponseDTO<FecundacionEstadoResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
@@ -55,7 +55,7 @@ public sealed class FecundacionEstadoController : ControllerBase
     [ServiceFilter(typeof(TenantHeaderFilter))]
     [RestrictTenantType(TenantType.Tenant)]
     [Authorize(Roles = AuthorizationRoles.Regular)]
-    [Tags("Reproduccion")]
+    [Tags("Update")]
     [ProducesResponseType(typeof(GeneralResponseDTO<FecundacionEstadoResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]

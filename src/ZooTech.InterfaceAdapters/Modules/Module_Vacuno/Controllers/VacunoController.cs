@@ -32,7 +32,7 @@ namespace ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Controllers;
 
 [ApiController]
 [Route("api/v1/vacunos")]
-[ApiExplorerSettings(GroupName = "public")]
+[ApiExplorerSettings(GroupName = "vacuno")]
 public sealed class VacunoController : ControllerBase
 {
     private readonly IReportFileStorage _reportFileStorage;
@@ -57,6 +57,7 @@ public sealed class VacunoController : ControllerBase
     [ServiceFilter(typeof(TenantHeaderFilter))]
     [RestrictTenantType(TenantType.Tenant)]
     [Authorize(Roles = AuthorizationRoles.Regular)]
+    [Tags("Read")]
     [ProducesResponseType(typeof(PagedResponse<List<VacunoItemResponse>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ListarVacunos(
     [FromQuery] string? search,
@@ -91,6 +92,7 @@ public sealed class VacunoController : ControllerBase
     [ServiceFilter(typeof(TenantHeaderFilter))]
     [RestrictTenantType(TenantType.Tenant)]
     [Authorize(Roles = AuthorizationRoles.Regular)]
+    [Tags("Genealogia")]
     [ProducesResponseType(typeof(GeneralResponseDTO<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -106,6 +108,7 @@ public sealed class VacunoController : ControllerBase
     [ServiceFilter(typeof(TenantHeaderFilter))]
     [RestrictTenantType(TenantType.Tenant)]
     [Authorize(Roles = AuthorizationRoles.Regular)]
+    [Tags("Genealogia")]
     [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -121,6 +124,7 @@ public sealed class VacunoController : ControllerBase
     [ServiceFilter(typeof(TenantHeaderFilter))]
     [RestrictTenantType(TenantType.Tenant)]
     [Authorize(Roles = AuthorizationRoles.Regular)]
+    [Tags("Create")]
     [ProducesResponseType(typeof(GeneralResponseDTO<VacunoResponse>), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -139,6 +143,7 @@ public sealed class VacunoController : ControllerBase
     [ServiceFilter(typeof(TenantHeaderFilter))]
     [RestrictTenantType(TenantType.Tenant)]
     [Authorize(Roles = AuthorizationRoles.Regular)]
+    [Tags("Read")]
     [ProducesResponseType(typeof(GeneralResponseDTO<VacunoResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(
@@ -159,6 +164,7 @@ public sealed class VacunoController : ControllerBase
     [ServiceFilter(typeof(TenantHeaderFilter))]
     [RestrictTenantType(TenantType.Tenant)]
     [Authorize(Roles = AuthorizationRoles.Regular)]
+    [Tags("Update")]
     [ProducesResponseType(typeof(GeneralResponseDTO<VacunoResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -184,6 +190,7 @@ public sealed class VacunoController : ControllerBase
     [ServiceFilter(typeof(TenantHeaderFilter))]
     [RestrictTenantType(TenantType.Tenant)]
     [Authorize(Roles = AuthorizationRoles.Regular)]
+    [Tags("Delete")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -198,6 +205,7 @@ public sealed class VacunoController : ControllerBase
     [HttpGet("reportes")]
     [ServiceFilter(typeof(TenantHeaderFilter))]
     [RestrictTenantType(TenantType.Tenant)]
+    [Tags("Reportes")]
     [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public IActionResult ReportesDisponibles(
@@ -234,6 +242,7 @@ public sealed class VacunoController : ControllerBase
     [HttpGet("reportes/listado")]
     [ServiceFilter(typeof(TenantHeaderFilter))]
     [RestrictTenantType(TenantType.Tenant)]
+    [Tags("Reportes")]
     [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> ReportesListado(
@@ -251,6 +260,7 @@ public sealed class VacunoController : ControllerBase
     [ServiceFilter(typeof(TenantHeaderFilter))]
     [RestrictTenantType(TenantType.Tenant)]
     [Authorize(Roles = AuthorizationRoles.Regular)]
+    [Tags("Reportes")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ReporteIndividual(
@@ -269,6 +279,7 @@ public sealed class VacunoController : ControllerBase
     [ServiceFilter(typeof(TenantHeaderFilter))]
     [RestrictTenantType(TenantType.Tenant)]
     [Authorize(Roles = AuthorizationRoles.Regular)]
+    [Tags("Reportes")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DescargarReporte(
@@ -287,6 +298,7 @@ public sealed class VacunoController : ControllerBase
     [HttpGet("granjas")]
     [ServiceFilter(typeof(TenantHeaderFilter))]
     [RestrictTenantType(TenantType.Tenant)]
+    [Tags("Read")]
     [Authorize(Roles = AuthorizationRoles.Regular)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> ListarGranjas(
@@ -311,6 +323,7 @@ public sealed class VacunoController : ControllerBase
     [ServiceFilter(typeof(TenantHeaderFilter))]
     [RestrictTenantType(TenantType.Tenant)]
     [Authorize(Roles = AuthorizationRoles.Regular)]
+    [Tags("Estadisticas")]
     [ProducesResponseType(typeof(VacunoActivityStatsResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetActivityStats(
         [FromQuery] System.DateOnly? fechaInicio,
@@ -333,6 +346,7 @@ public sealed class VacunoController : ControllerBase
     [ServiceFilter(typeof(TenantHeaderFilter))]
     [RestrictTenantType(TenantType.Tenant)]
     [Authorize(Roles = AuthorizationRoles.Regular)]
+    [Tags("Estadisticas")]
     [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ExportActivityStats(
@@ -441,6 +455,7 @@ public sealed class VacunoController : ControllerBase
 
 
     [HttpGet("catalogos")]
+    [Tags("Read")]
     [ProducesResponseType(typeof(GeneralResponseDTO<VacunoCatalogsResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCatalogos(CancellationToken cancellationToken)
     {
@@ -455,6 +470,7 @@ public sealed class VacunoController : ControllerBase
     }
 
     [HttpGet("referencias")]
+    [Tags("Read")]
     [ProducesResponseType(typeof(GeneralResponseDTO<List<VacunoReferenceResponse>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ListarReferencias(CancellationToken cancellationToken)
     {
