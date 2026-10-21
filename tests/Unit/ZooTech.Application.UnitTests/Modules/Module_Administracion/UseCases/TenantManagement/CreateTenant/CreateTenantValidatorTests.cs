@@ -1,8 +1,8 @@
 using FluentAssertions;
-using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant;
+using ZooTech.Application.Modules.Module_Administracion.UseCases.TenantManagement.CreateTenant;
 using ZooTech.Domain.Admin.Enums;
 
-namespace ZooTech.Application.UnitTests.Modules.Module_Tenancing.UseCases.CreateTenant;
+namespace ZooTech.Application.UnitTests.Modules.Module_Administracion.UseCases.TenantManagement.CreateTenant;
 
 public class CreateTenantValidatorTests
 {

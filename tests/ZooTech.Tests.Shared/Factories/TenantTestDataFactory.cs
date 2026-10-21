@@ -1,4 +1,4 @@
-using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant;
+using ZooTech.Application.Modules.Module_Administracion.UseCases.TenantManagement.CreateTenant;
 using ZooTech.Domain.Admin.Enums;
 using ZooTech.Infrastructure.Persistence.Entities.MainTenantsDb;
 

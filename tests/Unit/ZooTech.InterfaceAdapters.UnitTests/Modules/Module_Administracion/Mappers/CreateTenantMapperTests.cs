@@ -1,10 +1,9 @@
 using FluentAssertions;
-using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant;
-using ZooTech.InterfaceAdapters.Modules.Module_Tenancing.DTOs.Requests;
-using ZooTech.InterfaceAdapters.Modules.Module_Tenancing.DTOs.Responses;
-using ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Mappers;
+using ZooTech.Application.Modules.Module_Administracion.UseCases.TenantManagement.CreateTenant;
+using ZooTech.InterfaceAdapters.Modules.Module_Administracion.DTOs.Requests;
+using ZooTech.InterfaceAdapters.Modules.Module_Administracion.Mappers;
 
-namespace ZooTech.InterfaceAdapters.UnitTests.Modules.Module_Tenancing.Mappers;
+namespace ZooTech.InterfaceAdapters.UnitTests.Modules.Module_Administracion.Mappers;
 
 public class CreateTenantMapperTests
 {

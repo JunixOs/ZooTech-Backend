@@ -2,14 +2,14 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using ZooTech.Application.Common.Behaviors;
-using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant;
-using ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers;
-using ZooTech.InterfaceAdapters.Modules.Module_Tenancing.DTOs.Requests;
-using ZooTech.InterfaceAdapters.Modules.Module_Tenancing.DTOs.Responses;
+using ZooTech.Application.Modules.Module_Administracion.UseCases.TenantManagement.CreateTenant;
+using ZooTech.InterfaceAdapters.Modules.Module_Administracion.Controllers;
+using ZooTech.InterfaceAdapters.Modules.Module_Administracion.DTOs.Requests;
+using ZooTech.InterfaceAdapters.Modules.Module_Administracion.DTOs.Responses;
 
-namespace ZooTech.InterfaceAdapters.UnitTests.Modules.Module_Tenancing.Controllers;
+namespace ZooTech.InterfaceAdapters.UnitTests.Modules.Module_Administracion.Controllers;
 
-public class TenancingControllerTests
+public class TenantManagementControllerTests
 {
     [Fact]
     public async Task CreateTenant_Should_Send_Command_And_Return_Ok()
@@ -34,7 +34,7 @@ public class TenancingControllerTests
                 return Task.FromResult(expectedResult);
             });
 
-        var controller = new TenancingController(dispatcher);
+        var controller = new TenantManagementController(dispatcher);
 
         var request = new CreateTenantRequestDto
         {

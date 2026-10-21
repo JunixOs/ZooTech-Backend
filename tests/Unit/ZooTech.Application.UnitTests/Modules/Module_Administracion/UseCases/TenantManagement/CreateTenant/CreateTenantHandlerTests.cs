@@ -1,10 +1,10 @@
 using FluentAssertions;
 using Moq;
 using ZooTech.Application.Common.Gateway.Tenant;
-using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant;
+using ZooTech.Application.Modules.Module_Administracion.UseCases.TenantManagement.CreateTenant;
 using ZooTech.Tests.Shared.Factories;
 
-namespace ZooTech.Application.UnitTests.Modules.Module_Tenancing.UseCases.CreateTenant;
+namespace ZooTech.Application.UnitTests.Modules.Module_Administracion.UseCases.TenantManagement.CreateTenant;
 
 public class CreateTenantHandlerTests
 {

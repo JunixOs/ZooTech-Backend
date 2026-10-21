@@ -8,7 +8,7 @@ using Moq;
 using ZooTech.Application.Common.Gateway.Auditing;
 using ZooTech.Application.Common.Gateway.Context;
 using ZooTech.Application.Common.Gateway.Tenant;
-using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant;
+using ZooTech.Application.Modules.Module_Administracion.UseCases.TenantManagement.CreateTenant;
 using ZooTech.Domain.Admin.Enums;
 using ZooTech.Infrastructure.Context;
 namespace ZooTech.API.IntegrationTests;
