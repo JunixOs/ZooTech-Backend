@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Documentación de la API ZooTech">
+    <title>Gesti&#243;n de Usuarios Endpoints</title>
+
+    <link rel="stylesheet"
+          href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
+
+    <style>
+        body {
+            margin: 0;
+            background: #fafafa;
+        }
+
+        .swagger-ui .topbar {
+            background-color: #172554;
+        }
+
+        .swagger-ui .topbar-wrapper {
+            padding: 8px 0;
+        }
+
+        .swagger-ui .info {
+            margin: 32px 0;
+        }
+
+        .swagger-ui .scheme-container {
+            box-shadow: none;
+            background: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div id="swagger-ui"></div>
+
+    <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+    <script>
+        window.onload = function () {
+            SwaggerUIBundle({
+                spec: {"openapi":"3.0.4","info":{"title":"Gestión de Usuarios Endpoints","version":"v1"},"paths":{"/api/v1/gestionusuarios/auth/logout":{"post":{"tags":["Autenticación"],"responses":{"200":{"description":"OK"}}}},"/api/v1/gestionusuarios/auth/login/admin-user":{"post":{"tags":["Autenticación"],"requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/AuthAdminUserLoginRequestDTO"}},"text/json":{"schema":{"$ref":"#/components/schemas/AuthAdminUserLoginRequestDTO"}},"application/*+json":{"schema":{"$ref":"#/components/schemas/AuthAdminUserLoginRequestDTO"}}}},"responses":{"200":{"description":"OK"}}}},"/api/v1/gestionusuarios/auth/login/reg-user":{"post":{"tags":["Autenticación"],"requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/AuthRegularUserLoginRequestDTO"}},"text/json":{"schema":{"$ref":"#/components/schemas/AuthRegularUserLoginRequestDTO"}},"application/*+json":{"schema":{"$ref":"#/components/schemas/AuthRegularUserLoginRequestDTO"}}}},"responses":{"200":{"description":"OK"}}}}},"components":{"schemas":{"AuthAdminUserLoginRequestDTO":{"type":"object","properties":{"email":{"type":"string","nullable":true},"password":{"type":"string","nullable":true}},"additionalProperties":false},"AuthRegularUserLoginRequestDTO":{"type":"object","properties":{"email":{"type":"string","nullable":true}},"additionalProperties":false}}},"tags":[{"name":"Autenticación"}]},
+                dom_id: "#swagger-ui",
+                deepLinking: true,
+                docExpansion: "list",
+                filter: true,
+                displayRequestDuration: true,
+                persistAuthorization: false,
+                presets: [
+                    SwaggerUIBundle.presets.apis
+                ],
+                layout: "BaseLayout"
+            });
+        };
+    </script>
+</body>
+</html>
