@@ -1,6 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using ZooTech.Application.Common.Behaviors;
-using ZooTech.Application.Modules.Module_Auth.UseCases.AdminLogin;
+using ZooTech.Application.Modules.Module_GestionUsuarios.UseCases.AdminUser.Login;
 
 namespace ZooTech.Application.DependencyInjection
 {
@@ -10,7 +10,7 @@ namespace ZooTech.Application.DependencyInjection
             this IServiceCollection services
         )
         {
-            var assembly = typeof(AdminLoginInteractor).Assembly;
+            var assembly = typeof(LoginInteractor).Assembly;
 
             foreach (var implementation in assembly.GetTypes())
             {

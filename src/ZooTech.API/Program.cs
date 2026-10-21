@@ -6,7 +6,7 @@ using ZooTech.InterfaceAdapters.Middleware;
 using ZooTech.InterfaceAdapters.Modules.Module_Celo.Controllers;
 using ZooTech.InterfaceAdapters.Modules.Module_ProduccionLeche.Controllers;
 using ZooTech.InterfaceAdapters.Modules.Module_Vacuno.Controllers;
-using ZooTech.InterfaceAdapters.Modules.Module_Tenancing.Controllers;
+using ZooTech.InterfaceAdapters.Modules.Module_Administracion.Controllers;
 using QuestPDF.Infrastructure;
 using ZooTech.Application.DependencyInjection;
 
@@ -19,7 +19,7 @@ builder.Services
     .AddApplicationPart(typeof(CeloController).Assembly)
     .AddApplicationPart(typeof(VacunoController).Assembly)
     .AddApplicationPart(typeof(ProduccionLecheController).Assembly)
-    .AddApplicationPart(typeof(TenancingController).Assembly);
+    .AddApplicationPart(typeof(TenantManagementController).Assembly);
 
 // ======= Configuracion Swagger =======
 builder.Services.AddEndpointsApiExplorer();

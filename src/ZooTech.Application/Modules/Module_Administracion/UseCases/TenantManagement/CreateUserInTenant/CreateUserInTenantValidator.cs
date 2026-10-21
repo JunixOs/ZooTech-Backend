@@ -1,0 +1,43 @@
+using ZooTech.Application.Common.Validator;
+using ZooTech.Application.Modules.Module_Administracion.Validators;
+using ZooTech.Domain.Shared.Enums;
+
+namespace ZooTech.Application.Modules.Module_Administracion.UseCases.TenantManagement.CreateUserInTenant
+{
+    public class CreateUserInTenantValidator : ICommandQueryValidator<CreateUserInTenantCommand>
+    {
+        public ModuleName ModuleName => ModuleName.Tenancing;
+
+        public List<string> Validate(CreateUserInTenantCommand request)
+        {
+            var errors = new List<string>();
+
+            TenancingCommonValidationRules.ValidateEmailAndUsername(errors, "CREATE", request.Email, request.UserName);
+
+            if (string.IsNullOrWhiteSpace(request.FullName))
+            {
+                errors.Add("TENANCING-ADMIN_USER-CREATE-FULL_NAME-NULL");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Code))
+            {
+                errors.Add("TENANCING-ADMIN_USER-CREATE-CODE-NULL");
+            } 
+            else if (request.Code.Length > 15) 
+            {
+                errors.Add("TENANCING-ADMIN_USER-CREATE-CODE-INVALID");
+            }
+
+            if (request.TenantId is null)
+            {
+                errors.Add("TENANCING-ADMIN_USER-CREATE-TENANT_ID-NULL");
+            }
+            else if (request.TenantId <= 0)
+            {
+                errors.Add("TENANCING-ADMIN_USER-CREATE-TENANT_ID-INVALID");
+            }
+
+            return errors;
+        }
+    }
+}

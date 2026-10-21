@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using ZooTech.Application.Common.Gateway.Repositories.MainTenantsDb;
-using ZooTech.Application.Modules.Module_Tenancing.UseCases.ListTenants;
+using ZooTech.Application.Modules.Module_Administracion.UseCases.TenantManagement.ListTenants;
 using ZooTech.Domain.Admin.Entities;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Persistence.Mappers.MainTenantsDb;

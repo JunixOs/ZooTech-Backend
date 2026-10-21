@@ -2,8 +2,6 @@ using Microsoft.Extensions.DependencyInjection;
 using ZooTech.Application.Common.Behaviors;
 using ZooTech.Application.Common.Gateway.Reports;
 using ZooTech.Application.Common.Validator;
-using ZooTech.Application.Modules.Module_Auth.UseCases.AdminLogin;
-using ZooTech.Application.Modules.Module_Auth.UseCases.RegularLogin;
 // Removed Animals references
 using ZooTech.Application.Modules.Module_Celo.UseCases.CreateCelo;
 using ZooTech.Application.Modules.Module_Celo.UseCases.DeleteCelo;
@@ -24,10 +22,6 @@ using ZooTech.Application.Modules.Module_Sanidad.UseCases.CreateTriaje;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.DeleteTriaje;
 using ZooTech.Application.Modules.Module_Sanidad.UseCases.UpdateTriaje;
 using ZooTech.Application.Modules.Module_Sanidad.Validators;
-using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateAdminUser;
-using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant;
-using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateUserInTenant;
-using ZooTech.Application.Modules.Module_Tenancing.UseCases.DeleteAdminUser;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.CreateVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.DeleteVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ExportarActividadVacunos;
@@ -40,6 +34,12 @@ using ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ListarVac
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.ReporteVacuno.ObtenerRegistroVacunoReporte;
 using ZooTech.Application.Modules.Module_Vacuno.UseCases.UpdateVacuno;
 using ZooTech.Application.Modules.Module_Vacuno.Validators;
+using ZooTech.Application.Modules.Module_GestionUsuarios.UseCases.RegularUser.Login;
+using ZooTech.Application.Modules.Module_GestionUsuarios.UseCases.AdminUser.Login;
+using ZooTech.Application.Modules.Module_Administracion.UseCases.TenantManagement.CreateTenant;
+using ZooTech.Application.Modules.Module_Administracion.UseCases.TenantManagement.CreateUserInTenant;
+using ZooTech.Application.Modules.Module_Administracion.UseCases.AdminUserManagement.CreateAdminUser;
+using ZooTech.Application.Modules.Module_Administracion.UseCases.AdminUserManagement.DeleteAdminUser;
 
 namespace ZooTech.Application.DependencyInjection;
 
@@ -127,10 +127,10 @@ public static class DependencyInjection
         services.AddScoped<ICommandQueryValidator<UpdateVacunoCommand>, UpdateVacunoValidator>();
 
         // ============================================
-        // Use Cases - Module_Auth
+        // Use Cases - Module_GestionUsuarios
         // ============================================
-        services.AddScoped<ICommandQueryValidator<AdminLoginCommand>, AdminLoginValidator>();
-        services.AddScoped<ICommandQueryValidator<RegularLoginCommand>, RegularLoginValidator>();
+        services.AddScoped<ICommandQueryValidator<Modules.Module_GestionUsuarios.UseCases.AdminUser.Login.LoginCommand>, Modules.Module_GestionUsuarios.UseCases.AdminUser.Login.LoginValidator>();
+        services.AddScoped<ICommandQueryValidator<Modules.Module_GestionUsuarios.UseCases.RegularUser.Login.LoginCommand>, Modules.Module_GestionUsuarios.UseCases.RegularUser.Login.LoginValidator>();
 
         // ============================================
         // Use Cases - Module_Tenancing

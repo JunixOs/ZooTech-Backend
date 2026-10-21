@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using ZooTech.Application.Common.Gateway.Tenant;
-using ZooTech.Application.Modules.Module_Tenancing.UseCases.CreateTenant;
+using ZooTech.Application.Modules.Module_Administracion.UseCases.TenantManagement.CreateTenant;
 using ZooTech.Infrastructure.Exceptions;
 using ZooTech.Infrastructure.Persistence.Context;
 using ZooTech.Infrastructure.Persistence.Entities.MainTenantsDb;

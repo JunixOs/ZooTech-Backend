@@ -1,4 +1,4 @@
-using ZooTech.Application.Modules.Module_Tenancing.UseCases.ListAdminUsers;
+using ZooTech.Application.Modules.Module_Administracion.UseCases.AdminUserManagement.ListAdminUsers;
 using ZooTech.Domain.Admin.Entities;
 
 namespace ZooTech.Application.Common.Gateway.Repositories.MainTenantsDb
